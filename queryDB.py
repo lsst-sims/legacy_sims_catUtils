@@ -77,6 +77,7 @@ class queryDB(object):
                    catalogDescriptionPath+"requiredSchemaFields.dat",
                    catalogDescriptionPath+"requiredDerivedFields.dat",
                    catalogDescriptionPath+"outputFormat.dat")
+    nic.metadata = self.metadata
     nic.metadata.catalogDescription =  nic.catalogDescription
     nic.catalogType = self.filetypes
     data = {}
