@@ -2,10 +2,10 @@
 from dbModel import *
 from catalogDbMap import catalogDbMap
 import os
-from lsst.sims.measures.instance import InstanceCatalog
-from lsst.sims.measures.instance import CatalogDescription
-from lsst.sims.measures.instance import Metadata
-from lsst.sims.measures.instance import CatalogType
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.measures.instance import CatalogDescription
+from lsst.sims.catalogs.measures.instance import Metadata
+from lsst.sims.catalogs.measures.instance import CatalogType
 
 
 class queryDB(object):
