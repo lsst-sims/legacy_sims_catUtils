@@ -25,7 +25,7 @@ class queryDB(object):
         return None
       else:
         return self.makeCatalogFromQuery(result)
-    except Exception as e:
+    except Exception, e:
       print "Exception of type: %s"%(type(e))
       raise Exception(e)
 

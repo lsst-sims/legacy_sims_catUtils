@@ -8,14 +8,14 @@ from sqlalchemy import schema
 from elixir import *
 
 
-a_engine = create_engine("postgresql://cosmouser:cosmouser@deathray/cosmoDB.11.19.2009?server_side_cursors",
+a_engine = create_engine("postgresql://cosmouser:cosmouser@172.25.79.34/cosmoDB.11.19.2009?server_side_cursors",
         echo=False)
 a_session = scoped_session(sessionmaker(autoflush=True, 
     bind=a_engine))
 a_metadata = metadata
 a_metadata.bind = a_engine
 
-b_engine = create_engine("postgresql://jobreporter:jobreporter@deathray/joblog",
+b_engine = create_engine("postgresql://jobreporter:jobreporter@172.25.79.34/joblog",
         echo=False)
 b_session = application_session = scoped_session(sessionmaker(autoflush=True,
      bind=b_engine))
