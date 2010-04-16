@@ -2,6 +2,7 @@
 from dbModel import *
 from catalogDbMap import catalogDbMap
 import os
+import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import CatalogDescription
 from lsst.sims.catalogs.measures.instance import Metadata
@@ -87,6 +88,7 @@ class queryDB(object):
       for k in self.cdm.objectTypes['POINT'].keys():
         exec("data[k].append(s.%s)"%(k))
     for k in self.cdm.objectTypes['POINT'].keys():
-      nic.addColumn(data[k], k)
+      arr = numpy.asarray(data[k])
+      nic.addColumn(arr, k)
     nic.metadata = self.metadata
     return nic
