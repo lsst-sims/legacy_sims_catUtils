@@ -22,6 +22,7 @@ class queryDB(object):
     try:
       result = self.query.slice(self._start, self._start+self.chunksize).all()
       self._start += self.chunksize
+      print 'Got %i results from DB' % len(result)
       if len(result) == 0:
         return None
       else:
@@ -52,6 +53,7 @@ class queryDB(object):
       result = self.query.slice(self._start, self._start+self.chunksize).all()
 
       self._start += self.chunksize
+      print 'Got %i results from DB' % len(result)
       if len(result) == 0:
         return None
       else:
@@ -91,4 +93,11 @@ class queryDB(object):
       arr = numpy.asarray(data[k])
       nic.addColumn(arr, k)
     nic.metadata = self.metadata
+    if nic == None:
+        raise RuntimeError, '*** nic is None'
+    if nic.metadata == None:
+        raise RuntimeError, '*** nic.metadata is None'
+    if len(nic.dataArray) < 1:
+        raise RuntimeError, '*** nic.dataArray has len < 1'
+
     return nic
