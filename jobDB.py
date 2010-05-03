@@ -96,3 +96,8 @@ class JobState(object):
       return self._states[key].pvalue
     else:
       return None
+
+  def showStates(self):
+    for k in self._states.keys():
+      b_session.refresh(self._states[key])
+      print key, self._states[key].pvalue
