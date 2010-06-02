@@ -35,10 +35,10 @@ class catalogDbMap (object):
         self.objectTypes['POINT']['magnification'] = {'star':'0.0'}
         self.objectTypes['POINT']['properMotionRa'] = {'star':'(mudecl/(1000.*3600.))*PI()/180.'}
         self.objectTypes['POINT']['properMotionDec'] = {'star':'(mura/(1000.*3600.))*PI()/180.'}
-        self.objectTypes['POINT']['spatialmodel'] = {'star':"'None'"}
+        self.objectTypes['POINT']['spatialmodel'] = {'star':"'point'"}
         self.objectTypes['POINT']['galacticExtinctionModel'] = {'star':"'CCM'"}
         self.objectTypes['POINT']['galacticAv'] = {'star':'ebv*3.1'}
         self.objectTypes['POINT']['galacticRv'] = {'star':'3.1::real'}
-        self.objectTypes['POINT']['internalExtinctionModel'] = {'star':"'None'"}
+        self.objectTypes['POINT']['internalExtinctionModel'] = {'star':"'none'"}
         self.objectTypes['POINT']['parallax'] = {'star':'parallax'}
         self.objectTypes['POINT']['radialVelocity'] = {'star':'vr'}
