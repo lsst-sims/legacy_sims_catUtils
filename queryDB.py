@@ -81,7 +81,7 @@ class queryDB(object):
     elif objtype == 'WDSTARS':
       self.ptype = 'POINT'
       for map in om:
-        query = session.query(eval("%s.simobjid"%(map['table'])))
+        query = session.query(eval("%s.id"%(map['table'])))
         for k in self.cdm.objectTypes[map['ptype']].keys():
           if k == 'id':
 	    continue
