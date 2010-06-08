@@ -8,15 +8,15 @@ from sqlalchemy import schema
 from elixir import *
 
 
-a_engine = create_engine("postgresql://cosmouser:cosmouser@172.25.79.34/cosmoDB.11.19.2009?server_side_cursors",
-        echo=False)
+a_engine = create_engine("postgresql://cosmouser:cosmouser@172.25.79.34/cosmoDB.11.19.2009",
+        echo=False, server_side_cursors=True)
 a_session = scoped_session(sessionmaker(autoflush=True, 
     bind=a_engine))
 a_metadata = metadata
 a_metadata.bind = a_engine
 
 b_engine = create_engine("postgresql://jobreporter:jobreporter@172.25.79.34/joblog",
-        echo=False)
+        echo=True)
 b_session = application_session = scoped_session(sessionmaker(autoflush=True,
      bind=b_engine))
 b_metadata = ThreadLocalMetaData()
@@ -24,6 +24,18 @@ b_metadata.bind = b_engine
 
 class Star(Entity):
   using_options(tablename="stars", autoload=True, metadata=a_metadata,
+          session=a_session)
+
+class Wd(Entity):
+  using_options(tablename="starswd", autoload=True, metadata=a_metadata,
+          session=a_session)
+
+class Galaxy(Entity):
+  using_options(tablename="galaxy_new", autoload=True, metadata=a_metadata,
+          session=a_session)
+
+class Tiles(Entity):
+  using_options(tablename="tiles", autoload=True, metadata=a_metadata,
           session=a_session)
 
 class OpSim3_61(Entity):
