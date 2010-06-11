@@ -6,6 +6,7 @@ class catalogDbMap (object):
         self.objectTypes['POINT'] = {}
         self.objectTypes['OPSIM361'] = {}
         self.objectTypes['MOVINGPOINT'] = {}
+	self.objectTypes['ORBIT'] = {}
         self.objectTypes['SERSIC2D_BULGE'] = {}
         self.objectTypes['SERSIC2D_DISK'] = {}
         self.objectTypes['SERSIC2D_AGN'] = {}
@@ -70,6 +71,7 @@ class catalogDbMap (object):
         self.objectTypes['SERSIC2D']['internalExtinctionModel'] = "'CCM'"
         self.objectTypes['SERSIC2D']['internalAv'] = '0.0'
         self.objectTypes['SERSIC2D']['internalRv'] = '3.1'
+        self.objectTypes['SERSIC2D']['radialVelocity'] = '0.0'
 
         self.objectTypes['SERSIC2D_BULGE'] = copy.copy(self.objectTypes['SERSIC2D'])
         self.objectTypes['SERSIC2D_BULGE']['ra'] = 'bra'
@@ -118,6 +120,32 @@ class catalogDbMap (object):
         self.objectTypes['MOVINGPOINT']['spatialmodel'] = "'None'"
         self.objectTypes['MOVINGPOINT']['galacticExtinctionModel'] = "'None'"
         self.objectTypes['MOVINGPOINT']['internalExtinctionModel'] = "'None'"
+	
+	self.objectTypes['ORBIT']['q'] = 'q'
+	self.objectTypes['ORBIT']['e'] = 'e'
+	self.objectTypes['ORBIT']['i'] = 'i'
+	self.objectTypes['ORBIT']['node'] = 'node'
+	self.objectTypes['ORBIT']['argPeri'] = 'argperi'
+	self.objectTypes['ORBIT']['timePeri'] = 't_peri'
+	self.objectTypes['ORBIT']['epoch'] = 'epoch'
+	self.objectTypes['ORBIT']['magHv'] = 'h_g'
+	self.objectTypes['ORBIT']['phaseGv'] = 'g'
+	self.objectTypes['ORBIT']['index'] = 'index'
+	self.objectTypes['ORBIT']['n_par'] = 'n_par'
+	self.objectTypes['ORBIT']['moid'] = 'moid'
+	self.objectTypes['ORBIT']['objid'] = 'objid'
+	self.objectTypes['ORBIT']['objtype'] = 'type'
+	self.objectTypes['ORBIT']['isVar'] = 'isvar'
+	self.objectTypes['ORBIT']['var_t0'] = 't0'
+	self.objectTypes['ORBIT']['var_timescale'] = 'timescale'
+	self.objectTypes['ORBIT']['var_fluxmax'] = 'varfluxmax'
+	self.objectTypes['ORBIT']['sedname'] = 'sed_filename'
+	self.objectTypes['ORBIT']['u_opp'] = 'u_opp'
+	self.objectTypes['ORBIT']['g_opp'] = 'g_opp'
+	self.objectTypes['ORBIT']['r_opp'] = 'r_opp'
+	self.objectTypes['ORBIT']['i_opp'] = 'i_opp'
+	self.objectTypes['ORBIT']['z_opp'] = 'z_opp'
+	self.objectTypes['ORBIT']['y_opp'] = 'y_opp'
 
 
 class physicalObjectMap (object):
