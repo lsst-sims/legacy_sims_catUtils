@@ -59,6 +59,7 @@ class catalogDbMap (object):
         self.objectTypes['SERSIC2D']['magnification'] = '0.0'
         self.objectTypes['SERSIC2D']['properMotionRa'] = '0.0'
         self.objectTypes['SERSIC2D']['properMotionDec'] = '0.0'
+        self.objectTypes['SERSIC2D']['parallax'] = '0.0'
         self.objectTypes['SERSIC2D']['spatialmodel'] = "'None'"
         self.objectTypes['SERSIC2D']['majorAxis'] = '0'
         self.objectTypes['SERSIC2D']['minorAxis'] = '0'
@@ -103,6 +104,22 @@ class catalogDbMap (object):
         self.objectTypes['SERSIC2D_AGN']['sedFilename'] =\
           'lookupGalaxySedFromId(sedid_agn)'
 
+        self.objectTypes['MOVINGPOINT']['id'] = 'objid'
+        self.objectTypes['MOVINGPOINT']['ra'] = 'ra'
+        self.objectTypes['MOVINGPOINT']['dec'] = 'decl'
+        self.objectTypes['MOVINGPOINT']['magNorm'] = 'magNorm'
+        self.objectTypes['MOVINGPOINT']['sedFilename'] = 'sedFilename'
+        self.objectTypes['MOVINGPOINT']['redshift'] = '0.0'
+        self.objectTypes['MOVINGPOINT']['shearXX'] = '0.0'
+        self.objectTypes['MOVINGPOINT']['shearYY'] = '0.0'
+        self.objectTypes['MOVINGPOINT']['magnification'] = '0.0'
+        self.objectTypes['MOVINGPOINT']['properMotionRa'] = 'muRa'
+        self.objectTypes['MOVINGPOINT']['properMotionDec'] = 'muDec'
+        self.objectTypes['MOVINGPOINT']['spatialmodel'] = "'None'"
+        self.objectTypes['MOVINGPOINT']['galacticExtinctionModel'] = "'None'"
+        self.objectTypes['MOVINGPOINT']['internalExtinctionModel'] = "'None'"
+
+
 class physicalObjectMap (object):
     def __init__(self):
         self.objectMap = {}
@@ -117,5 +134,7 @@ class physicalObjectMap (object):
              {'table':'Galaxy','ptype':'SERSIC2D_AGN','constraint':'isagn > 0'})
         self.objectMap['SSM'] = \
             ({'table':'Ephems','ptype':'MOVINGPOINT','constraint':None},)
+        self.objectMap['ORBIT'] = \
+            ({'table':'Orbits','ptype':'ORBIT','constraint':None},)
         self.objectMap['OPSIM361'] = \
             ({'table':'OpSim3_61','ptype':'OPSIM361','constraint':None},)

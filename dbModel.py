@@ -16,7 +16,7 @@ a_metadata = metadata
 a_metadata.bind = a_engine
 
 b_engine = create_engine("postgresql://jobreporter:jobreporter@172.25.79.34/joblog",
-        echo=True)
+        echo=False)
 b_session = application_session = scoped_session(sessionmaker(autoflush=True,
      bind=b_engine))
 b_metadata = ThreadLocalMetaData()
