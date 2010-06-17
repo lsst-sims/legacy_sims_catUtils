@@ -34,6 +34,16 @@ class Galaxy(Entity):
   using_options(tablename="galaxy_new", autoload=True, metadata=a_metadata,
           session=a_session)
 
+'''
+class Ephem(Entity):
+  using_options(tablename="ephems", autoload=True, metadata=a_metadata,
+          session=a_session)
+'''
+
+class Orbits(Entity):
+  using_options(tablename="orbits", autoload=True, metadata=a_metadata,
+          session=a_session)
+
 class Tiles(Entity):
   using_options(tablename="tiles", autoload=True, metadata=a_metadata,
           session=a_session)
@@ -45,7 +55,8 @@ class OpSim3_61(Entity):
 class CatalogEventLog (Entity):
   using_options(tablename='eventlog', metadata=b_metadata, session=b_session)
   jobid = Field(Integer, index=True)
-  pkey = Field(Unicode(15))
+  owner = Field(UnicodeText)
+  pkey = Field(UnicodeText)
   pvalue = Field(UnicodeText)
   time = Field(DateTime(timezone=True))
   taskNumber = Field(Integer)
@@ -57,7 +68,8 @@ class CatalogEventLog (Entity):
 class JobStateLog (Entity):
   using_options(tablename='statelog', metadata=b_metadata, session=b_session)
   jobid = Field(Integer, index=True)
-  pkey = Field(Unicode(15))
+  owner = Field(UnicodeText)
+  pkey = Field(UnicodeText)
   pvalue = Field(UnicodeText)
   time = Field(DateTime(timezone=True))
   def __repr__(self):

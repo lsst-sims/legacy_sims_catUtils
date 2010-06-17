@@ -12,6 +12,46 @@ class catalogDbMap (object):
         self.objectTypes['SERSIC2D_AGN'] = {}
         self.objectTypes['SERSIC2D'] = {}
         self.objectTypes['STUB'] = {}
+        self.objectTypes['STARRAW'] = {}
+        self.objectTypes['GALRAW'] = {}
+        self.objectTypes['STARRAW']['id'] = 'id'
+        self.objectTypes['STARRAW']['ra'] = 'ra'
+        self.objectTypes['STARRAW']['dec'] = 'decl'
+        self.objectTypes['STARRAW']['sedFilename'] = 'sedfilename'
+        self.objectTypes['STARRAW']['fluxNorm'] = 'flux_scale'
+        self.objectTypes['STARRAW']['magNorm'] = 'toMag(flux_scale*flux_ratio_from_lc(isvar,t0,%f,timescale,varfluxpeak,\'%c\'))'
+        self.objectTypes['STARRAW']['lsst_u'] = 'umag'
+        self.objectTypes['STARRAW']['lsst_g'] = 'gmag'
+        self.objectTypes['STARRAW']['lsst_r'] = 'rmag'
+        self.objectTypes['STARRAW']['lsst_i'] = 'imag'
+        self.objectTypes['STARRAW']['lsst_z'] = 'zmag'
+        self.objectTypes['STARRAW']['lsst_y'] = 'ymag'
+        self.objectTypes['STARRAW']['sdss_u'] = 'sdssu'
+        self.objectTypes['STARRAW']['sdss_g'] = 'sdssg'
+        self.objectTypes['STARRAW']['sdss_r'] = 'sdssr'
+        self.objectTypes['STARRAW']['sdss_i'] = 'sdssi'
+        self.objectTypes['STARRAW']['sdss_z'] = 'sdssz'
+        self.objectTypes['STARRAW']['properMotionRa'] = '(mudecl/(1000.*3600.))*PI()/180.'
+        self.objectTypes['STARRAW']['properMotionDec'] = '(mura/(1000.*3600.))*PI()/180.'
+        self.objectTypes['STARRAW']['parallax'] = 'parallax'
+        self.objectTypes['STARRAW']['radialVelocity'] = 'vr'
+        self.objectTypes['GALRAW']['id'] = 'id'
+        self.objectTypes['GALRAW']['component'] = "'None'"
+        self.objectTypes['GALRAW']['ra'] = None
+        self.objectTypes['GALRAW']['dec'] = None
+        self.objectTypes['GALRAW']['sedFilename'] = None
+        self.objectTypes['GALRAW']['fluxNorm'] = None
+        self.objectTypes['GALRAW']['magNorm'] = None
+        self.objectTypes['GALRAW']['lsst_u'] = 'u'
+        self.objectTypes['GALRAW']['lsst_g'] = 'g'
+        self.objectTypes['GALRAW']['lsst_r'] = 'r'
+        self.objectTypes['GALRAW']['lsst_i'] = 'i'
+        self.objectTypes['GALRAW']['lsst_z'] = 'z'
+        self.objectTypes['GALRAW']['lsst_y'] = 'y'
+        self.objectTypes['GALRAW']['properMotionRa'] = '0.'
+        self.objectTypes['GALRAW']['properMotionDec'] = '0.'
+        self.objectTypes['GALRAW']['parallax'] = '0.'
+        self.objectTypes['GALRAW']['radialVelocity'] = '0.'
         self.objectTypes['POINT']['id'] = 'id'
         self.objectTypes['POINT']['ra'] = 'ra*PI()/180.'
         self.objectTypes['POINT']['dec'] = 'decl*PI()/180.'
@@ -106,6 +146,33 @@ class catalogDbMap (object):
         self.objectTypes['SERSIC2D_AGN']['sedFilename'] =\
           'lookupGalaxySedFromId(sedid_agn)'
 
+        self.objectTypes['GALRAW_BULGE'] = copy.copy(self.objectTypes['GALRAW'])
+	self.objectTypes['GALRAW_BULGE']['component'] = "'BULGE'"
+	self.objectTypes['GALRAW_BULGE']['ra'] = 'bra'
+	self.objectTypes['GALRAW_BULGE']['dec'] = 'bdec'
+	self.objectTypes['GALRAW_BULGE']['sedFilename'] =\
+          'lookupGalaxySedFromId(sedid_bulge)'
+	self.objectTypes['GALRAW_BULGE']['fluxNorm'] = 'flux_scale_bulge'
+	self.objectTypes['GALRAW_BULGE']['magNorm'] = 'toMag(flux_scale_bulge)'
+
+	self.objectTypes['GALRAW_DISK'] = copy.copy(self.objectTypes['GALRAW'])
+	self.objectTypes['GALRAW_BULGE']['component'] = "'DISK'"
+	self.objectTypes['GALRAW_DISK']['ra'] = 'dra'
+	self.objectTypes['GALRAW_DISK']['dec'] = 'ddec'
+	self.objectTypes['GALRAW_DISK']['sedFilename'] =\
+          'lookupGalaxySedFromId(sedid_disk)'
+	self.objectTypes['GALRAW_DISK']['fluxNorm'] = 'flux_scale_disk'
+	self.objectTypes['GALRAW_DISK']['magNorm'] = 'toMag(flux_scale_disk)'
+
+	self.objectTypes['GALRAW_AGN'] = copy.copy(self.objectTypes['GALRAW'])
+	self.objectTypes['GALRAW_AGN']['component'] = "'AGN'"
+	self.objectTypes['GALRAW_AGN']['ra'] = 'agnra'
+	self.objectTypes['GALRAW_AGN']['dec'] = 'agndec'
+	self.objectTypes['GALRAW_AGN']['sedFilename'] =\
+          'lookupGalaxySedFromId(sedid_agn)'
+	self.objectTypes['GALRAW_AGN']['fluxNorm'] = 'flux_scale_agn'
+	self.objectTypes['GALRAW_AGN']['magNorm'] = 'toMag(flux_scale_agn)'
+
         self.objectTypes['MOVINGPOINT']['id'] = 'objid'
         self.objectTypes['MOVINGPOINT']['ra'] = 'ra'
         self.objectTypes['MOVINGPOINT']['dec'] = 'decl'
@@ -154,6 +221,8 @@ class physicalObjectMap (object):
         self.objectMap['STARS'] = \
             ({'table':'Star','ptype':'POINT','constraint':None},\
              {'table':'Wd','ptype':'POINT','constraint':None})
+        self.objectMap['MSSTARS'] = \
+            ({'table':'Star','ptype':'POINT','constraint':None},)
         self.objectMap['WDSTARS'] = \
             ({'table':'Wd','ptype':'POINT','constraint':None},)
         self.objectMap['GALAXY'] = \
@@ -166,3 +235,11 @@ class physicalObjectMap (object):
             ({'table':'Orbits','ptype':'ORBIT','constraint':None},)
         self.objectMap['OPSIM361'] = \
             ({'table':'OpSim3_61','ptype':'OPSIM361','constraint':None},)
+        self.objectMap['STARRAW'] = \
+            ({'table':'Star','ptype':'STARRAW','constraint':None},\
+             {'table':'Wd','ptype':'STARRAW','constraint':None})
+        self.objectMap['GALRAW'] = \
+            ({'table':'Galaxy','ptype':'GALRAW_BULGE','constraint':'flux_scale_bulge is not NULL'},\
+             {'table':'Galaxy','ptype':'GALRAW_DISK','constraint':'flux_scale_disk is not NULL'},\
+             {'table':'Galaxy','ptype':'GALRAW_AGN','constraint':'isagn > 0'})
+

@@ -56,6 +56,19 @@ class LogEvents(object):
     value = "Task number %s stopped with term value %s"%(str(self._tasknumber), str(exitvalue))
     self.persist(key, value, self._jobdescription)
 
+class JobId(object):
+  def __init__(self, id, owner="anon"):
+    self._jobid = int(id)
+    self._owner = owner
+  def setOwner(self, owner):
+    self._owner = owner
+  def getOwner(self):
+    return self._owner
+  def setId(self, id):
+    self._jobid = id
+  def getId(self):
+    return self._jobid
+
 class JobState(object):
   def __init__(self, jobid=None):
     setup_all()
@@ -64,16 +77,18 @@ class JobState(object):
     if jobid is None:
       jobid = b_session.query(func.max(JobStateLog.jobid)).one()[0]
       if jobid is None:
-        self._jobid = 1
+        self._jobid = JobId(1)
       else:
-        self._jobid = jobid + 1
+        self._jobid = JobId(jobid + 1)
     else:
-      try:
-        jobid = int(jobid)
-      except:
-        raise Exception("The jobid could not be cast as an int")
-      self._jobid = jobid
-      statearr = JobStateLog.query.filter("jobid = %i"%jobid).all()
+      if isinstance(jobid, JobId):
+        self._jobid = jobid
+      elif isinstance(jobid, int):
+        self._jobid = JobId(jobid)
+      else:
+        raise Exception("The jobid is not an int or JobId class")
+      statearr = JobStateLog.query.filter("jobid = %i and owner =\
+              '%s'"%(self._jobid.getId(),self._jobid.getOwner())).all()
       for state in statearr:
         self._states[state.pkey] = state
 
@@ -86,7 +101,8 @@ class JobState(object):
       self._states[key].time = dt.datetime(1,1,1).now(timezone('US/Pacific'))
       b_session.commit()
     else:
-      self._states[key] = JobStateLog(jobid=self._jobid, pkey=unicode(key),
+      self._states[key] = JobStateLog(jobid=self._jobid.getId(),
+              owner=self._jobid.getOwner(), pkey=unicode(key),
               pvalue=unicode(state),
               time=dt.datetime(1,1,1).now(timezone('US/Pacific')))
       b_session.commit()
@@ -101,3 +117,8 @@ class JobState(object):
     for k in self._states.keys():
       b_session.refresh(self._states[k])
       print k, self._states[k].pvalue
+
+  def deleteStates(self):
+    for key in self._states.keys():
+      self._states[key].delete()
+    b_session.commit()

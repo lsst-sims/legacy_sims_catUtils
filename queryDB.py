@@ -78,6 +78,36 @@ class queryDB(object):
         return None
       else:
         return self.makeCatalogFromQuery(result, self.ptype)
+    if objtype == 'STARRAW':
+      self.ptype = 'STARRAW'
+      for map in om:
+        query = session.query(eval("%s.id"%(map['table'])))
+        for k in self.cdm.objectTypes[map['ptype']].keys():
+          if k == 'id':
+	    continue
+          elif k == 'magNorm':
+            col = expression.literal_column(self.cdm.objectTypes[map['ptype']][k]%(os.expmjd, os.filter)).label(k)
+            query = query.add_column(col)
+	  else:
+            col = expression.literal_column(self.cdm.objectTypes[map['ptype']][k]).label(k)
+            query = query.add_column(col)
+        query = query.filter("point @ scircle \'<(%fd,%fd),%fd>\'"%(os.fieldradeg, os.fielddecdeg, radiusdeg))
+        if map['constraint'] is not None:
+          query = query.filter(map['constraint'])
+        queries.append(session.execute(query))
+      self.queries = queries
+      result = []
+      for q in self.queries:
+        if len(result) == self.chunksize:
+            break
+        else:
+            result += q.fetchmany(self.chunksize - len(result))  
+
+      if len(result) == 0:
+        return None
+      else:
+        print self.ptype
+        return self.makeCatalogFromQuery(result, self.ptype)
     elif objtype == 'WDSTARS':
       self.ptype = 'POINT'
       for map in om:
@@ -111,6 +141,38 @@ class queryDB(object):
       '''Need to do query and then do the ephemeris calculation
       '''
       pass
+    elif objtype == 'GALRAW':
+      '''Remember that the galaxy has several components: Bulge, Disk, AGN
+      '''
+      self.ptype = 'GALRAW'
+      tiles = self.getTiles(os.fieldradeg, os.fielddecdeg, radiusdeg)
+      for tile in tiles:
+        for map in om:
+          query = session.query(eval("%s.id"%(map['table'])))
+          if map['constraint'] is not None:
+            query = query.filter(map['constraint'])
+          for k in self.cdm.objectTypes[map['ptype']].keys():
+            if k == 'id':
+              continue
+            else:
+              col = expression.literal_column(self.cdm.objectTypes[map['ptype']][k]).label(k)
+              query = query.add_column(col)
+          query = query.filter("point @ scircle '%s' and (point + strans(0,\
+              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
+              '%s'"%(tile['circ'],-tile['decmid'],tile['ramid'],tile['bbox']))
+          queries.append(session.execute(query))
+      self.queries = queries
+      result = []
+      for q in self.queries:
+        if len(result) == self.chunksize:
+            break
+        else:
+            result += q.fetchmany(self.chunksize - len(result))  
+
+      if len(result) == 0:
+        return None
+      else:
+        return self.makeCatalogFromQuery(result,self.ptype)
     elif objtype == 'GALAXY':
       '''Remember that the galaxy has several components: Bulge, Disk, AGN
       '''
