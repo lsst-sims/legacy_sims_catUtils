@@ -38,7 +38,7 @@ for key in starskeys:
 # so check .. (this is not strictly necessary, but does speed up some of the calculations
 #  below. so, for many stars, do it.)
 
-wavelen_base = stars[starskeys[0]].wavelen
+wavelen_base = rband.wavelen
 for key in starskeys:
     if stars[key].needResample(wavelen_match = wavelen_base):
         stars[key].resampleSED(wavelen_match=wavelen_base)
@@ -50,19 +50,28 @@ a, b = stars[starskeys[0]].setupCCMab()
 
 # pretend we want to read mags into an array .. you could just as easily put it into a
 # dictionary or list, with small variations in the code
-mags = n.empty(len(starskeys), dtype='float') 
+mags = n.empty(len(starskeys), dtype='float')
+mags2 = n.empty(len(starskeys), dtype='float')
+sedlist = []
 for i in range(len(starskeys)):
     # make a copy of the original SED *if* you want to 'reuse' the SED for multiple magnitude
     # calculations with various fluxnorms and dust applications (otherwise just use the object
     # you instantiated above)
     tmpstar = Sed(wavelen=stars[starskeys[i]].wavelen, flambda=stars[starskeys[i]].flambda)
-    tmpstar.multiplyFluxNorm(fluxnorm[i])
     tmpstar.addCCMDust(a, b, ebv=ebv[i])
+    tmpstar.multiplyFluxNorm(fluxnorm[i])
     mags[i] = tmpstar.calcMag(rband)
+    # This is for showing an example of the manyMagCalc function on bandpass
+    sedlist.append(tmpstar)
 
+# show the manyMagCalc method of bandpass - basically, take a list of SEDS and
+# quickly calculate the magnitudes of each one. This is a less stable way to calculate
+# magnitude than the version above (and you still have to do the dust / fluxnorm multiplications
+# before hand), but could be faster. (haven't completed speed testing yet). 
+mags2 = rband.manyMagCalc(sedlist)
 
 # show results
-print "#sedname      fluxnorm     ebv    magnitude"
+print "#sedname      fluxnorm     ebv    magnitude  manyMag"
 for i in range(len(starskeys)):
-    print "%s %.5g %.5f %.5f" %(starskeys[i], fluxnorm[i], ebv[i], mags[i])
+    print "%s %.5g %.5f %.5f %.5f" %(starskeys[i], fluxnorm[i], ebv[i], mags[i], mags2[i])
     
