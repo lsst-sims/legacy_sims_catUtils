@@ -34,11 +34,10 @@ class Galaxy(Entity):
   using_options(tablename="galaxy_new", autoload=True, metadata=a_metadata,
           session=a_session)
 
-'''
-class Ephem(Entity):
+class Ephems(Entity):
   using_options(tablename="ephems", autoload=True, metadata=a_metadata,
           session=a_session)
-'''
+  using_mapper_options(primary_key=['objid','obsdate'])
 
 class Orbits(Entity):
   using_options(tablename="orbits", autoload=True, metadata=a_metadata,
