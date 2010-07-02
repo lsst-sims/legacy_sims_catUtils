@@ -68,47 +68,78 @@ class queryDB(object):
       query = query.add_column(cols[k])
     self.opsimmeta = query.first()
 
-  def getQueryList(self, filter=""):  
+  def getQueryList(self, filter="", joinmap=None):  
     queries = []
     for omkey in self.om[self.objtype].keys():
+      if omkey == "formatas":
+        continue
       map = self.om[self.objtype][omkey]
       query = session.query(eval("%s.%s.label(\"%s\")"%(map['table'],
           self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
           map['idkey'])))
-      cols = {}
-      for ft in self.filetypes:
-	dmap = self.dm[ft][map['component']][map['ptype']]
-        for k in dmap.keys():
-          colstr = dmap[k][1]
-	  if colstr.startswith("%%"):
-	    colstr = colstr.lstrip("%%")
-            colstr = eval(colstr)
-          if k == map['idkey']:
-            continue
-          else:
-            if cols.has_key(k):
-	      print "Replacing expression %s with %s for key %s"%(cols[k], colstr, k)
-              cols[k] = expression.literal_column(colstr).label(k)
-            else:
-              cols[k] = expression.literal_column(colstr).label(k) 
-      for k in cols.keys():
-        query = query.add_column(cols[k])
+      query = self.addUniqueCols(map, query)
       query = query.filter(filter)
-      if not len(map['constraint'].rstrip()) == 0:
-        query = query.filter(map['constraint'])
+      if not len(map['constraint'].strip()) == 0:
+        const = map['constraint']
+        if const.startswith("%%"):
+          const = const.lstrip("%%")
+          const = eval(const)
+        query = query.filter(const)
       queries.append(session.execute(query))
     return queries
+
+  def addUniqueCols(self, map, query):
+    cols = self.getUniqueColNames(map)
+    for k in cols.keys():
+      cols[k] = expression.literal_column(cols[k]).label(k)
+      query = query.add_column(cols[k])
+    return query
+
+  def getUniqueColNames(self, map):
+    cols = {}
+    for ft in self.filetypes:
+      dmap = self.dm[ft][map['component']][map['ptype']]
+      for k in dmap.keys():
+        colstr = dmap[k][1]
+        if colstr.startswith("%%"):
+          colstr = colstr.lstrip("%%")
+          colstr = eval(colstr)
+        if k == map['idkey']:
+          continue
+        else:
+          if cols.has_key(k):
+            print "Replacing expression %s with %s for key %s"%(cols[k], colstr, k)
+            cols[k] = colstr
+          else:
+            cols[k] = colstr 
+    return cols
+
+  def getUniqueColNamesMO(self, idkey):
+    cols = {}
+    for ft in self.filetypes:
+      dmap = self.dm[ft]['SOLARSYSTEM']['MOVINGPOINT']
+      for k in dmap.keys():
+        colstr = dmap[k][1]
+        if k == idkey:
+          continue
+        else:
+          if cols.has_key(k):
+            print "Replacing expression %s with %s for key %s"%(cols[k], colstr, k)
+            cols[k] = colstr
+          else:
+            cols[k] = colstr 
+    return cols
 
   def getInstanceCatalogById(self, id, opsim="OPSIM361", radiusdeg=2.1, add_columns=()): 
     self.getOpsimMetadataById(id, opsim)
     objtype = self.objtype
     om = self.om[objtype]
-    if om[om.keys()[0]].has_key('formatas'):
-      self.ptype = om[om.keys()[0]]['formatas']
+    if om.has_key('formatas'):
+      self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
     if objtype == 'GALAXY':
-      '''Remember that the galaxy has several components: Bulge, Disk, AGN
+      '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTiles(self.opsimmeta.Unrefracted_RA,
               self.opsimmeta.Unrefracted_Dec, radiusdeg)
@@ -122,43 +153,47 @@ class queryDB(object):
     elif objtype == 'SSM':
       '''Need to do query and then do the ephemeris calculation
       '''
-      self.ptype = "ORBIT"
-      oom = self.pom.objectMap['ORBIT']
+      oom = self.om['ORBIT']
       #We need the orbit map for the join.  I'm assuming that if the orbit map
       #is length 1 there is only one orbit table and if > 1 there is one orbit
       #table per ephemeride table.
-      oqueries = []
-      equeries = []
-      query = None
+      queries = []
       n = 0
-      for map in om:
+      for k in om.keys():
+        if k == "formatas":
+          continue
+        map = om[k]
         #equery = session.query(eval("%s.objid"%(map['table'])))
         if len(oom) == 1:
-          omap = oom[0]
+          omap = oom['ORBIT0']
         elif len(oom) == len(om):
-          omap = oom[n]
+          omap = oom['ORBIT%i'%(n)]
         else:
           raise Exception('Getting orbits...', 'The orbit map and ephemeride\
                   map do not agree in length')
-        eid = eval("%s.objid"%(map['table'])).label('id')
-        oid = eval("%s.objid"%(omap['table'])).label('id')
+        eid = eval("%s.%s.label(\"%s\")"%(map['table'],
+                      self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+                      map['idkey']))
+        oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
+                      self.dm[self.filetypes[0]][omap['component']][omap['ptype']][omap['idkey']][1],
+                      omap['idkey']))
         equery = session.query(eid,oid).filter(eid == oid)
-        if map['constraint'] is not None:
-          equery = equery.filter(eval(map['constraint']))
-        if omap['constraint'] is not None:
-          equery = equery.filter(eval(omap['constraint']))
-        for k in self.cdm.objectTypes[map['ptype']].keys():
-          if k == 'id':
-            continue
-          else:
-            equery = equery.add_column(eval("%s.%s"%(map['table'],self.cdm.objectTypes[map['ptype']][k])).label(k))
-        for k in self.cdm.objectTypes[omap['ptype']].keys():
-          if k == 'id':
-            continue
-          else:
-            equery = equery.add_column(eval("%s.%s"%(omap['table'],self.cdm.objectTypes[omap['ptype']][k])).label(k))
-        query = equery.filter(self.getRaDecBounds(self.opsimmeta.fieldradeg, self.opsimmeta.fielddecdeg, radiusdeg))
-        print query.statement
+        #equery = self.addUniqueCols(map, equery)
+        equery = self.addUniqueCols(omap, equery)
+        if not len(map['constraint'].strip()) == 0:
+          const = map['constraint'].strip()
+          if const.startswith("%%"):
+            const = const.lstrip("%%")
+            const = eval(const)
+          equery = equery.filter(const)
+        if not len(omap['constraint'].strip()) == 0:
+          const = omap['constraint'].strip()
+          if const.startswith("%%"):
+            const = const.lstrip("%%")
+            const = eval(const)
+          equery = equery.filter(const)
+        query = equery.filter(self.getRaDecBounds(self.opsimmeta.Unrefracted_RA,
+            self.opsimmeta.Unrefracted_Dec, radiusdeg))
         queries.append(session.execute(query))
         n += 1
       self.queries = queries
@@ -170,6 +205,8 @@ class queryDB(object):
 
   def makeMovingObjectsFromOrbitList(self, results):
     objects = []
+    ephem_datfile = ""
+    pyoorb.pyoorb.oorb_init(ephemeris_fname=ephem_datfile)
     for r in results:
       mymo = mo.MovingObject(r['q'], r['e'], r['i'], r['node'],
                                r['argPeri'], r['timePeri'], r['epoch'],
@@ -182,35 +219,59 @@ class queryDB(object):
                                sedname=r['sedname'],
                                u_opp=r['u_opp'],g_opp=r['g_opp'], r_opp=r['r_opp'],
                                i_opp=r['i_opp'], z_opp=r['z_opp'], y_opp=r['y_opp'])
+      mymo.calcEphemeris([self.opsimmeta.Opsim_expmjd])
       objects.append(mymo)
-    objects = mo.MovingObjectList(objects)
-    objects.generateEphemeridesForAllObjects(self.opsimmeta.expmjd)
-    #for o in objects.getList():
-    #  for k in 
+    self.thismjd = objects[0].mjdTaiStr(self.opsimmeta.Opsim_expmjd)
+    return objects
 
+  class dbMovingObject(mo.MovingObject):
+    def keys(self):
+      return self.keyarr
+    def setkeys(keyarr):
+      self.keyarr = keyarr
 
   def makeCatalogFromQuery(self, result, ptype):
     if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
       catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
     else:
       raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
-    if ptype == "ORBIT":
-      result = self.makeMovingObjectsFromOrbitList(result)
     nic = InstanceCatalog(catalogDescriptionPath+"/config.dat")
     nic.objectType = ptype
     for k in self.opsimmeta.keys():
       nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
     nic.catalogType = self.filetypes
     data = {}
-    colkeys = result[0].keys()
-    for k in colkeys:
-      data[k] = []
-    for s in result:
+    if ptype == "MOVINGPOINT":
+      result = self.makeMovingObjectsFromOrbitList(result)
+      thismjd = self.thismjd
+      om = self.om[self.objtype]
+      colkeys = self.getUniqueColNamesMO(om[om.keys()[1]]['idkey'])
       for k in colkeys:
-        eval("data[k].append(s.%s)"%(k))
-    for k in colkeys:
-      arr = numpy.asarray(data[k])
-      nic.addColumn(arr, k)
+        data[k] = []
+      for s in result:
+        for k in colkeys:
+          col = colkeys[k]
+          if colkeys[k].startswith("%%"):
+            col = col.lstrip("%%")
+            col = eval(col)
+            eval("data[k].append(%s)"%(col))
+          else:
+            eval("data[k].append(s.%s)"%(col))
+      for k in colkeys:
+        arr = numpy.asarray(data[k])
+        nic.addColumn(arr, k)
+    else:
+      colkeys = result[0].keys()
+      for k in colkeys:
+        data[k] = []
+      for s in result:
+        for k in colkeys:
+          eval("data[k].append(s.%s)"%(k))
+      for k in colkeys:
+        arr = numpy.asarray(data[k])
+        nic.addColumn(arr, k)
+
+
     if nic == None:
         raise RuntimeError, '*** nic is None'
     if nic.metadata == None:
