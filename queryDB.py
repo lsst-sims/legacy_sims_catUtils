@@ -7,6 +7,7 @@ import pyoorb
 from lsst.sims.catalogs.generation.config import ConfigObj
 import lsst.sims.catalogs.generation.movingObjects as mo
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.measures.astrometry import Bbox
 
 
 class queryDB(object):
@@ -27,6 +28,10 @@ class queryDB(object):
     self.mm = ConfigObj(metaConfigFile)
     self.queries = None
     self.ptype = 'POINT'
+    self.expmjd = None
+    self.centradeg = None
+    self.centdecdeg = None
+    self.filter = None
     self.opsimmeta = None
     self.opsim = ""
 
@@ -67,8 +72,16 @@ class queryDB(object):
     for k in cols.keys():
       query = query.add_column(cols[k])
     self.opsimmeta = query.first()
+    self.centradeg =\
+    eval("self.opsimmeta.%s"%(omap['radegkey']))
+    self.centdecdeg =\
+    eval("self.opsimmeta.%s"%(omap['decdegkey']))
+    self.expmjd =\
+    eval("self.opsimmeta.%s"%(omap['expmjdkey']))
+    self.filter =\
+    eval("self.opsimmeta.%s"%(omap['filterkey']))
 
-  def getQueryList(self, filter="", joinmap=None):  
+  def getQueryList(self, filter=""):  
     queries = []
     for omkey in self.om[self.objtype].keys():
       if omkey == "formatas":
@@ -130,8 +143,11 @@ class queryDB(object):
             cols[k] = colstr 
     return cols
 
-  def getInstanceCatalogById(self, id, opsim="OPSIM361", radiusdeg=2.1, add_columns=()): 
-    self.getOpsimMetadataById(id, opsim)
+  def getInstanceCatalogByBbox(self, bbox, expmjd=0., filter='r'): 
+    self.expmjd = expmjd
+    self.centradeg = bbox.getCentDeg()[0]
+    self.centdecdeg = bbox.getCentDeg()[1]
+    self.filter = filter
     objtype = self.objtype
     om = self.om[objtype]
     if om.has_key('formatas'):
@@ -141,18 +157,21 @@ class queryDB(object):
     if objtype == 'GALAXY':
       '''We need to get galaxies from every tile in the overlap region
       '''
-      tiles = self.getTiles(self.opsimmeta.Unrefracted_RA,
-              self.opsimmeta.Unrefracted_Dec, radiusdeg)
+      tiles = self.getTilesBbox(bbox)
       queries = []
       for tile in tiles:
-        queries += self.getQueryList("point @ scircle '%s' and (point + strans(0,\
-			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
-				      '%s'"%(tile['circ'],-tile['decmid'],tile['ramid'],tile['bbox']))
+#        queries += self.getQueryList("point @ spoly '%s' and (point + strans(0,\
+#			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
+#				      '%s'"%(tile['tbox'],-tile['decmid'],tile['ramid'],tile['bbox']))
+        queries += self.getQueryList("point @ spoly '%s' and point @ spoly\
+    			              '%s'"%(tile['tbox'],tile['tbbox']))
       self.queries = queries
       return self.getNextChunk()
     elif objtype == 'SSM':
       '''Need to do query and then do the ephemeris calculation
       '''
+      if self.expmjd == 0.:
+        raise Exception("Expmjd cannot be None if you want to get Solar System Objects out")
       oom = self.om['ORBIT']
       #We need the orbit map for the join.  I'm assuming that if the orbit map
       #is length 1 there is only one orbit table and if > 1 there is one orbit
@@ -192,40 +211,104 @@ class queryDB(object):
             const = const.lstrip("%%")
             const = eval(const)
           equery = equery.filter(const)
-        query = equery.filter(self.getRaDecBounds(self.opsimmeta.Unrefracted_RA,
-            self.opsimmeta.Unrefracted_Dec, radiusdeg))
+        query = equery.filter(self.getRaDecBounds(bbox))
         queries.append(session.execute(query))
         n += 1
       self.queries = queries
       return self.getNextChunk()
     else:
-      filterstr = "point @ scircle \'<(%fd,%fd),%fd>\'"%(self.opsimmeta.Unrefracted_RA, self.opsimmeta.Unrefracted_Dec, radiusdeg)
+      filterstr = "point @ sbox \'((%fd,%fd),(%fd,%fd))\'"%(
+		  bbox.getRaMin(), bbox.getDecMin(), bbox.getRaMax(), bbox.getDecMax())
+      self.queries = self.getQueryList(filter=filterstr)
+      return self.getNextChunk()
+
+  def getInstanceCatalogById(self, id, opsim="OPSIM361", radiusdeg=2.1):
+    self.getOpsimMetadataById(id, opsim)
+    return self.getInstanceCatalogByCirc(self.centradeg, self.centdecdeg,
+            radiusdeg, expmjd = self.expmjd, filter = self.filter)
+
+  def getInstanceCatalogByCirc(self, centradeg, centdecdeg, radiusdeg, expmjd = 0.,
+          filter = 'r'): 
+    self.centradeg = centradeg
+    self.centdecdeg = centdecdeg
+    self.filter = filter
+    self.expmjd = expmjd
+
+    objtype = self.objtype
+    om = self.om[objtype]
+    if om.has_key('formatas'):
+      self.ptype = om['formatas']
+    else:
+      self.ptype = om[om.keys()[0]]['ptype']
+    if objtype == 'GALAXY':
+      '''We need to get galaxies from every tile in the overlap region
+      '''
+      tiles = self.getTilesCirc(self.centradeg,
+              self.centdecdeg, radiusdeg)
+      queries = []
+      for tile in tiles:
+        queries += self.getQueryList("point @ scircle '%s' and (point + strans(0,\
+			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
+				      '%s'"%(tile['circ'],-tile['decmid'],tile['ramid'],tile['bbox']))
+      self.queries = queries
+      return self.getNextChunk()
+    elif objtype == 'SSM':
+      '''Need to do query and then do the ephemeris calculation
+      '''
+      if self.expmjd == 0.:
+        raise Exception("Expmjd cannot be None if you want to get Solar System Objects out")
+      oom = self.om['ORBIT']
+      #We need the orbit map for the join.  I'm assuming that if the orbit map
+      #is length 1 there is only one orbit table and if > 1 there is one orbit
+      #table per ephemeride table.
+      queries = []
+      n = 0
+      for k in om.keys():
+        if k == "formatas":
+          continue
+        map = om[k]
+        #equery = session.query(eval("%s.objid"%(map['table'])))
+        if len(oom) == 1:
+          omap = oom['ORBIT0']
+        elif len(oom) == len(om):
+          omap = oom['ORBIT%i'%(n)]
+        else:
+          raise Exception('Getting orbits...', 'The orbit map and ephemeride\
+                  map do not agree in length')
+        eid = eval("%s.%s.label(\"%s\")"%(map['table'],
+                      self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+                      map['idkey']))
+        oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
+                      self.dm[self.filetypes[0]][omap['component']][omap['ptype']][omap['idkey']][1],
+                      omap['idkey']))
+        equery = session.query(eid,oid).filter(eid == oid)
+        #equery = self.addUniqueCols(map, equery)
+        equery = self.addUniqueCols(omap, equery)
+        if not len(map['constraint'].strip()) == 0:
+          const = map['constraint'].strip()
+          if const.startswith("%%"):
+            const = const.lstrip("%%")
+            const = eval(const)
+          equery = equery.filter(const)
+        if not len(omap['constraint'].strip()) == 0:
+          const = omap['constraint'].strip()
+          if const.startswith("%%"):
+            const = const.lstrip("%%")
+            const = eval(const)
+          equery = equery.filter(const)
+        query = equery.filter(self.getRaDecBoundsCirc(self.centradeg,
+            self.centdecdeg, radiusdeg))
+        queries.append(session.execute(query))
+        n += 1
+      self.queries = queries
+      return self.getNextChunk()
+    else:
+      filterstr = "point @ scircle \'<(%fd,%fd),%fd>\'"%(self.centradeg,
+              self.centdecdeg, radiusdeg)
       self.queries = self.getQueryList(filter=filterstr)
       return self.getNextChunk()
 
   def makeMovingObjectsFromOrbitList(self, results):
-    objects = []
-    ephem_datfile = ""
-    pyoorb.pyoorb.oorb_init(ephemeris_fname=ephem_datfile)
-    for r in results:
-      mymo = mo.MovingObject(r['q'], r['e'], r['i'], r['node'],
-                               r['argPeri'], r['timePeri'], r['epoch'],
-                               magHv=r['magHv'], phaseGv=r['phaseGv'], index=r['index'],
-                               n_par=r['n_par'], moid=r['moid'], 
-                               objid=r['id'], objtype=r['objtype'],
-                               isVar=r['isVar'], var_t0=r['var_t0'],
-                               var_timescale=r['var_timescale'],
-                               var_fluxmax=r['var_fluxmax'],
-                               sedname=r['sedname'],
-                               u_opp=r['u_opp'],g_opp=r['g_opp'], r_opp=r['r_opp'],
-                               i_opp=r['i_opp'], z_opp=r['z_opp'], y_opp=r['y_opp'])
-      mymo.calcEphemeris([self.opsimmeta.Opsim_expmjd])
-      objects.append(mymo)
-    self.thismjd = objects[0].mjdTaiStr(self.opsimmeta.Opsim_expmjd)
-    return objects
-
-
-  def makeMovingObjectsFromOrbitList2(self, results):
     objects = []
     ephem_datfile = ""
     pyoorb.pyoorb.oorb_init(ephemeris_fname=ephem_datfile)
@@ -244,9 +327,9 @@ class queryDB(object):
       objects.append(mymo)
     # turn list of moving objects into movingObjectList object
     objects = mo.MovingObjectList(objects)
-    self.thismjd = objects._mObjects[0].mjdTaiStr(self.opsimmeta.Opsim_expmjd)
     # generate ephemerides for all objects at once
-    objects.generateEphemeridesForAllObjects([self.opsimmeta.Opsim_expmjd], obscode=807)
+    objects.generateEphemeridesForAllObjects([self.expmjd], obscode=807)
+    self.thismjd = mymo.mjdTaiStr(self.expmjd)
     # return the basic list of moving objects 
     objects = objects._mObjects
     return objects
@@ -266,8 +349,9 @@ class queryDB(object):
       raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
     nic = InstanceCatalog(catalogDescriptionPath+"/config.dat")
     nic.objectType = ptype
-    for k in self.opsimmeta.keys():
-      nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
+    if self.opsimmeta is not None:
+      for k in self.opsimmeta.keys():
+        nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
     nic.catalogType = self.filetypes
     data = {}
     if ptype == "MOVINGPOINT":
@@ -310,7 +394,27 @@ class queryDB(object):
 
     return nic
 
-  def getTiles(self, raDeg, decDeg, radiusDeg):
+  def getTilesBbox(self, bbox):
+    sq = session.query(Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("sbox\
+            '((%fd, %fd), (%fd,%fd))' && bbox"%(bbox.getRaMin(),bbox.getDecMin(),
+            bbox.getRaMax(),bbox.getDecMax())).subquery().alias(name="mytiles")
+    col1 = expression.literal_column("spoly '{(%fd, %fd), (%fd, %fd), (%fd, %fd), (%fd, %fd)}'+\
+            strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
+            'ZYX')"%(\
+            bbox.getRaMin(),bbox.getDecMin(), bbox.getRaMin(), bbox.getDecMax(),
+	    bbox.getRaMax(),bbox.getDecMax(), bbox.getRaMax(),
+            bbox.getDecMin(),"mytiles","mytiles")).label("tbox")
+    col2 = expression.literal_column("bbox +\
+            strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
+            'ZYX')"%("mytiles","mytiles")).label("tbbox")
+    query = session.query(col1,col2,sq.c.ramid,sq.c.decmid,sq.c.bbox)
+    result = query.all()
+    tiles = []
+    for r in result:
+      tiles.append({'tbox':r.tbox, 'tbbox':r.tbbox, 'ramid':r.ramid, 'decmid':r.decmid,
+            'bbox':r.bbox})
+    return tiles
+  def getTilesCirc(self, raDeg, decDeg, radiusDeg):
     sq = session.query(Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("scircle\
             '<(%fd, %fd), %fd>' && bbox"%(raDeg, decDeg,
             radiusDeg)).subquery().alias(name="mytiles")
@@ -332,26 +436,11 @@ class queryDB(object):
   def rad2deg(self, ang):
     return ang*180./math.pi
 
-  def getRaDecBounds(self, ra, dec, radius):
-    ramax = ra+radius/math.cos(self.deg2rad(dec))
-    ramin = ra-radius/math.cos(self.deg2rad(dec))
-    decmax = dec+radius
-    decmin = dec-radius
-    if decmin < -90:
-      decmin = -90
-      if((-90 - decmin) > (decmax + 90)):
-        decmax = -190 - decmin
-      else:
-        decmax = decmax
-    elif decmax > 90:
-      decmax = 90
-      if((decmax - 90) > (90 - decmin)):
-        decmin = 180 - decmax
-      else:
-        decmin = decmin
-    else:
-      pass
-        
+  def getRaDecBounds(self, bbox):
+    decmin = bbox.getDecMin()
+    decmax = bbox.getDecMax()
+    ramin = bbox.getRaMin()
+    ramax = bbox.getRaMax()
 
     bound = ""
     if ramin < 0 and ramax > 360:
@@ -363,3 +452,11 @@ class queryDB(object):
     else:
       bound = "ra between %f and %f and decl between %f and %f"%(ramin, ramax, decmin, decmax)
     return bound
+
+  def getRaDecBoundsCirc(self, ra, dec, radius):
+    ramax = ra+radius/math.cos(self.deg2rad(dec))
+    ramin = ra-radius/math.cos(self.deg2rad(dec))
+    decmax = dec+radius
+    decmin = dec-radius
+    bbox = Bbox(ramin,ramax,decmin,decmax)
+    return self.getRaDecBounds(bbox)
