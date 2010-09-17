@@ -15,13 +15,17 @@ import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 # Initialize starting time.
 t = time.time()
 
+# Set the wavelength step for bandpasses. 
+wavelen_step = 0.1
+#wavelen_step = 0.25
+
 # Read in LSST bandpasses.
 bpdir = os.getenv("LSST_THROUGHPUTS_BASELINE")
 filterlist = ('u', 'g', 'r', 'i', 'z', 'y')
 lsstbp = {}
 for f in filterlist:
     lsstbp[f] = Bandpass()
-    lsstbp[f].readThroughput(os.path.join(bpdir, 'total_'+f+'.dat'))
+    lsstbp[f].readThroughput(os.path.join(bpdir, 'total_'+f+'.dat'), wavelen_step=wavelen_step)
 dt, t = dtime(t)
 print "Reading %d filters took %f s" %(len(filterlist), dt)
 
@@ -54,7 +58,7 @@ print "Checking (and potentially doing) resampling took %f s" %(dt)
 # Generate fake redshift and dust info for 10,000 'galaxies' that would be returned from galaxy info query.
 # Although we have only 960 galaxy seds, we will likely want to calculate magnitudes for many more galaxies.
 # So here, the test is how long to calculate magnitudes for 10,000 different galaxies?
-num_gal = 1000
+num_gal = 10000
 ebv_int = numpy.random.rand(num_gal)
 redshifts = numpy.random.rand(num_gal) * 10.0
 ebv_mw = numpy.random.rand(num_gal)  # random 0-1
@@ -69,7 +73,8 @@ print "Picking random numbers for ebv/redshift, etc took %f s" %(dt)
 # If you're only calculating magnitudes for a few galaxies, this might actually be just as fast and
 # would likely be easier to code/read, so is useful as a comparison.
 # Actual difference in timing between this method and the next (more optimized) method can be determined
-# by simply running 'python example_fastgals.py', but on my mac it was about 1.5 times faster optimized. 
+# by simply running 'python example_fastgals.py', but on my mac it was about 1.5 times faster optimized, with
+# wavelen_step = 0.1 nm. (wavelen_step will have an impact on the speed difference). 
 
 # Calculate internal a/b on the wavelength range required for calculating internal dust extinction. 
 a_int, b_int = gals[gallist[0]].setupCCMab()
@@ -105,7 +110,7 @@ print "Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies too
 a_int, b_int = gals[gallist[0]].setupCCMab()  # this is a/b on native galaxy sed range. 
 # Next: calculate milky way a/b on wavelength range required for calculating magnitudes - i.e. 300 to 1200 nm.
 tmpgal = Sed()
-tmpgal.setFlatSED(wavelen_min=300, wavelen_max=1200, wavelen_step=0.1)   # initializes tmpgal on range 300-1200 nm
+tmpgal.setFlatSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)   # initializes tmpgal on range 300-1200 nm
 a_mw, b_mw = tmpgal.setupCCMab()  # so this is a/b on 300-1200 range. 
 # Also: set up phi for each bandpass - ahead of time. And set up a list of bandpasses, for manyMagCalc method.
 bplist = []
@@ -123,7 +128,7 @@ for i in range(num_gal):
     tmpgal = Sed(wavelen=gals[galname].wavelen, flambda=gals[galname].flambda)
     tmpgal.addCCMDust(a_int, b_int, ebv=ebv_int[i])
     tmpgal.redshiftSED(redshifts[i])
-    tmpgal.resampleSED(wavelen_min=300, wavelen_max=1200, wavelen_step=0.1)
+    tmpgal.resampleSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)
     tmpgal.addCCMDust(a_mw, b_mw, ebv=ebv_mw[i])
     tmpgal.multiplyFluxNorm(fluxnorm[i])
     tmpgal.flambdaTofnu()
