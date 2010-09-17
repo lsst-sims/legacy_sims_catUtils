@@ -75,3 +75,43 @@ print "#sedname      fluxnorm     ebv    magnitude  manyMag"
 for i in range(len(starskeys)):
     print "%s %.5g %.5f %.5f %.5f" %(starskeys[i], fluxnorm[i], ebv[i], mags[i], mags2[i])
     
+
+
+# Now, pretend we're actually wanting to calculate the magnitude in multiple bandpasses.
+# (ignore the part that uses exampleBandpass.dat as the source .. you would replace that with
+#  rootdir + "total_" + filter where filter is a member of lsstfilterlist
+lsstfilterlist = ['u', 'g', 'r', 'i', 'z', 'y']
+lsst = {}
+rootdir = "./"
+for filter in lsstfilterlist:
+    lsst[filter] = Bandpass()
+    lsst[filter].readThroughput(rootdir+"exampleBandpass.dat")
+    # you have to do this now - sbToPhi to use the multi-mag calc
+    lsst[filter].sbTophi()
+
+# I *do* know that all bandpasses are using the same wavlength array, so let's take it
+# for granted that bandpass.wavelen is the same for each.
+
+# Now, we can calculate the magnitudes in multiple bandpasses, for each SED.
+
+# make the bandpass list
+bplist = []
+for filter in lsstfilterlist:
+    bplist.append(lsst[filter])
+# store the values in a 2-d array (could do in a dictionary of arrays too)
+mags = n.empty((len(starskeys), len(bplist)), dtype='float')
+for i in range(len(starskeys)):
+    # make a copy of the original SED *if* you want to 'reuse' the SED for multiple magnitude
+    # calculations with various fluxnorms and dust applications (otherwise just use the object
+    # you instantiated above)
+    tmpstar = Sed(wavelen=stars[starskeys[i]].wavelen, flambda=stars[starskeys[i]].flambda)
+    tmpstar.addCCMDust(a, b, ebv=ebv[i])
+    tmpstar.multiplyFluxNorm(fluxnorm[i])
+    mags[i] = tmpstar.manyMagCalc(bplist)
+
+print "#sedname mag_u  mag_g   mag_r   mag_i   mag_z   mag_y"
+for i in range(len(starskeys)):
+    print "%s  %.4f %.4f %.4f %.4f %.4f %.4f" %(starskeys[i], mags[i][0], mags[i][1],
+                                                mags[i][2], mags[i][3], mags[i][4],
+                                                mags[i][5])
+
