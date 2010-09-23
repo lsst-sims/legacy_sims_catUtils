@@ -34,6 +34,7 @@ class queryDB(object):
     self.filter = None
     self.opsimmeta = None
     self.opsim = ""
+    self.curtile = None
 
   def getNextChunk(self):
     result = []
@@ -87,8 +88,12 @@ class queryDB(object):
       if omkey == "formatas":
         continue
       map = self.om[self.objtype][omkey]
+      idcolstr = self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1]
+      if idcolstr.startswith("%%"):
+          idcolstr = idcolstr.lstrip("%%")
+          idcolstr = eval(idcolstr)
       query = session.query(eval("%s.%s.label(\"%s\")"%(map['table'],
-          self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+          idcolstr,
           map['idkey'])))
       query = self.addUniqueCols(map, query)
       query = query.filter(filter)
@@ -154,17 +159,18 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if objtype == 'GALAXY':
+    if objtype == 'GALAXY' or objtype == 'ASSEMBLEDGALAXY':
       '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTilesBbox(bbox)
       queries = []
       for tile in tiles:
-#        queries += self.getQueryList("point @ spoly '%s' and (point + strans(0,\
-#			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
-#				      '%s'"%(tile['tbox'],-tile['decmid'],tile['ramid'],tile['bbox']))
-        queries += self.getQueryList("point @ spoly '%s' and point @ spoly\
-    			              '%s'"%(tile['tbox'],tile['tbbox']))
+	self.curtile = tile
+        queries += self.getQueryList("point @ spoly '%s' and (point + strans(0,\
+			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
+				      '%s'"%(tile['tbox'],-tile['decmid'],tile['ramid'],tile['bbox']))
+        #queries += self.getQueryList("point @ spoly '%s' and point @ spoly\
+    	#		              '%s'"%(tile['tbox'],tile['tbbox']))
       self.queries = queries
       return self.getNextChunk()
     elif objtype == 'SSM':
@@ -240,13 +246,14 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if objtype == 'GALAXY':
+    if objtype == 'GALAXY' or objtype == 'ASSEMBLEDGALAXY':
       '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTilesCirc(self.centradeg,
               self.centdecdeg, radiusdeg)
       queries = []
       for tile in tiles:
+	self.curtile = tile
         queries += self.getQueryList("point @ scircle '%s' and (point + strans(0,\
 			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
 				      '%s'"%(tile['circ'],-tile['decmid'],tile['ramid'],tile['bbox']))
@@ -303,7 +310,9 @@ class queryDB(object):
       self.queries = queries
       return self.getNextChunk()
     else:
-      filterstr = "point @ scircle \'<(%fd,%fd),%fd>\'"%(self.centradeg,
+      bbox = self.getRaDecBoundsCirc(self.centradeg, self.centdecdeg,
+              radiusdeg)
+      filterstr = "%s and point @ scircle \'<(%fd,%fd),%fd>\'"%(bbox,self.centradeg,
               self.centdecdeg, radiusdeg)
       self.queries = self.getQueryList(filter=filterstr)
       return self.getNextChunk()
@@ -395,7 +404,7 @@ class queryDB(object):
     return nic
 
   def getTilesBbox(self, bbox):
-    sq = session.query(Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("sbox\
+    sq = session.query(Tiles.id, Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("sbox\
             '((%fd, %fd), (%fd,%fd))' && bbox"%(bbox.getRaMin(),bbox.getDecMin(),
             bbox.getRaMax(),bbox.getDecMax())).subquery().alias(name="mytiles")
     col1 = expression.literal_column("spoly '{(%fd, %fd), (%fd, %fd), (%fd, %fd), (%fd, %fd)}'+\
@@ -407,26 +416,26 @@ class queryDB(object):
     col2 = expression.literal_column("bbox +\
             strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
             'ZYX')"%("mytiles","mytiles")).label("tbbox")
-    query = session.query(col1,col2,sq.c.ramid,sq.c.decmid,sq.c.bbox)
+    query = session.query(col1,col2,sq.c.id,sq.c.ramid,sq.c.decmid,sq.c.bbox)
     result = query.all()
     tiles = []
     for r in result:
-      tiles.append({'tbox':r.tbox, 'tbbox':r.tbbox, 'ramid':r.ramid, 'decmid':r.decmid,
+      tiles.append({'tid':r.id, 'tbox':r.tbox, 'tbbox':r.tbbox, 'ramid':r.ramid, 'decmid':r.decmid,
             'bbox':r.bbox})
     return tiles
   def getTilesCirc(self, raDeg, decDeg, radiusDeg):
-    sq = session.query(Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("scircle\
+    sq = session.query(Tiles.id, Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("scircle\
             '<(%fd, %fd), %fd>' && bbox"%(raDeg, decDeg,
             radiusDeg)).subquery().alias(name="mytiles")
     col = expression.literal_column("scircle '<(%fd, %fd), %fd>'+\
             strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
             'ZYX')"%(raDeg,
             decDeg, radiusDeg,"mytiles","mytiles")).label("circ")
-    query = session.query(col,sq.c.ramid,sq.c.decmid,sq.c.bbox)
+    query = session.query(col,sq.c.id,sq.c.ramid,sq.c.decmid,sq.c.bbox)
     result = query.all()
     tiles = []
     for r in result:
-      tiles.append({'circ':r.circ, 'ramid':r.ramid, 'decmid':r.decmid,
+      tiles.append({'tid':r.id, 'circ':r.circ, 'ramid':r.ramid, 'decmid':r.decmid,
             'bbox':r.bbox})
     return tiles
 

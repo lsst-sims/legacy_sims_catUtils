@@ -22,17 +22,30 @@ b_session = application_session = scoped_session(sessionmaker(autoflush=True,
 b_metadata = ThreadLocalMetaData()
 b_metadata.bind = b_engine
 
+c_engine = create_engine("postgresql://calibuser:calibuser@128.95.99.32/calibDB.05.05.2010",
+        echo=False)
+c_session = application_session = scoped_session(sessionmaker(autoflush=True,
+     bind=c_engine))
+c_metadata = ThreadLocalMetaData()
+c_metadata.bind = c_engine
+
 class Star(Entity):
   using_options(tablename="stars", autoload=True, metadata=a_metadata,
           session=a_session)
+
+class CalibStar(Entity):
+  using_options(tablename="msrgb", autoload=True, metadata=c_metadata,
+          session=c_session)
+  using_mapper_options(primary_key=['simobjid'])
 
 class Wd(Entity):
   using_options(tablename="starswd", autoload=True, metadata=a_metadata,
           session=a_session)
 
 class Galaxy(Entity):
-  using_options(tablename="galaxy_new", autoload=True, metadata=a_metadata,
+  using_options(tablename="galaxy_rect", autoload=True, metadata=a_metadata,
           session=a_session)
+  using_mapper_options(primary_key=['id'])
 
 class Ephems(Entity):
   using_options(tablename="ephems", autoload=True, metadata=a_metadata,
