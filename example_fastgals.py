@@ -16,8 +16,8 @@ import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 t = time.time()
 
 # Set the wavelength step for bandpasses. 
-wavelen_step = 0.1
-#wavelen_step = 0.25
+#wavelen_step = 0.1
+wavelen_step = 0.25
 
 # Read in LSST bandpasses.
 bpdir = os.getenv("LSST_THROUGHPUTS_BASELINE")
@@ -131,7 +131,6 @@ for i in range(num_gal):
     tmpgal.resampleSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)
     tmpgal.addCCMDust(a_mw, b_mw, ebv=ebv_mw[i])
     tmpgal.multiplyFluxNorm(fluxnorm[i])
-    tmpgal.flambdaTofnu()
     tmpmags = tmpgal.manyMagCalc(bplist)
     j = 0
     for f in filterlist:
