@@ -455,7 +455,7 @@ class queryDB(object):
     if ramin < 0 and ramax > 360:
       bound = "decl between %f and %f"%(decmin, decmax)
     elif ramax > 360:
-      bound = "(ra between %f and 0. or ra between 0. and %f) and decl between %f and %f"%(ramin,ramax-360.,decmin,decmax)
+      bound = "(ra between %f and 360. or ra between 0. and %f) and decl between %f and %f"%(ramin,ramax-360.,decmin,decmax)
     elif ramin < 0:
       bound = "(ra between %f and 360. or ra between 0. and %f) and decl between %f and %f"%(ramin+360.,ramax,decmin,decmax)
     else:
