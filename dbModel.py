@@ -43,7 +43,7 @@ class Wd(Entity):
           session=a_session)
 
 class Galaxy(Entity):
-  using_options(tablename="galaxy_new", autoload=True, metadata=a_metadata,
+  using_options(tablename="galaxy_11182010", autoload=True, metadata=a_metadata,
           session=a_session)
 
 class GalaxyRect(Entity):
