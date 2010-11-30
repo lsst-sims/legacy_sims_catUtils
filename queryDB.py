@@ -28,6 +28,7 @@ class queryDB(object):
     self.mm = ConfigObj(metaConfigFile)
     self.queries = None
     self.ptype = 'POINT'
+    self.component = None
     self.expmjd = None
     self.centradeg = None
     self.centdecdeg = None
@@ -46,7 +47,7 @@ class queryDB(object):
     if len(result) == 0:
       return None
     else:
-      return self.makeCatalogFromQuery(result, self.ptype)
+      return self.makeCatalogFromQuery(result)
     """
     except Exception, e:
       print "Exception of type: %s"%(type(e))
@@ -87,8 +88,11 @@ class queryDB(object):
     for omkey in self.om[self.objtype].keys():
       if omkey == "formatas":
         continue
+      if omkey == "component":
+        self.component = self.om[self.objtype][omkey]
+        continue
       map = self.om[self.objtype][omkey]
-      idcolstr = self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1]
+      idcolstr = self.dm[self.filetypes[0]][self.component][map['ptype']][map['idkey']][1]
       if idcolstr.startswith("%%"):
           idcolstr = idcolstr.lstrip("%%")
           idcolstr = eval(idcolstr)
@@ -116,7 +120,7 @@ class queryDB(object):
   def getUniqueColNames(self, map):
     cols = {}
     for ft in self.filetypes:
-      dmap = self.dm[ft][map['component']][map['ptype']]
+      dmap = self.dm[ft][self.component][map['ptype']]
       for k in dmap.keys():
         colstr = dmap[k][1]
         if colstr.startswith("%%"):
@@ -187,6 +191,9 @@ class queryDB(object):
       for k in om.keys():
         if k == "formatas":
           continue
+        if k == "component":
+          self.component = om['component']
+          continue
         map = om[k]
         #equery = session.query(eval("%s.objid"%(map['table'])))
         if len(oom) == 1:
@@ -197,10 +204,10 @@ class queryDB(object):
           raise Exception('Getting orbits...', 'The orbit map and ephemeride\
                   map do not agree in length')
         eid = eval("%s.%s.label(\"%s\")"%(map['table'],
-                      self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][map['ptype']][map['idkey']][1],
                       map['idkey']))
         oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
-                      self.dm[self.filetypes[0]][omap['component']][omap['ptype']][omap['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][omap['ptype']][omap['idkey']][1],
                       omap['idkey']))
         equery = session.query(eid,oid).filter(eid == oid)
         #equery = self.addUniqueCols(map, equery)
@@ -273,6 +280,9 @@ class queryDB(object):
       for k in om.keys():
         if k == "formatas":
           continue
+        if k == "component":
+          self.component = om[k]
+          continue
         map = om[k]
         #equery = session.query(eval("%s.objid"%(map['table'])))
         if len(oom) == 1:
@@ -283,10 +293,10 @@ class queryDB(object):
           raise Exception('Getting orbits...', 'The orbit map and ephemeride\
                   map do not agree in length')
         eid = eval("%s.%s.label(\"%s\")"%(map['table'],
-                      self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][map['ptype']][map['idkey']][1],
                       map['idkey']))
         oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
-                      self.dm[self.filetypes[0]][omap['component']][omap['ptype']][omap['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][omap['ptype']][omap['idkey']][1],
                       omap['idkey']))
         equery = session.query(eid,oid).filter(eid == oid)
         #equery = self.addUniqueCols(map, equery)
@@ -351,19 +361,21 @@ class queryDB(object):
     def setkeys(keyarr):
       self.keyarr = keyarr
 
-  def makeCatalogFromQuery(self, result, ptype):
+  def makeCatalogFromQuery(self, result):
     if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
       catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
     else:
       raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
     nic = InstanceCatalog(catalogDescriptionPath+"/config.dat")
-    nic.objectType = ptype
+    nic.objectType = self.ptype
+    nic.neighborhoodType = self.component
+    nic.catalogType = self.filetypes
     if self.opsimmeta is not None:
       for k in self.opsimmeta.keys():
         nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
     nic.catalogType = self.filetypes
     data = {}
-    if ptype == "MOVINGPOINT":
+    if self.ptype == "MOVINGPOINT":
       result = self.makeMovingObjectsFromOrbitList(result)
       thismjd = self.thismjd
       om = self.om[self.objtype]
