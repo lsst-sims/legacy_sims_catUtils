@@ -379,7 +379,7 @@ class queryDB(object):
       result = self.makeMovingObjectsFromOrbitList(result)
       thismjd = self.thismjd
       om = self.om[self.objtype]
-      colkeys = self.getUniqueColNamesMO(om[om.keys()[1]]['idkey'])
+      colkeys = self.getUniqueColNamesMO(om[om.keys()[2]]['idkey'])
       for k in colkeys:
         data[k] = []
       for s in result:
@@ -388,7 +388,7 @@ class queryDB(object):
           if colkeys[k].startswith("%%"):
             col = col.lstrip("%%")
             col = eval(col)
-            eval("data[k].append(%s)"%(col))
+            data[k].append(col)
           else:
             eval("data[k].append(s.%s)"%(col))
       for k in colkeys:
