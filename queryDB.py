@@ -142,14 +142,11 @@ class queryDB(object):
       dmap = self.dm[ft]['SOLARSYSTEM']['MOVINGPOINT']
       for k in dmap.keys():
         colstr = dmap[k][1]
-        if k == idkey:
-          continue
+        if cols.has_key(k):
+          print "Replacing expression %s with %s for key %s"%(cols[k], colstr, k)
+          cols[k] = colstr
         else:
-          if cols.has_key(k):
-            print "Replacing expression %s with %s for key %s"%(cols[k], colstr, k)
-            cols[k] = colstr
-          else:
-            cols[k] = colstr 
+          cols[k] = colstr 
     return cols
 
   def getInstanceCatalogByBbox(self, bbox, expmjd=0., filter='r'): 
@@ -332,6 +329,8 @@ class queryDB(object):
     ephem_datfile = ""
     pyoorb.pyoorb.oorb_init(ephemeris_fname=ephem_datfile)
     for r in results:
+      #Hack since there are no sedfilenames in the db at the moment
+      r['sedname'] = "S.dat"
       mymo = mo.MovingObject(r['q'], r['e'], r['i'], r['node'],
                              r['argPeri'], r['timePeri'], r['epoch'],
                              magHv=r['magHv'], phaseGv=r['phaseGv'], index=r['index'],
@@ -380,10 +379,13 @@ class queryDB(object):
       thismjd = self.thismjd
       om = self.om[self.objtype]
       colkeys = self.getUniqueColNamesMO(om[om.keys()[2]]['idkey'])
+      idkey = om[om.keys()[2]]['idkey']
       for k in colkeys:
         data[k] = []
       for s in result:
         for k in colkeys:
+          if k == idkey:
+            continue
           col = colkeys[k]
           if colkeys[k].startswith("%%"):
             col = col.lstrip("%%")
