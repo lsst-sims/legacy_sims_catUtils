@@ -330,7 +330,18 @@ class queryDB(object):
     pyoorb.pyoorb.oorb_init(ephemeris_fname=ephem_datfile)
     for r in results:
       #Hack since there are no sedfilenames in the db at the moment
-      r['sedname'] = "S.dat"
+      mymo = mo.MovingObject(r['q'], r['e'], r['i'], r['node'],
+                             r['argPeri'], r['timePeri'], r['epoch'],
+                             magHv=r['magHv'], phaseGv=r['phaseGv'], index=r['index'],
+                             n_par=r['n_par'], moid=r['moid'], 
+                             objid=r['id'], objtype=r['objtype'],
+                             isVar=r['isVar'], var_t0=r['var_t0'],
+                             var_timescale=r['var_timescale'],
+                             var_fluxmax=r['var_fluxmax'],
+                             sedname="S.dat",
+                             u_opp=r['u_opp'],g_opp=r['g_opp'], r_opp=r['r_opp'],
+                             i_opp=r['i_opp'], z_opp=r['z_opp'], y_opp=r['y_opp'])  
+      '''
       mymo = mo.MovingObject(r['q'], r['e'], r['i'], r['node'],
                              r['argPeri'], r['timePeri'], r['epoch'],
                              magHv=r['magHv'], phaseGv=r['phaseGv'], index=r['index'],
@@ -341,7 +352,8 @@ class queryDB(object):
                              var_fluxmax=r['var_fluxmax'],
                              sedname=r['sedname'],
                              u_opp=r['u_opp'],g_opp=r['g_opp'], r_opp=r['r_opp'],
-                             i_opp=r['i_opp'], z_opp=r['z_opp'], y_opp=r['y_opp'])      
+                             i_opp=r['i_opp'], z_opp=r['z_opp'], y_opp=r['y_opp'])  
+      '''
       objects.append(mymo)
     # turn list of moving objects into movingObjectList object
     objects = mo.MovingObjectList(objects)
