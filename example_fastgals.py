@@ -75,7 +75,7 @@ print "Picking random numbers for ebv/redshift, etc took %f s" %(dt)
 # Actual difference in timing between this method and the next (more optimized) method can be determined
 # by simply running 'python example_fastgals.py', but on my mac it was about 1.5 times faster optimized, with
 # wavelen_step = 0.1 nm. (wavelen_step will have an impact on the speed difference). 
-# (and 3 times faster now I created setupPhiArray)
+# (and about 2.5 times faster now I created setupPhiArray)
 
 # Calculate internal a/b on the wavelength range required for calculating internal dust extinction. 
 a_int, b_int = gals[gallist[0]].setupCCMab()
