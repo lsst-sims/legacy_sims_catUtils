@@ -75,6 +75,7 @@ print "Picking random numbers for ebv/redshift, etc took %f s" %(dt)
 # Actual difference in timing between this method and the next (more optimized) method can be determined
 # by simply running 'python example_fastgals.py', but on my mac it was about 1.5 times faster optimized, with
 # wavelen_step = 0.1 nm. (wavelen_step will have an impact on the speed difference). 
+# (and 3 times faster now I created setupPhiArray)
 
 # Calculate internal a/b on the wavelength range required for calculating internal dust extinction. 
 a_int, b_int = gals[gallist[0]].setupCCMab()
@@ -112,11 +113,13 @@ a_int, b_int = gals[gallist[0]].setupCCMab()  # this is a/b on native galaxy sed
 tmpgal = Sed()
 tmpgal.setFlatSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)   # initializes tmpgal on range 300-1200 nm
 a_mw, b_mw = tmpgal.setupCCMab()  # so this is a/b on 300-1200 range. 
-# Also: set up phi for each bandpass - ahead of time. And set up a list of bandpasses, for manyMagCalc method.
+# Also: set up phi for each bandpass - ahead of time. And set up a list of bandpasses, then create phiarray 
+# and dlambda to set up for manyMagCalc method.
 bplist = []
 for f in filterlist:
     lsstbp[f].sbTophi()
     bplist.append(lsstbp[f])
+phiarray, dlambda = tmpgal.setupPhiArray(bplist)
 # Set up dictionary + arrays to hold calculated magnitude information. 
 mags2 = {}
 for f in filterlist:
@@ -131,7 +134,7 @@ for i in range(num_gal):
     tmpgal.resampleSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)
     tmpgal.addCCMDust(a_mw, b_mw, ebv=ebv_mw[i])
     tmpgal.multiplyFluxNorm(fluxnorm[i])
-    tmpmags = tmpgal.manyMagCalc(bplist)
+    tmpmags = tmpgal.manyMagCalc(phiarray, dlambda)
     j = 0
     for f in filterlist:
         mags2[f][i] = tmpmags[j]
