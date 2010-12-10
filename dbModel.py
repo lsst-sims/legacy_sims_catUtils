@@ -47,7 +47,7 @@ class Galaxy(Entity):
           session=a_session)
 
 class GalaxyRect(Entity):
-  using_options(tablename="galaxy_rect", autoload=True, metadata=a_metadata,
+  using_options(tablename="galaxy", autoload=True, metadata=a_metadata,
           session=a_session)
   using_mapper_options(primary_key=['id'])
 
