@@ -65,9 +65,10 @@ for i in range(len(starskeys)):
     sedlist.append(tmpstar)
 
 # show the manyMagCalc method of bandpass - basically, take a list of SEDS and
-# quickly calculate the magnitudes of each one. This is a less stable way to calculate
-# magnitude than the version above (and you still have to do the dust / fluxnorm multiplications
-# before hand), but could be faster. (haven't completed speed testing yet). 
+# quickly calculate the magnitudes of each one. 
+# you still have to do the dust/fluxnorm multiplications beforehand, but this is faster.
+# less error checking though. 
+
 mags2 = rband.manyMagCalc(sedlist)
 
 # show results
@@ -98,6 +99,7 @@ for filter in lsstfilterlist:
 bplist = []
 for filter in lsstfilterlist:
     bplist.append(lsst[filter])
+phiArray, dlambda = tmpstar.setupPhiArray(bplist)
 # store the values in a 2-d array (could do in a dictionary of arrays too)
 mags = n.empty((len(starskeys), len(bplist)), dtype='float')
 for i in range(len(starskeys)):
@@ -107,7 +109,7 @@ for i in range(len(starskeys)):
     tmpstar = Sed(wavelen=stars[starskeys[i]].wavelen, flambda=stars[starskeys[i]].flambda)
     tmpstar.addCCMDust(a, b, ebv=ebv[i])
     tmpstar.multiplyFluxNorm(fluxnorm[i])
-    mags[i] = tmpstar.manyMagCalc(bplist)
+    mags[i] = tmpstar.manyMagCalc(phiArray, dlambda)
 
 print "#sedname mag_u  mag_g   mag_r   mag_i   mag_z   mag_y"
 for i in range(len(starskeys)):
