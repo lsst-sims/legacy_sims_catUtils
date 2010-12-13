@@ -19,7 +19,7 @@ class queryDB(object):
     if os.environ.has_key("SED_DATA"):
       sedDataPath = os.environ["SED_DATA"]
     else:
-      raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
+      raise Exception("Environment variable SED_DATA not set to location of the catalog description files")
     dbMapConfigFile = catalogDescriptionPath+"requiredFields.dat"
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
     metaConfigFile = catalogDescriptionPath+"requiredMetadata.dat"
@@ -365,7 +365,7 @@ class queryDB(object):
     # generate ephemerides for all objects at once
     objects.generateEphemeridesForAllObjects([self.expmjd], obscode=807)
     objects.calcAllMags(self.filter, [self.expmjd],
-            self.rootSEDdir+"/ssmSed/",withErrors=False)
+            self.rootSEDdir+"/ssmSED/",withErrors=False)
     self.thismjd = mymo.mjdTaiStr(self.expmjd)
     # return the basic list of moving objects 
     objects = objects._mObjects
