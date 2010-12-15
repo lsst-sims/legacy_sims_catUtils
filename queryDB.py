@@ -80,9 +80,9 @@ class queryDB(object):
       query = query.add_column(cols[k])
     self.opsimmeta = query.first()
     self.centradeg =\
-    eval("self.opsimmeta.%s"%(omap['radegkey']))
+    eval("self.opsimmeta.%s"%(omap['raradkey']))*180./math.pi
     self.centdecdeg =\
-    eval("self.opsimmeta.%s"%(omap['decdegkey']))
+    eval("self.opsimmeta.%s"%(omap['decradkey']))*180./math.pi
     self.expmjd =\
     eval("self.opsimmeta.%s"%(omap['expmjdkey']))
     self.filter =\
