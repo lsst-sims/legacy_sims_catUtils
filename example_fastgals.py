@@ -16,8 +16,8 @@ import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 t = time.time()
 
 # Set the wavelength step for bandpasses. 
-#wavelen_step = 0.1
-wavelen_step = 0.25
+wavelen_step = 0.1
+#wavelen_step = 0.25
 
 # Read in LSST bandpasses.
 bpdir = os.getenv("LSST_THROUGHPUTS_BASELINE")
@@ -73,9 +73,11 @@ print "Picking random numbers for ebv/redshift, etc took %f s" %(dt)
 # If you're only calculating magnitudes for a few galaxies, this might actually be just as fast and
 # would likely be easier to code/read, so is useful as a comparison.
 # Actual difference in timing between this method and the next (more optimized) method can be determined
-# by simply running 'python example_fastgals.py', but on my mac it was about 1.5 times faster optimized, with
-# wavelen_step = 0.1 nm. (wavelen_step will have an impact on the speed difference). 
-# (and about 2.5 times faster now I created setupPhiArray)
+# by simply running 'python example_fastgals.py', but on my mac it was about 1.7 times faster optimized, with
+# wavelen_step = 0.1 nm. (wavelen_step will have an impact on the speed difference).
+# (w/ wavelen_step=0.25, find a 2.5 times faster speedup in the optimized version). 
+
+# Start 'regular' magnitude calculation.
 
 # Calculate internal a/b on the wavelength range required for calculating internal dust extinction. 
 a_int, b_int = gals[gallist[0]].setupCCMab()
@@ -93,7 +95,7 @@ for i in range(num_gal):
     tmpgal.addCCMDust(a_mw, b_mw, ebv=ebv_mw[i])
     tmpgal.multiplyFluxNorm(fluxnorm[i])
     # If you comment out the synchronize sed here, then the difference between this method and the optimized
-    # version increases to a 2.5 times difference.  (i.e. this 'synchronizeSED' buys you 1.5x faster, by itself.)
+    # version increases to a 2.5 times difference.  (i.e. this 'synchronizeSED' buys you 1.6x faster, by itself.)
     tmpgal.synchronizeSED(wavelen_min=lsstbp[filterlist[0]].wavelen.min(),
                           wavelen_max=lsstbp[filterlist[0]].wavelen.max(),
                           wavelen_step = lsstbp[filterlist[0]].wavelen[1] - lsstbp[filterlist[0]].wavelen[0])
@@ -104,7 +106,7 @@ print "Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies too
       %(len(filterlist), num_gal, dt)
 
 
-# For next test: want to also do all the same steps, but in severely optimized form. This means
+# For next test: want to also do all the same steps, but in an optimized form. This means
 # doing some things that Sed does 'behind the scenes' explicitly, but also means the code may be a little
 # harder to read at first.
 # First: calculate internal a/b on wavelength range required for internal dust extinction.
@@ -151,8 +153,15 @@ colors = ['m', 'g', 'r', 'b', 'k', 'y']
 i = 0
 diff = {}
 for f in filterlist:
+   print len(mags1[f]), len(mags2[f])
    diff[f] = numpy.zeros(num_gal, dtype='float')
-   diff[f] = numpy.abs(mags1[f] - mags2[f])
+   flags = numpy.isfinite(mags2[f])
+   if (flags.any() == 'False'):
+      print "Found %d finite magnitudes out of %d in optimized mags %s" %(len(flags[0]), len(mags2[f]), f)
+   flags = numpy.isfinite(mags1[f])
+   if (flags.any() == 'False'):
+      print "Found %d finite magnitudes out of %d in non-optimized mags %s" %(len(flags[0]), len(mags1[f]), f)
+   diff[f] = numpy.fabs(mags1[f] - mags2[f])
    condition  = (diff[f]>0.01)
    print f, diff[f][condition], redshifts[condition], fluxnorm[condition], mags1[f][condition], mags2[f][condition]
    #print f, diff[f].min(), diff[f].max(), mags1[f].max(), mags2[f].max(), len(mags1[f]), len(mags2[f])
