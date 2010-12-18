@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from dbModel import *
+from dbMsModel import *
 import os
 import math
 import numpy
@@ -8,6 +8,12 @@ from lsst.sims.catalogs.generation.config import ConfigObj
 import lsst.sims.catalogs.generation.movingObjects as mo
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.astrometry import Bbox
+from sqlalchemy import select 
+from sqlalchemy.orm import join
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.expression import select
+from sqlalchemy.sql.expression import between
 
 
 class queryDB(object):
@@ -19,7 +25,7 @@ class queryDB(object):
     dbMapConfigFile = catalogDescriptionPath+"requiredFields.dat"
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
     metaConfigFile = catalogDescriptionPath+"requiredMetadata.dat"
-    setup_all()
+    #setup_all()
     self.filetypes = filetypes
     self.objtype = objtype
     self.chunksize=chunksize
@@ -27,10 +33,12 @@ class queryDB(object):
     self.om = ConfigObj(objConfigFile)
     self.mm = ConfigObj(metaConfigFile)
     self.queries = None
+    self.coldesc = None
     self.ptype = 'POINT'
     self.expmjd = None
     self.centradeg = None
     self.centdecdeg = None
+    self.radiusdeg = None
     self.filter = None
     self.opsimmeta = None
     self.opsim = ""
@@ -38,11 +46,14 @@ class queryDB(object):
 
   def getNextChunk(self):
     result = []
+    '''
     for q in self.queries:
       if len(result) == self.chunksize:
           break
       else:
           result += q.fetchmany(self.chunksize - len(result))  
+    '''
+    result = self.queries.fetchmany(self.chunksize)
     if len(result) == 0:
       return None
     else:
@@ -82,7 +93,25 @@ class queryDB(object):
     self.filter =\
     eval("self.opsimmeta.%s"%(omap['filterkey']))
 
-  def getQueryList(self, filter=""):  
+  def addSpacial(self, query, map, type, ta):
+    if type == "circle":
+      sel = select(["htmidstart, htmidend"],
+              whereclause="innerflag=0",
+              from_obj=["LSST.dbo.fHtmCoverBinaryAdvanced([LSST].sph.fSimplifyString('REGION\
+              CIRCLE j2000 %f %f %f' ))"%(self.centradeg, self.centdecdeg,
+              self.radiusdeg*60.)])
+      sela = sel.alias('c')
+      onclause = between(ta.htmID, text("c.htmidstart"), text("c.htmidend"))
+      query = query.join((sela, onclause))
+      aperture = "[LSST].sph.fSimplifyString('REGION CIRCLE j2000 %f %f %f')"%(self.centradeg, 
+                self.centdecdeg, self.radiusdeg*60.)
+      filterstr = "%s = 1"%(str(func.LSST.sph.fRegioncontainsXYZ(text(aperture), ta.cx, ta.cy, ta.cz)))
+      query = query.filter(filterstr)
+      return query
+    else:
+        return query
+
+  def getUnionQuery(self, filter=None, type="circle"):  
     queries = []
     for omkey in self.om[self.objtype].keys():
       if omkey == "formatas":
@@ -92,19 +121,25 @@ class queryDB(object):
       if idcolstr.startswith("%%"):
           idcolstr = idcolstr.lstrip("%%")
           idcolstr = eval(idcolstr)
-      query = session.query(eval("%s.%s.label(\"%s\")"%(map['table'],
-          idcolstr,
-          map['idkey'])))
+      ta = eval("aliased(%s, name='star_alias')"%map['table'])
+      query = session.query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
+      query = self.addSpacial(query, map, "circle", ta)
       query = self.addUniqueCols(map, query)
-      query = query.filter(filter)
+      if filter is not None:
+        query = query.filter(filter)
       if not len(map['constraint'].strip()) == 0:
         const = map['constraint']
         if const.startswith("%%"):
           const = const.lstrip("%%")
           const = eval(const)
         query = query.filter(const)
-      queries.append(session.execute(query))
-    return queries
+      queries.append(query)
+    query = queries[0]
+    for i in range(len(queries)-1):
+      query = query.union_all(queries[i+1])
+    self.coldesc = query.column_descriptions
+    query = session.execute(query)
+    return query
 
   def addUniqueCols(self, map, query):
     cols = self.getUniqueColNames(map)
@@ -166,7 +201,7 @@ class queryDB(object):
       queries = []
       for tile in tiles:
 	self.curtile = tile
-        queries += self.getQueryList("point @ spoly '%s' and (point + strans(0,\
+        queries += self.getUnionQuery("point @ spoly '%s' and (point + strans(0,\
 			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
 				      '%s'"%(tile['tbox'],-tile['decmid'],tile['ramid'],tile['bbox']))
         #queries += self.getQueryList("point @ spoly '%s' and point @ spoly\
@@ -225,7 +260,7 @@ class queryDB(object):
     else:
       filterstr = "point @ sbox \'((%fd,%fd),(%fd,%fd))\'"%(
 		  bbox.getRaMin(), bbox.getDecMin(), bbox.getRaMax(), bbox.getDecMax())
-      self.queries = self.getQueryList(filter=filterstr)
+      self.queries = self.getUnionQuery(filter=filterstr)
       return self.getNextChunk()
 
   def getInstanceCatalogById(self, id, opsim="OPSIM361", radiusdeg=2.1):
@@ -237,6 +272,7 @@ class queryDB(object):
           filter = 'r'): 
     self.centradeg = centradeg
     self.centdecdeg = centdecdeg
+    self.radiusdeg = radiusdeg
     self.filter = filter
     self.expmjd = expmjd
 
@@ -254,7 +290,7 @@ class queryDB(object):
       queries = []
       for tile in tiles:
 	self.curtile = tile
-        queries += self.getQueryList("point @ scircle '%s' and (point + strans(0,\
+        queries += self.getUnionQuery("point @ scircle '%s' and (point + strans(0,\
 			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
 				      '%s'"%(tile['circ'],-tile['decmid'],tile['ramid'],tile['bbox']))
       self.queries = queries
@@ -310,11 +346,7 @@ class queryDB(object):
       self.queries = queries
       return self.getNextChunk()
     else:
-      bbox = self.getRaDecBoundsCirc(self.centradeg, self.centdecdeg,
-              radiusdeg)
-      filterstr = "%s and point @ scircle \'<(%fd,%fd),%fd>\'"%(bbox,self.centradeg,
-              self.centdecdeg, radiusdeg)
-      self.queries = self.getQueryList(filter=filterstr)
+      self.queries = self.getUnionQuery()
       return self.getNextChunk()
 
   def makeMovingObjectsFromOrbitList(self, results):
@@ -383,15 +415,16 @@ class queryDB(object):
         arr = numpy.asarray(data[k])
         nic.addColumn(arr, k)
     else:
-      colkeys = result[0].keys()
+      colkeys = zip(result[0].keys(),self.coldesc)
+      
       for k in colkeys:
-        data[k] = []
+        data[k[1]['name']] = []
       for s in result:
         for k in colkeys:
-          eval("data[k].append(s.%s)"%(k))
+          eval("data[k[1]['name']].append(s.%s)"%(k[0]))
       for k in colkeys:
-        arr = numpy.asarray(data[k])
-        nic.addColumn(arr, k)
+        arr = numpy.asarray(data[k[1]['name']])
+        nic.addColumn(arr, k[1]['name'])
 
 
     if nic == None:
