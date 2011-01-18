@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from dbModel import *
+import re
 import os
 import math
 import numpy
@@ -165,7 +166,7 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if objtype == 'GALAXY' or objtype == 'ASSEMBLEDGALAXY':
+    if re.search("GALAXY", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTilesBbox(bbox)
@@ -255,7 +256,7 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if objtype == 'GALAXY' or objtype == 'ASSEMBLEDGALAXY':
+    if re.search("GALAXY", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTilesCirc(self.centradeg,
