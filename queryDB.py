@@ -20,7 +20,7 @@ class queryDB(object):
     if os.environ.has_key("SED_DATA"):
       sedDataPath = os.environ["SED_DATA"]
     else:
-      raise Exception("Environment variable SED_DATA not set to location of the catalog description files")
+      raise Exception("Environment variable SED_DATA not set to location of the default SED files")
     dbMapConfigFile = catalogDescriptionPath+"requiredFields.dat"
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
     metaConfigFile = catalogDescriptionPath+"requiredMetadata.dat"
