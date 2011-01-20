@@ -41,6 +41,7 @@ for gal in gallist:
 dt, t = dtime(t)
 print "Reading %d galaxy seds took %f s" %(len(gallist), dt)
 
+
 # Check on resampling - want all galaxy seds to have the same wavelength range.
 if ((gals[gallist[0]].wavelen.min() < 30) & (gals[gallist[0]].wavelen.max() > 2000)):
     # If true, then gals[gallist[0]] is okay to use as a template -- this ought to be true.
