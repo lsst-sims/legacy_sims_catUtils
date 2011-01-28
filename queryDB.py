@@ -135,9 +135,10 @@ class queryDB(object):
         query = query.filter(const)
       queries.append(query)
     query = queries[0]
+    self.coldesc = query.column_descriptions
     for i in range(len(queries)-1):
       query = query.union_all(queries[i+1])
-    self.coldesc = query.column_descriptions
+
     query = session.execute(query)
     return query
 
