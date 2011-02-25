@@ -24,6 +24,7 @@ class queryDB(object):
       raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
     dbMapConfigFile = catalogDescriptionPath+"requiredFields.dat"
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
+    objEnumConfigFile = catalogDescriptionPath+"objectEnum.dat"
     metaConfigFile = catalogDescriptionPath+"requiredMetadata.dat"
     #setup_all()
     self.filetypes = filetypes
@@ -31,10 +32,12 @@ class queryDB(object):
     self.chunksize=chunksize
     self.dm = ConfigObj(dbMapConfigFile)
     self.om = ConfigObj(objConfigFile)
+    self.em = ConfigObj(objEnumConfigFile)['OBJECTTYPES']
     self.mm = ConfigObj(metaConfigFile)
     self.queries = None
     self.coldesc = None
     self.ptype = 'POINT'
+    self.component = None
     self.expmjd = None
     self.centradeg = None
     self.centdecdeg = None
@@ -57,7 +60,7 @@ class queryDB(object):
     if len(result) == 0:
       return None
     else:
-      return self.makeCatalogFromQuery(result, self.ptype)
+      return self.makeCatalogFromQuery(result)
     """
     except Exception, e:
       print "Exception of type: %s"%(type(e))
@@ -116,13 +119,19 @@ class queryDB(object):
     for omkey in self.om[self.objtype].keys():
       if omkey == "formatas":
         continue
+      if omkey == "component":
+	self.component = self.om[self.objtype][omkey]
+	continue
+      appint = int(self.em[omkey]['id'])
       map = self.om[self.objtype][omkey]
-      idcolstr = self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1]
+      print self.component, self.ptype
+      idcolstr = self.dm[self.filetypes[0]][self.component][self.ptype][map['idkey']][1]
       if idcolstr.startswith("%%"):
           idcolstr = idcolstr.lstrip("%%")
           idcolstr = eval(idcolstr)
       ta = eval("aliased(%s, name='star_alias')"%map['table'])
       query = session.query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
+      query = query.add_column(expression.literal_column("%i"%(appint)).label("appendint"))
       query = self.addSpacial(query, map, "circle", ta)
       query = self.addUniqueCols(map, query)
       if filter is not None:
@@ -152,7 +161,7 @@ class queryDB(object):
   def getUniqueColNames(self, map):
     cols = {}
     for ft in self.filetypes:
-      dmap = self.dm[ft][map['component']][map['ptype']]
+      dmap = self.dm[ft][self.component][self.ptype]
       for k in dmap.keys():
         colstr = dmap[k][1]
         if colstr.startswith("%%"):
@@ -233,10 +242,10 @@ class queryDB(object):
           raise Exception('Getting orbits...', 'The orbit map and ephemeride\
                   map do not agree in length')
         eid = eval("%s.%s.label(\"%s\")"%(map['table'],
-                      self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][self.ptype][map['idkey']][1],
                       map['idkey']))
         oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
-                      self.dm[self.filetypes[0]][omap['component']][omap['ptype']][omap['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][self.ptype][omap['idkey']][1],
                       omap['idkey']))
         equery = session.query(eid,oid).filter(eid == oid)
         #equery = self.addUniqueCols(map, equery)
@@ -320,10 +329,10 @@ class queryDB(object):
           raise Exception('Getting orbits...', 'The orbit map and ephemeride\
                   map do not agree in length')
         eid = eval("%s.%s.label(\"%s\")"%(map['table'],
-                      self.dm[self.filetypes[0]][map['component']][map['ptype']][map['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][self.ptype][map['idkey']][1],
                       map['idkey']))
         oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
-                      self.dm[self.filetypes[0]][omap['component']][omap['ptype']][omap['idkey']][1],
+                      self.dm[self.filetypes[0]][self.component][self.ptype][omap['idkey']][1],
                       omap['idkey']))
         equery = session.query(eid,oid).filter(eid == oid)
         #equery = self.addUniqueCols(map, equery)
@@ -384,19 +393,21 @@ class queryDB(object):
     def setkeys(keyarr):
       self.keyarr = keyarr
 
-  def makeCatalogFromQuery(self, result, ptype):
+  def makeCatalogFromQuery(self, result):
     if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
       catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
     else:
       raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
     nic = InstanceCatalog(catalogDescriptionPath+"/config.dat")
-    nic.objectType = ptype
+    nic.objectType = self.ptype
+    nic.neighborhoodType = self.component
+    nic.catalogType = self.filetypes
     if self.opsimmeta is not None:
       for k in self.opsimmeta.keys():
         nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
     nic.catalogType = self.filetypes
     data = {}
-    if ptype == "MOVINGPOINT":
+    if self.ptype == "MOVINGPOINT":
       result = self.makeMovingObjectsFromOrbitList(result)
       thismjd = self.thismjd
       om = self.om[self.objtype]
