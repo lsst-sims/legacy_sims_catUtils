@@ -124,7 +124,6 @@ class queryDB(object):
 	continue
       appint = int(self.em[omkey]['id'])
       map = self.om[self.objtype][omkey]
-      print self.component, self.ptype
       idcolstr = self.dm[self.filetypes[0]][self.component][self.ptype][map['idkey']][1]
       if idcolstr.startswith("%%"):
           idcolstr = idcolstr.lstrip("%%")
