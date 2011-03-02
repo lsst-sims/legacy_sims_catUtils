@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from dbMsModel import *
+import re
 import os
 import math
 import numpy
@@ -203,7 +204,7 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if objtype == 'GALAXY' or objtype == 'ASSEMBLEDGALAXY':
+    if re.search("GALAXY", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTilesBbox(bbox)
@@ -291,18 +292,10 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if objtype == 'GALAXY' or objtype == 'ASSEMBLEDGALAXY':
+    if re.search("GALAXY", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
-      tiles = self.getTilesCirc(self.centradeg,
-              self.centdecdeg, radiusdeg)
-      queries = []
-      for tile in tiles:
-	self.curtile = tile
-        queries += self.getUnionQuery("point @ scircle '%s' and (point + strans(0,\
-			              %f*PI()/180.,  %f*PI()/180., 'XYZ')) @ spoly\
-				      '%s'"%(tile['circ'],-tile['decmid'],tile['ramid'],tile['bbox']))
-      self.queries = queries
+      self.queries, self.coldesc = initGalaxy(self.centradeg, self.centdecdeg, self.radiusdeg, om.keys()[2])
       return self.getNextChunk()
     elif objtype == 'SSM':
       '''Need to do query and then do the ephemeris calculation
