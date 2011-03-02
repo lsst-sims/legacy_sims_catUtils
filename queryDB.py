@@ -113,10 +113,12 @@ class queryDB(object):
           const = const.lstrip("%%")
           const = eval(const)
         query = query.filter(const)
+      print query
       queries.append(session.execute(query))
     return queries
 
   def addUniqueCols(self, map, query):
+    print map, query
     cols = self.getUniqueColNames(map)
     for k in cols.keys():
       cols[k] = expression.literal_column(cols[k]).label(k)
@@ -131,6 +133,7 @@ class queryDB(object):
         colstr = dmap[k][1]
         if colstr.startswith("%%"):
           colstr = colstr.lstrip("%%")
+          print colstr
           colstr = eval(colstr)
         if k == map['idkey']:
           continue
