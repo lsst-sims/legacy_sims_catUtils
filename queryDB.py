@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from dbMsModel import *
+from copy import deepcopy
 import re
 import os
 import math
@@ -27,7 +28,7 @@ class queryDB(object):
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
     objEnumConfigFile = catalogDescriptionPath+"objectEnum.dat"
     metaConfigFile = catalogDescriptionPath+"requiredMetadata.dat"
-    #setup_all()
+    self.nictemp = InstanceCatalog(catalogDescriptionPath+"/config.dat")
     self.filetypes = filetypes
     self.objtype = objtype
     self.chunksize=chunksize
@@ -61,7 +62,8 @@ class queryDB(object):
     if len(result) == 0:
       return None
     else:
-      return self.makeCatalogFromQuery(result)
+      cat = self.makeCatalogFromQuery(result)
+      return cat
     """
     except Exception, e:
       print "Exception of type: %s"%(type(e))
@@ -295,6 +297,8 @@ class queryDB(object):
     if re.search("GALAXY", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
+      #THis is a hack
+      self.component = "EXTRAGALACTIC"
       self.queries, self.coldesc = initGalaxy(self.centradeg, self.centdecdeg, self.radiusdeg, om.keys()[2])
       return self.getNextChunk()
     elif objtype == 'SSM':
@@ -386,11 +390,7 @@ class queryDB(object):
       self.keyarr = keyarr
 
   def makeCatalogFromQuery(self, result):
-    if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
-      catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
-    else:
-      raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
-    nic = InstanceCatalog(catalogDescriptionPath+"/config.dat")
+    nic = deepcopy(self.nictemp)
     nic.objectType = self.ptype
     nic.neighborhoodType = self.component
     nic.catalogType = self.filetypes
@@ -420,15 +420,8 @@ class queryDB(object):
         nic.addColumn(arr, k)
     else:
       colkeys = zip(result[0].keys(),self.coldesc)
-      
       for k in colkeys:
-        data[k[1]['name']] = []
-      for s in result:
-        for k in colkeys:
-          eval("data[k[1]['name']].append(s.%s)"%(k[0]))
-      for k in colkeys:
-        arr = numpy.asarray(data[k[1]['name']])
-        nic.addColumn(arr, k[1]['name'])
+        nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
 
 
     if nic == None:
