@@ -206,7 +206,7 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if re.search("GALAXY", objtype):
+    if re.search("GALAXY", objtype) or re.search("AGN", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
       tiles = self.getTilesBbox(bbox)
@@ -294,7 +294,7 @@ class queryDB(object):
       self.ptype = om['formatas']
     else:
       self.ptype = om[om.keys()[0]]['ptype']
-    if re.search("GALAXY", objtype):
+    if re.search("GALAXY", objtype) or re.search("AGN", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
       colstr = ""
