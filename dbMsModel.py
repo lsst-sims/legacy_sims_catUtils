@@ -32,8 +32,10 @@ BHB = db.map(bhb)
 RRLy = db.map(rrly)
 
 session = a_session
-def initGalaxy(ra, dec, radiusdeg, component):
-    query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchTrim%s] @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f"%(component,ra,dec,radiusdeg*60.))
+def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
+    query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchSpecCols]\
+            @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
+            @ColumnNames = '%s'"%(ra,dec,radiusdeg*60.,columns))
     coldesc = []
     for k in query.keys():
 	    coldesc.append({"name":k})

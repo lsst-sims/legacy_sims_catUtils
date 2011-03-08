@@ -160,10 +160,10 @@ class queryDB(object):
       query = query.add_column(cols[k])
     return query
 
-  def getUniqueColNames(self, map):
+  def getUniqueColNames(self, map, otype=None):
     cols = {}
     for ft in self.filetypes:
-      dmap = self.dm[ft][self.component][self.ptype]
+      dmap = self.dm[ft][self.component][map['ptype']]
       for k in dmap.keys():
         colstr = dmap[k][1]
         if colstr.startswith("%%"):
@@ -297,9 +297,29 @@ class queryDB(object):
     if re.search("GALAXY", objtype):
       '''We need to get galaxies from every tile in the overlap region
       '''
-      #THis is a hack
-      self.component = "EXTRAGALACTIC"
-      self.queries, self.coldesc = initGalaxy(self.centradeg, self.centdecdeg, self.radiusdeg, om.keys()[2])
+      colstr = ""
+      const = ""
+      for omkey in self.om[self.objtype].keys():
+        if omkey == "formatas":
+          continue
+        if omkey == "component":
+  	  self.component = self.om[self.objtype][omkey]
+	  continue
+        appint = int(self.em[omkey]['id'])
+        map = self.om[self.objtype][omkey]
+        cols = self.getUniqueColNames(map, self.objtype)
+        colarr = []
+        for k in cols.keys():
+            colarr.append("%s as %s"%(cols[k], k))
+        colarr.append("%i as appendint"%(appint))
+        colstr = ",".join(colarr)
+        if not len(map['constraint'].strip()) == 0:
+          const = map['constraint']
+          if const.startswith("%%"):
+            const = const.lstrip("%%")
+            const = eval(const)
+      self.queries, self.coldesc = initGalaxy(self.centradeg, self.centdecdeg,
+              self.radiusdeg, colstr, constraint = const)
       return self.getNextChunk()
     elif objtype == 'SSM':
       '''Need to do query and then do the ephemeris calculation
@@ -422,6 +442,8 @@ class queryDB(object):
       colkeys = zip(result[0].keys(),self.coldesc)
       for k in colkeys:
         nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
+      # nic.addColumn(numpy.fromiter((tuple(s[k[0]] for k in colkeys) for s
+      #    in result), count=len(result)), k[1]['name'])
 
 
     if nic == None:
