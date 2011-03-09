@@ -33,12 +33,19 @@ RRLy = db.map(rrly)
 
 session = a_session
 def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
-    query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchSpecCols]\
+    if constraint is not None:
+        query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint]\
             @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
-            @ColumnNames = '%s'"%(ra,dec,radiusdeg*60.,columns))
+            @ColumnNames = '%s', @WhereClause =\
+            '%s'"%(ra,dec,radiusdeg*60.,columns,constraint))
+    else:
+        query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint]\
+            @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
+            @ColumnNames = '%s'\
+            '%s'"%(ra,dec,radiusdeg*60.,columns))
     coldesc = []
     for k in query.keys():
-	    coldesc.append({"name":k})
+        coldesc.append({"name":k})
     return query, coldesc
 '''
 class Star(Entity):

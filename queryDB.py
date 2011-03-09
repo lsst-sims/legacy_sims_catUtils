@@ -318,6 +318,7 @@ class queryDB(object):
           if const.startswith("%%"):
             const = const.lstrip("%%")
             const = eval(const)
+          const = "WHERE %s"%(const)
       self.queries, self.coldesc = initGalaxy(self.centradeg, self.centdecdeg,
               self.radiusdeg, colstr, constraint = const)
       return self.getNextChunk()
@@ -444,6 +445,9 @@ class queryDB(object):
         nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
       # nic.addColumn(numpy.fromiter((tuple(s[k[0]] for k in colkeys) for s
       #    in result), count=len(result)), k[1]['name'])
+    if nic.neighborhoodType == "EXTRAGALACTIC":
+        nic.dataArray['raJ2000'] *= math.pi/180.
+        nic.dataArray['decJ2000'] *= math.pi/180.
 
 
     if nic == None:
