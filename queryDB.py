@@ -24,6 +24,7 @@ class queryDB(object):
       catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
     else:
       raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
+    catalogDescriptionPath = self.getEnvironPath("CATALOG_DESCRIPTION_PATH")
     dbMapConfigFile = catalogDescriptionPath+"requiredFields.dat"
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
     objEnumConfigFile = catalogDescriptionPath+"objectEnum.dat"
@@ -49,6 +50,9 @@ class queryDB(object):
     self.opsim = ""
     self.curtile = None
 
+  def closeSession(self):
+    session.close_all()
+
   def getNextChunk(self):
     result = []
     '''
@@ -60,6 +64,7 @@ class queryDB(object):
     '''
     result = self.queries.fetchmany(self.chunksize)
     if len(result) == 0:
+      self.closeSession()
       return None
     else:
       cat = self.makeCatalogFromQuery(result)
@@ -160,32 +165,16 @@ class queryDB(object):
       query = query.add_column(cols[k])
     return query
 
-  def getUniqueColNames(self, map, otype=None):
+  def getUniqueColNames(self, map):
     cols = {}
     for ft in self.filetypes:
       dmap = self.dm[ft][self.component][map['ptype']]
       for k in dmap.keys():
         colstr = dmap[k][1]
-        if colstr.startswith("%%"):
+        if colstr.startswith("%%") and (str(map['ptype']) != 'MOVINGPOINT'):
           colstr = colstr.lstrip("%%")
           colstr = eval(colstr)
         if k == map['idkey']:
-          continue
-        else:
-          if cols.has_key(k):
-            print "Replacing expression %s with %s for key %s"%(cols[k], colstr, k)
-            cols[k] = colstr
-          else:
-            cols[k] = colstr 
-    return cols
-
-  def getUniqueColNamesMO(self, idkey):
-    cols = {}
-    for ft in self.filetypes:
-      dmap = self.dm[ft]['SOLARSYSTEM']['MOVINGPOINT']
-      for k in dmap.keys():
-        colstr = dmap[k][1]
-        if k == idkey:
           continue
         else:
           if cols.has_key(k):
@@ -290,6 +279,7 @@ class queryDB(object):
 
     objtype = self.objtype
     om = self.om[objtype]
+    const = None
     if om.has_key('formatas'):
       self.ptype = om['formatas']
     else:
@@ -307,7 +297,7 @@ class queryDB(object):
 	  continue
         appint = int(self.em[omkey]['id'])
         map = self.om[self.objtype][omkey]
-        cols = self.getUniqueColNames(map, self.objtype)
+        cols = self.getUniqueColNames(map)
         colarr = []
         for k in cols.keys():
             colarr.append("%s as %s"%(cols[k], k))
@@ -327,50 +317,23 @@ class queryDB(object):
       '''
       if self.expmjd == 0.:
         raise Exception("Expmjd cannot be None if you want to get Solar System Objects out")
-      oom = self.om['ORBIT']
-      #We need the orbit map for the join.  I'm assuming that if the orbit map
-      #is length 1 there is only one orbit table and if > 1 there is one orbit
-      #table per ephemeride table.
-      queries = []
-      n = 0
-      for k in om.keys():
-        if k == "formatas":
-          continue
-        map = om[k]
-        #equery = session.query(eval("%s.objid"%(map['table'])))
-        if len(oom) == 1:
-          omap = oom['ORBIT0']
-        elif len(oom) == len(om):
-          omap = oom['ORBIT%i'%(n)]
-        else:
-          raise Exception('Getting orbits...', 'The orbit map and ephemeride\
-                  map do not agree in length')
-        eid = eval("%s.%s.label(\"%s\")"%(map['table'],
-                      self.dm[self.filetypes[0]][self.component][self.ptype][map['idkey']][1],
-                      map['idkey']))
-        oid = eval("%s.%s.label(\"%s\")"%(omap['table'],
-                      self.dm[self.filetypes[0]][self.component][self.ptype][omap['idkey']][1],
-                      omap['idkey']))
-        equery = session.query(eid,oid).filter(eid == oid)
-        #equery = self.addUniqueCols(map, equery)
-        equery = self.addUniqueCols(omap, equery)
-        if not len(map['constraint'].strip()) == 0:
-          const = map['constraint'].strip()
-          if const.startswith("%%"):
-            const = const.lstrip("%%")
-            const = eval(const)
-          equery = equery.filter(const)
-        if not len(omap['constraint'].strip()) == 0:
-          const = omap['constraint'].strip()
-          if const.startswith("%%"):
-            const = const.lstrip("%%")
-            const = eval(const)
-          equery = equery.filter(const)
-        query = equery.filter(self.getRaDecBoundsCirc(self.centradeg,
-            self.centdecdeg, radiusdeg))
-        queries.append(session.execute(query))
-        n += 1
-      self.queries = queries
+      oom = self.om['ORBIT']['ORBITS']
+      self.component = self.om[self.objtype]["component"]
+      appint = int(self.em['EPHEMS']['id'])
+      cols = self.getUniqueColNames(oom)
+      colarr = []
+      colarr.append("%i as appendint"%(appint))
+      for k in cols.keys():
+          colarr.append("%s as %s"%(cols[k], k))
+      colstr = ",".join(colarr)
+      if not len(oom['constraint'].strip()) == 0:
+        const = oom['constraint']
+        if const.startswith("%%"):
+          const = const.lstrip("%%")
+          const = eval(const)
+        const = "WHERE %s"%(const)
+      self.queries, self.coldesc = initSSM(self.centradeg, self.centdecdeg,
+              self.radiusdeg, self.expmjd, colstr, constraint = const)
       return self.getNextChunk()
     else:
       self.queries = self.getUnionQuery()
@@ -380,10 +343,13 @@ class queryDB(object):
     objects = []
     ephem_datfile = ""
     pyoorb.pyoorb.oorb_init(ephemeris_fname=ephem_datfile)
+    appendint = None
     for r in results:
+      appendint = r['appendint']
       mymo = mo.MovingObject(r['q'], r['e'], r['i'], r['node'],
                              r['argPeri'], r['timePeri'], r['epoch'],
-                             magHv=r['magHv'], phaseGv=r['phaseGv'], index=r['index'],
+                             magHv=r['magHv'], phaseGv=r['phaseGv'],
+                             index=r['idx'],
                              n_par=r['n_par'], moid=r['moid'], 
                              objid=r['id'], objtype=r['objtype'],
                              isVar=r['isVar'], var_t0=r['var_t0'],
@@ -397,18 +363,13 @@ class queryDB(object):
     objects = mo.MovingObjectList(objects)
     # generate ephemerides for all objects at once
     objects.generateEphemeridesForAllObjects([self.expmjd], obscode=807)
+    objects = objects.getMovingObjectsInFieldofView(self.centradeg,\
+            self.centdecdeg, self.radiusdeg, self.expmjd)
+    objects.calcAllMags("imsim",[self.expmjd],os.path.join(self.getEnvironPath("SED_DATA"),"ssmSED"),withErrors=False)
     self.thismjd = mymo.mjdTaiStr(self.expmjd)
     # return the basic list of moving objects 
     objects = objects._mObjects
-    return objects
-
-
-
-  class dbMovingObject(mo.MovingObject):
-    def keys(self):
-      return self.keyarr
-    def setkeys(keyarr):
-      self.keyarr = keyarr
+    return objects, appendint
 
   def makeCatalogFromQuery(self, result):
     nic = deepcopy(self.nictemp)
@@ -421,12 +382,13 @@ class queryDB(object):
     nic.catalogType = self.filetypes
     data = {}
     if self.ptype == "MOVINGPOINT":
-      result = self.makeMovingObjectsFromOrbitList(result)
+      result,appendint = self.makeMovingObjectsFromOrbitList(result)
       thismjd = self.thismjd
       om = self.om[self.objtype]
-      colkeys = self.getUniqueColNamesMO(om[om.keys()[1]]['idkey'])
+      colkeys = self.getUniqueColNames(om['EPHEMS'])
       for k in colkeys:
         data[k] = []
+      data['appendint'] = []
       for s in result:
         for k in colkeys:
           col = colkeys[k]
@@ -436,13 +398,20 @@ class queryDB(object):
             eval("data[k].append(%s)"%(col))
           else:
             eval("data[k].append(s.%s)"%(col))
+        data['appendint'].append(appendint)
       for k in colkeys:
         arr = numpy.asarray(data[k])
         nic.addColumn(arr, k)
+      nic.addColumn(numpy.asarray(data['appendint']), 'appendint')
     else:
       colkeys = zip(result[0].keys(),self.coldesc)
       for k in colkeys:
-        nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
+        if k[0] == u'variabilityParameters':
+          #need to cast to string in case the result is None which happens
+          #when an object is not variable
+          nic.addColumn( numpy.array([eval(str(s[k[0]])) for s in result]), k[1]['name'])
+        else:
+          nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
       # nic.addColumn(numpy.fromiter((tuple(s[k[0]] for k in colkeys) for s
       #    in result), count=len(result)), k[1]['name'])
     if nic.neighborhoodType == "EXTRAGALACTIC":
@@ -458,42 +427,6 @@ class queryDB(object):
         raise RuntimeError, '*** nic.dataArray has len < 1'
 
     return nic
-
-  def getTilesBbox(self, bbox):
-    sq = session.query(Tiles.id, Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("sbox\
-            '((%fd, %fd), (%fd,%fd))' && bbox"%(bbox.getRaMin(),bbox.getDecMin(),
-            bbox.getRaMax(),bbox.getDecMax())).subquery().alias(name="mytiles")
-    col1 = expression.literal_column("spoly '{(%fd, %fd), (%fd, %fd), (%fd, %fd), (%fd, %fd)}'+\
-            strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
-            'ZYX')"%(\
-            bbox.getRaMin(),bbox.getDecMin(), bbox.getRaMin(), bbox.getDecMax(),
-	    bbox.getRaMax(),bbox.getDecMax(), bbox.getRaMax(),
-            bbox.getDecMin(),"mytiles","mytiles")).label("tbox")
-    col2 = expression.literal_column("bbox +\
-            strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
-            'ZYX')"%("mytiles","mytiles")).label("tbbox")
-    query = session.query(col1,col2,sq.c.id,sq.c.ramid,sq.c.decmid,sq.c.bbox)
-    result = query.all()
-    tiles = []
-    for r in result:
-      tiles.append({'tid':r.id, 'tbox':r.tbox, 'tbbox':r.tbbox, 'ramid':r.ramid, 'decmid':r.decmid,
-            'bbox':r.bbox})
-    return tiles
-  def getTilesCirc(self, raDeg, decDeg, radiusDeg):
-    sq = session.query(Tiles.id, Tiles.ramid, Tiles.decmid, Tiles.bbox).filter("scircle\
-            '<(%fd, %fd), %fd>' && bbox"%(raDeg, decDeg,
-            radiusDeg)).subquery().alias(name="mytiles")
-    col = expression.literal_column("scircle '<(%fd, %fd), %fd>'+\
-            strans(-%s.ramid*PI()/180., %s.decmid*PI()/180.,0.0,\
-            'ZYX')"%(raDeg,
-            decDeg, radiusDeg,"mytiles","mytiles")).label("circ")
-    query = session.query(col,sq.c.id,sq.c.ramid,sq.c.decmid,sq.c.bbox)
-    result = query.all()
-    tiles = []
-    for r in result:
-      tiles.append({'tid':r.id, 'circ':r.circ, 'ramid':r.ramid, 'decmid':r.decmid,
-            'bbox':r.bbox})
-    return tiles
 
   def deg2rad(self, ang):
     return ang*math.pi/180.
@@ -525,3 +458,9 @@ class queryDB(object):
     decmin = dec-radius
     bbox = Bbox(ramin,ramax,decmin,decmax)
     return self.getRaDecBounds(bbox)
+
+  def getEnvironPath(self, var):
+    if os.environ.has_key(var):
+      return os.environ[var]
+    else:
+      raise Exception("Environment variable %s not set."%(var))

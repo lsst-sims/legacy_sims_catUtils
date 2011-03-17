@@ -17,10 +17,8 @@ a_session = scoped_session(sessionmaker(autoflush=True,
     bind=a_engine))
 a_metadata = MetaData()
 a_metadata.bind = a_engine
-star = Table('stars', a_metadata, autoload=True)
 opsim = Table('output_opsim3_61', a_metadata, autoload=True)
-#galaxy = Table('galaxy', a_metadata, autoload=True)
-#Galaxy = db.map(galaxy)
+star = Table('stars', a_metadata, autoload=True)
 wd = Table('starsWD', a_metadata, autoload=True)
 rrly = Table('starsRRLy', a_metadata, autoload=True)
 bhb = Table('starsBHB', a_metadata, autoload=True)
@@ -43,6 +41,21 @@ def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
             @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
             @ColumnNames = '%s'\
             '%s'"%(ra,dec,radiusdeg*60.,columns))
+    coldesc = []
+    for k in query.keys():
+        coldesc.append({"name":k})
+    return query, coldesc
+
+def initSSM(ra, dec, radiusdeg, expmjd, columns, constraint=None):
+    if constraint is not None:
+        query = a_session.execute("EXECUTE [LSST].[dbo].[spSearchSSMColSpec]\
+            @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f, @MJD = %f,\
+            @ColumnNames = '%s', @WhereClause =\
+            '%s'"%(ra,dec,radiusdeg*60.,expmjd,columns,constraint))
+    else:
+        query = a_session.execute("EXECUTE [LSST].[dbo].[spSearchSSMColSpec]\
+            @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f, @MJD =\
+            %f, @ColumnNames = '%s'"%(ra,dec,radiusdeg*60.,expmjd,columns))
     coldesc = []
     for k in query.keys():
         coldesc.append({"name":k})
