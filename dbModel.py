@@ -8,7 +8,7 @@ from sqlalchemy import schema
 from elixir import *
 
 b_engine = create_engine("postgresql://jobreporter:jobreporter@172.25.79.34/joblog",
-        echo=False)
+        echo=False, convert_unicode=False)
 b_session = application_session = scoped_session(sessionmaker(autoflush=True,
      bind=b_engine))
 b_metadata = ThreadLocalMetaData()
@@ -42,9 +42,9 @@ class CatalogEventLog (Entity):
 class JobStateLog (Entity):
   using_options(tablename='statelog', metadata=b_metadata, session=b_session)
   jobid = Field(Integer, index=True)
-  owner = Field(UnicodeText)
-  pkey = Field(UnicodeText)
-  pvalue = Field(UnicodeText)
+  owner = Field(Text)
+  pkey = Field(Text)
+  pvalue = Field(Text)
   time = Field(DateTime(timezone=True))
   def __repr__(self):
     return '<Log state (%s,%s) at %s>' % (self.pkey, self.pvalue, self.time)

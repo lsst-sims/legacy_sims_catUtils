@@ -91,6 +91,7 @@ class JobState(object):
               '%s'"%(self._jobid.getId(),self._jobid.getOwner())).all()
       for state in statearr:
         self._states[state.pkey] = state
+    self.updateState("__Registration__", "Completed job registration")
 
   def getJobId(self):
     return self._jobid
@@ -106,6 +107,7 @@ class JobState(object):
               pvalue=unicode(state),
               time=dt.datetime(1,1,1).now(timezone('US/Pacific')))
       b_session.commit()
+
   def queryState(self, key):
     if self._states.has_key(key):
       b_session.refresh(self._states[key])
