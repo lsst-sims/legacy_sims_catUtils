@@ -22,12 +22,16 @@ star = Table('stars', a_metadata, autoload=True)
 wd = Table('starsWD', a_metadata, autoload=True)
 rrly = Table('starsRRLy', a_metadata, autoload=True)
 bhb = Table('starsBHB', a_metadata, autoload=True)
+lens = Table('lens', a_metadata, autoload=True)
+image = Table('image', a_metadata, autoload=True)
 db = SqlSoup(a_metadata)
 Star = db.map(star)
 OpSim3_61 = db.map(opsim)
 Wd = db.map(wd)
 BHB = db.map(bhb)
 RRLy = db.map(rrly)
+LENS = db.map(lens, primary_key=[lens.c.id])
+IMAGE = db.map(image, primary_key=[image.c.id])
 
 session = a_session
 def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):

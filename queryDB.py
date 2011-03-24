@@ -154,7 +154,6 @@ class queryDB(object):
     self.coldesc = query.column_descriptions
     for i in range(len(queries)-1):
       query = query.union_all(queries[i+1])
-
     query = session.execute(query)
     return query
 
@@ -300,7 +299,9 @@ class queryDB(object):
         cols = self.getUniqueColNames(map)
         colarr = []
         for k in cols.keys():
-            colarr.append("%s as %s"%(cols[k], k))
+          if cols[k].startswith("'") and cols[k].endswith("'"):
+            cols[k] = "'"+cols[k]+"'"
+          colarr.append("%s as %s"%(cols[k], k))
         colarr.append("%i as appendint"%(appint))
         colstr = ",".join(colarr)
         if not len(map['constraint'].strip()) == 0:
@@ -324,7 +325,9 @@ class queryDB(object):
       colarr = []
       colarr.append("%i as appendint"%(appint))
       for k in cols.keys():
-          colarr.append("%s as %s"%(cols[k], k))
+        if cols[k].startswith("'") and cols[k].endswith("'"):
+          cols[k] = "'"+cols[k]+"'"
+        colarr.append("%s as %s"%(cols[k], k))
       colstr = ",".join(colarr)
       if not len(oom['constraint'].strip()) == 0:
         const = oom['constraint']
