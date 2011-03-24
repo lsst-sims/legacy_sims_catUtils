@@ -1,3 +1,4 @@
+import warnings
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
 from sqlalchemy import create_engine
@@ -8,9 +9,9 @@ from sqlalchemy import schema
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy.ext.sqlsoup import SqlSoup
-#from elixir import *
+from sqlalchemy import exc as sa_exc
 
-
+warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 a_engine =create_engine("mssql://LSST-2:L$$TUser@SQLSERVERDB",
         echo=False)
 a_session = scoped_session(sessionmaker(autoflush=True, 
