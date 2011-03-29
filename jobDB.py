@@ -91,6 +91,7 @@ class JobState(object):
               '%s'"%(self._jobid.getId(),self._jobid.getOwner())).all()
       for state in statearr:
         self._states[state.pkey] = state
+    "Here"
     self.updateState("__Registration__", "Completed job registration")
 
   def getJobId(self):

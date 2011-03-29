@@ -1,3 +1,4 @@
+import warnings
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.sql import expression
 from sqlalchemy import create_engine
@@ -6,7 +7,9 @@ import sqlalchemy.databases as sd
 from sqlalchemy import func
 from sqlalchemy import schema
 from elixir import *
+from sqlalchemy import exc as sa_exc
 
+warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 b_engine = create_engine("postgresql://jobreporter:jobreporter@172.25.79.34/joblog",
         echo=False, convert_unicode=False)
 b_session = application_session = scoped_session(sessionmaker(autoflush=True,

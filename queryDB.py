@@ -5,6 +5,7 @@ import re
 import os
 import math
 import numpy
+import warnings
 import pyoorb
 from lsst.sims.catalogs.generation.config import ConfigObj
 import lsst.sims.catalogs.generation.movingObjects as mo
@@ -49,31 +50,30 @@ class queryDB(object):
     self.opsimmeta = None
     self.opsim = ""
     self.curtile = None
+    self.numretry = 3
 
   def closeSession(self):
     session.close_all()
 
   def getNextChunk(self):
     result = []
-    '''
-    for q in self.queries:
-      if len(result) == self.chunksize:
-          break
-      else:
-          result += q.fetchmany(self.chunksize - len(result))  
-    '''
-    result = self.queries.fetchmany(self.chunksize)
+    retry = 0
+    while retry < self.numretry:
+        try:
+            result = self.queries.fetchmany(self.chunksize)
+            break
+        except Exception, e:
+            retry += 1
+            warnings.warn("Failed to fetch from database.  Retry #%i"%retry)
+    if retry >= self.numretry:
+        raise Exception("Max number of retries reached. Num retry: %i"%self.numretry)
+
     if len(result) == 0:
       self.closeSession()
       return None
     else:
       cat = self.makeCatalogFromQuery(result)
       return cat
-    """
-    except Exception, e:
-      print "Exception of type: %s"%(type(e))
-      raise Exception(e)
-    """
 
   def getOpsimMetadataById(self, id, opsim="OPSIM361"):
     self.opsim = opsim
