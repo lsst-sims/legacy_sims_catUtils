@@ -12,7 +12,7 @@ from sqlalchemy.ext.sqlsoup import SqlSoup
 from sqlalchemy import exc as sa_exc
 
 warnings.simplefilter("ignore", category=sa_exc.SAWarning)
-a_engine =create_engine("mssql://LSST-2:L$$TUser@SQLSERVERDB",
+a_engine =create_engine("mssql+pyodbc://LSST-2:L$$TUser@SQLSERVERDB",
         echo=False)
 a_session = scoped_session(sessionmaker(autoflush=True, 
     bind=a_engine))

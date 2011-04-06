@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from dbMsModel import *
+import pickle
 from copy import deepcopy
 import re
 import os
@@ -56,7 +57,6 @@ class queryDB(object):
     session.close_all()
 
   def getNextChunk(self):
-    result = []
     retry = 0
     while retry < self.numretry:
         try:
@@ -65,6 +65,7 @@ class queryDB(object):
         except Exception, e:
             retry += 1
             warnings.warn("Failed to fetch from database.  Retry #%i"%retry)
+            time.sleep(100)
     if retry >= self.numretry:
         raise Exception("Max number of retries reached. Num retry: %i"%self.numretry)
 
@@ -72,6 +73,7 @@ class queryDB(object):
       self.closeSession()
       return None
     else:
+      #self.pickleResults(result)
       cat = self.makeCatalogFromQuery(result)
       return cat
 
@@ -374,6 +376,12 @@ class queryDB(object):
     objects = objects._mObjects
     return objects, appendint
 
+  def makeCatalogFromPickle(self, rfh, cfh, ptype, comp):
+    self.ptype = ptype
+    self.component = comp
+    self.coldesc = pickle.load(cfh)
+    return self.makeCatalogFromQuery(pickle.load(rfh))
+
   def makeCatalogFromQuery(self, result):
     nic = deepcopy(self.nictemp)
     nic.objectType = self.ptype
@@ -467,3 +475,9 @@ class queryDB(object):
       return os.environ[var]
     else:
       raise Exception("Environment variable %s not set."%(var))
+
+  def pickleResults(self, results):
+    rfh = open("/astro/net/pogo3/krughoff/results.pkl","w")
+    icfh = open("/astro/net/pogo3/krughoff/cols.pkl","w")
+    pickle.dump(results,rfh)
+    pickle.dump(self.coldesc,icfh)
