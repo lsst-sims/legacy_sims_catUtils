@@ -21,7 +21,8 @@ from sqlalchemy.sql.expression import between
 
 
 class queryDB(object):
-  def __init__(self, objtype = 'STARS', filetypes=('TRIM',), chunksize=100000):
+  def __init__(self, objtype = 'STARS', filetypes=('TRIM',), chunksize=100000,
+          makeCat=True, pickleRes=False):
     if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
       catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
     else:
@@ -52,6 +53,8 @@ class queryDB(object):
     self.opsim = ""
     self.curtile = None
     self.numretry = 3
+    self.makeCat = makeCat
+    self.pickleRes = pickleRes
 
   def closeSession(self):
     session.close_all()
@@ -73,8 +76,12 @@ class queryDB(object):
       self.closeSession()
       return None
     else:
-      #self.pickleResults(result)
-      cat = self.makeCatalogFromQuery(result)
+      if self.pickleRes:
+        self.pickleResults(result)
+      if self.makeCat:
+        cat = self.makeCatalogFromQuery(result)
+      else:
+	cat = True
       return cat
 
   def getOpsimMetadataById(self, id, opsim="OPSIM361"):
@@ -98,9 +105,9 @@ class queryDB(object):
       query = query.add_column(cols[k])
     self.opsimmeta = query.first()
     self.centradeg =\
-    eval("self.opsimmeta.%s"%(omap['radegkey']))
+    math.degrees(eval("self.opsimmeta.%s"%(omap['rakey'])))
     self.centdecdeg =\
-    eval("self.opsimmeta.%s"%(omap['decdegkey']))
+    math.degrees(eval("self.opsimmeta.%s"%(omap['deckey'])))
     self.expmjd =\
     eval("self.opsimmeta.%s"%(omap['expmjdkey']))
     self.filter =\
@@ -376,11 +383,6 @@ class queryDB(object):
     objects = objects._mObjects
     return objects, appendint
 
-  def makeCatalogFromPickle(self, rfh, cfh, ptype, comp):
-    self.ptype = ptype
-    self.component = comp
-    self.coldesc = pickle.load(cfh)
-    return self.makeCatalogFromQuery(pickle.load(rfh))
 
   def makeCatalogFromQuery(self, result):
     nic = deepcopy(self.nictemp)
@@ -479,5 +481,5 @@ class queryDB(object):
   def pickleResults(self, results):
     rfh = open("/astro/net/pogo3/krughoff/results.pkl","w")
     icfh = open("/astro/net/pogo3/krughoff/cols.pkl","w")
-    pickle.dump(results,rfh)
-    pickle.dump(self.coldesc,icfh)
+    pickle.dump(results,rfh,protocol=2)
+    pickle.dump(self.coldesc,icfh,protocol=2)
