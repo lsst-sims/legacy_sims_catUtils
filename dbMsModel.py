@@ -55,7 +55,7 @@ def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
 
 def initSSM(ra, dec, radiusdeg, expmjd, columns, constraint=None):
     if constraint is not None:
-        query = a_session.execute("EXECUTE [LSST].[dbo].[spSearchSSMColSpec]\
+        query = a_session.execute("EXECUTE [LSST].[dbo].[spSearchSSMColSpec_y5]\
             @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f, @MJD = %f,\
             @ColumnNames = '%s', @WhereClause =\
             '%s'"%(ra,dec,radiusdeg*60.,expmjd,columns,constraint))

@@ -11,6 +11,8 @@ import pyoorb
 from lsst.sims.catalogs.generation.config import ConfigObj
 import lsst.sims.catalogs.generation.movingObjects as mo
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.measures.instance import CatalogDescription
+from lsst.sims.catalogs.measures.instance import Metadata
 from lsst.sims.catalogs.measures.astrometry import Bbox
 from sqlalchemy import select 
 from sqlalchemy.orm import join
@@ -32,7 +34,8 @@ class queryDB(object):
     objConfigFile = catalogDescriptionPath+"objectMap.dat"
     objEnumConfigFile = catalogDescriptionPath+"objectEnum.dat"
     metaConfigFile = catalogDescriptionPath+"requiredMetadata.dat"
-    self.nictemp = InstanceCatalog(catalogDescriptionPath+"/config.dat")
+    self.catDescription = CatalogDescription(catalogDescriptionPath+"/config.dat")
+    self.metadata = Metadata(catalogDescriptionPath+"/config.dat")
     self.filetypes = filetypes
     self.objtype = objtype
     self.chunksize=chunksize
@@ -60,17 +63,7 @@ class queryDB(object):
     session.close_all()
 
   def getNextChunk(self):
-    retry = 0
-    while retry < self.numretry:
-        try:
-            result = self.queries.fetchmany(self.chunksize)
-            break
-        except Exception, e:
-            retry += 1
-            warnings.warn("Failed to fetch from database.  Retry #%i"%retry)
-            time.sleep(100)
-    if retry >= self.numretry:
-        raise Exception("Max number of retries reached. Num retry: %i"%self.numretry)
+    result = self.queries.fetchmany(self.chunksize)
 
     if len(result) == 0:
       self.closeSession()
@@ -385,7 +378,7 @@ class queryDB(object):
 
 
   def makeCatalogFromQuery(self, result):
-    nic = deepcopy(self.nictemp)
+    nic = InstanceCatalog(cd=self.catDescription, md=deepcopy(self.metadata))
     nic.objectType = self.ptype
     nic.neighborhoodType = self.component
     nic.catalogType = self.filetypes
@@ -418,26 +411,29 @@ class queryDB(object):
       nic.addColumn(numpy.asarray(data['appendint']), 'appendint')
     else:
       colkeys = zip(result[0].keys(),self.coldesc)
-      for k in colkeys:
+      #arr = numpy.asarray(result)
+      #arr = arr.T
+      for i,k in enumerate(colkeys):
         if k[0] == u'variabilityParameters':
           #need to cast to string in case the result is None which happens
           #when an object is not variable
           nic.addColumn( numpy.array([eval(str(s[k[0]])) for s in result]), k[1]['name'])
+          #nic.addColumn(arr[i], k[1]['name'])
         else:
           nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
+          #nic.addColumn(arr[i], k[1]['name'])
       # nic.addColumn(numpy.fromiter((tuple(s[k[0]] for k in colkeys) for s
       #    in result), count=len(result)), k[1]['name'])
     if nic.neighborhoodType == "EXTRAGALACTIC":
         nic.dataArray['raJ2000'] *= math.pi/180.
         nic.dataArray['decJ2000'] *= math.pi/180.
 
-
     if nic == None:
         raise RuntimeError, '*** nic is None'
     if nic.metadata == None:
         raise RuntimeError, '*** nic.metadata is None'
     if len(nic.dataArray) < 0:
-        raise RuntimeError, '*** nic.dataArray has len < 1'
+        raise RuntimeError, '*** nic.dataArray has len < 0'
 
     return nic
 
