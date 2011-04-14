@@ -12,7 +12,6 @@ class LogEvents(object):
     self._tasknumber = None
     self._jobid = None
     jobid = b_session.query(func.max(CatalogEventLog.jobid)).one()[0]
-    print "my Jobid is",jobid
     if jobid is None:
       self._jobid = 1
     else:
@@ -22,9 +21,9 @@ class LogEvents(object):
       self._ip = socket.gethostbyname(socket.gethostname())
     else:
       self._ip = ip
+    self.persist('__REGISTRATION__', 'Registered job %i'%'jobid', '')
 
   def persist(self, key, value, description):
-    print "Persisting Task number %s"%(str(self._tasknumber))
     CatalogEventLog(jobid=self._jobid, pkey=unicode(key),
             pvalue=unicode(value),
             time=dt.datetime(1,1,1).now(timezone('US/Pacific')),
@@ -42,7 +41,6 @@ class LogEvents(object):
     else:
       pass
     self._tasknumber = tasknumber
-    print "Task number %s"%(str(self._tasknumber))
     value = "Task started"
     self.persist(key, value, self._jobdescription)
     
@@ -91,7 +89,6 @@ class JobState(object):
               '%s'"%(self._jobid.getId(),self._jobid.getOwner())).all()
       for state in statearr:
         self._states[state.pkey] = state
-    "Here"
     self.updateState("__Registration__", "Completed job registration")
 
   def getJobId(self):
