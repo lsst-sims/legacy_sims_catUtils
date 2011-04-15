@@ -4,6 +4,7 @@ from sqlalchemy import func
 import datetime as dt
 from pytz import timezone
 import socket
+import time
 
 class LogEvents(object):
   def __init__(self, jobdescription="", ip = None):
@@ -22,6 +23,7 @@ class LogEvents(object):
     else:
       self._ip = ip
     self.persist('__REGISTRATION__', 'Registered job %i'%self._jobid, '')
+    time.sleep(5)
 
   def persist(self, key, value, description):
     CatalogEventLog(jobid=self._jobid, pkey=unicode(key),
@@ -35,7 +37,6 @@ class LogEvents(object):
     key = "TASK_START" 
     if tasknumber is None:
       tasknumber = b_session.query(func.max(CatalogEventLog.taskNumber)).one()[0]
-      print "Task number %s"%(str(tasknumber))
       if tasknumber is None:
         tasknumber = 1
     else:
