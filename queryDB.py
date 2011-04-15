@@ -55,7 +55,6 @@ class queryDB(object):
     self.opsimmeta = None
     self.opsim = ""
     self.curtile = None
-    self.numretry = 3
     self.makeCat = makeCat
     self.pickleRes = pickleRes
 
@@ -64,7 +63,6 @@ class queryDB(object):
 
   def getNextChunk(self):
     result = self.queries.fetchmany(self.chunksize)
-
     if len(result) == 0:
       self.closeSession()
       return None

@@ -21,7 +21,7 @@ class LogEvents(object):
       self._ip = socket.gethostbyname(socket.gethostname())
     else:
       self._ip = ip
-    self.persist('__REGISTRATION__', 'Registered job %i'%'jobid', '')
+    self.persist('__REGISTRATION__', 'Registered job %i'%self._jobid, '')
 
   def persist(self, key, value, description):
     CatalogEventLog(jobid=self._jobid, pkey=unicode(key),
