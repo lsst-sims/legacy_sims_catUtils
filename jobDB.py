@@ -7,16 +7,18 @@ import socket
 import time
 
 class LogEvents(object):
-  def __init__(self, jobdescription="", ip = None):
+  def __init__(self, jobdescription="", jobid=None, ip = None):
     setup_all()
     create_all()
     self._tasknumber = None
-    self._jobid = None
-    jobid = b_session.query(func.max(CatalogEventLog.jobid)).one()[0]
     if jobid is None:
-      self._jobid = 1
+      jobid = b_session.query(func.max(CatalogEventLog.jobid)).one()[0]
+      if jobid is None:
+        self._jobid = 1
+      else:
+        self._jobid = jobid + 1
     else:
-      self._jobid = jobid + 1
+      self._jobid = int(jobid)
     self._jobdescription = jobdescription
     if ip is None:
       self._ip = socket.gethostbyname(socket.gethostname())
