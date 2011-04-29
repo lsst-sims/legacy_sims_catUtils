@@ -138,6 +138,7 @@ class queryDB(object):
           idcolstr = eval(idcolstr)
       ta = eval("aliased(%s, name='star_alias')"%map['table'])
       query = session.query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
+      query = query.with_hint(ta, 'WITH(FORCESEEK)')
       query = query.add_column(expression.literal_column("%i"%(appint)).label("appendint"))
       query = self.addSpacial(query, map, "circle", ta)
       query = self.addUniqueCols(map, query)
@@ -150,10 +151,27 @@ class queryDB(object):
           const = eval(const)
         query = query.filter(const)
       queries.append(query)
-    query = queries[0]
     self.coldesc = query.column_descriptions
+    '''
+    query = queries[0]
     for i in range(len(queries)-1):
       query = query.union_all(queries[i+1])
+    '''
+    #Workaround for adding a hint
+    qstr = str(queries[0])
+    qstr = qstr.lstrip("SELECT")
+    parts = qstr.split(" JOIN ")
+    parts[0] = parts[0]+" WITH(FORCESEEK) "
+    qstr = " JOIN ".join(parts)
+    query = session.query(qstr)
+    for i in range(len(queries)-1):
+      qstr = str(queries[i+1])
+      qstr = qstr.lstrip("SELECT")
+      parts = qstr.split(" JOIN ")
+      parts[0] = parts[0]+" WITH(FORCESEEK) "
+      qstr = " JOIN ".join(parts)
+      query=query.union_all(session.query(qstr))
+    #End workaround
     query = session.execute(query)
     return query
 
