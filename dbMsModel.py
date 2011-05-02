@@ -13,7 +13,7 @@ from sqlalchemy import exc as sa_exc
 
 warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 a_engine =create_engine("mssql+pyodbc://LSST-2:L$$TUser@SQLSERVERDB",
-        echo=True)
+        echo=False)
 a_session = scoped_session(sessionmaker(autoflush=True, 
     bind=a_engine))
 a_metadata = MetaData()
@@ -25,6 +25,7 @@ rrly = Table('starsRRLy', a_metadata, autoload=True)
 bhb = Table('starsBHB', a_metadata, autoload=True)
 lens = Table('lens', a_metadata, autoload=True)
 image = Table('image', a_metadata, autoload=True)
+eb = Table('ebstars', a_metadata, autoload=True)
 astromeggs = Table('AstromEasterEggs', a_metadata, autoload=True)
 db = SqlSoup(a_metadata)
 Star = db.map(star)
@@ -35,6 +36,7 @@ BHB = db.map(bhb)
 RRLy = db.map(rrly)
 LENS = db.map(lens, primary_key=[lens.c.id])
 IMAGE = db.map(image, primary_key=[image.c.id])
+EBSTARS = db.map(eb)
 
 session = a_session
 def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
