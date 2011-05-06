@@ -26,6 +26,7 @@ bhb = Table('starsBHB', a_metadata, autoload=True)
 lens = Table('lens', a_metadata, autoload=True)
 image = Table('image', a_metadata, autoload=True)
 eb = Table('ebstars', a_metadata, autoload=True)
+cepheid = Table('cepheidstars', a_metadata, autoload=True)
 astromeggs = Table('AstromEasterEggs', a_metadata, autoload=True)
 db = SqlSoup(a_metadata)
 Star = db.map(star)
@@ -37,6 +38,7 @@ RRLy = db.map(rrly)
 LENS = db.map(lens, primary_key=[lens.c.id])
 IMAGE = db.map(image, primary_key=[image.c.id])
 EBSTARS = db.map(eb)
+CEPHEIDSTARS = db.map(cepheid)
 
 session = a_session
 def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
