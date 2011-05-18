@@ -97,6 +97,14 @@ class JobState(object):
   def getJobId(self):
     return self._jobid
 
+  def getJobIdsByOwner(self, owner):
+    jids = []
+    idarr = b_session.query(func.distinct(JobStateLog.jobid)).filter("owner = '%s'"%(owner)).all()
+    for id in idarr:
+      jids.append(JobId(id[0], owner))
+    return jids
+
+
   def updateState(self, key, state):
     if self._states.has_key(key):
       self._states[key].pvalue = unicode(state)
@@ -117,9 +125,13 @@ class JobState(object):
       return None
 
   def showStates(self):
+    states = {}
     for k in self._states.keys():
       b_session.refresh(self._states[k])
-      print k, self._states[k].pvalue
+      #print k, self._states[k].pvalue
+      states[k] = self._states[k].pvalue
+    return states
+
 
   def deleteStates(self):
     for key in self._states.keys():
