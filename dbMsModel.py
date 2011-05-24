@@ -71,6 +71,22 @@ def initSSM(ra, dec, radiusdeg, expmjd, columns, constraint=None):
     for k in query.keys():
         coldesc.append({"name":k})
     return query, coldesc
+
+def initSSMy1(ra, dec, radiusdeg, expmjd, columns, constraint=None):
+    if constraint is not None:
+        query = a_session.execute("EXECUTE [LSST].[dbo].[spSearchSSMColSpec]\
+            @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f, @MJD = %f,\
+            @ColumnNames = '%s', @WhereClause =\
+            '%s'"%(ra,dec,radiusdeg*60.,expmjd,columns,constraint))
+    else:
+        query = a_session.execute("EXECUTE [LSST].[dbo].[spSearchSSMColSpec]\
+            @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f, @MJD =\
+            %f, @ColumnNames = '%s'"%(ra,dec,radiusdeg*60.,expmjd,columns))
+    coldesc = []
+    for k in query.keys():
+        coldesc.append({"name":k})
+    return query, coldesc
+
 '''
 class Star(Entity):
   using_options(tablename="stars", autoload=True, metadata=a_metadata,

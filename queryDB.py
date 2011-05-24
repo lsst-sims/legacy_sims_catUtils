@@ -353,8 +353,16 @@ class queryDB(object):
           const = const.lstrip("%%")
           const = eval(const)
         const = "WHERE %s"%(const)
-      self.queries, self.coldesc = initSSM(self.centradeg, self.centdecdeg,
-              self.radiusdeg, self.expmjd, colstr, constraint = const)
+      if (self.expmjd > 49354.16 and self.expmjd < 49381.16) or\
+              (self.expmjd > 49384.16 and self.expmjd < 49411.16):
+          self.queries, self.coldesc = initSSMy1(self.centradeg, self.centdecdeg,
+                  self.radiusdeg, self.expmjd, colstr, constraint = const)
+      elif (self.expmjd > 50813.16 and self.expmjd < 51203.16):
+          self.queries, self.coldesc = initSSM(self.centradeg, self.centdecdeg,
+                  self.radiusdeg, self.expmjd, colstr, constraint = const)
+      else:
+          raise Exception("There no indexed ephemerides for this observation time")
+      
       return self.getNextChunk()
     else:
       self.queries = self.getUnionQuery()
@@ -386,7 +394,10 @@ class queryDB(object):
     objects.generateEphemeridesForAllObjects([self.expmjd], obscode=807)
     objects = objects.getMovingObjectsInFieldofView(self.centradeg,\
             self.centdecdeg, self.radiusdeg, self.expmjd)
-    objects.calcAllMags("imsim",[self.expmjd],os.path.join(self.getEnvironPath("SED_DATA"),"ssmSED"),withErrors=False)
+    if self.filter is not None:
+        objects.calcAllMags(self.filter,[self.expmjd],os.path.join(self.getEnvironPath("SED_DATA"),"ssmSED"),withErrors=False)
+    else:
+        objects.calcAllMags('r',[self.expmjd],os.path.join(self.getEnvironPath("SED_DATA"),"ssmSED"),withErrors=False)
     self.thismjd = mymo.mjdTaiStr(self.expmjd)
     # return the basic list of moving objects 
     objects = objects._mObjects
