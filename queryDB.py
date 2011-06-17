@@ -99,6 +99,14 @@ class queryDB(object):
     math.degrees(eval("self.opsimmeta.%s"%(omap['rakey'])))
     self.centdecdeg =\
     math.degrees(eval("self.opsimmeta.%s"%(omap['deckey'])))
+    if self.centdecdeg < -90.:
+        self.centdecdeg = -self.centdecdeg - 180.
+        self.centradeg += 180.
+        self.centradeg = self.centradeg%360.
+    if self.centdecdeg > 90.:
+        self.centdecdeg = -self.centdecdeg + 180.
+        self.centradeg += 180.
+        self.centradeg = self.centradeg%360.
     self.expmjd =\
     eval("self.opsimmeta.%s"%(omap['expmjdkey']))
     self.filter =\
