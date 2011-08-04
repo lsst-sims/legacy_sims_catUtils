@@ -13,7 +13,7 @@ from sqlalchemy import exc as sa_exc
 
 warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 a_engine =create_engine("mssql+pyodbc://LSST-2:L$$TUser@SQLSERVERDB",
-        echo=True)
+        echo=False)
 a_session = scoped_session(sessionmaker(autoflush=True, 
     bind=a_engine))
 a_metadata = MetaData()
