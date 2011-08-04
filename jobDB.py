@@ -126,12 +126,16 @@ class JobState(object):
 
   def showStates(self):
     states = {}
+    keys = self._states.keys()
     for k in self._states.keys():
       b_session.refresh(self._states[k])
       #print k, self._states[k].pvalue
       states[k] = self._states[k].pvalue
     return states
 
+  def refreshStates(self):
+    for k in self._states.keys():
+      b_session.refresh(self._states[k])
 
   def deleteStates(self):
     for key in self._states.keys():
