@@ -420,6 +420,11 @@ class queryDB(object):
     if self.opsimmeta is not None:
       for k in self.opsimmeta.keys():
         nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
+    else:
+        nic.metadata.addMetadata('filter', self.filter, "filter of observation")
+        nic.metadata.addMetadata('expmjd', self.expmjd, "mjd of observation")
+        nic.metadata.addMetadata('centradeg', self.centradeg, "ra of center of field")
+        nic.metadata.addMetadata('centdecdeg', self.centdecdeg, "dec of center of field")
     nic.catalogType = self.filetypes
     data = {}
     if self.ptype == "MOVINGPOINT":
