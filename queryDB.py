@@ -310,6 +310,9 @@ class queryDB(object):
         nic.addColumn( numpy.array([eval(str(s[k[0]])) for s in result]), k[1]['name'])
       else:
         nic.addColumn( numpy.array([s[k[0]] for s in result]), k[1]['name'])
+    if nic.neighborhoodType == "EXTRAGALACTIC":
+        nic.dataArray['raJ2000'] *= math.pi/180.
+        nic.dataArray['decJ2000'] *= math.pi/180.
     if nic == None:
         raise RuntimeError, '*** nic is None'
     if nic.metadata == None:
