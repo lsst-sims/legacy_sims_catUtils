@@ -25,7 +25,6 @@ class LogEvents(object):
     else:
       self._ip = ip
     self.persist('__REGISTRATION__', 'Registered job %i'%self._jobid, '')
-    time.sleep(5)
 
   def persist(self, key, value, description):
     CatalogEventLog(jobid=self._jobid, pkey=unicode(key),
