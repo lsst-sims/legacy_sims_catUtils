@@ -54,8 +54,7 @@ def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
     else:
         query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint]\
             @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
-            @ColumnNames = '%s'\
-            '%s'"%(ra,dec,radiusdeg*60.,columns))
+            @ColumnNames = '%s'"%(ra,dec,radiusdeg*60.,columns))
     coldesc = []
     for k in query.keys():
         coldesc.append({"name":k})

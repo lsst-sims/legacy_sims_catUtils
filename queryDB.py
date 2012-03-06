@@ -9,7 +9,6 @@ import numpy
 import warnings
 import pyoorb
 from lsst.sims.catalogs.generation.config import ConfigObj
-import lsst.sims.catalogs.generation.movingObjects as mo
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import CatalogDescription
 from lsst.sims.catalogs.measures.instance import Metadata
