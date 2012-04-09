@@ -11,7 +11,7 @@ from elixir import *
 from sqlalchemy import exc as sa_exc
 
 warnings.simplefilter("ignore", category=sa_exc.SAWarning)
-b_engine = create_engine("postgresql://jobreporter:jobreporter@128.208.190.71/joblog",
+b_engine = create_engine("postgresql://jobreporter:jobreporter@172.25.79.34/joblog",
         echo=False, convert_unicode=False, poolclass=NullPool)
 b_session = application_session = scoped_session(sessionmaker(autoflush=True,
      bind=b_engine))
