@@ -23,7 +23,7 @@ from sqlalchemy.sql.expression import between
 
 class queryDB(object):
   def __init__(self, objtype = 'STARS', filetypes=('TRIM',), chunksize=100000,
-          makeCat=True):
+          makeCat=True, dithered=False):
     if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
       catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
     else:
@@ -56,6 +56,7 @@ class queryDB(object):
     self.opsim = ""
     self.curtile = None
     self.makeCat = makeCat
+    self.dithered = dithered
 
   def closeSession(self):
     session.close_all()
@@ -67,7 +68,7 @@ class queryDB(object):
       return None
     else:
       if self.makeCat:
-        cat = self.makeCatalogFromQuery(result)
+        cat = self.makeCatalogFromQuery(result, self.dithered)
       else:
 	cat = True
       return cat
@@ -109,7 +110,7 @@ class queryDB(object):
     self.filter =\
     eval("self.opsimmeta.%s"%(omap['filterkey']))
 
-  def addSpacial(self, query, map, type, ta):
+  def addSpatial(self, query, map, type, ta):
     if type == "circle":
       sel = select(["htmidstart, htmidend"],
               whereclause="innerflag=0",
@@ -144,7 +145,7 @@ class queryDB(object):
       ta = eval("aliased(%s, name='star_alias')"%map['table'])
       query = session.query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
       query = query.add_column(expression.literal_column("%i"%(appint)).label("appendint"))
-      query = self.addSpacial(query, map, "circle", ta)
+      query = self.addSpatial(query, map, "circle", ta)
       query = self.addUniqueCols(map, query)
       if filter is not None:
         query = query.filter(filter)
@@ -287,8 +288,9 @@ class queryDB(object):
       self.queries = self.getUnionQuery()
       return self.getNextChunk()
 
-  def makeCatalogFromQuery(self, result):
+  def makeCatalogFromQuery(self, result, dithered=False):
     nic = InstanceCatalog(cd=self.catDescription, md=deepcopy(self.metadata))
+
     nic.objectType = self.ftype
     nic.neighborhoodType = self.component
     nic.catalogType = self.filetypes
@@ -300,6 +302,25 @@ class queryDB(object):
         nic.metadata.addMetadata('expmjd', self.expmjd, "mjd of observation")
         nic.metadata.addMetadata('centradeg', self.centradeg, "ra of center of field")
         nic.metadata.addMetadata('centdecdeg', self.centdecdeg, "dec of center of field")
+    if dithered:
+        omap = self.om['METADATA'][self.opsim]        
+        mra =\
+        eval("self.opsimmeta.%s"%(omap['moonrakey']))
+        mdec =\
+        eval("self.opsimmeta.%s"%(omap['moondeckey']))
+        rottel =\
+        eval("self.opsimmeta.%s"%(omap['rottelkey']))
+        nalt, naz, nrotsky, ndist2moon =\
+        nic.recalculatePointingInfo(math.radians(self.centradeg),\
+                math.radians(self.centdecdeg), mra, mdec, self.expmjd, rottel)
+        nic.metadata.addMetadata(omap['altkey'], nalt, "dithered altitude",
+                clobber=True)
+        nic.metadata.addMetadata(omap['azkey'], naz, "dithered azimuth",
+                clobber=True)
+        nic.metadata.addMetadata(omap['dist2moonkey'], ndist2moon, "dithered distance to the moon",
+                clobber=True)
+        nic.metadata.addMetadata(omap['rotskykey'], nrotsky, "Rotator angle after dithering",
+                clobber=True)
     nic.catalogType = self.filetypes
     colkeys = zip(result[0].keys(),self.coldesc)
     for i,k in enumerate(colkeys):
