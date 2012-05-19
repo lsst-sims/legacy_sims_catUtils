@@ -270,7 +270,7 @@ class queryDB(object):
           self.queries, self.coldesc = initSSM(self.centradeg, self.centdecdeg,
                   self.radiusdeg, self.expmjd, colstr, constraint = const)
       else:
-          raise Exception("There no indexed ephemerides for this observation time")
+          raise Exception("There are no indexed ephemerides for this observation time")
       
       return self.getNextChunk()
 
