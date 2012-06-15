@@ -64,10 +64,10 @@ def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
 
 def initSSM(ra, dec, radiusdeg, expmjd, columns, constraint=None):
     if constraint is not None:
-        query = a_session.execute("select %s from [LSST].[dbo].[Test_MBA_y5](\
+        query = a_session.execute("select %s from [LSST].[dbo].[fSSMAll](\
             %f, %f, %f,%f) where %s"%(columns, expmjd, ra, dec, radiusdeg*60., constraint))
     else:
-        query = a_session.execute("select %s from [LSST].[dbo].[Test_MBA_y5](\
+       query = a_session.execute("select %s from [LSST].[dbo].[fSSMAll](\
             %f, %f, %f,%f)"%(columns, expmjd, ra, dec, radiusdeg*60.))
     coldesc = []
     for k in query.keys():

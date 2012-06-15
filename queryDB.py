@@ -266,7 +266,7 @@ class queryDB(object):
             const = const.lstrip("%%")
             const = eval(const)
           const = "WHERE %s"%(const)
-      if (self.expmjd > 50813.16 and self.expmjd < 51143.16):
+      if (self.expmjd > 50093.1604):
           self.queries, self.coldesc = initSSM(self.centradeg, self.centdecdeg,
                   self.radiusdeg, self.expmjd, colstr, constraint = const)
       else:
