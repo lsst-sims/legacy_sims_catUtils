@@ -64,19 +64,6 @@ for i in range(len(starskeys)):
     # This is for showing an example of the manyMagCalc function on bandpass
     sedlist.append(tmpstar)
 
-# show the manyMagCalc method of bandpass - basically, take a list of SEDS and
-# quickly calculate the magnitudes of each one. 
-# you still have to do the dust/fluxnorm multiplications beforehand, but this is faster.
-# less error checking though. 
-
-mags2 = rband.manyMagCalc(sedlist)
-
-# show results
-print "#sedname      fluxnorm     ebv    magnitude  manyMag"
-for i in range(len(starskeys)):
-    print "%s %.5g %.5f %.5f %.5f" %(starskeys[i], fluxnorm[i], ebv[i], mags[i], mags2[i])
-    
-
 
 # Now, pretend we're actually wanting to calculate the magnitude in multiple bandpasses.
 # (ignore the part that uses exampleBandpass.dat as the source .. you would replace that with

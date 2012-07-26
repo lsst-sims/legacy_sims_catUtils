@@ -2,7 +2,7 @@
 
 # CONCLUSION: don't  bother using bandpass's manyMagCalc function. Use Sed's instead.
 # the memory management required for bandpass's function seems to make it *slower* than doing the magnitude calculation
-# in the straight-forward manner. 
+# in the straight-forward manner. (actually, Bandpass's manyMagCalc function has been removed).  
 
 # Otherwise, the manyMagCalc function speeds up magnitude calculation by about 0.7 times
 #  (if the filter-by-filter magnitude calculation was done in a smart way, using the same wavelength grid
@@ -45,7 +45,7 @@ print "Reading %d filters took %f s" %(len(filterlist), dt)
 
 # Read in a set of star seds. 
 # Replace stardir with your root galaxy sed directory.
-stardir = "/Users/rhiannonjones/seds/kurucz_r/"
+stardir = os.path.join(os.getenv('HOME'), 'seds/kurucz_r')
 stars = {}
 starlist = os.listdir(stardir)
 for star in starlist:

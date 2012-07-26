@@ -29,9 +29,12 @@ for f in filterlist:
 dt, t = dtime(t)
 print "Reading %d filters took %f s" %(len(filterlist), dt)
 
+wavelen_min = lsstbp[filterlist[0]].wavelen.min()
+wavelen_max = lsstbp[filterlist[0]].wavelen.max() - wavelen_step
+
 # Read in galaxy seds. (there aren't many, so just read them all).
 # Replace galdir with your root galaxy sed directory.
-galdir = "/Users/rhiannonjones/seds/galaxies/"
+galdir = os.path.join(os.getenv('HOME'), 'seds/galaxies')
 gals = {}
 gallist = os.listdir(galdir)
 for gal in gallist:
@@ -42,7 +45,7 @@ dt, t = dtime(t)
 print "Reading %d galaxy seds took %f s" %(len(gallist), dt)
 
 
-# Check on resampling - want all galaxy seds to have the same wavelength range.
+# Check on resampling - want all galaxy seds to have the same wavelength range (not necessarily same as the bandpass). 
 if ((gals[gallist[0]].wavelen.min() < 30) & (gals[gallist[0]].wavelen.max() > 2000)):
     # If true, then gals[gallist[0]] is okay to use as a template -- this ought to be true.
     wavelen_match = gals[gallist[0]].wavelen
@@ -79,7 +82,6 @@ print "Picking random numbers for ebv/redshift, etc took %f s" %(dt)
 # (w/ wavelen_step=0.25, find a 2.5 times faster speedup in the optimized version). 
 
 # Start 'regular' magnitude calculation.
-
 # Calculate internal a/b on the wavelength range required for calculating internal dust extinction. 
 a_int, b_int = gals[gallist[0]].setupCCMab()
 # Set up dictionary + arrays to hold calculated magnitude information. 
@@ -97,15 +99,14 @@ for i in range(num_gal):
     tmpgal.multiplyFluxNorm(fluxnorm[i])
     # If you comment out the synchronize sed here, then the difference between this method and the optimized
     # version increases to a 2.5 times difference.  (i.e. this 'synchronizeSED' buys you 1.6x faster, by itself.)
-    tmpgal.synchronizeSED(wavelen_min=lsstbp[filterlist[0]].wavelen.min(),
-                          wavelen_max=lsstbp[filterlist[0]].wavelen.max(),
-                          wavelen_step = lsstbp[filterlist[0]].wavelen[1] - lsstbp[filterlist[0]].wavelen[0])
+    tmpgal.synchronizeSED(wavelen_min=wavelen_min,
+                          wavelen_max=wavelen_max,
+                          wavelen_step = wavelen_step)
     for f in filterlist:
         mags1[f][i] = tmpgal.calcMag(lsstbp[f])
 dt, t = dtime(t)
 print "Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies took %f s" \
       %(len(filterlist), num_gal, dt)
-
 
 # For next test: want to also do all the same steps, but in an optimized form. This means
 # doing some things that Sed does 'behind the scenes' explicitly, but also means the code may be a little
@@ -114,8 +115,8 @@ print "Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies too
 a_int, b_int = gals[gallist[0]].setupCCMab()  # this is a/b on native galaxy sed range. 
 # Next: calculate milky way a/b on wavelength range required for calculating magnitudes - i.e. 300 to 1200 nm.
 tmpgal = Sed()
-tmpgal.setFlatSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)   # initializes tmpgal on range 300-1200 nm
-a_mw, b_mw = tmpgal.setupCCMab()  # so this is a/b on 300-1200 range. 
+tmpgal.setFlatSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step = wavelen_step)
+a_mw, b_mw = tmpgal.setupCCMab()  # so this is a/b on native MW bandpass range. 
 # Also: set up phi for each bandpass - ahead of time. And set up a list of bandpasses, then create phiarray 
 # and dlambda to set up for manyMagCalc method.
 bplist = []
@@ -134,9 +135,10 @@ for i in range(num_gal):
     tmpgal = Sed(wavelen=gals[galname].wavelen, flambda=gals[galname].flambda)
     tmpgal.addCCMDust(a_int, b_int, ebv=ebv_int[i])
     tmpgal.redshiftSED(redshifts[i])
-    tmpgal.resampleSED(wavelen_min=300, wavelen_max=1200, wavelen_step=wavelen_step)
+    tmpgal.resampleSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
     tmpgal.addCCMDust(a_mw, b_mw, ebv=ebv_mw[i])
     tmpgal.multiplyFluxNorm(fluxnorm[i])
+    #tmpgal.flambdaTofnu() #Not needed because multiplyFluxNorm calculates fnu
     tmpmags = tmpgal.manyMagCalc(phiarray, dlambda)
     j = 0
     for f in filterlist:
