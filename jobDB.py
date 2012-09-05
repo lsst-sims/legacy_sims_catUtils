@@ -29,7 +29,7 @@ class LogEvents(object):
   def persist(self, key, value, description):
     CatalogEventLog(jobid=self._jobid, pkey=unicode(key),
             pvalue=unicode(value),
-            time=dt.datetime(1,1,1).now(timezone('US/Pacific')),
+            time=dt.datetime(1,1,1).now(timezone('UTC')),
             taskNumber=self._tasknumber, ip=self._ip,
             description=unicode(description))
     b_session.commit()
@@ -107,13 +107,13 @@ class JobState(object):
   def updateState(self, key, state):
     if self._states.has_key(key):
       self._states[key].pvalue = unicode(state)
-      self._states[key].time = dt.datetime(1,1,1).now(timezone('US/Pacific'))
+      self._states[key].time = dt.datetime(1,1,1).now(timezone('UTC'))
       b_session.commit()
     else:
       self._states[key] = JobStateLog(jobid=self._jobid.getId(),
               owner=self._jobid.getOwner(), pkey=unicode(key),
               pvalue=unicode(state),
-              time=dt.datetime(1,1,1).now(timezone('US/Pacific')))
+              time=dt.datetime(1,1,1).now(timezone('UTC')))
       b_session.commit()
 
   def queryState(self, key):
