@@ -26,7 +26,9 @@ class queryDB(object):
         if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
             catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
         else:
-            raise Exception("Environment variable CATALOG_DESCRIPTION_PATH not set to location of the catalog description files")
+            raise Exception("Environment variable CATALOG_DESCRIPTION_PATH "
+                            "not set to location of the catalog description "
+                            "files")
         catalogDescriptionPath = self.getEnvironPath("CATALOG_DESCRIPTION_PATH")
         dbMapConfigFile = os.path.join(catalogDescriptionPath,
                                        "requiredFields.dat")
@@ -36,10 +38,11 @@ class queryDB(object):
                                          "objectEnum.dat")
         metaConfigFile = os.path.join(catalogDescriptionPath,
                                       "requiredMetadata.dat")
-        self.catDescription = CatalogDescription(
-            os.path.join(catalogDescriptionPath,"/config.dat"))
+        self.catDescription =\
+            CatalogDescription(os.path.join(catalogDescriptionPath,
+                                            "config.dat"))
         self.metadata = Metadata(os.path.join(catalogDescriptionPath,
-                                              "/config.dat"))
+                                              "config.dat"))
         self.filetypes = filetypes
         self.objtype = objtype
         self.chunksize=chunksize
