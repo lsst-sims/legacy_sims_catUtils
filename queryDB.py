@@ -20,28 +20,33 @@ from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.expression import between
 
 
+class ChunkIterator(object):
+    """Iterator for queryDB chunks"""
+    def __init__(self, qdb):
+        self.qdb = qdb
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        chunk = self.qdb.getNextChunk()
+        if chunk is None:
+            raise StopIteration
+        return chunk
+
+
 class queryDB(object):
     def __init__(self, objtype = 'STARS', filetypes=('TRIM',), chunksize=100000,
                  makeCat=True, dithered=False):
-        if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
-            catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
-        else:
-            raise Exception("Environment variable CATALOG_DESCRIPTION_PATH "
-                            "not set to location of the catalog description "
-                            "files")
-        catalogDescriptionPath = self.getEnvironPath("CATALOG_DESCRIPTION_PATH")
-        dbMapConfigFile = os.path.join(catalogDescriptionPath,
-                                       "requiredFields.dat")
-        objConfigFile = os.path.join(catalogDescriptionPath,
-                                     "objectMap.dat")
-        objEnumConfigFile = os.path.join(catalogDescriptionPath,
-                                         "objectEnum.dat")
-        metaConfigFile = os.path.join(catalogDescriptionPath,
-                                      "requiredMetadata.dat")
-        self.catDescription =\
-            CatalogDescription(os.path.join(catalogDescriptionPath,
-                                            "config.dat"))
-        self.metadata = Metadata(os.path.join(catalogDescriptionPath,
+        catalog_path = self.getEnvironPath("CATALOG_DESCRIPTION_PATH")
+
+        dbMapConfigFile = os.path.join(catalog_path, "requiredFields.dat")
+        objConfigFile = os.path.join(catalog_path, "objectMap.dat")
+        objEnumConfigFile = os.path.join(catalog_path, "objectEnum.dat")
+        metaConfigFile = os.path.join(catalog_path, "requiredMetadata.dat")
+        self.catDescription = CatalogDescription(os.path.join(catalog_path,
+                                                              "config.dat"))
+        self.metadata = Metadata(os.path.join(catalog_path,
                                               "config.dat"))
         self.filetypes = filetypes
         self.objtype = objtype
@@ -67,7 +72,9 @@ class queryDB(object):
         self.dithered = dithered
         
     def closeSession(self):
+        # JTV - what is `session`?  This is not defined anywhere.
         session.close_all()
+
 
     def getNextChunk(self):
         result = self.queries.fetchmany(self.chunksize)
@@ -245,7 +252,6 @@ class queryDB(object):
                                                     self.radiusdeg,
                                                     colstr,
                                                     constraint=const)
-            return self.getNextChunk()
 
         elif objtype == 'SSM':
             #Need to do query and then do the ephemeris calculation
@@ -284,8 +290,6 @@ class queryDB(object):
             else:
                 raise Exception("There are no indexed ephemerides "
                                 "for this observation time")
-            
-            return self.getNextChunk()
 
         else:
             # Deal with all other types of objects
@@ -298,7 +302,8 @@ class queryDB(object):
                 self.ptype = om[omkey]['ptype']
                 break
             self.queries = self.getUnionQuery()
-            return self.getNextChunk()
+            
+        return ChunkIterator(self)
 
     def makeCatalogFromQuery(self, result, dithered=False):
         nic = InstanceCatalog(cd=self.catDescription,
@@ -352,9 +357,9 @@ class queryDB(object):
         if nic.neighborhoodType == "EXTRAGALACTIC":
             nic.dataArray['raJ2000'] *= math.pi/180.
             nic.dataArray['decJ2000'] *= math.pi/180.
-        if nic == None:
+        if nic is None:
             raise RuntimeError, '*** nic is None'
-        if nic.metadata == None:
+        if nic.metadata is None:
             raise RuntimeError, '*** nic.metadata is None'
         if len(nic.dataArray) < 0:
             raise RuntimeError, '*** nic.dataArray has len < 0'
@@ -401,5 +406,5 @@ class queryDB(object):
         if os.environ.has_key(var):
             return os.environ[var]
         else:
-            raise Exception("Environment variable %s not set."%(var))
+            raise Exception("Environment variable %s not set." % (var))
 
