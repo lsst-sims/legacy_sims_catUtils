@@ -22,7 +22,7 @@ from sqlalchemy.sql.expression import between
 
 class queryDB(object):
     def __init__(self, objtype = 'STARS', filetypes=('TRIM',), chunksize=100000,
-                 makeCat=True, dithered=False):
+                 makeCat=True, dithered=False, opsimdb='MSSQL'):
         if os.environ.has_key("CATALOG_DESCRIPTION_PATH"):
             catalogDescriptionPath = os.environ["CATALOG_DESCRIPTION_PATH"]
         else:
@@ -65,9 +65,11 @@ class queryDB(object):
         self.curtile = None
         self.makeCat = makeCat
         self.dithered = dithered
+        self.opsimsession = sessions[opsimdb]
         
     def closeSession(self):
-        session.close_all()
+        for k in sessions.keys():
+            sessions[k].close_all()
 
     def getNextChunk(self):
         result = self.queries.fetchmany(self.chunksize)
@@ -95,8 +97,10 @@ class queryDB(object):
                     cols[k] = expression.literal_column(map[k][1]).label(k)
                 else:
                     cols[k] = expression.literal_column(map[k][1]).label(k) 
-        query = session.query(eval("%s.%s.label(\"%s\")"
-                                   % (omap['table'],self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1],omap['idkey'])))
+        query =\
+               self.opsimsession.query(eval("%s.%s.label(\"%s\")"
+               % (omap['table'],self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1],omap['idkey'])))
+
         query = query.filter("%s=%s"%(self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1], id))
         for k in cols.keys():
             query = query.add_column(cols[k])
@@ -135,10 +139,25 @@ class queryDB(object):
         else:
             return query
 
+    def addSimpleSpatial(self, query, map, ta):
+      cols = self.getUniqueColNames(map)
+      onclause = self.getRaDecBoundsCirc(self.centradeg, self.centdecdeg, 
+              self.radiusdeg, raName=cols['raJ2000'], decName=cols['decJ2000'])
+      query = query.filter(onclause)
+      return query
+
+
     def getUnionQuery(self, filter=None, type="circle"):  
         queries = []
+        #This is a hack to make the MSSQL database the default one.
+        sessionkey = 'MSSQL'
         for omkey in self.om[self.objtype].keys():
             if omkey == "formatas":
+                continue
+            if omkey == "simpleSpatial":
+                continue
+            if omkey == "dbname":
+                sessionkey = self.om[self.objtype][omkey]
                 continue
             if omkey == "component":
                 self.component = self.om[self.objtype][omkey]
@@ -150,10 +169,13 @@ class queryDB(object):
                 idcolstr = idcolstr.lstrip("%%")
                 idcolstr = eval(idcolstr)
             ta = eval("aliased(%s, name='star_alias')"%map['table'])
-            query = session.query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
+            query = sessions[sessionkey].query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
             query = query.add_column(expression.literal_column("%i"%(appint)).label("appendint"))
-            query = self.addSpatial(query, map, "circle", ta)
             query = self.addUniqueCols(map, query)
+            if type is None:
+                query = self.addSimpleSpatial(query, map, ta)
+            else:
+                query = self.addSpatial(query, map, "circle", ta)
             if filter is not None:
                 query = query.filter(filter)
             if not len(map['constraint'].strip()) == 0:
@@ -169,7 +191,7 @@ class queryDB(object):
         for i in range(len(queries)-1):
             query=query.union_all(queries[i+1])
         #End workaround
-        query = session.execute(query)
+        query = sessions[sessionkey].execute(query)
         return query
 
     def addUniqueCols(self, map, query):
@@ -220,6 +242,11 @@ class queryDB(object):
             for omkey in om.keys():
                 if omkey == "formatas":
                     continue
+                if omkey == "simpleSpatial":
+                    print "Warning cannot do simple spatial quereis with tiled galaxies"
+                    continue
+                if omkey == "dbname":
+                    continue
                 if omkey == "component":
                     self.component = om[omkey]
                     continue
@@ -257,6 +284,11 @@ class queryDB(object):
             for omkey in om.keys():
                 if omkey == "formatas":
                     continue
+                if omkey == "simpleSpatial":
+                    print "Warning cannot do simple spatial quereis with SSM objects"
+                    continue
+                if omkey == "dbname":
+                    continue
                 if omkey == "component":
                     self.component = om[omkey]
                     continue
@@ -289,15 +321,25 @@ class queryDB(object):
 
         else:
             # Deal with all other types of objects
+            # By default simple spacial is False
+            ss = False
             for omkey in om.keys():
                 if omkey == "formatas":
+                    continue
+                if omkey == "simpleSpatial":
+                    ss = om[omkey]
+                    continue
+                if omkey == "dbname":
                     continue
                 if omkey == "component":
                     self.component = om[omkey]
                     continue
                 self.ptype = om[omkey]['ptype']
                 break
-            self.queries = self.getUnionQuery()
+            if ss:
+                self.queries = self.getUnionQuery(type=None)
+            else:
+                self.queries = self.getUnionQuery(type='circle')
             return self.getNextChunk()
 
     def makeCatalogFromQuery(self, result, dithered=False):
@@ -367,7 +409,7 @@ class queryDB(object):
     def rad2deg(self, ang):
         return ang*180./math.pi
 
-    def getRaDecBounds(self, bbox):
+    def getRaDecBounds(self, bbox, raName, decName):
         decmin = bbox.getDecMin()
         decmax = bbox.getDecMax()
         ramin = bbox.getRaMin()
@@ -375,27 +417,27 @@ class queryDB(object):
 
         bound = ""
         if ramin < 0 and ramax > 360:
-            bound = "decl between %f and %f"%(decmin, decmax)
+            bound = "%s between %f and %f"%(decName, decmin, decmax)
         elif ramax > 360:
-            bound = ("(ra between %f and 360. or ra between 0. and %f) "
-                     "and decl between %f and %f" 
-                     % (ramin,ramax-360.,decmin,decmax))
+            bound = ("%s not between %f and %f "
+                     "and %s between %f and %f" 
+                     % (raName, ramin, ramax%360., decName, decmin, decmax))
         elif ramin < 0:
-            bound = ("(ra between %f and 360. or ra between 0. and %f) "
-                     "and decl between %f and %f"
-                     % (ramin+360.,ramax,decmin,decmax))
+            bound = ("%s not between %f and %f "
+                     "and %s between %f and %f"
+                     % (raName, ramin%360., ramax, decName, decmin, decmax))
         else:
-            bound = ("ra between %f and %f and decl between %f and %f"
-                     % (ramin, ramax, decmin, decmax))
+            bound = ("%s between %f and %f and %s between %f and %f"
+                     % (raName, ramin, ramax, decName, decmin, decmax))
         return bound
 
-    def getRaDecBoundsCirc(self, ra, dec, radius):
+    def getRaDecBoundsCirc(self, ra, dec, radius, raName="ra", decName="decl"):
         ramax = ra+radius/math.cos(self.deg2rad(dec))
         ramin = ra-radius/math.cos(self.deg2rad(dec))
         decmax = dec+radius
         decmin = dec-radius
         bbox = Bbox(ramin,ramax,decmin,decmax)
-        return self.getRaDecBounds(bbox)
+        return self.getRaDecBounds(bbox, raName, decName)
 
     def getEnvironPath(self, var):
         if os.environ.has_key(var):
