@@ -11,7 +11,8 @@ from sqlalchemy import Table
 from sqlalchemy.ext.sqlsoup import SqlSoup
 from sqlalchemy import exc as sa_exc
 
-#warnings.simplefilter("ignore", category=sa_exc.SAWarning)
+sessions = {}
+warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 a_engine =create_engine("mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST",
         echo=False)
 a_session = scoped_session(sessionmaker(autoflush=True, 
@@ -46,7 +47,7 @@ EBSTARS = db.map(eb, primary_key=[eb.c.simobjid])
 CEPHEIDSTARS = db.map(cepheid, primary_key=[cepheid.c.simobjid])
 DWARFGALAXYSTARS = db.map(dwarfgal)
 
-session = a_session
+sessions['MSSQL'] = a_session
 def initGalaxy(ra, dec, radiusdeg, columns, constraint=None):
     if constraint is not None:
         query = a_session.execute("EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint]\
