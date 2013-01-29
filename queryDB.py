@@ -136,19 +136,18 @@ class queryDB(object):
                     print "Replacing expression %s with %s for key %s"%(cols[k], map[k][1], k)
                     cols[k] = expression.literal_column(map[k][1]).label(k)
                 else:
-                    cols[k] = expression.literal_column(map[k][1]).label(k) 
-        query =\
-               self.opsimsession.query(eval("self.dbms.%s.%s.label(\"%s\")"
-               % (omap['table'],self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1],omap['idkey'])))
+                    cols[k] = expression.literal_column(map[k][1]).label(k)
 
-        query = query.filter("%s=%s"%(self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1], id))
+        obj = getattr(getattr(self.dbms, omap['table']),
+                      self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1])
+        query = self.opsimsession.query(obj.label(omap['idkey']))
+        query = query.filter("%s = %s"
+                             % (self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1], id))
         for k in cols.keys():
             query = query.add_column(cols[k])
         self.opsimmeta = query.first()
-        self.centradeg =\
-            math.degrees(eval("self.opsimmeta.%s" % (omap['rakey'])))
-        self.centdecdeg =\
-            math.degrees(eval("self.opsimmeta.%s" % (omap['deckey'])))
+        self.centradeg = math.degrees(getattr(self.opsimmeta, omap['rakey']))
+        self.centdecdeg = math.degrees(getattr(self.opsimmeta, omap['deckey']))
         if self.centdecdeg < -90.:
             self.centdecdeg = -self.centdecdeg - 180.
             self.centradeg += 180.
@@ -157,8 +156,8 @@ class queryDB(object):
             self.centdecdeg = -self.centdecdeg + 180.
             self.centradeg += 180.
             self.centradeg = self.centradeg%360.
-        self.expmjd = eval("self.opsimmeta.%s"%(omap['expmjdkey']))
-        self.filter = eval("self.opsimmeta.%s"%(omap['filterkey']))
+        self.expmjd = getattr(self.opsimmeta, omap['expmjdkey'])
+        self.filter = getattr(self.opsimmeta, omap['filterkey'])
 
     def addSpatial(self, query, map, type, ta):
         if type == "circle":
@@ -209,9 +208,10 @@ class queryDB(object):
             if idcolstr.startswith("%%"):
                 idcolstr = idcolstr.lstrip("%%")
                 idcolstr = eval(idcolstr)
-            ta = eval("aliased(self.dbms.%s, name='star_alias')" % map['table'])
+            ta = aliased(getattr(self.dbms, map['table']),
+                         name='star_alias')
             query = self.dbms.sessions[sessionkey].query(
-                eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
+                getattr(ta, idcolstr).label(map['idkey']))
             query = query.add_column(
                 expression.literal_column("%i"%(appint)).label("appendint"))
             query = self.addUniqueCols(map, query)
@@ -413,7 +413,9 @@ class queryDB(object):
         nic.catalogType = self.filetypes
         if self.opsimmeta is not None:
             for k in self.opsimmeta.keys():
-                nic.metadata.addMetadata(k,eval("self.opsimmeta.%s"%(k)),"")
+                nic.metadata.addMetadata(k,
+                                         getattr(self.opsimmeta, str(k)),
+                                         "")
         else:
             nic.metadata.addMetadata('filter', self.filter,
                                      "filter of observation")
@@ -426,9 +428,9 @@ class queryDB(object):
 
         if dithered:
             omap = self.om['METADATA'][self.opsim]        
-            mra = eval("self.opsimmeta.%s"%(omap['moonrakey']))
-            mdec = eval("self.opsimmeta.%s"%(omap['moondeckey']))
-            rottel = eval("self.opsimmeta.%s"%(omap['rottelkey']))
+            mra = getattr(self.opsimmeta, omap['moonrakey'])
+            mdec = getattr(self.opsimmeta, omap['moondeckey'])
+            rottel = getattr(self.opsimmeta, omap['rottelkey'])
             nalt, naz, nrotsky, ndist2moon = nic.recalculatePointingInfo(\
                 math.radians(self.centradeg), math.radians(self.centdecdeg),
                 mra, mdec, self.expmjd, rottel)
