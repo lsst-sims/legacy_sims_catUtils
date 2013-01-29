@@ -141,9 +141,10 @@ class queryDB(object):
 
     def addSimpleSpatial(self, query, map, ta):
       cols = self.getUniqueColNames(map)
-      onclause = self.getRaDecBoundsCirc(self.centradeg, self.centdecdeg, 
-              self.radiusdeg, raName=cols['raJ2000'], decName=cols['decJ2000'])
+      onclause = self.getRaDecBoundsCirc(math.radians(self.centradeg), math.radians(self.centdecdeg), 
+              math.radians(self.radiusdeg), raName=cols['raJ2000'], decName=cols['decJ2000'])
       query = query.filter(onclause)
+      print query
       return query
 
 
@@ -403,12 +404,6 @@ class queryDB(object):
 
         return nic
 
-    def deg2rad(self, ang):
-        return ang*math.pi/180.
-
-    def rad2deg(self, ang):
-        return ang*180./math.pi
-
     def getRaDecBounds(self, bbox, raName, decName):
         decmin = bbox.getDecMin()
         decmax = bbox.getDecMax()
@@ -416,24 +411,24 @@ class queryDB(object):
         ramax = bbox.getRaMax()
 
         bound = ""
-        if ramin < 0 and ramax > 360:
+        if ramin < 0 and ramax > 2.*math.pi:
             bound = "%s between %f and %f"%(decName, decmin, decmax)
-        elif ramax > 360:
+        elif ramax > 2.*math.pi:
             bound = ("%s not between %f and %f "
                      "and %s between %f and %f" 
-                     % (raName, ramin, ramax%360., decName, decmin, decmax))
+                     % (raName, ramin, ramax%(2.*math.pi), decName, decmin, decmax))
         elif ramin < 0:
             bound = ("%s not between %f and %f "
                      "and %s between %f and %f"
-                     % (raName, ramin%360., ramax, decName, decmin, decmax))
+                     % (raName, ramin%(2.*math.pi), ramax, decName, decmin, decmax))
         else:
             bound = ("%s between %f and %f and %s between %f and %f"
                      % (raName, ramin, ramax, decName, decmin, decmax))
         return bound
 
     def getRaDecBoundsCirc(self, ra, dec, radius, raName="ra", decName="decl"):
-        ramax = ra+radius/math.cos(self.deg2rad(dec))
-        ramin = ra-radius/math.cos(self.deg2rad(dec))
+        ramax = ra+radius/math.cos(dec)
+        ramin = ra-radius/math.cos(dec)
         decmax = dec+radius
         decmin = dec-radius
         bbox = Bbox(ramin,ramax,decmin,decmax)
