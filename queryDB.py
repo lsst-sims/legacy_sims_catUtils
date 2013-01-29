@@ -8,7 +8,7 @@
 # - add SQL where statements? <- primary function; all others use this.
 # - tricky: star vs gal vs ..., what parameters to grab.
 
-from .dbMsModel import *
+from .dbMsModel import DBMSModel
 import time
 from copy import deepcopy
 import re
@@ -21,12 +21,13 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import CatalogDescription
 from lsst.sims.catalogs.measures.instance import Metadata
 from lsst.sims.catalogs.measures.astrometry import Bbox
-from sqlalchemy import select 
+import sqlalchemy
 from sqlalchemy.orm import join
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.expression import between
+from sqlalchemy.sql import expression
 
 
 class ChunkIterator(object):
@@ -53,6 +54,9 @@ class queryDB(object):
             raise Exception("Environment variable CATALOG_DESCRIPTION_PATH "
                             "not set to location of the catalog description "
                             "files")
+
+        self.dbms = DBMSModel()
+
         catalogDescriptionPath = self.getEnvironPath("CATALOG_DESCRIPTION_PATH")
         dbMapConfigFile = os.path.join(catalogDescriptionPath,
                                        "requiredFields.dat")
@@ -89,11 +93,11 @@ class queryDB(object):
         self.curtile = None
         self.makeCat = makeCat
         self.dithered = dithered
-        self.opsimsession = sessions[opsimdb]
+        self.opsimsession = self.dbms.sessions[opsimdb]
         
     def closeSession(self):
-        for k in sessions.keys():
-            sessions[k].close_all()
+        for k in self.dbms.sessions.keys():
+            self.dbms.sessions[k].close_all()
 
     def getNextChunk(self):
         result = self.queries.fetchmany(self.chunksize)
@@ -134,7 +138,7 @@ class queryDB(object):
                 else:
                     cols[k] = expression.literal_column(map[k][1]).label(k) 
         query =\
-               self.opsimsession.query(eval("%s.%s.label(\"%s\")"
+               self.opsimsession.query(eval("self.dbms.%s.%s.label(\"%s\")"
                % (omap['table'],self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1],omap['idkey'])))
 
         query = query.filter("%s=%s"%(self.mm[self.filetypes[0]][self.opsim][omap['idkey']][1], id))
@@ -169,7 +173,7 @@ class queryDB(object):
             aperture = ("[LSST].sph.fSimplifyString('REGION CIRCLE j2000 %f %f %f')" %
                         (self.centradeg, 
                          self.centdecdeg, self.radiusdeg*60.))
-            filterstr = "%s = 1"%(str(func.LSST.sph.fRegioncontainsXYZ(text(aperture), ta.cx, ta.cy, ta.cz)))
+            filterstr = "%s = 1"%(str(sqlalchemy.func.LSST.sph.fRegioncontainsXYZ(text(aperture), ta.cx, ta.cy, ta.cz)))
             query = query.filter(filterstr)
             return query
         else:
@@ -205,9 +209,11 @@ class queryDB(object):
             if idcolstr.startswith("%%"):
                 idcolstr = idcolstr.lstrip("%%")
                 idcolstr = eval(idcolstr)
-            ta = eval("aliased(%s, name='star_alias')"%map['table'])
-            query = sessions[sessionkey].query(eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
-            query = query.add_column(expression.literal_column("%i"%(appint)).label("appendint"))
+            ta = eval("aliased(self.dbms.%s, name='star_alias')" % map['table'])
+            query = self.dbms.sessions[sessionkey].query(
+                eval("ta.%s.label(\"%s\")"%(idcolstr, map['idkey'])))
+            query = query.add_column(
+                expression.literal_column("%i"%(appint)).label("appendint"))
             query = self.addUniqueCols(map, query)
             if type is None:
                 query = self.addSimpleSpatial(query, map, ta)
@@ -228,7 +234,7 @@ class queryDB(object):
         for i in range(len(queries)-1):
             query=query.union_all(queries[i+1])
         #End workaround
-        query = sessions[sessionkey].execute(query)
+        query = self.dbms.sessions[sessionkey].execute(query)
         return query
 
     def addUniqueCols(self, map, query):
