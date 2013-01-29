@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+
+
+# TODO: query operations:
+# - get by id
+# - get by circ
+# - get by bounds
+# - add SQL where statements? <- primary function; all others use this.
+# - tricky: star vs gal vs ..., what parameters to grab.
+
 from .dbMsModel import *
 import time
 from copy import deepcopy
@@ -75,9 +84,20 @@ class queryDB(object):
         # JTV - what is `session`?  This is not defined anywhere.
         session.close_all()
 
-
     def getNextChunk(self):
         result = self.queries.fetchmany(self.chunksize)
+        if len(result) == 0:
+            self.closeSession()
+            return None
+        else:
+            if self.makeCat:
+                cat = self.makeCatalogFromQuery(result, self.dithered)
+            else:
+                cat = True
+            return cat
+
+    def getAllRows(self):
+        result = self.queries.fetchall()
         if len(result) == 0:
             self.closeSession()
             return None
@@ -208,8 +228,31 @@ class queryDB(object):
                                              radiusdeg, expmjd = self.expmjd,
                                              filter = self.filter)
 
+    def iterInstanceCatalogById(self, id, opsim="OPSIM361", radiusdeg=2.1):
+        self.getOpsimMetadataById(id, opsim)
+        return self.iterInstanceCatalogByCirc(self.centradeg, self.centdecdeg,
+                                              radiusdeg, expmjd = self.expmjd,
+                                              filter = self.filter)
+
+    def iterInstanceCatalogByCirc(self, centradeg, centdecdeg, radiusdeg,
+                                  expmjd = 0., filter = 'r'):
+        self._setupInstanceCatalogByCirc(centradeg, centdecdeg, radiusdeg,
+                                         expmjd=expmjd, filter=filter)
+        return ChunkIterator(self)
+
     def getInstanceCatalogByCirc(self, centradeg, centdecdeg, radiusdeg,
-                                 expmjd = 0., filter = 'r'): 
+                                 expmjd = 0., filter = 'r'):
+        self._setupInstanceCatalogByCirc(centradeg, centdecdeg, radiusdeg,
+                                         expmjd=expmjd, filter=filter)
+        return self.getAllRows()
+
+    def _setupInstanceCatalogByCirc(self, centradeg, centdecdeg, radiusdeg,
+                                    expmjd = 0., filter = 'r'):
+        """set up instance catalog query by circular region.
+
+        This internal function is called by
+        getInstanceCatalogByCirc and iterInstanceCatalogByCirc
+        """
         self.centradeg = centradeg
         self.centdecdeg = centdecdeg
         self.radiusdeg = radiusdeg
@@ -302,8 +345,6 @@ class queryDB(object):
                 self.ptype = om[omkey]['ptype']
                 break
             self.queries = self.getUnionQuery()
-            
-        return ChunkIterator(self)
 
     def makeCatalogFromQuery(self, result, dithered=False):
         nic = InstanceCatalog(cd=self.catDescription,
