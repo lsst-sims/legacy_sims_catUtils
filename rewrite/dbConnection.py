@@ -1,25 +1,71 @@
 import warnings
+import math
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
-from sqlalchemy import create_engine
-from sqlalchemy import ThreadLocalMetaData
-import sqlalchemy.databases as sd 
-from sqlalchemy import MetaData
-from sqlalchemy import Table
-from sqlalchemy.ext.sqlsoup import SqlSoup
-from sqlalchemy import exc as sa_exc
+from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
+                        Table, Column, BigInteger)
 
 
 DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
 
-requirementsDict = dict(
-    msstars={'id':'simobjid',
-             'umag':'umag'}
-    )
+# XXX: create an OpSim metadata interface class?
 
 
-# OpSim metadata interface class?
+#------------------------------------------------------------
+# Iterator for database chunks
+class ChunkIterator(object):
+    """Iterator for query chunks"""
+    def __init__(self, exec_query, chunksize):
+        self.exec_query = exec_query
+        self.chunksize = chunksize
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        chunk = self.exec_query.fetchmany(self.chunksize)
+        if len(chunk) == 0:
+            raise StopIteration
+        return chunk
+
+#------------------------------------------------------------
+# Query utilities
+def box_bound(RAmin, RAmax, DECmin, DECmax,
+              RAname='ra', DECname='decl'):
+    (RAmin, RAmax, DECmin, DECmax) = map(math.radians,
+                                         (RAmin, RAmax, DECmin, DECmax))
+
+    if RAmin < 0 and RAmax > 2. * math.pi:
+        bound = "%s between %f and %f" % (DECname, DECmin, DECmax)
+
+    elif RAmin < 0 and RAmax <= 2 * math.pi:
+        # XXX is this right?  It seems strange.
+        bound = ("%s not between %f and %f and %s between %f and %f"
+                 % (RAname, RAmin % (2 * math.pi), RAmax,
+                    DECname, DECmin, DECmax))
+
+    elif RAmin >= 0 and RAmax > 2. * math.pi:
+        bound = ("%s not between %f and %f and %s between %f and %f" 
+                 % (RAname, RAmin, RAmax % (2 * math.pi),
+                    DECname, DECmin, DECmax))
+
+    else:
+        bound = ("%s between %f and %f and %s between %f and %f"
+                 % (RAname, RAmin, RAmax, DECname, DECmin, DECmax))
+
+    return bound
+
+
+def circle_bound(RA, DEC, radius,
+                 RAname='ra', DECname='decl'):
+    RAmax = RA + radius / math.cos(math.radians(DEC))
+    RAmin = RA - radius / math.cos(math.radians(DEC))
+    DECmax = DEC + radius
+    DECmin = DEC - radius
+
+    return box_bound(RAmin, RAmax, DECmin, DECmax, RAname, DECname)
+
 
 class DBObjectMeta(type):
     """Meta class for registering new objects.
@@ -44,26 +90,31 @@ class DBObjectMeta(type):
         # if not, then this is the base class: add the registry
         if not hasattr(cls, 'registry'):
             cls.registry = {}
+        else:
+            # add this class to the registry
+            if cls.objid in cls.registry:
+                warnings.warn('duplicate object id %s specified' % cls.objid)
+            cls.registry[cls.objid] = cls
 
-        # add this class to the registry
-        if cls.objid in cls.registry:
-            warnings.warn('duplicate object id %s specified' % cls.objid)
-        cls.registry[cls.objid] = cls
+            if not hasattr(cls, 'columns'):
+                raise ValueError()
 
-        # build requirements dict from columns and column_map
-        cls.requirements = dict([(key, cls.column_map.get(key, key))
-                                 for key in cls.columns])
+            # build requirements dict from columns and column_map
+            cls.requirements = dict([(key, cls.column_map.get(key, key))
+                                     for key in cls.columns])
             
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
 
 class DBObject(object):
+    """Database Object base class
+
+    """
     __metaclass__ = DBObjectMeta
     objid = None
     tableid = None
     columns = []
     column_map = {}
-    requires_tiling = False
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -86,66 +137,109 @@ class DBObject(object):
             self.address = DEFAULT_ADDRESS
         else:
             self.address = address
+
         self._connect_to_engine()
         self._get_table()
 
     def _get_table(self):
-        table = Table(self.tableid, self.metadata, autoload=True)
-        self.table = self.db.map(table,
-                                 primary_key=[table.c.simobjid])
+        # XXX: We've hard-coded simobjid here: this might not be correct
+        #      in general.  We should find a better way to do this.
+        self.table = Table(self.tableid, self.metadata,
+                           Column('simobjid', BigInteger, primary_key=True),
+                           autoload=True)
 
     def _connect_to_engine(self):
+        """create and connect to a database engine"""
         self.engine = create_engine(self.address, echo=False)
         self.session = scoped_session(sessionmaker(autoflush=True, 
                                                    bind=self.engine))
         self.metadata = MetaData()
         self.metadata.bind = self.engine
-        self.db = SqlSoup(self.metadata)
 
-    def _get_column_query(self, colnames):
+    def _get_column_query(self, colnames=None):
         """Given a list of valid column names, return the query object"""
+        if colnames is None:
+            colnames = self.columns
+
         try:
             vals = [self.requirements[col] for col in colnames]
         except KeyError:
             raise ValueError('entries in colnames must be in self.columns')
 
-        # Get first query
+        # Get the first query
         # XXX: this will fail if the first of the queries is a compound
         #      expression like 'ra*PI()/180.'  We should do this a better
-        #      way, perhaps using the primary column?
-        query = self.session.query(getattr(self.table,
-                                           vals[0]).label(colnames[0]))
+        #      way, perhaps using the primary column (related to problem
+        #      in _get_table(), above)
+        query = self.session.query(self.table.c[vals[0]].label(colnames[0]))
+
         for col, val in zip(colnames[1:], vals[1:]):
             query = query.add_column(expression.literal_column(val).label(col))
 
         return query
 
-    def add_spatial_query(self):
-        # XXX: add spatial query
-        pass
+    def query_columns(self, colnames=None, chunksize=None,
+                      circ_bounds=None, box_bounds=None):
+        """Execute a query
 
-    def compute_tiling(self):
-        # XXX: compute tiling
-        pass
+        Parameters
+        ----------
+        colnames : list or None
+            a list of valid column names, corresponding to entries in the
+            `columns` class attribute.  If not specified, all columns are
+            queried.
+        chunksize : int (optional)
+            if specified, then return an iterator object to query the database,
+            each time returning the next `chunksize` elements.  If not
+            specified, all matching results will be returned.
+        circ_bounds : tuple (optional)
+            if specified, then limit the query to the specified circular
+            spatial range. circ_bounds = (RAcenter, DECcenter, radius),
+            measured in degrees.
+        box_bounds :tuple (optional)
+            if specified, then limit the query to the specified quadrilateral
+            spatial range.  box_bounds = (RAmin, RAmax, DECmin, DECmax),
+            measured in degrees
 
-    def query_columns(self, colnames):
+        Returns
+        -------
+        result : list or iterator
+            If chunksize is not specified, then result is a list of all
+            items which match the specified query.  If chunksize is specified,
+            then result is an iterator over lists of the given size.
+        """
         query = self._get_column_query(colnames)
-        # XXX: execute query here
-        return query
+
+        if circ_bounds is not None:
+            RA, DEC, radius = circ_bounds
+            query = query.filter(circle_bound(RA, DEC, radius))
+
+        if box_bounds is not None:
+            RAmin, RAmax, DECmin, DECmax = box_bounds
+            query = query.filter(box_bound(RAmin, RAmax, DECmin, DECmax))
+
+        exec_query = self.session.execute(query)
+
+        if chunksize is None:
+            return exec_query.fetchall()
+        else:
+            return ChunkIterator(exec_query, chunksize)
 
 
 class StarObj(DBObject):
+    # XXX: this is incomplete.  We need to use all the column values from
+    #      the requiredFields file.
     objid = 'msstars'
     tableid = 'starsMSRGB_forceseek'
     columns = ['id', 'umag', 'gmag', 'rmag', 'imag', 'zmag',
-               'raJ2000', 'decJ2000']
+               'raJ2000', 'decJ2000', 'sedFilename']
     column_map = {'id':'simobjid',
                   'raJ2000':'ra*PI()/180.',
-                  'decJ2000':'decl*PI()/180.'}
-    requires_tiling = False
+                  'decJ2000':'decl*PI()/180.',
+                  'sedFilename':'sedfilename'}
     
 
 if __name__ == '__main__':
     #star = StarObj()
     star = DBObject.from_objid('msstars')
-    print star.query_columns(['id', 'gmag', 'rmag', 'raJ2000', 'decJ2000'])
+    print star.query_columns(circ_bounds=(2.0, 5.0, 1.0))
