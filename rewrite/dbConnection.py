@@ -35,22 +35,21 @@ class ObservationMetaData(object):
     """
     @classmethod
     def from_obshistid(cls, obshistid):
-        obj = cls()
-        return obj
+        raise NotImplementedError()
     
     def __init__(self, circ_bounds=None, box_bounds=None, mjd=None):
         self.circ_bounds = circ_bounds
         self.box_bounds = box_bounds
         self.mjd = mjd
 
-    def filter(self, query, RAname='ra', DECname='dec', MJDname='mjd'):
+    def filter(self, query, RAname='ra', DECname='decl', MJDname='mjd'):
         """Filter the query by the associated metadata"""
-        on_clause = self.to_SQL()
+        on_clause = self.to_SQL(RAname, DECname, MJDname)
         if on_clause:
             query = query.filter(on_clause)
         return query
 
-    def to_SQL(self, RAname='ra', DECname='dec', MJDname='mjd'):
+    def to_SQL(self, RAname='ra', DECname='decl', MJDname='mjd'):
         constraint = ""
         if self.box_bounds is not None:
             bb = self.box_bounds
@@ -239,18 +238,21 @@ class DBObject(object):
             raise ValueError('entries in colnames must be in self.columns')
 
         # Get the first query
-        # XXX: this will fail if the first of the queries is a compound
-        #      expression like 'ra*PI()/180.'  We should do this a better
-        #      way, perhaps using the primary column (related to problem
-        #      in _get_table(), above)
-        query = self.session.query(self.table.c[vals[0]].label(colnames[0]))
+        if self.idColName in vals:
+            idLabel = colnames[vals.index(self.idColName)]
+        else:
+            idLabel = 'id'
+
+        query = self.session.query(self.table.c[self.idColName].label(idLabel))
 
         for col, val in zip(colnames[1:], vals[1:]):
+            if val == self.idColName:
+                pass
             query = query.add_column(expression.literal_column(val).label(col))
 
         return query
 
-    def _postprocess_query(self, results):
+    def _postprocess_results(self, results):
         """Post-process the query results.
         This can be overridden in derived classes: by default it returns
         the results un-modified.

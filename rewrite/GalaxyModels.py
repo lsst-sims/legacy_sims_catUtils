@@ -165,7 +165,6 @@ class GalaxyAgnObj(GalaxyBulgeObj):
             'lsst_i':'i_ab',
             'lsst_z':'z_ab',
             'lsst_y':'y_ab'}
-    columns = column_map.keys()
 
 if __name__ == '__main__':
     #star = StarObj()
