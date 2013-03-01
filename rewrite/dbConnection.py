@@ -1,5 +1,6 @@
 import warnings
 import math
+
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
 from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
@@ -9,7 +10,105 @@ from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
 DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
 
-# XXX: create an OpSim metadata interface class?
+class ObservationMetaData(object):
+    """Observation Metadata
+    
+    This class contains any metadata for a query which is associated with
+    a particular telescope pointing, including bounds in RA and DEC, and
+    the time of the observation.
+
+    Parameters
+    ----------
+    circ_bounds : dict (optional)
+        a dictionary with the keys 'ra', 'dec', and 'radius' measured, in
+        degrees
+    box_bounds : dict (optional)
+        a dictionary with the keys 'ra_min', 'ra_max', 'dec_min', 'dec_max',
+        measured in degrees
+    MJD : list (optional)
+        a list of MJD values to query
+
+    Examples
+    --------
+    >>> data = ObservationMetaData.from_obshistid(88544919)
+    >>> print data.MJD
+    """
+    @classmethod
+    def from_obshistid(cls, obshistid):
+        obj = cls()
+        return obj
+    
+    def __init__(self, circ_bounds=None, box_bounds=None, mjd=None):
+        self.circ_bounds = circ_bounds
+        self.box_bounds = box_bounds
+        self.mjd = mjd
+
+    def filter(self, query, RAname='ra', DECname='dec', MJDname='mjd'):
+        """Filter the query by the associated metadata"""
+        on_clause = self.to_SQL()
+        if on_clause:
+            query = query.filter(on_clause)
+        return query
+
+    def to_SQL(self, RAname='ra', DECname='dec', MJDname='mjd'):
+        constraint = ""
+        if self.box_bounds is not None:
+            bb = self.box_bounds
+            constraint += self.box_bound_constraint(bb['ra_min'],
+                                                    bb['ra_max'],
+                                                    bb['dec_min'],
+                                                    bb['dec_max'],
+                                                    RAname, DECname)
+        if self.circ_bounds is not None:
+            cb = self.circ_bounds
+            constraint += self.circle_bound_constraint(cb['ra'], cb['dec'],
+                                                       cb['radius'],
+                                                       RAname, DECname)
+        if self.mjd is not None:
+            constraint += self.mjd_constraint(self.mjd, MJDname)
+            
+        return constraint
+
+    @staticmethod
+    def mdj_constraint(MJD, MJDname):
+        raise NotImplementedError("haven't implemented MJD bound yet")
+
+    @staticmethod
+    def box_bound_constraint(RAmin, RAmax, DECmin, DECmax,
+                             RAname='ra', DECname='decl'):
+        (RAmin, RAmax, DECmin, DECmax) = map(math.radians,
+                                             (RAmin, RAmax, DECmin, DECmax))
+
+        if RAmin < 0 and RAmax > 2. * math.pi:
+            bound = "%s between %f and %f" % (DECname, DECmin, DECmax)
+
+        elif RAmin < 0 and RAmax <= 2 * math.pi:
+            # XXX is this right?  It seems strange.
+            bound = ("%s not between %f and %f and %s between %f and %f"
+                     % (RAname, RAmin % (2 * math.pi), RAmax,
+                        DECname, DECmin, DECmax))
+
+        elif RAmin >= 0 and RAmax > 2. * math.pi:
+            bound = ("%s not between %f and %f and %s between %f and %f" 
+                     % (RAname, RAmin, RAmax % (2 * math.pi),
+                        DECname, DECmin, DECmax))
+
+        else:
+            bound = ("%s between %f and %f and %s between %f and %f"
+                     % (RAname, RAmin, RAmax, DECname, DECmin, DECmax))
+
+        return bound
+
+    @staticmethod
+    def circle_bound_constraint(RA, DEC, radius,
+                                RAname='ra', DECname='decl'):
+        RAmax = RA + radius / math.cos(math.radians(DEC))
+        RAmin = RA - radius / math.cos(math.radians(DEC))
+        DECmax = DEC + radius
+        DECmin = DEC - radius
+        return ObservationMetaData.box_bound_constraint(RAmin, RAmax,
+                                                        DECmin, DECmax,
+                                                        RAname, DECname)    
 
 
 #------------------------------------------------------------
@@ -17,7 +116,8 @@ DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:143
 class ChunkIterator(object):
     """Iterator for query chunks"""
     def __init__(self, exec_query, chunksize):
-        self.exec_query = exec_query
+        self.dbobj = dbobj
+        self.exec_query = dbobj.session.execute(query)
         self.chunksize = chunksize
 
     def __iter__(self):
@@ -27,44 +127,7 @@ class ChunkIterator(object):
         chunk = self.exec_query.fetchmany(self.chunksize)
         if len(chunk) == 0:
             raise StopIteration
-        return chunk
-
-#------------------------------------------------------------
-# Query utilities
-def box_bound(RAmin, RAmax, DECmin, DECmax,
-              RAname='ra', DECname='decl'):
-    (RAmin, RAmax, DECmin, DECmax) = map(math.radians,
-                                         (RAmin, RAmax, DECmin, DECmax))
-
-    if RAmin < 0 and RAmax > 2. * math.pi:
-        bound = "%s between %f and %f" % (DECname, DECmin, DECmax)
-
-    elif RAmin < 0 and RAmax <= 2 * math.pi:
-        # XXX is this right?  It seems strange.
-        bound = ("%s not between %f and %f and %s between %f and %f"
-                 % (RAname, RAmin % (2 * math.pi), RAmax,
-                    DECname, DECmin, DECmax))
-
-    elif RAmin >= 0 and RAmax > 2. * math.pi:
-        bound = ("%s not between %f and %f and %s between %f and %f" 
-                 % (RAname, RAmin, RAmax % (2 * math.pi),
-                    DECname, DECmin, DECmax))
-
-    else:
-        bound = ("%s between %f and %f and %s between %f and %f"
-                 % (RAname, RAmin, RAmax, DECname, DECmin, DECmax))
-
-    return bound
-
-
-def circle_bound(RA, DEC, radius,
-                 RAname='ra', DECname='decl'):
-    RAmax = RA + radius / math.cos(math.radians(DEC))
-    RAmin = RA - radius / math.cos(math.radians(DEC))
-    DECmax = DEC + radius
-    DECmin = DEC - radius
-
-    return box_bound(RAmin, RAmax, DECmin, DECmax, RAname, DECname)
+        return self.dbobj._postprocess_results(chunk)
 
 
 class DBObjectMeta(type):
@@ -96,12 +159,13 @@ class DBObjectMeta(type):
                 warnings.warn('duplicate object id %s specified' % cls.objid)
             cls.registry[cls.objid] = cls
 
-            if not hasattr(cls, 'columns'):
-                raise ValueError()
-
-            # build requirements dict from columns and column_map
-            cls.requirements = dict([(key, cls.column_map.get(key, key))
-                                     for key in cls.columns])
+            if not hasattr(cls, 'columns') or cls.columns is None:
+                cls.columns = cls.column_map.keys()
+                cls.requirements = cls.column_map
+            else:
+                # build requirements dict from columns and column_map
+                cls.requirements = dict([(key, cls.column_map.get(key, key))
+                                         for key in cls.columns])
             
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
@@ -113,6 +177,7 @@ class DBObject(object):
     __metaclass__ = DBObjectMeta
     objid = None
     tableid = None
+    idColName = None
     appendint = None
     spatialModel = None
     columns = []
@@ -151,10 +216,8 @@ class DBObject(object):
         return self.spatialModel
 
     def _get_table(self):
-        # XXX: We've hard-coded simobjid here: this might not be correct
-        #      in general.  We should find a better way to do this.
         self.table = Table(self.tableid, self.metadata,
-                           Column('simobjid', BigInteger, primary_key=True),
+                           Column(self.idColName, BigInteger, primary_key=True),
                            autoload=True)
 
     def _connect_to_engine(self):
@@ -187,8 +250,15 @@ class DBObject(object):
 
         return query
 
+    def _postprocess_query(self, results):
+        """Post-process the query results.
+        This can be overridden in derived classes: by default it returns
+        the results un-modified.
+        """
+        return results
+
     def query_columns(self, colnames=None, chunksize=None,
-                      circ_bounds=None, box_bounds=None):
+                      obs_metadata=None):
         """Execute a query
 
         Parameters
@@ -201,14 +271,9 @@ class DBObject(object):
             if specified, then return an iterator object to query the database,
             each time returning the next `chunksize` elements.  If not
             specified, all matching results will be returned.
-        circ_bounds : tuple (optional)
-            if specified, then limit the query to the specified circular
-            spatial range. circ_bounds = (RAcenter, DECcenter, radius),
-            measured in degrees.
-        box_bounds :tuple (optional)
-            if specified, then limit the query to the specified quadrilateral
-            spatial range.  box_bounds = (RAmin, RAmax, DECmin, DECmax),
-            measured in degrees
+        obs_metadata : object (optional)
+            an observation metadata object which has a "filter" method, which
+            will add a filter string to the query.
 
         Returns
         -------
@@ -219,20 +284,14 @@ class DBObject(object):
         """
         query = self._get_column_query(colnames)
 
-        if circ_bounds is not None:
-            RA, DEC, radius = circ_bounds
-            query = query.filter(circle_bound(RA, DEC, radius))
-
-        if box_bounds is not None:
-            RAmin, RAmax, DECmin, DECmax = box_bounds
-            query = query.filter(box_bound(RAmin, RAmax, DECmin, DECmax))
-
-        exec_query = self.session.execute(query)
+        if obs_metadata is not None:
+            query = obs_metadata.filter(query)
 
         if chunksize is None:
-            return exec_query.fetchall()
+            exec_query = self.session.execute(query)
+            return self._postprocess_results(exec_query.fetchall())
         else:
-            return ChunkIterator(exec_query, chunksize)
+            return ChunkIterator(self, chunksize)
 
 
 class StarObj(DBObject):
@@ -240,6 +299,7 @@ class StarObj(DBObject):
     #      the requiredFields file.
     objid = 'msstars'
     tableid = 'starsMSRGB_forceseek'
+    idColName = 'simobjid'
     appendint = 4
     spatialModel = 'POINT'
     columns = ['id', 'umag', 'gmag', 'rmag', 'imag', 'zmag',
@@ -249,7 +309,12 @@ class StarObj(DBObject):
                   'decJ2000':'decl*PI()/180.',
                   'sedFilename':'sedfilename'}
 
+
 if __name__ == '__main__':
     #star = StarObj()
     star = DBObject.from_objid('msstars')
-    print star.query_columns(circ_bounds=(2.0, 5.0, 1.0))
+
+    obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
+                                                        dec=5.0,
+                                                        radius=1.0))
+    print star.query_columns(obs_metadata=obs_metadata)

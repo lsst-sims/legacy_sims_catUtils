@@ -34,13 +34,6 @@ class GalaxyBulgeObj(DBObject):
             'lsst_y':'y_ab'}
     columns = column_map.keys()
 
-    def _get_table(self):
-        #For galaxies we call a stored procedure, so this is not used.
-        #However, it may prove useful.
-        self.table = Table(self.tableid, self.metadata,
-                           Column(self.idColName, BigInteger, primary_key=True),
-                           autoload=True)
-
     def _get_column_query(self, colnames=None):
         raise NotImplementedError("We are calling a stored procedure so "
                                   "no need to loop over columns")
