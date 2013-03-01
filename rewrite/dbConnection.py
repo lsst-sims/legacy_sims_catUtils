@@ -113,6 +113,8 @@ class DBObject(object):
     __metaclass__ = DBObjectMeta
     objid = None
     tableid = None
+    appendint = None
+    spatialModel = None
     columns = []
     column_map = {}
 
@@ -129,9 +131,10 @@ class DBObject(object):
         return cls(*args, **kwargs)
 
     def __init__(self, address=None):
-        if (self.objid is None) or (self.tableid is None):
+        if (self.objid is None) or (self.tableid is None)\
+           or (self.appendint is None) or (self.spatialModel is None):
             raise ValueError("DBObject must be subclassed, and "
-                             "define objid & tableid.")
+                             "define objid, tableid, appendint, and spatialModel.")
 
         if address is None:
             self.address = DEFAULT_ADDRESS
@@ -140,6 +143,12 @@ class DBObject(object):
 
         self._connect_to_engine()
         self._get_table()
+
+    def getObjectTypeId(self):
+        return self.appendint
+
+    def getSpatialModel(self):
+        return self.spatialModel
 
     def _get_table(self):
         # XXX: We've hard-coded simobjid here: this might not be correct
@@ -231,13 +240,14 @@ class StarObj(DBObject):
     #      the requiredFields file.
     objid = 'msstars'
     tableid = 'starsMSRGB_forceseek'
+    appendint = 4
+    spatialModel = 'POINT'
     columns = ['id', 'umag', 'gmag', 'rmag', 'imag', 'zmag',
                'raJ2000', 'decJ2000', 'sedFilename']
     column_map = {'id':'simobjid',
                   'raJ2000':'ra*PI()/180.',
                   'decJ2000':'decl*PI()/180.',
                   'sedFilename':'sedfilename'}
-    
 
 if __name__ == '__main__':
     #star = StarObj()
