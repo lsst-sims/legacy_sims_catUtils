@@ -1,5 +1,6 @@
 import warnings
 import math
+import numpy
 
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
@@ -37,77 +38,16 @@ class ObservationMetaData(object):
     def from_obshistid(cls, obshistid):
         raise NotImplementedError()
     
-    def __init__(self, circ_bounds=None, box_bounds=None, mjd=None):
-        self.circ_bounds = circ_bounds
-        self.box_bounds = box_bounds
-        self.mjd = mjd
-
-    def filter(self, query, RAname='ra', DECname='decl', MJDname='mjd'):
-        """Filter the query by the associated metadata"""
-        on_clause = self.to_SQL(RAname, DECname, MJDname)
-        if on_clause:
-            query = query.filter(on_clause)
-        return query
-
-    def to_SQL(self, RAname='ra', DECname='decl', MJDname='mjd'):
-        constraint = ""
-        if self.box_bounds is not None:
-            bb = self.box_bounds
-            constraint += self.box_bound_constraint(bb['ra_min'],
-                                                    bb['ra_max'],
-                                                    bb['dec_min'],
-                                                    bb['dec_max'],
-                                                    RAname, DECname)
-        if self.circ_bounds is not None:
-            cb = self.circ_bounds
-            constraint += self.circle_bound_constraint(cb['ra'], cb['dec'],
-                                                       cb['radius'],
-                                                       RAname, DECname)
-        if self.mjd is not None:
-            constraint += self.mjd_constraint(self.mjd, MJDname)
-            
-        return constraint
-
-    @staticmethod
-    def mdj_constraint(MJD, MJDname):
-        raise NotImplementedError("haven't implemented MJD bound yet")
-
-    @staticmethod
-    def box_bound_constraint(RAmin, RAmax, DECmin, DECmax,
-                             RAname='ra', DECname='decl'):
-        (RAmin, RAmax, DECmin, DECmax) = map(math.radians,
-                                             (RAmin, RAmax, DECmin, DECmax))
-
-        if RAmin < 0 and RAmax > 2. * math.pi:
-            bound = "%s between %f and %f" % (DECname, DECmin, DECmax)
-
-        elif RAmin < 0 and RAmax <= 2 * math.pi:
-            # XXX is this right?  It seems strange.
-            bound = ("%s not between %f and %f and %s between %f and %f"
-                     % (RAname, RAmin % (2 * math.pi), RAmax,
-                        DECname, DECmin, DECmax))
-
-        elif RAmin >= 0 and RAmax > 2. * math.pi:
-            bound = ("%s not between %f and %f and %s between %f and %f" 
-                     % (RAname, RAmin, RAmax % (2 * math.pi),
-                        DECname, DECmin, DECmax))
-
+    def __init__(self, obshistid=None, circ_bounds=None, box_bounds=None, mjd=None):
+        if obshistid is not None:
+            raise NotImplementedError()
         else:
-            bound = ("%s between %f and %f and %s between %f and %f"
-                     % (RAname, RAmin, RAmax, DECname, DECmin, DECmax))
+            if circ_bounds is not None and box_bounds is not None:
+                raise ValueError()
+            self.circ_bounds = circ_bounds
+            self.box_bounds = box_bounds
+            self.mjd = mjd
 
-        return bound
-
-    @staticmethod
-    def circle_bound_constraint(RA, DEC, radius,
-                                RAname='ra', DECname='decl'):
-        RAmax = RA + radius / math.cos(math.radians(DEC))
-        RAmin = RA - radius / math.cos(math.radians(DEC))
-        DECmax = DEC + radius
-        DECmin = DEC - radius
-        return ObservationMetaData.box_bound_constraint(RAmin, RAmax,
-                                                        DECmin, DECmax,
-                                                        RAname, DECname)    
 
 
 #------------------------------------------------------------
@@ -179,7 +119,10 @@ class DBObject(object):
     idColName = None
     appendint = None
     spatialModel = None
-    columns = []
+    columns = None
+    raColName = None
+    decColName = None
+    mjdColName = None
     column_map = {}
 
     @classmethod
@@ -195,10 +138,13 @@ class DBObject(object):
         return cls(*args, **kwargs)
 
     def __init__(self, address=None):
-        if (self.objid is None) or (self.tableid is None)\
-           or (self.appendint is None) or (self.spatialModel is None):
+        if (self.objid is None) or (self.tableid is None):
             raise ValueError("DBObject must be subclassed, and "
-                             "define objid, tableid, appendint, and spatialModel.")
+                             "define objid and tableid.")
+        if (self.appendint is None) or (self.spatialModel is None):
+            warnings.warn("Either appendint or spatialModel has not "
+                          "been set.  Input files for phosim are not "
+                          "possible.")
 
         if address is None:
             self.address = DEFAULT_ADDRESS
@@ -231,7 +177,6 @@ class DBObject(object):
         """Given a list of valid column names, return the query object"""
         if colnames is None:
             colnames = self.columns
-
         try:
             vals = [self.requirements[col] for col in colnames]
         except KeyError:
@@ -246,11 +191,83 @@ class DBObject(object):
         query = self.session.query(self.table.c[self.idColName].label(idLabel))
 
         for col, val in zip(colnames[1:], vals[1:]):
-            if val == self.idColName:
-                pass
+            if val is self.idColName:
+                continue
             query = query.add_column(expression.literal_column(val).label(col))
 
         return query
+
+    def filter(self, query, circ_bounds=None, box_bounds=None, mjd=None):
+        """Filter the query by the associated metadata"""
+        on_clause = self.to_SQL(circ_bounds, box_bounds, mjd)
+        if on_clause:
+            query = query.filter(on_clause)
+        return query
+
+    def to_SQL(self, circ_bounds=None, box_bounds=None, mjd=None):
+        constraint = ""
+        if box_bounds is not None:
+            bb = box_bounds
+            constraint += self.box_bound_constraint(bb['ra_min'],
+                                                    bb['ra_max'],
+                                                    bb['dec_min'],
+                                                    bb['dec_max'],
+						    self.raColName,
+						    self.decColName)
+        if circ_bounds is not None:
+            cb = circ_bounds
+            constraint += self.circle_bound_constraint(cb['ra'], cb['dec'],
+                                                       cb['radius'],
+                                                       self.raColName, self.decColName)
+	#KSK: Make MJD self consistent with other column labelings
+        if mjd is not None:
+            constraint += self.mjd_constraint(mjd, self.mjdColName)
+            
+        return constraint
+
+    @staticmethod
+    def mdj_constraint(MJD, MJDname):
+        raise NotImplementedError("haven't implemented MJD bound yet")
+
+    @staticmethod
+    def box_bound_constraint(RAmin, RAmax, DECmin, DECmax,
+                             RAname, DECname):
+        #KSK:  I don't know exactly what we do here.  This is in code, but operating
+        #on a database is it less confusing to work in degrees or radians?
+        #(RAmin, RAmax, DECmin, DECmax) = map(math.radians,
+        #                                     (RAmin, RAmax, DECmin, DECmax))
+
+        if RAmin < 0 and RAmax > 360.:
+            bound = "%s between %f and %f" % (DECname, DECmin, DECmax)
+
+        elif RAmin < 0 and RAmax <= 360.:
+            # XXX is this right?  It seems strange.
+            bound = ("%s not between %f and %f and %s between %f and %f"
+                     % (RAname, RAmin % (360.), RAmax,
+                        DECname, DECmin, DECmax))
+
+        elif RAmin >= 0 and RAmax > 2. * math.pi:
+            bound = ("%s not between %f and %f and %s between %f and %f" 
+                     % (RAname, RAmin, RAmax % (360.),
+                        DECname, DECmin, DECmax))
+
+        else:
+            bound = ("%s between %f and %f and %s between %f and %f"
+                     % (RAname, RAmin, RAmax, DECname, DECmin, DECmax))
+
+        return bound
+
+    @staticmethod
+    def circle_bound_constraint(RA, DEC, radius,
+                                RAname, DECname):
+        RAmax = RA + radius / math.cos(math.radians(DEC))
+        RAmin = RA - radius / math.cos(math.radians(DEC))
+        DECmax = DEC + radius
+        DECmin = DEC - radius
+        return DBObject.box_bound_constraint(RAmin, RAmax,
+                                                        DECmin, DECmax,
+                                                        RAname, DECname)    
+
 
     def _postprocess_results(self, results):
         """Post-process the query results.
@@ -260,7 +277,7 @@ class DBObject(object):
         return results
 
     def query_columns(self, colnames=None, chunksize=None,
-                      obs_metadata=None):
+                      obs_metadata=None, constraint=None):
         """Execute a query
 
         Parameters
@@ -285,10 +302,12 @@ class DBObject(object):
             then result is an iterator over lists of the given size.
         """
         query = self._get_column_query(colnames)
-
         if obs_metadata is not None:
-            query = obs_metadata.filter(query)
+            query = self.filter(query, circ_bounds=obs_metadata.circ_bounds, 
+                    box_bounds=obs_metadata.box_bounds, mjd=obs_metadata.mjd)
 
+        if constraint is not None:
+            query = query.filter(constraint)
         if chunksize is None:
             exec_query = self.session.execute(query)
             return self._postprocess_results(exec_query.fetchall())
@@ -302,6 +321,8 @@ class StarObj(DBObject):
     objid = 'msstars'
     tableid = 'starsMSRGB_forceseek'
     idColName = 'simobjid'
+    raColName = 'ra'
+    decColName = 'decl'
     appendint = 4
     spatialModel = 'POINT'
     columns = ['id', 'umag', 'gmag', 'rmag', 'imag', 'zmag',
@@ -311,7 +332,6 @@ class StarObj(DBObject):
                   'decJ2000':'decl*PI()/180.',
                   'sedFilename':'sedfilename'}
 
-
 if __name__ == '__main__':
     #star = StarObj()
     star = DBObject.from_objid('msstars')
@@ -319,4 +339,4 @@ if __name__ == '__main__':
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
                                                         dec=5.0,
                                                         radius=1.0))
-    print star.query_columns(obs_metadata=obs_metadata)
+    print star.query_columns(obs_metadata=obs_metadata, constraint="rmag < 21.")
