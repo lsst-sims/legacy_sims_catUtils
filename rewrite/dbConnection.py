@@ -98,13 +98,10 @@ class DBObjectMeta(type):
                 warnings.warn('duplicate object id %s specified' % cls.objid)
             cls.registry[cls.objid] = cls
 
-            if not hasattr(cls, 'columns') or cls.columns is None:
-                cls.columns = cls.column_map.keys()
-                cls.requirements = cls.column_map
-            else:
-                # build requirements dict from columns and column_map
-                cls.requirements = dict([(key, cls.column_map.get(key, key))
-                                         for key in cls.columns])
+            # build requirements dict from columns and column_map
+            cls.requirements = dict([(el[0], cls.column_map.get(el[0], el[0]))
+                                     for el in cls.columns])
+            cls.dtype = numpy.dtype(cls.columns)
             
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
@@ -145,6 +142,10 @@ class DBObject(object):
             warnings.warn("Either appendint or spatialModel has not "
                           "been set.  Input files for phosim are not "
                           "possible.")
+        if self.columns is None:
+            raise ValueError("DBObject must be subclasses, and define "
+                             "columns.  The columns variable is a list "
+                             "of tuples suitable for parsing by numpy.dtype")
 
         if address is None:
             self.address = DEFAULT_ADDRESS
@@ -176,7 +177,7 @@ class DBObject(object):
     def _get_column_query(self, colnames=None):
         """Given a list of valid column names, return the query object"""
         if colnames is None:
-            colnames = self.columns
+            colnames = [el[0] for el in self.columns]
         try:
             vals = [self.requirements[col] for col in colnames]
         except KeyError:
@@ -274,7 +275,11 @@ class DBObject(object):
         This can be overridden in derived classes: by default it returns
         the results un-modified.
         """
-        return results
+        retresults = numpy.zeros((len(results),),dtype=self.dtype)
+        for i, result in enumerate(results):
+            for k in self.requirements.keys():
+                retresults[i][k] = result[k]
+        return retresults
 
     def query_columns(self, colnames=None, chunksize=None,
                       obs_metadata=None, constraint=None):
@@ -327,6 +332,17 @@ class StarObj(DBObject):
     spatialModel = 'POINT'
     columns = ['id', 'umag', 'gmag', 'rmag', 'imag', 'zmag',
                'raJ2000', 'decJ2000', 'sedFilename']
+    #These types should be matched to the database.
+    columns = [('id', int),
+               ('umag', float),
+               ('gmag', float),
+               ('rmag', float),
+               ('imag', float),
+               ('zmag', float),
+               ('raJ2000', float),
+               ('decJ2000', float),
+               ('sedFilename', unicode, 40)]
+
     column_map = {'id':'simobjid',
                   'raJ2000':'ra*PI()/180.',
                   'decJ2000':'decl*PI()/180.',

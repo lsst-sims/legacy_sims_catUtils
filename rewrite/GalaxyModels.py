@@ -1,5 +1,6 @@
 import warnings
 import math
+import numpy
 from dbConnection import ChunkIterator, DBObject, ObservationMetaData
 from sqlalchemy import Table, Column, BigInteger, MetaData
 
@@ -16,6 +17,43 @@ class GalaxyObj(DBObject):
     spatialModel = None
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
+    columns = [('galid', str, 30),
+            ('raJ2000', float),
+            ('decJ2000', float),
+            ('raJ2000Bulge', float),
+            ('decJ2000Bulge', float),
+            ('raJ2000Disk', float),
+            ('decJ2000Disk', float),
+            ('raJ2000Agn', float),
+            ('decJ2000Agn', float),
+            ('magNormBulge', float),
+            ('magNormDisk', float),
+            ('magNormAgn', float),
+            ('sedFilenameBulge', unicode, 40),
+            ('sedFilenameDisk', unicode, 40),
+            ('sedFilenameAgn', unicode, 40),
+            ('majorAxisBulge', float),
+            ('minorAxisBulge', float),
+            ('positionAngleBulge', float),
+            ('sindexBulge', int),
+            ('majorAxisDisk', float),
+            ('minorAxisDisk', float),
+            ('positionAngleDisk', float),
+            ('sindexDisk', int),
+            ('internalExtinctionModelBulge', str, 3),
+            ('internalAvBulge', float),
+            ('internalRvBulge', float),
+            ('internalExtinctionModelDisk', str, 3),
+            ('internalAvDisk', float),
+            ('internalRvDisk', float),
+            ('redshift', float),
+            ('radialVelocity', float),
+            ('lsst_u', float),
+            ('lsst_g', float),
+            ('lsst_r', float),
+            ('lsst_i', float),
+            ('lsst_z', float),
+            ('lsst_y', float)]
     column_map = {    
             'galid':'galid',
             'raJ2000':'ra*PI()/180.',
@@ -68,6 +106,44 @@ class GalaxyTileObj(DBObject):
     spatialModel = None
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
+    columns = [('galtileid', numpy.int64),
+            ('galid', str, 30),
+            ('raJ2000', float),
+            ('decJ2000', float),
+            ('raJ2000Bulge', float),
+            ('decJ2000Bulge', float),
+            ('raJ2000Disk', float),
+            ('decJ2000Disk', float),
+            ('raJ2000Agn', float),
+            ('decJ2000Agn', float),
+            ('magNormBulge', float),
+            ('magNormDisk', float),
+            ('magNormAgn', float),
+            ('sedFilenameBulge', unicode, 40),
+            ('sedFilenameDisk', unicode, 40),
+            ('sedFilenameAgn', unicode, 40),
+            ('majorAxisBulge', float),
+            ('minorAxisBulge', float),
+            ('positionAngleBulge', float),
+            ('sindexBulge', int),
+            ('majorAxisDisk', float),
+            ('minorAxisDisk', float),
+            ('positionAngleDisk', float),
+            ('sindexDisk', int),
+            ('internalExtinctionModelBulge', str, 3),
+            ('internalAvBulge', float),
+            ('internalRvBulge', float),
+            ('internalExtinctionModelDisk', str, 3),
+            ('internalAvDisk', float),
+            ('internalRvDisk', float),
+            ('redshift', float),
+            ('radialVelocity', float),
+            ('lsst_u', float),
+            ('lsst_g', float),
+            ('lsst_r', float),
+            ('lsst_i', float),
+            ('lsst_z', float),
+            ('lsst_y', float)]
     column_map = {    
             'galtileid':'galtileid',
             'galid':'galid',
@@ -116,7 +192,13 @@ class GalaxyTileObj(DBObject):
         #Here we will need to do the post processing of the results to return radians in the raJ2000 and decJ2000 fields.
         #This is a result of the fact that the stored procedure does not allow the ra/dec columns to be modified in the return
         #result set.
-        return results
+        retresults = numpy.zeros((len(results),),dtype=self.dtype)
+        for i, result in enumerate(results):
+            for k in self.requirements.keys():
+                retresults[i][k] = result[k]
+	retresults['raJ2000'] = numpy.radians(retresults['raJ2000'])
+	retresults['decJ2000'] = numpy.radians(retresults['decJ2000'])
+        return retresults
 
     def query_columns(self, colnames=None, chunksize=None, obs_metadata=None, constraint=None):
         """Execute a query
@@ -150,7 +232,7 @@ class GalaxyTileObj(DBObject):
             then result is an iterator over lists of the given size.
         """
         if colnames is None:
-            colnames = self.columns
+            colnames = [el[0] for el in self.columns]
         
         #We know that galtileid comes back with the query, but we don't want 
         #to add it to the query since it's generated on the fly.
@@ -211,6 +293,29 @@ class GalaxyBulgeObj(GalaxyTileObj):
     spatialModel = 'SERSIC2D'
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
+    columns = [('galtileid', numpy.int64),
+            ('galid', str, 30),
+	    ('componentra', float),
+	    ('componentdec', float),
+            ('raJ2000', float),
+            ('decJ2000', float),
+            ('magNorm', float),
+            ('sedFilename', unicode, 40),
+            ('majorAxis', float),
+            ('minorAxis', float),
+            ('positionAngle', float),
+            ('sindex', int),
+            ('internalExtinctionModel', str, 3),
+            ('internalAv', float),
+            ('internalRv', float),
+            ('redshift', float),
+            ('radialVelocity', float),
+            ('lsst_u', float),
+            ('lsst_g', float),
+            ('lsst_r', float),
+            ('lsst_i', float),
+            ('lsst_z', float),
+            ('lsst_y', float)]
     column_map = {    
             'galtileid':'galtileid',
             'galid':'galid',
@@ -237,7 +342,6 @@ class GalaxyBulgeObj(GalaxyTileObj):
             'lsst_i':'i_ab',
             'lsst_z':'z_ab',
             'lsst_y':'y_ab'}
-    columns = column_map.keys()
 
 class GalaxyDiskObj(GalaxyTileObj):
     objid = 'galaxyDisk'
@@ -251,6 +355,29 @@ class GalaxyDiskObj(GalaxyTileObj):
     spatialModel = 'SERSIC2D'
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
+    columns = [('galtileid', numpy.int64),
+            ('galid', str, 30),
+	    ('componentra', float),
+	    ('componentdec', float),
+            ('raJ2000', float),
+            ('decJ2000', float),
+            ('magNorm', float),
+            ('sedFilename', unicode, 40),
+            ('majorAxis', float),
+            ('minorAxis', float),
+            ('positionAngle', float),
+            ('sindex', int),
+            ('internalExtinctionModel', str, 3),
+            ('internalAv', float),
+            ('internalRv', float),
+            ('redshift', float),
+            ('radialVelocity', float),
+            ('lsst_u', float),
+            ('lsst_g', float),
+            ('lsst_r', float),
+            ('lsst_i', float),
+            ('lsst_z', float),
+            ('lsst_y', float)]
     column_map = {    
             'galtileid':'galtileid',
             'galid':'galid',
@@ -277,7 +404,6 @@ class GalaxyDiskObj(GalaxyTileObj):
             'lsst_i':'i_ab',
             'lsst_z':'z_ab',
             'lsst_y':'y_ab'}
-    columns = column_map.keys()
 
 class GalaxyAgnObj(GalaxyTileObj):
     objid = 'galaxyAgn'
@@ -291,6 +417,23 @@ class GalaxyAgnObj(GalaxyTileObj):
     spatialModel = 'ZPOINT'
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
+    columns = [('galtileid', numpy.int64),
+            ('galid', str, 30),
+	    ('componentra', float),
+	    ('componentdec', float),
+            ('raJ2000', float),
+            ('decJ2000', float),
+            ('magNorm', float),
+            ('sedFilename', unicode, 40),
+            ('redshift', float),
+            ('radialVelocity', float),
+	    ('variabilityParameters', str, 256),
+            ('lsst_u', float),
+            ('lsst_g', float),
+            ('lsst_r', float),
+            ('lsst_i', float),
+            ('lsst_z', float),
+            ('lsst_y', float)]
     column_map = {    
             'galtileid':'galtileid',
             'galid':'galid',
@@ -311,7 +454,6 @@ class GalaxyAgnObj(GalaxyTileObj):
             'lsst_i':'i_ab',
             'lsst_z':'z_ab',
             'lsst_y':'y_ab'}
-    columns = column_map.keys()
 
 if __name__ == '__main__':
     star = DBObject.from_objid('msstars')
@@ -334,4 +476,5 @@ if __name__ == '__main__':
     metadataList = [obs_metadata, obs_metadata_gal, obs_metadata, 
 		    obs_metadata, obs_metadata, obs_metadata]
     for object, constraint, md in zip(objects, constraints, metadataList):
-        print "Length of returned result set of %s is: %i"%(object.objid, len(object.query_columns(obs_metadata=md, constraint=constraint)))
+        result = object.query_columns(obs_metadata=md, constraint=constraint)
+        print "Length of returned result set of %s is: %i"%(object.objid, len(result))
