@@ -98,10 +98,12 @@ class DBObjectMeta(type):
                 warnings.warn('duplicate object id %s specified' % cls.objid)
             cls.registry[cls.objid] = cls
 
-            # build requirements dict from columns and column_map
-            cls.requirements = dict([(el[0], cls.column_map.get(el[0], el[0]))
-                                     for el in cls.columns])
-            cls.dtype = numpy.dtype(cls.columns)
+            # build requirements dict from columns
+            cls.requirements = dict([(k, cls.columns[k][0])
+                                     for k in cls.columns.keys()])
+            # build dtype from columns            
+            cls.dtype = numpy.dtype([(k,)+cls.columns[k][1:]
+                                     for k in cls.columns.keys()])
             
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
@@ -113,14 +115,13 @@ class DBObject(object):
     __metaclass__ = DBObjectMeta
     objid = None
     tableid = None
-    idColName = None
+    idColKey = None
     appendint = None
     spatialModel = None
     columns = None
     raColName = None
     decColName = None
     mjdColName = None
-    column_map = {}
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -163,7 +164,7 @@ class DBObject(object):
 
     def _get_table(self):
         self.table = Table(self.tableid, self.metadata,
-                           Column(self.idColName, BigInteger, primary_key=True),
+                           Column(self.columns[self.idColKey][0], BigInteger, primary_key=True),
                            autoload=True)
 
     def _connect_to_engine(self):
@@ -176,23 +177,26 @@ class DBObject(object):
 
     def _get_column_query(self, colnames=None):
         """Given a list of valid column names, return the query object"""
+        #XXXX This is not o.k. as this is now a dict and as such is 
+        #not ordered.
         if colnames is None:
-            colnames = [el[0] for el in self.columns]
+            colnames = [k for k in self.columns.keys()]
         try:
             vals = [self.requirements[col] for col in colnames]
         except KeyError:
             raise ValueError('entries in colnames must be in self.columns')
 
         # Get the first query
-        if self.idColName in vals:
-            idLabel = colnames[vals.index(self.idColName)]
+        idColName = self.columns[self.idColKey][0]
+        if idColName in vals:
+            idLabel = colnames[vals.index(idColName)]
         else:
             idLabel = 'id'
 
-        query = self.session.query(self.table.c[self.idColName].label(idLabel))
+        query = self.session.query(self.table.c[idColName].label(idLabel))
 
-        for col, val in zip(colnames[1:], vals[1:]):
-            if val is self.idColName:
+        for col, val in zip(colnames, vals):
+            if val is idColName:
                 continue
             query = query.add_column(expression.literal_column(val).label(col))
 
@@ -325,33 +329,25 @@ class StarObj(DBObject):
     #      the requiredFields file.
     objid = 'msstars'
     tableid = 'starsMSRGB_forceseek'
-    idColName = 'simobjid'
+    idColKey = 'id'
     raColName = 'ra'
     decColName = 'decl'
     appendint = 4
     spatialModel = 'POINT'
-    columns = ['id', 'umag', 'gmag', 'rmag', 'imag', 'zmag',
-               'raJ2000', 'decJ2000', 'sedFilename']
     #These types should be matched to the database.
-    columns = [('id', int),
-               ('umag', float),
-               ('gmag', float),
-               ('rmag', float),
-               ('imag', float),
-               ('zmag', float),
-               ('raJ2000', float),
-               ('decJ2000', float),
-               ('sedFilename', unicode, 40)]
-
-    column_map = {'id':'simobjid',
-                  'raJ2000':'ra*PI()/180.',
-                  'decJ2000':'decl*PI()/180.',
-                  'sedFilename':'sedfilename'}
+    columns = {'id':('simobjid', int),
+               'umag':('umag', float),
+               'gmag':('gmag', float),
+               'rmag':('rmag', float),
+               'imag':('imag', float),
+               'zmag':('zmag', float),
+               'raJ2000':('ra*PI()/180.', float),
+               'decJ2000':('decl*PI()/180.', float),
+               'sedFilename':('sedfilename', unicode, 40)}
 
 if __name__ == '__main__':
     #star = StarObj()
     star = DBObject.from_objid('msstars')
-
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
                                                         dec=5.0,
                                                         radius=1.0))
