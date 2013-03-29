@@ -8,6 +8,29 @@ from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
                         Table, Column, BigInteger)
 
 
+# TODO : we need to clean up "columns", "column_map", and "requirements".
+#        currently it's very confusing, and a lot of things are duplicated.
+#        Initially, I thought that "columns" would specify the ordering
+#        of things, and "column_map" would be used for only a handful of
+#        the columns.  After seeing Simon's GalaxyObj implementations, it's
+#        clear that this assumption was wrong: nearly every column needs to
+#        be mapped, and additionally we need to specify type info for nearly
+#        every column.
+#
+#        For simplicity, we should have the class define a single array with
+#        column names & attributes.  It could look like this:
+#
+#        columns = [('galid', 'galid', str, 30),
+#                   ('raJ2000', 'ra*PI()/180., float),
+#                   ('decJ2000', 'dec*PI()/180.'),  # float by default
+#                   ...]
+#
+#        The metaclass would take this column list, and turn it into two
+#        ordered dictionaries, (using `from collections import OrderedDict`)
+#        one consisting of the column mapping, and one consisting of the
+#        type mapping.
+
+
 DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
 
@@ -54,16 +77,16 @@ class ObservationMetaData(object):
 # Iterator for database chunks
 class ChunkIterator(object):
     """Iterator for query chunks"""
-    def __init__(self, exec_query, chunksize):
+    def __init__(self, exec_query, chunk_size):
         self.dbobj = dbobj
         self.exec_query = dbobj.session.execute(query)
-        self.chunksize = chunksize
+        self.chunk_size = chunk_size
 
     def __iter__(self):
         return self
 
     def next(self):
-        chunk = self.exec_query.fetchmany(self.chunksize)
+        chunk = self.exec_query.fetchmany(self.chunk_size)
         if len(chunk) == 0:
             raise StopIteration
         return self.dbobj._postprocess_results(chunk)
@@ -285,7 +308,7 @@ class DBObject(object):
                 retresults[i][k] = result[k]
         return retresults
 
-    def query_columns(self, colnames=None, chunksize=None,
+    def query_columns(self, colnames=None, chunk_size=None,
                       obs_metadata=None, constraint=None):
         """Execute a query
 
@@ -295,9 +318,9 @@ class DBObject(object):
             a list of valid column names, corresponding to entries in the
             `columns` class attribute.  If not specified, all columns are
             queried.
-        chunksize : int (optional)
+        chunk_size : int (optional)
             if specified, then return an iterator object to query the database,
-            each time returning the next `chunksize` elements.  If not
+            each time returning the next `chunk_size` elements.  If not
             specified, all matching results will be returned.
         obs_metadata : object (optional)
             an observation metadata object which has a "filter" method, which
@@ -306,8 +329,8 @@ class DBObject(object):
         Returns
         -------
         result : list or iterator
-            If chunksize is not specified, then result is a list of all
-            items which match the specified query.  If chunksize is specified,
+            If chunk_size is not specified, then result is a list of all
+            items which match the specified query.  If chunk_size is specified,
             then result is an iterator over lists of the given size.
         """
         query = self._get_column_query(colnames)
@@ -317,11 +340,11 @@ class DBObject(object):
 
         if constraint is not None:
             query = query.filter(constraint)
-        if chunksize is None:
+        if chunk_size is None:
             exec_query = self.session.execute(query)
             return self._postprocess_results(exec_query.fetchall())
         else:
-            return ChunkIterator(self, chunksize)
+            return ChunkIterator(self, chunk_size)
 
 
 class StarObj(DBObject):
