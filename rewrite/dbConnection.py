@@ -1,6 +1,7 @@
 import warnings
 import math
 import numpy
+from collections import OrderedDict
 
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
@@ -57,16 +58,27 @@ class ObservationMetaData(object):
     >>> data = ObservationMetaData.from_obshistid(88544919)
     >>> print data.MJD
     """
-    @classmethod
-    def from_obshistid(cls, obshistid):
-        raise NotImplementedError()
-    
-    def __init__(self, obshistid=None, circ_bounds=None, box_bounds=None, mjd=None):
-        if obshistid is not None:
-            raise NotImplementedError()
+    def from_obshistid(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False):
+        #92815035 is the last obshistid in 3_61
+        result = self.osm.query_columns(constraint="obshistid=%i"%obshistid)
+        if makeCircBounds:
+            self.circ_bounds = dict(ra=math.degrees(result[self.osm.raColKey][0]), 
+                                    dec=math.degrees(result[self.osm.decColKey][0]), 
+                                    radius=radiusDeg)
+            #We don't do mjd bounding yet
+            self.mjd = None
+            self.box_bounds = None
+        elif makeBoxBounds:
+            raise NotImplementedError("Don't have BBox construction yet")
+        else:
+            raise ValueErr("Need either circ_bounds or box_bounds")
+            
+    def __init__(self, opsimid=None, circ_bounds=None, box_bounds=None, mjd=None):
+        if opsimid is not None:
+            self.osm = MetadataDBObject.from_objid('opsim3_61')
         else:
             if circ_bounds is not None and box_bounds is not None:
-                raise ValueError()
+                raise ValueError("Passing both circ_bounds and box_bounds")
             self.circ_bounds = circ_bounds
             self.box_bounds = box_bounds
             self.mjd = mjd
@@ -121,15 +133,17 @@ class DBObjectMeta(type):
                 warnings.warn('duplicate object id %s specified' % cls.objid)
             cls.registry[cls.objid] = cls
 
-            # build requirements dict from columns
-            cls.requirements = dict([(k, cls.columns[k][0])
-                                     for k in cls.columns.keys()])
-            # build dtype from columns            
-            cls.dtype = numpy.dtype([(k,)+cls.columns[k][1:]
-                                     for k in cls.columns.keys()])
+            # build column mapping and type mapping dicts from columns
+            cls.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0]) 
+                                         for el in cls.columns])
+            cls.typeMap = OrderedDict([(el[0], el[2:] if len(el)> 2 else (float,))
+                                       for el in cls.columns])
+            #cls.dtype = numpy.dtype([(k,)+cls.columns[k][1:]
+            #                         for k in cls.columns.keys()])
+            #cls.requirements = dict([(k, cls.columns[k][0])
+            #                         for k in cls.columns.keys()])
             
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
-
 
 class DBObject(object):
     """Database Object base class
@@ -169,7 +183,8 @@ class DBObject(object):
         if self.columns is None:
             raise ValueError("DBObject must be subclasses, and define "
                              "columns.  The columns variable is a list "
-                             "of tuples suitable for parsing by numpy.dtype")
+                             "of tuples containing column name, mapping to "
+                             "database name, type")
 
         if address is None:
             self.address = DEFAULT_ADDRESS
@@ -187,7 +202,7 @@ class DBObject(object):
 
     def _get_table(self):
         self.table = Table(self.tableid, self.metadata,
-                           Column(self.columns[self.idColKey][0], BigInteger, primary_key=True),
+                           Column(self.columnMap[self.idColKey], BigInteger, primary_key=True),
                            autoload=True)
 
     def _connect_to_engine(self):
@@ -200,21 +215,19 @@ class DBObject(object):
 
     def _get_column_query(self, colnames=None):
         """Given a list of valid column names, return the query object"""
-        #XXXX This is not o.k. as this is now a dict and as such is 
-        #not ordered.
         if colnames is None:
-            colnames = [k for k in self.columns.keys()]
+            colnames = [k for k in self.columnMap.keys()]
         try:
-            vals = [self.requirements[col] for col in colnames]
+            vals = [self.columnMap[k] for k in colnames]
         except KeyError:
-            raise ValueError('entries in colnames must be in self.columns')
+            raise ValueError('entries in colnames must be in self.columnMap')
 
         # Get the first query
-        idColName = self.columns[self.idColKey][0]
+        idColName = self.columnMap[self.idColKey]
         if idColName in vals:
-            idLabel = colnames[vals.index(idColName)]
+            idLabel = self.idColKey
         else:
-            idLabel = 'id'
+            idLabel = idColName
 
         query = self.session.query(self.table.c[idColName].label(idLabel))
 
@@ -254,7 +267,7 @@ class DBObject(object):
         return constraint
 
     @staticmethod
-    def mdj_constraint(MJD, MJDname):
+    def mjd_constraint(MJD, MJDname):
         raise NotImplementedError("haven't implemented MJD bound yet")
 
     @staticmethod
@@ -296,17 +309,38 @@ class DBObject(object):
                                                         DECmin, DECmax,
                                                         RAname, DECname)    
 
+    def _final_pass(self, results):
+        """ Make final modifications to a set of data before returning it to 
+	    the user
+	Parameters
+	----------
+	results : a structured array constructed from the result set from a query
+
+	Returns
+	-------
+	results : a potentially modified structured array.  The default is to do nothing.
+	"""
+        return results
 
     def _postprocess_results(self, results):
-        """Post-process the query results.
-        This can be overridden in derived classes: by default it returns
-        the results un-modified.
+        """Post-process the query results to put then
+	in a structured array.  
+	Parameters
+	----------
+	results : a result set as returned by execution of the query
+	
+	Returns
+	-------
+	_final_pass(retresutls) : the result of calling the _final_pass method on a
+	     structured array constructed from the query data.
         """
-        retresults = numpy.zeros((len(results),),dtype=self.dtype)
+        dtype = numpy.dtype([(k,)+self.typeMap[k]
+                             for k in self.typeMap.keys()])
+        retresults = numpy.zeros((len(results),), dtype=dtype)
         for i, result in enumerate(results):
-            for k in self.requirements.keys():
+            for k in self.columnMap.keys():
                 retresults[i][k] = result[k]
-        return retresults
+        return self._final_pass(retresults)
 
     def query_columns(self, colnames=None, chunk_size=None,
                       obs_metadata=None, constraint=None):
@@ -334,9 +368,108 @@ class DBObject(object):
             then result is an iterator over lists of the given size.
         """
         query = self._get_column_query(colnames)
+
         if obs_metadata is not None:
             query = self.filter(query, circ_bounds=obs_metadata.circ_bounds, 
                     box_bounds=obs_metadata.box_bounds, mjd=obs_metadata.mjd)
+
+        if constraint is not None:
+            query = query.filter(constraint)
+        if chunk_size is None:
+            exec_query = self.session.execute(query)
+            return self._postprocess_results(exec_query.fetchall())
+        else:
+            return ChunkIterator(self, chunk_size)
+
+class MetadataDBObject(DBObject):
+    """Metadata Database Object base class
+
+    """
+    objid = 'opsim3_61'
+    tableid = 'output_opsim3_61'
+    #Note that identical observations may have more than one unique
+    #obshistid, so this is the id, but not for unique visits.
+    #To do that, group by expdate.
+    idColKey = 'Opsim_obshistid'
+    bandColKey = 'Opsim_filter'
+    raColKey = 'Unrefracted_RA'
+    decColKey = 'Unrefracted_Dec'
+    mjdColKey = 'Opsim_expmjd'
+    #These are interpreted as SQL strings.
+    raColName = 'fieldra*PI()/180.'
+    decColName = 'fielddec*PI()/180.'
+    columns = [('SIM_SEED', 'expdate', int),
+               ('Unrefracted_RA', 'fieldra'),
+               ('Unrefracted_Dec', 'fielddec'),
+               ('Opsim_moonra', 'moonra'),
+               ('Opsim_moondec', 'moondec'),
+               ('Opsim_rotskypos', 'rotskypos'),
+               ('Opsim_rottelpos', 'rottelpos'),
+               ('Opsim_filter', 'filter', str, 1),
+               ('Opsim_rawseeing', 'rawseeing'),
+               ('Opsim_sunalt', 'sunalt'),
+               ('Opsim_moonalt', 'moonalt'),
+               ('Opsim_dist2moon', 'dist2moon'),
+               ('Opsim_moonphase', 'moonphase'),
+               ('Opsim_obshistid', 'obshistid', numpy.int64),
+               ('Opsim_expmjd', 'expmjd'),
+               ('Opsim_altitude', 'altitude'),
+               ('Opsim_azimuth', 'azimuth')]
+
+    def __init__(self, address=None):
+        if (self.objid is None) or (self.tableid is None):
+            raise ValueError("DBObject must be subclassed, and "
+                             "define objid and tableid.")
+        if self.columns is None:
+            raise ValueError("DBObject must be subclasses, and define "
+                             "columns.  The columns variable is a list "
+                             "of tuples containing column name, mapping to "
+                             "database name, type")
+
+        if address is None:
+            self.address = DEFAULT_ADDRESS
+        else:
+            self.address = address
+
+        self._connect_to_engine()
+        self._get_table()
+
+    def getObjectTypeId(self):
+        raise NotImplementedError("Metadata has no object type")
+
+    def getSpatialModel(self):
+        raise NotImplementedError("Metadata has no spatial model")
+
+    def query_columns(self, colnames=None, chunk_size=None,
+                      circ_bounds=None, box_bounds=None,
+                      mjd_bounds=None, constraint=None):
+        """Execute a query
+
+        Parameters
+        ----------
+        colnames : list or None
+            a list of valid column names, corresponding to entries in the
+            `columns` class attribute.  If not specified, all columns are
+            queried.
+        chunk_size : int (optional)
+            if specified, then return an iterator object to query the database,
+            each time returning the next `chunk_size` elements.  If not
+            specified, all matching results will be returned.
+        *_bounds : object (optional)
+            bounds to be passed to the filter method  which
+            will add a filter string to the query.
+
+        Returns
+        -------
+        result : list or iterator
+            If chunk_size is not specified, then result is a list of all
+            items which match the specified query.  If chunk_size is specified,
+            then result is an iterator over lists of the given size.
+        """
+        query = self._get_column_query(colnames)
+
+        query = self.filter(query, circ_bounds=circ_bounds, 
+                    box_bounds=box_bounds, mjd=mjd_bounds)
 
         if constraint is not None:
             query = query.filter(constraint)
@@ -358,20 +491,25 @@ class StarObj(DBObject):
     appendint = 4
     spatialModel = 'POINT'
     #These types should be matched to the database.
-    columns = {'id':('simobjid', int),
-               'umag':('umag', float),
-               'gmag':('gmag', float),
-               'rmag':('rmag', float),
-               'imag':('imag', float),
-               'zmag':('zmag', float),
-               'raJ2000':('ra*PI()/180.', float),
-               'decJ2000':('decl*PI()/180.', float),
-               'sedFilename':('sedfilename', unicode, 40)}
+    #Default map is float.  If the column mapping is the same as the column name, None can be specified
+    columns = [('id','simobjid', int),
+               ('umag', None),
+               ('gmag', None),
+               ('rmag', None),
+               ('imag', None),
+               ('zmag', None),
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'decl*PI()/180.'),
+               ('sedFilename', 'sedfilename', unicode, 40)]
 
 if __name__ == '__main__':
-    #star = StarObj()
     star = DBObject.from_objid('msstars')
-    obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
-                                                        dec=5.0,
-                                                        radius=1.0))
-    print star.query_columns(obs_metadata=obs_metadata, constraint="rmag < 21.")
+    #obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
+    #                                                    dec=5.0,
+    #                                                    radius=1.0))
+    obs_metadata = ObservationMetaData(opsimid="opsim3_61")
+    obs_metadata.from_obshistid(88544919, 0.1, makeCircBounds=True)
+
+    result = star.query_columns(obs_metadata=obs_metadata, constraint="rmag < 21.")
+    print result.dtype
+    print result

@@ -9,7 +9,7 @@ class GalaxyObj(DBObject):
     #This is the base table for the galaxies
     #with a bulge component
     tableid = 'galaxy'
-    idColName = 'galid'
+    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 9
@@ -17,88 +17,50 @@ class GalaxyObj(DBObject):
     spatialModel = None
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
-    columns = [('galid', str, 30),
-            ('raJ2000', float),
-            ('decJ2000', float),
-            ('raJ2000Bulge', float),
-            ('decJ2000Bulge', float),
-            ('raJ2000Disk', float),
-            ('decJ2000Disk', float),
-            ('raJ2000Agn', float),
-            ('decJ2000Agn', float),
-            ('magNormBulge', float),
-            ('magNormDisk', float),
-            ('magNormAgn', float),
-            ('sedFilenameBulge', unicode, 40),
-            ('sedFilenameDisk', unicode, 40),
-            ('sedFilenameAgn', unicode, 40),
-            ('majorAxisBulge', float),
-            ('minorAxisBulge', float),
-            ('positionAngleBulge', float),
-            ('sindexBulge', int),
-            ('majorAxisDisk', float),
-            ('minorAxisDisk', float),
-            ('positionAngleDisk', float),
-            ('sindexDisk', int),
-            ('internalExtinctionModelBulge', str, 3),
-            ('internalAvBulge', float),
-            ('internalRvBulge', float),
-            ('internalExtinctionModelDisk', str, 3),
-            ('internalAvDisk', float),
-            ('internalRvDisk', float),
-            ('redshift', float),
-            ('radialVelocity', float),
-            ('lsst_u', float),
-            ('lsst_g', float),
-            ('lsst_r', float),
-            ('lsst_i', float),
-            ('lsst_z', float),
-            ('lsst_y', float)]
-    column_map = {    
-            'galid':'galid',
-            'raJ2000':'ra*PI()/180.',
-            'decJ2000':'dec*PI()/180.',
-            'raJ2000Bulge':'bra*PI()/180.',
-            'decJ2000Bulge':'bdec*PI()/180.',
-            'raJ2000Disk':'dra*PI()/180.',
-            'decJ2000Disk':'ddec*PI()/180.',
-            'raJ2000Agn':'agnra*PI()/180.',
-            'decJ2000Agn':'agndec*PI()/180.',
-            'magNormBulge':'magnorm_bulge',
-            'magNormDisk':'magnorm_disk',
-            'magNormAgn':'magnorm_agn',
-            'sedFilenameBulge':'sedname_bulge',
-            'sedFilenameDisk':'sedname_disk',
-            'sedFilenameAgn':'sedname_agn',
-            'majorAxisBulge':'a_b',
-            'minorAxisBulge':'b_b',
-            'positionAngleBulge':'pa_bulge',
-            'sindexBulge':'bulge_n',
-            'majorAxisDisk':'a_d',
-            'minorAxisDisk':'b_d',
-            'positionAngleDisk':'pa_disk',
-            'sindexDisk':'disk_n',
-            'internalExtinctionModelBulge':'ext_model_b',
-            'internalAvBulge':'av_b',
-            'internalRvBulge':'rv_b',
-            'internalExtinctionModelDisk':'ext_model_d',
-            'internalAvDisk':'av_d',
-            'internalRvDisk':'rv_d',
-            'redshift':'redshift',
-            'radialVelocity':'rad_vel',
-            'lsst_u':'u_ab',
-            'lsst_g':'g_ab',
-            'lsst_r':'r_ab',
-            'lsst_i':'i_ab',
-            'lsst_z':'z_ab',
-            'lsst_y':'y_ab'}
+    columns = [('galid', None, str, 30),
+            ('raJ2000', 'ra*PI()/180.'),
+            ('decJ2000', 'dec*PI()/180.'),
+            ('raJ2000Bulge', 'bra*PI()/180.'),
+            ('decJ2000Bulge', 'bdec*PI()/180.'),
+            ('raJ2000Disk', 'dra*PI()/180.'),
+            ('decJ2000Disk', 'ddec*PI()/180.'),
+            ('raJ2000Agn', 'agnra*PI()/180.'),
+            ('decJ2000Agn', 'agndec*PI()/180.'),
+            ('magNormBulge', 'magnorm_bulge'),
+            ('magNormDisk', 'magnorm_disk'),
+            ('magNormAgn', 'magnorm_agn'),
+            ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
+            ('sedFilenameDisk', 'sedname_disk', unicode, 40),
+            ('sedFilenameAgn', 'sedname_agn', unicode, 40),
+            ('majorAxisBulge', 'a_b'),
+            ('minorAxisBulge', 'b_b'),
+            ('positionAngleBulge', 'pa_bulge'),
+            ('sindexBulge', 'bulge_n', int),
+            ('majorAxisDisk', 'a_d'),
+            ('minorAxisDisk', 'b_d'),
+            ('positionAngleDisk', 'pa_disk'),
+            ('sindexDisk', 'disk_n', int),
+            ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
+            ('internalAvBulge', 'av_b'),
+            ('internalRvBulge', 'rv_b'),
+            ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
+            ('internalAvDisk', 'av_d'),
+            ('internalRvDisk', 'rv_d'),
+            ('redshift', None),
+            ('radialVelocity', 'rad_vel'),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
 
 
 class GalaxyTileObj(DBObject):
     objid = 'galaxyTiled'
     #This is the base table for the galaxies
     tableid = 'galaxy'
-    idColName = 'galid'
+    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 9
@@ -106,99 +68,54 @@ class GalaxyTileObj(DBObject):
     spatialModel = None
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
-    columns = [('galtileid', numpy.int64),
-            ('galid', str, 30),
-            ('raJ2000', float),
-            ('decJ2000', float),
-            ('raJ2000Bulge', float),
-            ('decJ2000Bulge', float),
-            ('raJ2000Disk', float),
-            ('decJ2000Disk', float),
-            ('raJ2000Agn', float),
-            ('decJ2000Agn', float),
-            ('magNormBulge', float),
-            ('magNormDisk', float),
-            ('magNormAgn', float),
-            ('sedFilenameBulge', unicode, 40),
-            ('sedFilenameDisk', unicode, 40),
-            ('sedFilenameAgn', unicode, 40),
-            ('majorAxisBulge', float),
-            ('minorAxisBulge', float),
-            ('positionAngleBulge', float),
-            ('sindexBulge', int),
-            ('majorAxisDisk', float),
-            ('minorAxisDisk', float),
-            ('positionAngleDisk', float),
-            ('sindexDisk', int),
-            ('internalExtinctionModelBulge', str, 3),
-            ('internalAvBulge', float),
-            ('internalRvBulge', float),
-            ('internalExtinctionModelDisk', str, 3),
-            ('internalAvDisk', float),
-            ('internalRvDisk', float),
-            ('redshift', float),
-            ('radialVelocity', float),
-            ('lsst_u', float),
-            ('lsst_g', float),
-            ('lsst_r', float),
-            ('lsst_i', float),
-            ('lsst_z', float),
-            ('lsst_y', float)]
-    column_map = {    
-            'galtileid':'galtileid',
-            'galid':'galid',
-            'raJ2000':'ra',
-            'decJ2000':'dec',
-            'raJ2000Bulge':'bra*PI()/180.',
-            'decJ2000Bulge':'bdec*PI()/180.',
-            'raJ2000Disk':'dra*PI()/180.',
-            'decJ2000Disk':'ddec*PI()/180.',
-            'raJ2000Agn':'agnra*PI()/180.',
-            'decJ2000Agn':'agndec*PI()/180.',
-            'magNormBulge':'magnorm_bulge',
-            'magNormDisk':'magnorm_disk',
-            'magNormAgn':'magnorm_agn',
-            'sedFilenameBulge':'sedname_bulge',
-            'sedFilenameDisk':'sedname_disk',
-            'sedFilenameAgn':'sedname_agn',
-            'majorAxisBulge':'a_b',
-            'minorAxisBulge':'b_b',
-            'positionAngleBulge':'pa_bulge',
-            'sindexBulge':'bulge_n',
-            'majorAxisDisk':'a_d',
-            'minorAxisDisk':'b_d',
-            'positionAngleDisk':'pa_disk',
-            'sindexDisk':'disk_n',
-            'internalExtinctionModelBulge':'ext_model_b',
-            'internalAvBulge':'av_b',
-            'internalRvBulge':'rv_b',
-            'internalExtinctionModelDisk':'ext_model_d',
-            'internalAvDisk':'av_d',
-            'internalRvDisk':'rv_d',
-            'redshift':'redshift',
-            'radialVelocity':'rad_vel',
-            'lsst_u':'u_ab',
-            'lsst_g':'g_ab',
-            'lsst_r':'r_ab',
-            'lsst_i':'i_ab',
-            'lsst_z':'z_ab',
-            'lsst_y':'y_ab'}
+    columns = [('galtileid', None, numpy.int64),
+            ('galid', None, str, 30),
+            ('raJ2000', 'ra*PI()/180.'),
+            ('decJ2000', 'dec*PI()/180.'),
+            ('raJ2000Bulge', 'bra*PI()/180.'),
+            ('decJ2000Bulge', 'bdec*PI()/180.'),
+            ('raJ2000Disk', 'dra*PI()/180.'),
+            ('decJ2000Disk', 'ddec*PI()/180.'),
+            ('raJ2000Agn', 'agnra*PI()/180.'),
+            ('decJ2000Agn', 'agndec*PI()/180.'),
+            ('magNormBulge', 'magnorm_bulge'),
+            ('magNormDisk', 'magnorm_disk'),
+            ('magNormAgn', 'magnorm_agn'),
+            ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
+            ('sedFilenameDisk', 'sedname_disk', unicode, 40),
+            ('sedFilenameAgn', 'sedname_agn', unicode, 40),
+            ('majorAxisBulge', 'a_b'),
+            ('minorAxisBulge', 'b_b'),
+            ('positionAngleBulge', 'pa_bulge'),
+            ('sindexBulge', 'bulge_n', int),
+            ('majorAxisDisk', 'a_d'),
+            ('minorAxisDisk', 'b_d'),
+            ('positionAngleDisk', 'pa_disk'),
+            ('sindexDisk', 'disk_n', int),
+            ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
+            ('internalAvBulge', 'av_b'),
+            ('internalRvBulge', 'rv_b'),
+            ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
+            ('internalAvDisk', 'av_d'),
+            ('internalRvDisk', 'rv_d'),
+            ('redshift', None),
+            ('radialVelocity', 'rad_vel'),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
 
     def _get_column_query(self, colnames=None):
         raise NotImplementedError("We are calling a stored procedure so "
                                   "no need to loop over columns")
 
-    def _postprocess_results(self, results):
-        #Here we will need to do the post processing of the results to return radians in the raJ2000 and decJ2000 fields.
-        #This is a result of the fact that the stored procedure does not allow the ra/dec columns to be modified in the return
-        #result set.
-        retresults = numpy.zeros((len(results),),dtype=self.dtype)
-        for i, result in enumerate(results):
-            for k in self.requirements.keys():
-                retresults[i][k] = result[k]
-	retresults['raJ2000'] = numpy.radians(retresults['raJ2000'])
-	retresults['decJ2000'] = numpy.radians(retresults['decJ2000'])
-        return retresults
+    def _final_pass(self, results):
+        """Modify the results of raJ2000 and decJ2000 to be in radians"""
+	results['raJ2000'] = numpy.radians(results['raJ2000'])
+	results['decJ2000'] = numpy.radians(results['decJ2000'])
+        return results
 
     def query_columns(self, colnames=None, chunksize=None, obs_metadata=None, constraint=None):
         """Execute a query
@@ -232,13 +149,13 @@ class GalaxyTileObj(DBObject):
             then result is an iterator over lists of the given size.
         """
         if colnames is None:
-            colnames = [el[0] for el in self.columns]
+            colnames = [k for k in self.columnMap.keys()]
         
         #We know that galtileid comes back with the query, but we don't want 
         #to add it to the query since it's generated on the fly.
         while 'galtileid' in colnames:
             colnames.remove('galtileid')
-        mappedcolnames = ["%s as %s"%(self.column_map[x], x) for x in colnames]
+        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
 	circ_bounds = None
         box_bounds = None
@@ -267,7 +184,7 @@ class GalaxyTileObj(DBObject):
                           "if the database is large")
 
 
-        query = "EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint]\
+        query = "EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint2013]\
                @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
                @ColumnNames = '%s'" % (RA, DEC, radius * 60., mappedcolnames)
 
@@ -275,7 +192,6 @@ class GalaxyTileObj(DBObject):
             query += ", @WhereClause = '%s'"%(constraint)
 
         exec_query = self.session.execute(query)
-
         if chunksize is None:
             return self._postprocess_results(exec_query.fetchall())
         else:
@@ -286,174 +202,107 @@ class GalaxyBulgeObj(GalaxyTileObj):
     #This is the base table for the galaxies
     #with a bulge component
     tableid = 'galaxy_bulge'
-    idColName = 'galid'
+    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 1
     spatialModel = 'SERSIC2D'
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
-    columns = [('galtileid', numpy.int64),
-            ('galid', str, 30),
-	    ('componentra', float),
-	    ('componentdec', float),
-            ('raJ2000', float),
-            ('decJ2000', float),
-            ('magNorm', float),
-            ('sedFilename', unicode, 40),
-            ('majorAxis', float),
-            ('minorAxis', float),
-            ('positionAngle', float),
-            ('sindex', int),
-            ('internalExtinctionModel', str, 3),
-            ('internalAv', float),
-            ('internalRv', float),
-            ('redshift', float),
-            ('radialVelocity', float),
-            ('lsst_u', float),
-            ('lsst_g', float),
-            ('lsst_r', float),
-            ('lsst_i', float),
-            ('lsst_z', float),
-            ('lsst_y', float)]
-    column_map = {    
-            'galtileid':'galtileid',
-            'galid':'galid',
-            'componentra':'bra',
-            'componentdec':'bdec',
+    columns = [('galtileid', None, numpy.int64),
+            ('galid', None, str, 30),
+	    ('componentra','bra'),
+	    ('componentdec', 'bdec'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
-            'raJ2000':'ra',
-            'decJ2000':'dec',
-            'magNorm':'magnorm_bulge',
-            'sedFilename':'sedname_bulge',
-            'majorAxis':'a_b',
-            'minorAxis':'b_b',
-            'positionAngle':'pa_bulge',
-            'sindex':'bulge_n',
-            'internalExtinctionModel':'ext_model_b',
-            'internalAv':'av_b',
-            'internalRv':'rv_b',
-            'redshift':'redshift',
-            'radialVelocity':'rad_vel',
-            'lsst_u':'u_ab',
-            'lsst_g':'g_ab',
-            'lsst_r':'r_ab',
-            'lsst_i':'i_ab',
-            'lsst_z':'z_ab',
-            'lsst_y':'y_ab'}
+            ('raJ2000', 'ra'),
+            ('decJ2000', 'dec'),
+            ('magNorm', 'magnorm_bulge'),
+            ('sedFilename', 'sedname_bulge', unicode, 40),
+            ('majorAxis', 'a_b'),
+            ('minorAxis', 'b_b'),
+            ('positionAngle', 'pa_bulge'),
+            ('sindex', 'bulge_n', int),
+            ('internalExtinctionModel', 'ext_model_b', str, 3),
+            ('internalAv', 'av_b'),
+            ('internalRv', 'rv_b'),
+            ('redshift', None),
+            ('radialVelocity', 'rad_vel'),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
 
 class GalaxyDiskObj(GalaxyTileObj):
     objid = 'galaxyDisk'
     #This is the base table for the galaxies
     #with a disk component
     tableid = 'galaxy'
-    idColName = 'galid'
+    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 2
     spatialModel = 'SERSIC2D'
     #Only realy need to specify the mappings that are not 
     #"x as x" but most need to be mapped anyway.
-    columns = [('galtileid', numpy.int64),
-            ('galid', str, 30),
-	    ('componentra', float),
-	    ('componentdec', float),
-            ('raJ2000', float),
-            ('decJ2000', float),
-            ('magNorm', float),
-            ('sedFilename', unicode, 40),
-            ('majorAxis', float),
-            ('minorAxis', float),
-            ('positionAngle', float),
-            ('sindex', int),
-            ('internalExtinctionModel', str, 3),
-            ('internalAv', float),
-            ('internalRv', float),
-            ('redshift', float),
-            ('radialVelocity', float),
-            ('lsst_u', float),
-            ('lsst_g', float),
-            ('lsst_r', float),
-            ('lsst_i', float),
-            ('lsst_z', float),
-            ('lsst_y', float)]
-    column_map = {    
-            'galtileid':'galtileid',
-            'galid':'galid',
-            'componentra':'dra',
-            'componentdec':'ddec',
+    columns = [('galtileid', None, numpy.int64),
+            ('galid', None, str, 30),
+	    ('componentra','dra'),
+	    ('componentdec', 'ddec'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
-            'raJ2000':'ra',
-            'decJ2000':'dec',
-            'magNorm':'magnorm_disk',
-            'sedFilename':'sedname_disk',
-            'majorAxis':'a_d',
-            'minorAxis':'b_d',
-            'positionAngle':'pa_disk',
-            'sindex':'disk_n',
-            'internalExtinctionModel':'ext_model_d',
-            'internalAv':'av_d',
-            'internalRv':'rv_d',
-            'redshift':'redshift',
-            'radialVelocity':'rad_vel',
-            'lsst_u':'u_ab',
-            'lsst_g':'g_ab',
-            'lsst_r':'r_ab',
-            'lsst_i':'i_ab',
-            'lsst_z':'z_ab',
-            'lsst_y':'y_ab'}
+            ('raJ2000', 'ra'),
+            ('decJ2000', 'dec'),
+            ('magNorm', 'magnorm_disk'),
+            ('sedFilename', 'sedname_disk', unicode, 40),
+            ('majorAxis', 'a_d'),
+            ('minorAxis', 'b_d'),
+            ('positionAngle', 'pa_disk'),
+            ('sindex', 'disk_n', int),
+            ('internalExtinctionModel', 'ext_model_d', str, 3),
+            ('internalAv', 'av_d'),
+            ('internalRv', 'rv_d'),
+            ('redshift', None),
+            ('radialVelocity', 'rad_vel'),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
 
 class GalaxyAgnObj(GalaxyTileObj):
     objid = 'galaxyAgn'
     #This is the base table for the galaxies
     #with an agn component
     tableid = 'galaxy_agn'
-    idColName = 'galid'
+    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 3
     spatialModel = 'ZPOINT'
-    #Only realy need to specify the mappings that are not 
-    #"x as x" but most need to be mapped anyway.
-    columns = [('galtileid', numpy.int64),
-            ('galid', str, 30),
-	    ('componentra', float),
-	    ('componentdec', float),
-            ('raJ2000', float),
-            ('decJ2000', float),
-            ('magNorm', float),
-            ('sedFilename', unicode, 40),
-            ('redshift', float),
-            ('radialVelocity', float),
-	    ('variabilityParameters', str, 256),
-            ('lsst_u', float),
-            ('lsst_g', float),
-            ('lsst_r', float),
-            ('lsst_i', float),
-            ('lsst_z', float),
-            ('lsst_y', float)]
-    column_map = {    
-            'galtileid':'galtileid',
-            'galid':'galid',
-            'componentra':'agnra',
-            'componentdec':'agndec',
+    #The tuples must be at least len 2
+    columns = [('galtileid', None, numpy.int64),
+            ('galid', None, str, 30),
+	    ('componentra','agnra'),
+	    ('componentdec', 'agndec'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
-            'raJ2000':'ra',
-            'decJ2000':'dec',
-            'magNorm':'magnorm_agn',
-            'sedFilename':'sedname_agn',
-            'redshift':'redshift',
-            'radialVelocity':'rad_vel',
-            'variabilityParameters':'varParamStr',
-            'lsst_u':'u_ab',
-            'lsst_g':'g_ab',
-            'lsst_r':'r_ab',
-            'lsst_i':'i_ab',
-            'lsst_z':'z_ab',
-            'lsst_y':'y_ab'}
+            ('raJ2000', 'ra'),
+            ('decJ2000', 'dec'),
+            ('magNorm', 'magnorm_agn'),
+            ('sedFilename', 'sedname_agn', unicode, 40),
+            ('redshift', None),
+            ('radialVelocity', 'rad_vel'),
+            ('variabilityParameters', 'varParamStr', str, 256),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
 
 if __name__ == '__main__':
     star = DBObject.from_objid('msstars')
