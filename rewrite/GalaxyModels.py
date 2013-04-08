@@ -1,22 +1,28 @@
 import warnings
 import math
 import numpy
-from dbConnection import ChunkIterator, DBObject, ObservationMetaData
+from dbConnection import ChunkIterator, DBObject
+from MetaDataDBObject import ObservationMetaData
 from sqlalchemy import Table, Column, BigInteger, MetaData
 
 class GalaxyObj(DBObject):
     objid = 'galaxyBase'
     #This is the base table for the galaxies
-    #with a bulge component
     tableid = 'galaxy'
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 9
     #There is no spatial model available for coadded galaxies 
+    #This will cause a warning, but it just means we can't make
+    #TRIM files with this object.
     spatialModel = None
-    #Only realy need to specify the mappings that are not 
-    #"x as x" but most need to be mapped anyway.
+
+    #The following maps column names to database schema.  The tuples
+    #must be at least length 2.  If column name is the same as the name
+    #in the DB the mapping element may be None.  The rest of the tuple
+    #should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #is assumed to be float.
     columns = [('galid', None, str, 30),
             ('raJ2000', 'ra*PI()/180.'),
             ('decJ2000', 'dec*PI()/180.'),
@@ -66,8 +72,12 @@ class GalaxyTileObj(DBObject):
     appendint = 9
     #There is no spatial model available for coadded galaxies 
     spatialModel = None
-    #Only realy need to specify the mappings that are not 
-    #"x as x" but most need to be mapped anyway.
+
+    #The following maps column names to database schema.  The tuples
+    #must be at least length 2.  If column name is the same as the name
+    #in the DB the mapping element may be None.  The rest of the tuple
+    #should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
             ('raJ2000', 'ra*PI()/180.'),
@@ -112,12 +122,21 @@ class GalaxyTileObj(DBObject):
                                   "no need to loop over columns")
 
     def _final_pass(self, results):
-        """Modify the results of raJ2000 and decJ2000 to be in radians"""
-	results['raJ2000'] = numpy.radians(results['raJ2000'])
-	results['decJ2000'] = numpy.radians(results['decJ2000'])
+        """Modify the results of raJ2000 and decJ2000 to be in radians
+        Parameters
+        ----------
+        results : Structured array of results from query
+
+        Returns
+        -------
+        results : Modified structured array
+        """
+
+        results['raJ2000'] = numpy.radians(results['raJ2000'])
+        results['decJ2000'] = numpy.radians(results['decJ2000'])
         return results
 
-    def query_columns(self, colnames=None, chunksize=None, obs_metadata=None, constraint=None):
+    def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None):
         """Execute a query
 
         Parameters
@@ -130,23 +149,19 @@ class GalaxyTileObj(DBObject):
             if specified, then return an iterator object to query the database,
             each time returning the next `chunksize` elements.  If not
             specified, all matching results will be returned.
-        circ_bounds : tuple (optional)
-            if specified, then limit the query to the specified circular
-            spatial range. circ_bounds = (RAcenter, DECcenter, radius),
-            measured in degrees.
-        box_bounds : tuple (optional)
-            if specified, then limit the query to the specified quadrilateral
-            spatial range.  box_bounds = (RAmin, RAmax, DECmin, DECmax),
-            measured in degrees
+        obs_metadata : object (optional)
+            object containing information on the observation including the region of the sky
+            to query and time of the observation.
         constraint : string (optional)
-            if specified, the predicate is added to the query
+            if specified, the predicate is added to the query verbatim using AND
 
         Returns
         -------
-        result : list or iterator
-            If chunksize is not specified, then result is a list of all
-            items which match the specified query.  If chunksize is specified,
-            then result is an iterator over lists of the given size.
+        result : structured array or iterator
+            If chunksize is not specified, then result is a structured array of all
+            items which match the specified query with columns named by the column
+            names in the columns class attribute.  If chunksize is specified,
+            then result is an iterator over structured arrays of the given size.
         """
         if colnames is None:
             colnames = [k for k in self.columnMap.keys()]
@@ -157,18 +172,15 @@ class GalaxyTileObj(DBObject):
             colnames.remove('galtileid')
         mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
-	circ_bounds = None
+        circ_bounds = None
         box_bounds = None
 
-	if obs_metadata is not None:
-	    if obs_metadata.circ_bounds is not None:
-	        circ_bounds = obs_metadata.circ_bounds
-	    if obs_metadata.box_bounds is not None:
+        if obs_metadata is not None:
+            if obs_metadata.circ_bounds is not None:
+                 circ_bounds = obs_metadata.circ_bounds
+            if obs_metadata.box_bounds is not None:
                 box_bounds = obs_metadata.box_bounds
         
-	#KSK: Should we do some checking to make sure circ_bounds and 
-	#box_bounds are not both set, or if they are that they are 
-	#self consistent
         if circ_bounds is not None:
             RA = circ_bounds['ra']
             DEC = circ_bounds['dec']
@@ -192,10 +204,10 @@ class GalaxyTileObj(DBObject):
             query += ", @WhereClause = '%s'"%(constraint)
 
         exec_query = self.session.execute(query)
-        if chunksize is None:
+        if chunk_size is None:
             return self._postprocess_results(exec_query.fetchall())
         else:
-            return ChunkIterator(exec_query, chunksize)
+            return ChunkIterator(self, query, chunk_size)
 
 class GalaxyBulgeObj(GalaxyTileObj):
     objid = 'galaxyBulge'
@@ -207,12 +219,15 @@ class GalaxyBulgeObj(GalaxyTileObj):
     decColName = 'dec'
     appendint = 1
     spatialModel = 'SERSIC2D'
-    #Only realy need to specify the mappings that are not 
-    #"x as x" but most need to be mapped anyway.
+    #The following maps column names to database schema.  The tuples
+    #must be at least length 2.  If column name is the same as the name
+    #in the DB the mapping element may be None.  The rest of the tuple
+    #should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-	    ('componentra','bra'),
-	    ('componentdec', 'bdec'),
+            ('componentra','bra'),
+            ('componentdec', 'bdec'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
@@ -245,12 +260,15 @@ class GalaxyDiskObj(GalaxyTileObj):
     decColName = 'dec'
     appendint = 2
     spatialModel = 'SERSIC2D'
-    #Only realy need to specify the mappings that are not 
-    #"x as x" but most need to be mapped anyway.
+    #The following maps column names to database schema.  The tuples
+    #must be at least length 2.  If column name is the same as the name
+    #in the DB the mapping element may be None.  The rest of the tuple
+    #should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-	    ('componentra','dra'),
-	    ('componentdec', 'ddec'),
+            ('componentra','dra'),
+            ('componentdec', 'ddec'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
@@ -283,11 +301,15 @@ class GalaxyAgnObj(GalaxyTileObj):
     decColName = 'dec'
     appendint = 3
     spatialModel = 'ZPOINT'
-    #The tuples must be at least len 2
+    #The following maps column names to database schema.  The tuples
+    #must be at least length 2.  If column name is the same as the name
+    #in the DB the mapping element may be None.  The rest of the tuple
+    #should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-	    ('componentra','agnra'),
-	    ('componentdec', 'agndec'),
+            ('componentra','agnra'),
+            ('componentdec', 'agndec'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
@@ -304,26 +326,3 @@ class GalaxyAgnObj(GalaxyTileObj):
             ('lsst_z', 'z_ab'),
             ('lsst_y', 'y_ab')]
 
-if __name__ == '__main__':
-    star = DBObject.from_objid('msstars')
-    galaxy = DBObject.from_objid('galaxyBase')
-    galaxyTiled = DBObject.from_objid('galaxyTiled')
-    galaxyBulge = DBObject.from_objid('galaxyBulge')
-    galaxyDisk = DBObject.from_objid('galaxyDisk')
-    galaxyAgn = DBObject.from_objid('galaxyAgn')
-
-    objects = [star, galaxy, galaxyTiled, galaxyBulge, galaxyDisk, galaxyAgn]
-
-    constraints = ["rmag < 21.", "gr_total_rest > 0.8", "r_ab < 20.", "mass_bulge > 1.", 
-                   "DiskLSSTg < 20.", "t0_agn > 300."]
-    obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
-                                                        dec=5.0,
-                                                        radius=0.01))
-    obs_metadata_gal = ObservationMetaData(circ_bounds=dict(ra=0.0,
-                                                            dec=0.0,
-                                                            radius=0.01))
-    metadataList = [obs_metadata, obs_metadata_gal, obs_metadata, 
-		    obs_metadata, obs_metadata, obs_metadata]
-    for object, constraint, md in zip(objects, constraints, metadataList):
-        result = object.query_columns(obs_metadata=md, constraint=constraint)
-        print "Length of returned result set of %s is: %i"%(object.objid, len(result))

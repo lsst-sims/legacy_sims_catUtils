@@ -8,7 +8,11 @@ from sqlalchemy.sql import expression
 from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
                         Table, Column, BigInteger)
 
+DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
+# KSK : I think the following have been cleaned up.  there are no references 
+# column_map or requirements anymore.  The meta class constructs two ordered 
+# dictionaries: columnMap and typeMap.
 # TODO : we need to clean up "columns", "column_map", and "requirements".
 #        currently it's very confusing, and a lot of things are duplicated.
 #        Initially, I thought that "columns" would specify the ordering
@@ -32,64 +36,13 @@ from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
 #        type mapping.
 
 
-DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
-
-
-class ObservationMetaData(object):
-    """Observation Metadata
-    
-    This class contains any metadata for a query which is associated with
-    a particular telescope pointing, including bounds in RA and DEC, and
-    the time of the observation.
-
-    Parameters
-    ----------
-    circ_bounds : dict (optional)
-        a dictionary with the keys 'ra', 'dec', and 'radius' measured, in
-        degrees
-    box_bounds : dict (optional)
-        a dictionary with the keys 'ra_min', 'ra_max', 'dec_min', 'dec_max',
-        measured in degrees
-    MJD : list (optional)
-        a list of MJD values to query
-
-    Examples
-    --------
-    >>> data = ObservationMetaData.from_obshistid(88544919)
-    >>> print data.MJD
-    """
-    def from_obshistid(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False):
-        #92815035 is the last obshistid in 3_61
-        result = self.osm.query_columns(constraint="obshistid=%i"%obshistid)
-        if makeCircBounds:
-            self.circ_bounds = dict(ra=math.degrees(result[self.osm.raColKey][0]), 
-                                    dec=math.degrees(result[self.osm.decColKey][0]), 
-                                    radius=radiusDeg)
-            #We don't do mjd bounding yet
-            self.mjd = None
-            self.box_bounds = None
-        elif makeBoxBounds:
-            raise NotImplementedError("Don't have BBox construction yet")
-        else:
-            raise ValueErr("Need either circ_bounds or box_bounds")
-            
-    def __init__(self, opsimid=None, circ_bounds=None, box_bounds=None, mjd=None):
-        if opsimid is not None:
-            self.osm = MetadataDBObject.from_objid('opsim3_61')
-        else:
-            if circ_bounds is not None and box_bounds is not None:
-                raise ValueError("Passing both circ_bounds and box_bounds")
-            self.circ_bounds = circ_bounds
-            self.box_bounds = box_bounds
-            self.mjd = mjd
-
 
 
 #------------------------------------------------------------
 # Iterator for database chunks
 class ChunkIterator(object):
     """Iterator for query chunks"""
-    def __init__(self, exec_query, chunk_size):
+    def __init__(self, dbobj, query, chunk_size):
         self.dbobj = dbobj
         self.exec_query = dbobj.session.execute(query)
         self.chunk_size = chunk_size
@@ -138,11 +91,6 @@ class DBObjectMeta(type):
                                          for el in cls.columns])
             cls.typeMap = OrderedDict([(el[0], el[2:] if len(el)> 2 else (float,))
                                        for el in cls.columns])
-            #cls.dtype = numpy.dtype([(k,)+cls.columns[k][1:]
-            #                         for k in cls.columns.keys()])
-            #cls.requirements = dict([(k, cls.columns[k][0])
-            #                         for k in cls.columns.keys()])
-            
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
 class DBObject(object):
@@ -158,7 +106,6 @@ class DBObject(object):
     columns = None
     raColName = None
     decColName = None
-    mjdColName = None
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -238,37 +185,35 @@ class DBObject(object):
 
         return query
 
-    def filter(self, query, circ_bounds=None, box_bounds=None, mjd=None):
+    def filter(self, query, circ_bounds=None, box_bounds=None):
         """Filter the query by the associated metadata"""
-        on_clause = self.to_SQL(circ_bounds, box_bounds, mjd)
+        on_clause = self.to_SQL(circ_bounds, box_bounds)
         if on_clause:
             query = query.filter(on_clause)
         return query
 
-    def to_SQL(self, circ_bounds=None, box_bounds=None, mjd=None):
+    def to_SQL(self, circ_bounds=None, box_bounds=None):
+        if circ_bounds and box_bounds:
+            raise ValueError("circ_bounds and box_bounds should not both be set")
         constraint = ""
-        if box_bounds is not None:
+        if box_bounds:
             bb = box_bounds
-            constraint += self.box_bound_constraint(bb['ra_min'],
+            constraint = self.box_bound_constraint(bb['ra_min'],
                                                     bb['ra_max'],
                                                     bb['dec_min'],
                                                     bb['dec_max'],
-						    self.raColName,
-						    self.decColName)
-        if circ_bounds is not None:
+                                                    self.raColName,
+                                                    self.decColName)
+        if circ_bounds:
             cb = circ_bounds
-            constraint += self.circle_bound_constraint(cb['ra'], cb['dec'],
+            constraint = self.circle_bound_constraint(cb['ra'], cb['dec'],
                                                        cb['radius'],
                                                        self.raColName, self.decColName)
-	#KSK: Make MJD self consistent with other column labelings
-        if mjd is not None:
-            constraint += self.mjd_constraint(mjd, self.mjdColName)
-            
         return constraint
 
     @staticmethod
-    def mjd_constraint(MJD, MJDname):
-        raise NotImplementedError("haven't implemented MJD bound yet")
+    def mjd_constraint(mjd_bounds, MJDname):
+        raise NotImplementedError("This is better done using a constraint at run time")
 
     @staticmethod
     def box_bound_constraint(RAmin, RAmax, DECmin, DECmax,
@@ -311,28 +256,28 @@ class DBObject(object):
 
     def _final_pass(self, results):
         """ Make final modifications to a set of data before returning it to 
-	    the user
-	Parameters
-	----------
-	results : a structured array constructed from the result set from a query
+            the user
+        Parameters
+        ----------
+        results : a structured array constructed from the result set from a query
 
-	Returns
-	-------
-	results : a potentially modified structured array.  The default is to do nothing.
-	"""
+        Returns
+        -------
+        results : a potentially modified structured array.  The default is to do nothing.
+        """
         return results
 
     def _postprocess_results(self, results):
         """Post-process the query results to put then
-	in a structured array.  
-	Parameters
-	----------
-	results : a result set as returned by execution of the query
-	
-	Returns
-	-------
-	_final_pass(retresutls) : the result of calling the _final_pass method on a
-	     structured array constructed from the query data.
+        in a structured array.  
+        Parameters
+        ----------
+        results : a result set as returned by execution of the query
+
+        Returns
+        -------
+        _final_pass(retresutls) : the result of calling the _final_pass method on a
+             structured array constructed from the query data.
         """
         dtype = numpy.dtype([(k,)+self.typeMap[k]
                              for k in self.typeMap.keys()])
@@ -359,6 +304,8 @@ class DBObject(object):
         obs_metadata : object (optional)
             an observation metadata object which has a "filter" method, which
             will add a filter string to the query.
+        constraint : str (optional)
+            a string which is interpreted as SQL and used as a predicate on the query
 
         Returns
         -------
@@ -371,7 +318,7 @@ class DBObject(object):
 
         if obs_metadata is not None:
             query = self.filter(query, circ_bounds=obs_metadata.circ_bounds, 
-                    box_bounds=obs_metadata.box_bounds, mjd=obs_metadata.mjd)
+                    box_bounds=obs_metadata.box_bounds)
 
         if constraint is not None:
             query = query.filter(constraint)
@@ -379,106 +326,7 @@ class DBObject(object):
             exec_query = self.session.execute(query)
             return self._postprocess_results(exec_query.fetchall())
         else:
-            return ChunkIterator(self, chunk_size)
-
-class MetadataDBObject(DBObject):
-    """Metadata Database Object base class
-
-    """
-    objid = 'opsim3_61'
-    tableid = 'output_opsim3_61'
-    #Note that identical observations may have more than one unique
-    #obshistid, so this is the id, but not for unique visits.
-    #To do that, group by expdate.
-    idColKey = 'Opsim_obshistid'
-    bandColKey = 'Opsim_filter'
-    raColKey = 'Unrefracted_RA'
-    decColKey = 'Unrefracted_Dec'
-    mjdColKey = 'Opsim_expmjd'
-    #These are interpreted as SQL strings.
-    raColName = 'fieldra*PI()/180.'
-    decColName = 'fielddec*PI()/180.'
-    columns = [('SIM_SEED', 'expdate', int),
-               ('Unrefracted_RA', 'fieldra'),
-               ('Unrefracted_Dec', 'fielddec'),
-               ('Opsim_moonra', 'moonra'),
-               ('Opsim_moondec', 'moondec'),
-               ('Opsim_rotskypos', 'rotskypos'),
-               ('Opsim_rottelpos', 'rottelpos'),
-               ('Opsim_filter', 'filter', str, 1),
-               ('Opsim_rawseeing', 'rawseeing'),
-               ('Opsim_sunalt', 'sunalt'),
-               ('Opsim_moonalt', 'moonalt'),
-               ('Opsim_dist2moon', 'dist2moon'),
-               ('Opsim_moonphase', 'moonphase'),
-               ('Opsim_obshistid', 'obshistid', numpy.int64),
-               ('Opsim_expmjd', 'expmjd'),
-               ('Opsim_altitude', 'altitude'),
-               ('Opsim_azimuth', 'azimuth')]
-
-    def __init__(self, address=None):
-        if (self.objid is None) or (self.tableid is None):
-            raise ValueError("DBObject must be subclassed, and "
-                             "define objid and tableid.")
-        if self.columns is None:
-            raise ValueError("DBObject must be subclasses, and define "
-                             "columns.  The columns variable is a list "
-                             "of tuples containing column name, mapping to "
-                             "database name, type")
-
-        if address is None:
-            self.address = DEFAULT_ADDRESS
-        else:
-            self.address = address
-
-        self._connect_to_engine()
-        self._get_table()
-
-    def getObjectTypeId(self):
-        raise NotImplementedError("Metadata has no object type")
-
-    def getSpatialModel(self):
-        raise NotImplementedError("Metadata has no spatial model")
-
-    def query_columns(self, colnames=None, chunk_size=None,
-                      circ_bounds=None, box_bounds=None,
-                      mjd_bounds=None, constraint=None):
-        """Execute a query
-
-        Parameters
-        ----------
-        colnames : list or None
-            a list of valid column names, corresponding to entries in the
-            `columns` class attribute.  If not specified, all columns are
-            queried.
-        chunk_size : int (optional)
-            if specified, then return an iterator object to query the database,
-            each time returning the next `chunk_size` elements.  If not
-            specified, all matching results will be returned.
-        *_bounds : object (optional)
-            bounds to be passed to the filter method  which
-            will add a filter string to the query.
-
-        Returns
-        -------
-        result : list or iterator
-            If chunk_size is not specified, then result is a list of all
-            items which match the specified query.  If chunk_size is specified,
-            then result is an iterator over lists of the given size.
-        """
-        query = self._get_column_query(colnames)
-
-        query = self.filter(query, circ_bounds=circ_bounds, 
-                    box_bounds=box_bounds, mjd=mjd_bounds)
-
-        if constraint is not None:
-            query = query.filter(constraint)
-        if chunk_size is None:
-            exec_query = self.session.execute(query)
-            return self._postprocess_results(exec_query.fetchall())
-        else:
-            return ChunkIterator(self, chunk_size)
-
+            return ChunkIterator(self, query, chunk_size)
 
 class StarObj(DBObject):
     # XXX: this is incomplete.  We need to use all the column values from
@@ -502,14 +350,3 @@ class StarObj(DBObject):
                ('decJ2000', 'decl*PI()/180.'),
                ('sedFilename', 'sedfilename', unicode, 40)]
 
-if __name__ == '__main__':
-    star = DBObject.from_objid('msstars')
-    #obs_metadata = ObservationMetaData(circ_bounds=dict(ra=2.0,
-    #                                                    dec=5.0,
-    #                                                    radius=1.0))
-    obs_metadata = ObservationMetaData(opsimid="opsim3_61")
-    obs_metadata.from_obshistid(88544919, 0.1, makeCircBounds=True)
-
-    result = star.query_columns(obs_metadata=obs_metadata, constraint="rmag < 21.")
-    print result.dtype
-    print result
