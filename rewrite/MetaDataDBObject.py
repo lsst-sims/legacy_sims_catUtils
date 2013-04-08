@@ -1,5 +1,4 @@
 from dbConnection import DBObject
-from dbConnection import DEFAULT_ADDRESS
 import numpy
 import math
 
@@ -82,7 +81,7 @@ class MetaDataDBObject(DBObject):
                              "database name, type")
 
         if address is None:
-            self.address = DEFAULT_ADDRESS
+            self.address = self.dbAddress
         else:
             self.address = address
 

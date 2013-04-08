@@ -7,8 +7,8 @@ from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
 from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
                         Table, Column, BigInteger)
-
-DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+# KSK : moved this into the class
+#DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
 # KSK : I think the following have been cleaned up.  there are no references 
 # column_map or requirements anymore.  The meta class constructs two ordered 
@@ -106,6 +106,9 @@ class DBObject(object):
     columns = None
     raColName = None
     decColName = None
+    #This is the default address.  Simply change this in the class definition for other
+    #endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -134,7 +137,7 @@ class DBObject(object):
                              "database name, type")
 
         if address is None:
-            self.address = DEFAULT_ADDRESS
+            self.address = self.dbAddress
         else:
             self.address = address
 
