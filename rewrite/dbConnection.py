@@ -137,12 +137,15 @@ class DBObject(object):
                              "database name, type")
 
         if address is None:
-            self.address = self.dbAddress
-        else:
-            self.address = address
+	    address = self.getDbAddress()
+
+        self.dbAddress = address
 
         self._connect_to_engine()
         self._get_table()
+
+    def getDbAddress(self):
+        return self.dbAddress
 
     def getObjectTypeId(self):
         return self.appendint
@@ -157,7 +160,7 @@ class DBObject(object):
 
     def _connect_to_engine(self):
         """create and connect to a database engine"""
-        self.engine = create_engine(self.address, echo=False)
+        self.engine = create_engine(self.dbAddress, echo=False)
         self.session = scoped_session(sessionmaker(autoflush=True, 
                                                    bind=self.engine))
         self.metadata = MetaData()

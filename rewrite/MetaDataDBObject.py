@@ -81,9 +81,9 @@ class MetaDataDBObject(DBObject):
                              "database name, type")
 
         if address is None:
-            self.address = self.dbAddress
-        else:
-            self.address = address
+            address = self.getDbAddress()
+
+        self.dbAddress = address
 
         self._connect_to_engine()
         self._get_table()
