@@ -1,4 +1,3 @@
-import sys
 import warnings
 import math
 import numpy
