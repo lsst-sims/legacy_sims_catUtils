@@ -235,7 +235,7 @@ class DBObject(object):
         elif RAmin < 0 and RAmax <= 360.:
             # XXX is this right?  It seems strange.
             bound = ("%s not between %f and %f and %s between %f and %f"
-                     % (RAname, RAmin % (360.), RAmax,
+                     % (RAname, RAmax, RAmin % (360.), 
                         DECname, DECmin, DECmax))
 
         elif RAmin >= 0 and RAmax > 2. * math.pi:

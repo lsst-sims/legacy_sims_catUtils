@@ -10,7 +10,7 @@ class GalaxyObj(DBObject):
     #This is the base table for the galaxies
     tableid = 'galaxy'
     idColKey = 'galid'
-    raColName = 'ra'
+    raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
     appendint = 9
     #There is no spatial model available for coadded galaxies 
@@ -61,6 +61,15 @@ class GalaxyObj(DBObject):
             ('lsst_z', 'z_ab'),
             ('lsst_y', 'y_ab')]
 
+    def _final_pass(self, results):
+        #This is to map the values from 0 - 2*PI() as ra goes negative currently
+        results['raJ2000'] = results['raJ2000']%(numpy.pi*2.)
+        results['raJ2000Bulge'] = results['raJ2000Bulge']%(numpy.pi*2.)
+        results['raJ2000Disk'] = results['raJ2000Disk']%(numpy.pi*2.)
+        results['raJ2000Agn'] = results['raJ2000Agn']%(numpy.pi*2.)
+        return results
+
+
 
 class GalaxyTileObj(DBObject):
     objid = 'galaxyTiled'
@@ -80,8 +89,8 @@ class GalaxyTileObj(DBObject):
     #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-            ('raJ2000', 'ra*PI()/180.'),
-            ('decJ2000', 'dec*PI()/180.'),
+            ('raJ2000', 'ra'),
+            ('decJ2000', 'dec'),
             ('raJ2000Bulge', 'bra*PI()/180.'),
             ('decJ2000Bulge', 'bdec*PI()/180.'),
             ('raJ2000Disk', 'dra*PI()/180.'),
@@ -226,17 +235,17 @@ class GalaxyBulgeObj(GalaxyTileObj):
     #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-            ('componentra','bra'),
-            ('componentdec', 'bdec'),
+            ('componentra','bra*PI()/180.'),
+            ('componentdec', 'bdec*PI()/180.'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_bulge'),
             ('sedFilename', 'sedname_bulge', unicode, 40),
-            ('majorAxis', 'a_b'),
-            ('minorAxis', 'b_b'),
-            ('positionAngle', 'pa_bulge'),
+            ('majorAxis', 'a_b*PI()/180.'),
+            ('minorAxis', 'b_b*PI()/180.'),
+            ('positionAngle', 'pa_bulge*PI()/180.'),
             ('sindex', 'bulge_n', int),
             ('internalExtinctionModel', 'ext_model_b', str, 3),
             ('internalAv', 'av_b'),
@@ -267,17 +276,17 @@ class GalaxyDiskObj(GalaxyTileObj):
     #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-            ('componentra','dra'),
-            ('componentdec', 'ddec'),
+            ('componentra','dra*PI()/180.'),
+            ('componentdec', 'ddec*PI()/180.'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_disk'),
             ('sedFilename', 'sedname_disk', unicode, 40),
-            ('majorAxis', 'a_d'),
-            ('minorAxis', 'b_d'),
-            ('positionAngle', 'pa_disk'),
+            ('majorAxis', 'a_d*PI()/180.'),
+            ('minorAxis', 'b_d*PI()/180.'),
+            ('positionAngle', 'pa_disk*PI()/180.'),
             ('sindex', 'disk_n', int),
             ('internalExtinctionModel', 'ext_model_d', str, 3),
             ('internalAv', 'av_d'),
@@ -308,8 +317,8 @@ class GalaxyAgnObj(GalaxyTileObj):
     #is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
-            ('componentra','agnra'),
-            ('componentdec', 'agndec'),
+            ('componentra','agnra*PI()/180.'),
+            ('componentdec', 'agndec*PI()/180.'),
             #This is actually a problem with the stored procedure.  We need to be able to map columns other than
             #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
