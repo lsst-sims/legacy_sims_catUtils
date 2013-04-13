@@ -334,25 +334,3 @@ class DBObject(object):
         else:
             return ChunkIterator(self, query, chunk_size)
 
-class StarObj(DBObject):
-    # XXX: this is incomplete.  We need to use all the column values from
-    #      the requiredFields file.
-    objid = 'msstars'
-    tableid = 'starsMSRGB_forceseek'
-    idColKey = 'id'
-    raColName = 'ra'
-    decColName = 'decl'
-    appendint = 4
-    spatialModel = 'POINT'
-    #These types should be matched to the database.
-    #Default map is float.  If the column mapping is the same as the column name, None can be specified
-    columns = [('id','simobjid', int),
-               ('umag', None),
-               ('gmag', None),
-               ('rmag', None),
-               ('imag', None),
-               ('zmag', None),
-               ('raJ2000', 'ra*PI()/180.'),
-               ('decJ2000', 'decl*PI()/180.'),
-               ('sedFilename', 'sedfilename', unicode, 40)]
-
