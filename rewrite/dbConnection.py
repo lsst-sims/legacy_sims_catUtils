@@ -2,41 +2,13 @@ import warnings
 import math
 import numpy
 from collections import OrderedDict
+from lsst.sims.catalogs.measures.instance.rewrite import\
+        InstanceCatalog
 
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
 from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
                         Table, Column, BigInteger)
-# KSK : moved this into the class
-#DEFAULT_ADDRESS = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
-
-# KSK : I think the following have been cleaned up.  there are no references 
-# column_map or requirements anymore.  The meta class constructs two ordered 
-# dictionaries: columnMap and typeMap.
-# TODO : we need to clean up "columns", "column_map", and "requirements".
-#        currently it's very confusing, and a lot of things are duplicated.
-#        Initially, I thought that "columns" would specify the ordering
-#        of things, and "column_map" would be used for only a handful of
-#        the columns.  After seeing Simon's GalaxyObj implementations, it's
-#        clear that this assumption was wrong: nearly every column needs to
-#        be mapped, and additionally we need to specify type info for nearly
-#        every column.
-#
-#        For simplicity, we should have the class define a single array with
-#        column names & attributes.  It could look like this:
-#
-#        columns = [('galid', 'galid', str, 30),
-#                   ('raJ2000', 'ra*PI()/180., float),
-#                   ('decJ2000', 'dec*PI()/180.'),  # float by default
-#                   ...]
-#
-#        The metaclass would take this column list, and turn it into two
-#        ordered dictionaries, (using `from collections import OrderedDict`)
-#        one consisting of the column mapping, and one consisting of the
-#        type mapping.
-
-
-
 
 #------------------------------------------------------------
 # Iterator for database chunks
@@ -137,12 +109,15 @@ class DBObject(object):
                              "database name, type")
 
         if address is None:
-	    address = self.getDbAddress()
+            address = self.getDbAddress()
 
         self.dbAddress = address
 
         self._connect_to_engine()
         self._get_table()
+
+    def getCatalog(self, ftype, *args, **kwargs):
+        return InstanceCatalog.new_catalog(ftype, self, *args, **kwargs)
 
     def getDbAddress(self):
         return self.dbAddress
@@ -328,9 +303,9 @@ class DBObject(object):
 
         if constraint is not None:
             query = query.filter(constraint)
+
         if chunk_size is None:
             exec_query = self.session.execute(query)
             return self._postprocess_results(exec_query.fetchall())
         else:
             return ChunkIterator(self, query, chunk_size)
-
