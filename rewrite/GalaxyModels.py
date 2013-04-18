@@ -69,7 +69,6 @@ class MyGalaxyObj(DBObject):
         home_path = os.getenv("HOME")
         f=open("%s/dbLogin"%(home_path),"r")
         return (f.readline()).strip()
-    
 
 class GalaxyObj(DBObject):
     objid = 'galaxyBase'
@@ -104,13 +103,13 @@ class GalaxyObj(DBObject):
             ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
             ('sedFilenameDisk', 'sedname_disk', unicode, 40),
             ('sedFilenameAgn', 'sedname_agn', unicode, 40),
-            ('majorAxisBulge', 'a_b'),
-            ('minorAxisBulge', 'b_b'),
-            ('positionAngleBulge', 'pa_bulge'),
+            ('majorAxisBulge', 'a_b*PI()/180.'),
+            ('minorAxisBulge', 'b_b*PI()/180.'),
+            ('positionAngleBulge', 'pa_bulge*PI()/180.'),
             ('sindexBulge', 'bulge_n', int),
-            ('majorAxisDisk', 'a_d'),
-            ('minorAxisDisk', 'b_d'),
-            ('positionAngleDisk', 'pa_disk'),
+            ('majorAxisDisk', 'a_d*PI()/180.'),
+            ('minorAxisDisk', 'b_d*PI()/180.'),
+            ('positionAngleDisk', 'pa_disk*PI()/180.'),
             ('sindexDisk', 'disk_n', int),
             ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
             ('internalAvBulge', 'av_b'),
@@ -169,13 +168,13 @@ class GalaxyTileObj(DBObject):
             ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
             ('sedFilenameDisk', 'sedname_disk', unicode, 40),
             ('sedFilenameAgn', 'sedname_agn', unicode, 40),
-            ('majorAxisBulge', 'a_b'),
-            ('minorAxisBulge', 'b_b'),
-            ('positionAngleBulge', 'pa_bulge'),
+            ('majorAxisBulge', 'a_b*PI()/180.'),
+            ('minorAxisBulge', 'b_b*PI()/180.'),
+            ('positionAngleBulge', 'pa_bulge*PI()/180.'),
             ('sindexBulge', 'bulge_n', int),
-            ('majorAxisDisk', 'a_d'),
-            ('minorAxisDisk', 'b_d'),
-            ('positionAngleDisk', 'pa_disk'),
+            ('majorAxisDisk', 'a_d*PI()/180.'),
+            ('minorAxisDisk', 'b_d*PI()/180.'),
+            ('positionAngleDisk', 'pa_disk*PI()/180.'),
             ('sindexDisk', 'disk_n', int),
             ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
             ('internalAvBulge', 'av_b'),
