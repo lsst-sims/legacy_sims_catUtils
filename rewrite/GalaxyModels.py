@@ -1,9 +1,75 @@
 import warnings
 import math
 import numpy
+import os
 from dbConnection import ChunkIterator, DBObject
 from MetaDataDBObject import ObservationMetaData
 from sqlalchemy import Table, Column, BigInteger, MetaData
+
+class MyGalaxyObj(DBObject):
+    
+    objid = 'mygalaxyBase'
+    #This is the base table for the galaxies
+    tableid = 'galaxies'
+    idColKey = 'galid'
+    raColName = 'ra'
+    decColName = 'decl'
+    appendint = 9
+    #There is no spatial model available for coadded galaxies 
+    #This will cause a warning, but it just means we can't make
+    #TRIM files with this object.    
+    spatialModel = None
+
+
+
+    #The following maps column names to database schema.  The tuples
+    #must be at least length 2.  If column name is the same as the name
+    #in the DB the mapping element may be None.  The rest of the tuple
+    #should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #is assumed to be float.
+    columns = [('galid', None, str, 30),
+            ('raJ2000', 'ra*PI()/180.'),
+            ('decJ2000', 'decl*PI()/180.'),
+            ('raJ2000Bulge', 'bra*PI()/180.'),
+            ('decJ2000Bulge', 'bdec*PI()/180.'),
+            ('raJ2000Disk', 'dra*PI()/180.'),
+            ('decJ2000Disk', 'ddec*PI()/180.'),
+            ('raJ2000Agn', 'agnra*PI()/180.'),
+            ('decJ2000Agn', 'agndec*PI()/180.'),
+            ('magNormBulge', 'magnorm_bulge'),
+            ('magNormDisk', 'magnorm_disk'),
+            ('magNormAgn', 'magnorm_agn'),
+            ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
+            ('sedFilenameDisk', 'sedname_disk', unicode, 40),
+            ('sedFilenameAgn', 'sedname_agn', unicode, 40),
+            ('majorAxisBulge', 'a_b'),
+            ('minorAxisBulge', 'b_b'),
+            ('positionAngleBulge', 'pa_bulge'),
+            ('sindexBulge', 'bulge_n', int),
+            ('majorAxisDisk', 'a_d'),
+            ('minorAxisDisk', 'b_d'),
+            ('positionAngleDisk', 'pa_disk'),
+            ('sindexDisk', 'disk_n', int),
+            ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
+            ('internalAvBulge', 'av_b'),
+            ('internalRvBulge', 'rv_b'),
+            ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
+            ('internalAvDisk', 'av_d'),
+            ('internalRvDisk', 'rv_d'),
+            ('redshift', None),
+            ('radialVelocity', 'rad_vel'),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
+
+    def getDbAddress(self):
+        home_path = os.getenv("HOME")
+        f=open("%s/dbLogin"%(home_path),"r")
+        return (f.readline()).strip()
+    
 
 class GalaxyObj(DBObject):
     objid = 'galaxyBase'
@@ -38,13 +104,13 @@ class GalaxyObj(DBObject):
             ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
             ('sedFilenameDisk', 'sedname_disk', unicode, 40),
             ('sedFilenameAgn', 'sedname_agn', unicode, 40),
-            ('majorAxisBulge', 'a_b*PI()/180.'),
-            ('minorAxisBulge', 'b_b*PI()/180.'),
-            ('positionAngleBulge', 'pa_bulge*PI()/180.'),
+            ('majorAxisBulge', 'a_b'),
+            ('minorAxisBulge', 'b_b'),
+            ('positionAngleBulge', 'pa_bulge'),
             ('sindexBulge', 'bulge_n', int),
-            ('majorAxisDisk', 'a_d*PI()/180.'),
-            ('minorAxisDisk', 'b_d*PI()/180.'),
-            ('positionAngleDisk', 'pa_disk*PI()/180.'),
+            ('majorAxisDisk', 'a_d'),
+            ('minorAxisDisk', 'b_d'),
+            ('positionAngleDisk', 'pa_disk'),
             ('sindexDisk', 'disk_n', int),
             ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
             ('internalAvBulge', 'av_b'),
@@ -103,13 +169,13 @@ class GalaxyTileObj(DBObject):
             ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
             ('sedFilenameDisk', 'sedname_disk', unicode, 40),
             ('sedFilenameAgn', 'sedname_agn', unicode, 40),
-            ('majorAxisBulge', 'a_b*PI()/180.'),
-            ('minorAxisBulge', 'b_b*PI()/180.'),
-            ('positionAngleBulge', 'pa_bulge*PI()/180.'),
+            ('majorAxisBulge', 'a_b'),
+            ('minorAxisBulge', 'b_b'),
+            ('positionAngleBulge', 'pa_bulge'),
             ('sindexBulge', 'bulge_n', int),
-            ('majorAxisDisk', 'a_d*PI()/180.'),
-            ('minorAxisDisk', 'b_d*PI()/180.'),
-            ('positionAngleDisk', 'pa_disk*PI()/180.'),
+            ('majorAxisDisk', 'a_d'),
+            ('minorAxisDisk', 'b_d'),
+            ('positionAngleDisk', 'pa_disk'),
             ('sindexDisk', 'disk_n', int),
             ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
             ('internalAvBulge', 'av_b'),
