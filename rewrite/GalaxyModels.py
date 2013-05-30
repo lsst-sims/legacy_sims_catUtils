@@ -124,7 +124,20 @@ class GalaxyObj(DBObject):
             ('lsst_r', 'r_ab'),
             ('lsst_i', 'i_ab'),
             ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+            ('lsst_y', 'y_ab'),
+            ('BulgeLSSTu', None),
+            ('BulgeLSSTg', None),
+            ('BulgeLSSTr', None),
+            ('BulgeLSSTi', None),
+            ('BulgeLSSTz', None),
+            ('BulgeLSSTy', None),
+            ('DiskLSSTu', None),
+            ('DiskLSSTg', None),
+            ('DiskLSSTr', None),
+            ('DiskLSSTi', None),
+            ('DiskLSSTz', None),
+            ('DiskLSSTy', None),
+            ]
 
     def _final_pass(self, results):
         #This is to map the values from 0 - 2*PI() as ra goes negative currently

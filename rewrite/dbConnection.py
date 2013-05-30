@@ -148,6 +148,11 @@ class DBObject(object):
         try:
             vals = [self.columnMap[k] for k in colnames]
         except KeyError:
+            for c in colnames:
+                if c in self.columnMap.keys():
+                    continue
+                else:
+                    print "%s not in columnMap"%(c)
             raise ValueError('entries in colnames must be in self.columnMap')
 
         # Get the first query
@@ -260,11 +265,14 @@ class DBObject(object):
         _final_pass(retresutls) : the result of calling the _final_pass method on a
              structured array constructed from the query data.
         """
-        dtype = numpy.dtype([(k,)+self.typeMap[k]
-                             for k in self.typeMap.keys()])
+        if len(results) > 0:
+            cols = [str(k) for k in results[0].keys()]
+        else:
+            return results
+        dtype = numpy.dtype([(k,)+self.typeMap[k] for k in cols])
         retresults = numpy.zeros((len(results),), dtype=dtype)
         for i, result in enumerate(results):
-            for k in self.columnMap.keys():
+            for k in cols:
                 retresults[i][k] = result[k]
         return self._final_pass(retresults)
 
