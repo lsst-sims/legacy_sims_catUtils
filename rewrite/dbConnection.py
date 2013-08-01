@@ -78,8 +78,8 @@ class DBObject(object):
     columns = None
     raColName = None
     decColName = None
-    #This is the default address.  Simply change this in the class definition for other
-    #endpoints.
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
     dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
     @classmethod
@@ -241,29 +241,32 @@ class DBObject(object):
                                                         RAname, DECname)    
 
     def _final_pass(self, results):
-        """ Make final modifications to a set of data before returning it to 
-            the user
-        Parameters
-        ----------
-        results : a structured array constructed from the result set from a query
+        """ Make final modifications to a set of data before returning it to the user
+        
+        **Parameters**
+        
+            * results : a structured array constructed from the result set from a query
 
-        Returns
-        -------
-        results : a potentially modified structured array.  The default is to do nothing.
+        **Returns**
+        
+            * results : a potentially modified structured array.  The default is to do nothing.
+        
         """
         return results
 
     def _postprocess_results(self, results):
         """Post-process the query results to put then
-        in a structured array.  
-        Parameters
-        ----------
-        results : a result set as returned by execution of the query
+        in a structured array.
+  
+        **Parameters**
 
-        Returns
-        -------
-        _final_pass(retresutls) : the result of calling the _final_pass method on a
-             structured array constructed from the query data.
+            * results : a result set as returned by execution of the query
+
+        **Returns**
+
+            * _final_pass(retresults) : the result of calling the _final_pass method on a
+              structured array constructed from the query data.
+
         """
         if len(results) > 0:
             cols = [str(k) for k in results[0].keys()]
@@ -280,28 +283,29 @@ class DBObject(object):
                       obs_metadata=None, constraint=None):
         """Execute a query
 
-        Parameters
-        ----------
-        colnames : list or None
-            a list of valid column names, corresponding to entries in the
-            `columns` class attribute.  If not specified, all columns are
-            queried.
-        chunk_size : int (optional)
-            if specified, then return an iterator object to query the database,
-            each time returning the next `chunk_size` elements.  If not
-            specified, all matching results will be returned.
-        obs_metadata : object (optional)
-            an observation metadata object which has a "filter" method, which
-            will add a filter string to the query.
-        constraint : str (optional)
-            a string which is interpreted as SQL and used as a predicate on the query
+        **Parameters**
 
-        Returns
-        -------
-        result : list or iterator
-            If chunk_size is not specified, then result is a list of all
-            items which match the specified query.  If chunk_size is specified,
-            then result is an iterator over lists of the given size.
+            * colnames : list or None
+              a list of valid column names, corresponding to entries in the
+              `columns` class attribute.  If not specified, all columns are
+              queried.
+            * chunk_size : int (optional)
+              if specified, then return an iterator object to query the database,
+              each time returning the next `chunk_size` elements.  If not
+              specified, all matching results will be returned.
+            * obs_metadata : object (optional)
+              an observation metadata object which has a "filter" method, which
+              will add a filter string to the query.
+            * constraint : str (optional)
+              a string which is interpreted as SQL and used as a predicate on the query
+
+        **Returns**
+
+            * result : list or iterator
+              If chunk_size is not specified, then result is a list of all
+              items which match the specified query.  If chunk_size is specified,
+              then result is an iterator over lists of the given size.
+
         """
         query = self._get_column_query(colnames)
 

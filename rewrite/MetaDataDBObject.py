@@ -10,22 +10,23 @@ class ObservationMetaData(object):
     a particular telescope pointing, including bounds in RA and DEC, and
     the time of the observation.
 
-    Parameters
-    ----------
-    circ_bounds : dict (optional)
-        a dictionary with the keys 'ra', 'dec', and 'radius' measured, in
-        degrees
-    box_bounds : dict (optional)
-        a dictionary with the keys 'ra_min', 'ra_max', 'dec_min', 'dec_max',
-        measured in degrees
-    mjd : float (optional)
-        The MJD of the observation..
-    metadata : dict (optional)
-        a dictionary containing arbitrary metadata
+    **Parameters**
 
-    Examples
-    --------
-    >>> data = ObservationMetaData(dict(('ra_min', 0), ('ra_max', 10), ('dec_min', 10), ('dec_max', 20)))
+        * circ_bounds : dict (optional)
+          a dictionary with the keys 'ra', 'dec', and 'radius' measured, in
+          degrees
+        * box_bounds : dict (optional)
+          a dictionary with the keys 'ra_min', 'ra_max', 'dec_min', 'dec_max',
+          measured in degrees
+        * mjd : float (optional)
+          The MJD of the observation..
+        * metadata : dict (optional)
+          a dictionary containing arbitrary metadata
+
+    **Examples**::
+
+        >>> data = ObservationMetaData(dict(('ra_min', 0), ('ra_max', 10), ('dec_min', 10), ('dec_max', 20)))
+
     """
             
     def __init__(self, circ_bounds=None, box_bounds=None, mjd=None, metadata=None):
@@ -42,14 +43,14 @@ class MetaDataDBObject(DBObject):
     """
     objid = 'opsim3_61'
     tableid = 'output_opsim3_61'
-    #Note that identical observations may have more than one unique
-    #obshistid, so this is the id, but not for unique visits.
-    #To do that, group by expdate.
+    #: Note that identical observations may have more than one unique
+    #: obshistid, so this is the id, but not for unique visits.
+    #: To do that, group by expdate.
     idColKey = 'Opsim_obshistid'
     bandColKey = 'Opsim_filter'
     raColKey = 'Unrefracted_RA'
     decColKey = 'Unrefracted_Dec'
-    #These are interpreted as SQL strings.
+    #: These are interpreted as SQL strings.
     raColName = 'fieldra*PI()/180.'
     decColName = 'fielddec*PI()/180.'
     mjdColName = 'expmjd'
@@ -120,35 +121,36 @@ class MetaDataDBObject(DBObject):
                       constraint=None):
         """Execute a query
 
-        Parameters
-        ----------
-        colnames : list or None
-            a list of valid column names, corresponding to entries in the
-            `columns` class attribute.  If not specified, all columns are
-            queried.
-        chunk_size : int (optional)
-            if specified, then return an iterator object to query the database,
-            each time returning the next `chunk_size` elements.  If not
-            specified, all matching results will be returned.
-        circ_bounds : dict (optional)
-            a dictionary with the keys 'ra', 'dec', and 'radius' measured, in
-            degrees
-        box_bounds : dict (optional)
-            a dictionary with the keys 'ra_min', 'ra_max', 'dec_min', 'dec_max',
-            measured in degrees
-        mjd_bounds : dict (optional)
-            a dictionary with the keys 'mjd_min' and 'mjd_max' used to bound the 
-            query in time.
-        constraint : str (optional)
-            if constraint exists it will be used verbatim as a filter on the query 
+        **Parameters**
 
-        Returns
-        -------
-        result : structured array or iterator
-            If chunk_size is not specified, then result is a structured array whose
-            columns names are specified in the 'columns' class variable. If chunk_size 
-            is specified, then result is an iterator over structured arrays of the 
-            given size.
+            * colnames : list or None
+              a list of valid column names, corresponding to entries in the
+              `columns` class attribute.  If not specified, all columns are
+              queried.
+            * chunk_size : int (optional)
+              if specified, then return an iterator object to query the database,
+              each time returning the next `chunk_size` elements.  If not
+              specified, all matching results will be returned.
+            * circ_bounds : dict (optional)
+              a dictionary with the keys 'ra', 'dec', and 'radius' measured, in
+              degrees
+            * box_bounds : dict (optional)
+              a dictionary with the keys 'ra_min', 'ra_max', 'dec_min', 'dec_max',
+              measured in degrees
+            * mjd_bounds : dict (optional)
+              a dictionary with the keys 'mjd_min' and 'mjd_max' used to bound the 
+              query in time.
+            * constraint : str (optional)
+              if constraint exists it will be used verbatim as a filter on the query 
+
+        **Returns**
+
+            * result : structured array or iterator
+              If chunk_size is not specified, then result is a structured array whose
+              columns names are specified in the 'columns' class variable. If chunk_size 
+              is specified, then result is an iterator over structured arrays of the 
+              given size.
+
         """
         query = self._get_column_query(colnames)
 

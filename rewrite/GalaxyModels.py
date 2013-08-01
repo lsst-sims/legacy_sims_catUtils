@@ -9,24 +9,24 @@ from sqlalchemy import Table, Column, BigInteger, MetaData
 class MyGalaxyObj(DBObject):
     
     objid = 'mygalaxyBase'
-    #This is the base table for the galaxies
+    #: This is the base table for the galaxies
     tableid = 'galaxies'
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'decl'
     appendint = 9
-    #There is no spatial model available for coadded galaxies 
-    #This will cause a warning, but it just means we can't make
-    #TRIM files with this object.    
+    #: There is no spatial model available for coadded galaxies 
+    #: This will cause a warning, but it just means we can't make
+    #: TRIM files with this object.    
     spatialModel = None
 
 
 
-    #The following maps column names to database schema.  The tuples
-    #must be at least length 2.  If column name is the same as the name
-    #in the DB the mapping element may be None.  The rest of the tuple
-    #should be formatted like a numpy.dtype.  If ommitted, the dtype
-    #is assumed to be float.
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
     columns = [('galid', None, str, 30),
             ('raJ2000', 'ra*PI()/180.'),
             ('decJ2000', 'decl*PI()/180.'),
@@ -72,22 +72,22 @@ class MyGalaxyObj(DBObject):
 
 class GalaxyObj(DBObject):
     objid = 'galaxyBase'
-    #This is the base table for the galaxies
+    #: This is the base table for the galaxies
     tableid = 'galaxy'
     idColKey = 'galid'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
     appendint = 9
-    #There is no spatial model available for coadded galaxies 
-    #This will cause a warning, but it just means we can't make
-    #TRIM files with this object.
+    #: There is no spatial model available for coadded galaxies 
+    #: This will cause a warning, but it just means we can't make
+    #: TRIM files with this object.
     spatialModel = None
 
-    #The following maps column names to database schema.  The tuples
-    #must be at least length 2.  If column name is the same as the name
-    #in the DB the mapping element may be None.  The rest of the tuple
-    #should be formatted like a numpy.dtype.  If ommitted, the dtype
-    #is assumed to be float.
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
     columns = [('galid', None, str, 30),
             ('raJ2000', 'ra*PI()/180.'),
             ('decJ2000', 'dec*PI()/180.'),
@@ -140,7 +140,7 @@ class GalaxyObj(DBObject):
             ]
 
     def _final_pass(self, results):
-        #This is to map the values from 0 - 2*PI() as ra goes negative currently
+        """This is to map the values from 0 - 2*PI() as ra goes negative currently"""
         results['raJ2000'] = results['raJ2000']%(numpy.pi*2.)
         results['raJ2000Bulge'] = results['raJ2000Bulge']%(numpy.pi*2.)
         results['raJ2000Disk'] = results['raJ2000Disk']%(numpy.pi*2.)
@@ -151,20 +151,20 @@ class GalaxyObj(DBObject):
 
 class GalaxyTileObj(DBObject):
     objid = 'galaxyTiled'
-    #This is the base table for the galaxies
+    #: This is the base table for the galaxies
     tableid = 'galaxy'
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 9
-    #There is no spatial model available for coadded galaxies 
+    #: There is no spatial model available for coadded galaxies 
     spatialModel = None
 
-    #The following maps column names to database schema.  The tuples
-    #must be at least length 2.  If column name is the same as the name
-    #in the DB the mapping element may be None.  The rest of the tuple
-    #should be formatted like a numpy.dtype.  If ommitted, the dtype
-    #is assumed to be float.
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
             ('raJ2000', 'ra'),
@@ -210,13 +210,14 @@ class GalaxyTileObj(DBObject):
 
     def _final_pass(self, results):
         """Modify the results of raJ2000 and decJ2000 to be in radians
-        Parameters
-        ----------
-        results : Structured array of results from query
+        **Parameters**
 
-        Returns
-        -------
-        results : Modified structured array
+            * results : Structured array of results from query
+
+        **Returns**
+
+            * results : Modified structured array
+
         """
 
         results['raJ2000'] = numpy.radians(results['raJ2000'])
@@ -226,29 +227,30 @@ class GalaxyTileObj(DBObject):
     def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None):
         """Execute a query
 
-        Parameters
-        ----------
-        colnames : list or None
-            a list of valid column names, corresponding to entries in the
-            `columns` class attribute.  If not specified, all columns are
-            queried.
-        chunksize : int (optional)
-            if specified, then return an iterator object to query the database,
-            each time returning the next `chunksize` elements.  If not
-            specified, all matching results will be returned.
-        obs_metadata : object (optional)
-            object containing information on the observation including the region of the sky
-            to query and time of the observation.
-        constraint : string (optional)
-            if specified, the predicate is added to the query verbatim using AND
+        **Parameters**
 
-        Returns
-        -------
-        result : structured array or iterator
-            If chunksize is not specified, then result is a structured array of all
-            items which match the specified query with columns named by the column
-            names in the columns class attribute.  If chunksize is specified,
-            then result is an iterator over structured arrays of the given size.
+            * colnames : list or None
+              a list of valid column names, corresponding to entries in the
+              `columns` class attribute.  If not specified, all columns are
+              queried.
+            * chunksize : int (optional)
+              if specified, then return an iterator object to query the database,
+              each time returning the next `chunksize` elements.  If not
+              specified, all matching results will be returned.
+            * obs_metadata : object (optional)
+              object containing information on the observation including the region of the sky
+              to query and time of the observation.
+            * constraint : string (optional)
+              if specified, the predicate is added to the query verbatim using AND
+
+        **Returns**
+
+            * result : structured array or iterator
+              If chunksize is not specified, then result is a structured array of all
+              items which match the specified query with columns named by the column
+              names in the columns class attribute.  If chunksize is specified,
+              then result is an iterator over structured arrays of the given size.
+
         """
         if colnames is None:
             colnames = [k for k in self.columnMap.keys()]
@@ -298,25 +300,25 @@ class GalaxyTileObj(DBObject):
 
 class GalaxyBulgeObj(GalaxyTileObj):
     objid = 'galaxyBulge'
-    #This is the base table for the galaxies
-    #with a bulge component
+    #: This is the base table for the galaxies
+    #: with a bulge component
     tableid = 'galaxy_bulge'
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 1
     spatialModel = 'SERSIC2D'
-    #The following maps column names to database schema.  The tuples
-    #must be at least length 2.  If column name is the same as the name
-    #in the DB the mapping element may be None.  The rest of the tuple
-    #should be formatted like a numpy.dtype.  If ommitted, the dtype
-    #is assumed to be float.
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
             ('componentra','bra*PI()/180.'),
             ('componentdec', 'bdec*PI()/180.'),
-            #This is actually a problem with the stored procedure.  We need to be able to map columns other than
-            #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
+            #: This is actually a problem with the stored procedure.  We need to be able to map columns other than
+            #: just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_bulge'),
@@ -339,25 +341,25 @@ class GalaxyBulgeObj(GalaxyTileObj):
 
 class GalaxyDiskObj(GalaxyTileObj):
     objid = 'galaxyDisk'
-    #This is the base table for the galaxies
-    #with a disk component
+    #: This is the base table for the galaxies
+    #: with a disk component
     tableid = 'galaxy'
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 2
     spatialModel = 'SERSIC2D'
-    #The following maps column names to database schema.  The tuples
-    #must be at least length 2.  If column name is the same as the name
-    #in the DB the mapping element may be None.  The rest of the tuple
-    #should be formatted like a numpy.dtype.  If ommitted, the dtype
-    #is assumed to be float.
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
             ('componentra','dra*PI()/180.'),
             ('componentdec', 'ddec*PI()/180.'),
-            #This is actually a problem with the stored procedure.  We need to be able to map columns other than
-            #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
+            #: This is actually a problem with the stored procedure.  We need to be able to map columns other than
+            #: just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_disk'),
@@ -380,25 +382,25 @@ class GalaxyDiskObj(GalaxyTileObj):
 
 class GalaxyAgnObj(GalaxyTileObj):
     objid = 'galaxyAgn'
-    #This is the base table for the galaxies
-    #with an agn component
+    #: This is the base table for the galaxies
+    #: with an agn component
     tableid = 'galaxy_agn'
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     appendint = 3
     spatialModel = 'ZPOINT'
-    #The following maps column names to database schema.  The tuples
-    #must be at least length 2.  If column name is the same as the name
-    #in the DB the mapping element may be None.  The rest of the tuple
-    #should be formatted like a numpy.dtype.  If ommitted, the dtype
-    #is assumed to be float.
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
             ('componentra','agnra*PI()/180.'),
             ('componentdec', 'agndec*PI()/180.'),
-            #This is actually a problem with the stored procedure.  We need to be able to map columns other than
-            #just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
+            #: This is actually a problem with the stored procedure.  We need to be able to map columns other than
+            #: just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
             ('raJ2000', 'ra'),
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_agn'),

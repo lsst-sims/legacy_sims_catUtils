@@ -11,7 +11,7 @@ class StarObj(DBObject):
     appendint = 4
     spatialModel = 'POINT'
     #These types should be matched to the database.
-    #Default map is float.  If the column mapping is the same as the column name, None can be specified
+    #: Default map is float.  If the column mapping is the same as the column name, None can be specified
     columns = [('id','simobjid', int),
                ('umag', None),
                ('gmag', None),
