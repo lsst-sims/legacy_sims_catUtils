@@ -2,7 +2,7 @@ import warnings
 import math
 import numpy
 from collections import OrderedDict
-from lsst.sims.catalogs.measures.instance.rewrite import\
+from lsst.sims.catalogs.measures.instance import\
         InstanceCatalog
 
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
