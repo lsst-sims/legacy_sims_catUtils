@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from dbModel import *
+from jobLogModel import *
 from sqlalchemy import func
 import datetime as dt
 from pytz import timezone

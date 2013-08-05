@@ -17,19 +17,7 @@ b_session = application_session = scoped_session(sessionmaker(autoflush=True,
      bind=b_engine))
 b_metadata = ThreadLocalMetaData()
 b_metadata.bind = b_engine
-'''
-c_engine = create_engine("postgresql://calibuser:calibuser@128.208.190.117/calibDB.05.05.2010",
-        echo=False)
-c_session = application_session = scoped_session(sessionmaker(autoflush=True,
-     bind=c_engine))
-c_metadata = ThreadLocalMetaData()
-c_metadata.bind = c_engine
 
-class CalibStar(Entity):
-  using_options(tablename="msrgb_master", autoload=True, metadata=c_metadata,
-          session=c_session)
-  using_mapper_options(primary_key=['simobjid'])
-'''
 class CatalogEventLog (Entity):
   using_options(tablename='eventlog', metadata=b_metadata, session=b_session)
   jobid = Field(Integer, index=True)
