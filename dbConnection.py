@@ -209,20 +209,18 @@ class DBObject(object):
         #(RAmin, RAmax, DECmin, DECmax) = map(math.radians,
         #                                     (RAmin, RAmax, DECmin, DECmax))
 
+        #Special case where the whole region is selected
         if RAmin < 0 and RAmax > 360.:
             bound = "%s between %f and %f" % (DECname, DECmin, DECmax)
+            return bound
 
-        elif RAmin < 0 and RAmax <= 360.:
+        RAmin %= 360.
+        RAmax %= 360.
+        if RAmin > RAmax:
             # XXX is this right?  It seems strange.
             bound = ("%s not between %f and %f and %s between %f and %f"
-                     % (RAname, RAmax, RAmin % (360.), 
+                     % (RAname, RAmax, RAmin, 
                         DECname, DECmin, DECmax))
-
-        elif RAmin >= 0 and RAmax > 2. * math.pi:
-            bound = ("%s not between %f and %f and %s between %f and %f" 
-                     % (RAname, RAmin, RAmax % (360.),
-                        DECname, DECmin, DECmax))
-
         else:
             bound = ("%s between %f and %f and %s between %f and %f"
                      % (RAname, RAmin, RAmax, DECname, DECmin, DECmax))
