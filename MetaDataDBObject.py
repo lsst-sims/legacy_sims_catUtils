@@ -51,8 +51,8 @@ class MetaDataDBObject(DBObject):
     raColKey = 'Unrefracted_RA'
     decColKey = 'Unrefracted_Dec'
     #: These are interpreted as SQL strings.
-    raColName = 'fieldra*PI()/180.'
-    decColName = 'fielddec*PI()/180.'
+    raColName = 'fieldra'
+    decColName = 'fielddec'
     mjdColName = 'expmjd'
     columns = [('SIM_SEED', 'expdate', int),
                ('Unrefracted_RA', 'fieldra'),
