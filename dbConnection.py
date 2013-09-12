@@ -23,10 +23,18 @@ class ChunkIterator(object):
         return self
 
     def next(self):
-        chunk = self.exec_query.fetchmany(self.chunk_size)
-        if len(chunk) == 0:
-            raise StopIteration
-        return self.dbobj._postprocess_results(chunk)
+	if self.chunk_size is None and not self.exec_query.closed:
+	    chunk = self.exec_query.fetchall()
+	    if len(chunk) == 0:
+                raise StopIteration
+            return self.dbobj._postprocess_results(chunk)
+        elif self.chunk_size is None:
+	    raise StopIteration
+	else:
+            chunk = self.exec_query.fetchmany(self.chunk_size)
+            if len(chunk) == 0:
+                raise StopIteration
+            return self.dbobj._postprocess_results(chunk)
 
 
 class DBObjectMeta(type):
@@ -313,9 +321,4 @@ class DBObject(object):
 
         if constraint is not None:
             query = query.filter(constraint)
-
-        if chunk_size is None:
-            exec_query = self.session.execute(query)
-            return self._postprocess_results(exec_query.fetchall())
-        else:
-            return ChunkIterator(self, query, chunk_size)
+        return ChunkIterator(self, query, chunk_size)

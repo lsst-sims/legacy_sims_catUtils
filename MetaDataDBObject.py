@@ -1,4 +1,4 @@
-from dbConnection import DBObject
+from dbConnection import ChunkIterator, DBObject
 from collections import OrderedDict
 import numpy
 import math
@@ -97,7 +97,9 @@ class MetaDataDBObject(DBObject):
         raise NotImplementedError("Metadata has no spatial model")
 
     def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False):
-        result = self.query_columns(constraint="obshistid=%i"%obshistid)
+        chunks = self.query_columns(constraint="obshistid=%i"%obshistid)
+        #The query will only return one row (hopefully)
+        result = chunks.next()
         ra = result[self.raColKey][0]
         dec = result[self.decColKey][0]
         if makeCircBounds:
@@ -161,8 +163,4 @@ class MetaDataDBObject(DBObject):
                                   mjd_bounds['mjd_min'], mjd_bounds['mjd_max']))
         if constraint is not None:
             query = query.filter(constraint)
-        if chunk_size is None:
-            exec_query = self.session.execute(query)
-            return self._postprocess_results(exec_query.fetchall())
-        else:
-            return ChunkIterator(self, chunk_size)
+        return ChunkIterator(self, query, chunk_size)

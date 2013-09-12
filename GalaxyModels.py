@@ -292,11 +292,7 @@ class GalaxyTileObj(DBObject):
         if constraint is not None:
             query += ", @WhereClause = '%s'"%(constraint)
 
-        exec_query = self.session.execute(query)
-        if chunk_size is None:
-            return self._postprocess_results(exec_query.fetchall())
-        else:
-            return ChunkIterator(self, query, chunk_size)
+        return ChunkIterator(self, query, chunk_size)
 
 class GalaxyBulgeObj(GalaxyTileObj):
     objid = 'galaxyBulge'
