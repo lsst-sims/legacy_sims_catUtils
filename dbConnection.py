@@ -10,6 +10,11 @@ from sqlalchemy.sql import expression
 from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
                         Table, Column, BigInteger)
 
+#The documentation at http://docs.sqlalchemy.org/en/rel_0_7/core/types.html#sqlalchemy.types.Numeric
+#suggests using the cdecimal module.  Since it is not standard, import decimal.
+#TODO: test for cdecimal and use it if it exists.
+import decimal
+
 #------------------------------------------------------------
 # Iterator for database chunks
 class ChunkIterator(object):
@@ -66,12 +71,20 @@ class DBObjectMeta(type):
                 warnings.warn('duplicate object id %s specified' % cls.objid)
             cls.registry[cls.objid] = cls
 
-            # build column mapping and type mapping dicts from columns
-            cls.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0]) 
-                                         for el in cls.columns])
-            cls.typeMap = OrderedDict([(el[0], el[2:] if len(el)> 2 else (float,))
-                                       for el in cls.columns])
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
+
+    def __str__(cls):
+        dbObjects = cls.registry.keys()
+        outstr = "++++++++++++++++++++++++++++++++++++++++++++++\n"+\
+                 "Registered object types are:\n"
+        for dbObject in dbObjects:
+            outstr += "%s\n"%(dbObject)
+        outstr += "\n\n"
+        outstr += "To query the possible column names do:\n"
+        outstr += "$> DBObject.from_objid([name]).show_columns()\n"
+        outstr += "+++++++++++++++++++++++++++++++++++++++++++++"
+        return outstr
+
 
 class DBObject(object):
     """Database Object base class
@@ -89,6 +102,14 @@ class DBObject(object):
     #: This is the default address.  Simply change this in the class definition for other
     #: endpoints.
     dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+    #: Mapping of DDL types to python types.  Strings are assumed to be 256 characters
+    #: this can be overridden by modifying the dbTypeMap or by making a custom columns
+    #: list.
+    dbTypeMap = {'BIGINT':(int,), 'BOOLEAN':(bool,), 'FLOAT':(float,), 'INTEGER':(int,),\
+                 'NUMERIC':(decimal.Decimal,), 'SMALLINT':(int,), 'TINYINT':(int,), 'VARCHAR':(str, 256),\
+                 'TEXT':(str, 256), 'CLOB':(str, 256), 'NVARCHAR':(str, 256),\
+                 'NCLOB':(unicode, 256), 'NTEXT':(unicode, 256), 'CHAR':(str, 1), 'INT':(int,),\
+                 'REAL':(float,)}
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -110,11 +131,6 @@ class DBObject(object):
             warnings.warn("Either appendint or spatialModel has not "
                           "been set.  Input files for phosim are not "
                           "possible.")
-        if self.columns is None:
-            raise ValueError("DBObject must be subclasses, and define "
-                             "columns.  The columns variable is a list "
-                             "of tuples containing column name, mapping to "
-                             "database name, type")
 
         if address is None:
             address = self.getDbAddress()
@@ -123,6 +139,23 @@ class DBObject(object):
 
         self._connect_to_engine()
         self._get_table()
+
+        #Need to do this after the table is instantiated so that
+        #the default columns can be filled from the table object.
+        if self.columns is None:
+            self._make_default_columns()
+        # build column mapping and type mapping dicts from columns
+        self._make_column_map()
+        self._make_type_map()
+
+    def show_mapped_columns(self):
+        for col in self.columnMap.keys():
+            print "%s -- %s"%(col, self.typeMap[col][0].__name__)
+
+    def show_db_columns(self):
+        for col in self.table.c.keys():
+            print "%s -- %s"%(col, self.table.c[col].type.__visit_name__)
+
 
     def getCatalog(self, ftype, *args, **kwargs):
         return InstanceCatalog.new_catalog(ftype, self, *args, **kwargs)
@@ -137,8 +170,12 @@ class DBObject(object):
         return self.spatialModel
 
     def _get_table(self):
+        '''
         self.table = Table(self.tableid, self.metadata,
                            Column(self.columnMap[self.idColKey], BigInteger, primary_key=True),
+                           autoload=True)
+        '''
+        self.table = Table(self.tableid, self.metadata,
                            autoload=True)
 
     def _connect_to_engine(self):
@@ -148,6 +185,23 @@ class DBObject(object):
                                                    bind=self.engine))
         self.metadata = MetaData()
         self.metadata.bind = self.engine
+    def _make_column_map(self):
+        self.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0]) 
+                                     for el in self.columns])
+    def _make_type_map(self):
+        self.typeMap = OrderedDict([(el[0], el[2:] if len(el)> 2 else (float,))
+                                   for el in self.columns])
+
+    def _make_default_columns(self):
+        self.columns = []
+        for col in self.table.c.keys():
+            dbtypestr = self.table.c[col].type.__visit_name__
+            if dbtypestr in self.dbTypeMap.keys():
+                self.columns.append((col, col)+self.dbTypeMap[dbtypestr])
+            else:
+                warnings.warn("Can't create default column for %s.  There is no mapping "%(col)+\
+                              "for type %s.  Modify the dbTypeMap, or make a custom columns "%(dbtypestr)+\
+                              "list.")
 
     def _get_column_query(self, colnames=None):
         """Given a list of valid column names, return the query object"""

@@ -1,4 +1,3 @@
-
 from dbConnection import DBObject
 class StarObj(DBObject):
     # XXX: this is incomplete.  We need to use all the column values from
@@ -18,6 +17,7 @@ class StarObj(DBObject):
                ('rmag', None),
                ('imag', None),
                ('zmag', None),
+               ('ymag', None),
                ('raJ2000', 'ra*PI()/180.'),
                ('decJ2000', 'decl*PI()/180.'),
                ('glon', 'gal_l*PI()/180.'),
@@ -30,3 +30,14 @@ class StarObj(DBObject):
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', unicode, 40)]
+
+class StarObj(DBObject):
+    # XXX: this is incomplete.  We need to use all the column values from
+    #      the requiredFields file.
+    objid = 'msstars2'
+    tableid = 'starsMSRGB_forceseek'
+    idColKey = 'id'
+    raColName = 'ra'
+    decColName = 'decl'
+    appendint = 99
+    spatialModel = 'POINT'
