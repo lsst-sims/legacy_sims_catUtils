@@ -81,7 +81,7 @@ class DBObjectMeta(type):
             outstr += "%s\n"%(dbObject)
         outstr += "\n\n"
         outstr += "To query the possible column names do:\n"
-        outstr += "$> DBObject.from_objid([name]).show_columns()\n"
+        outstr += "$> DBObject.from_objid([name]).show_mapped_columns()\n"
         outstr += "+++++++++++++++++++++++++++++++++++++++++++++"
         return outstr
 
