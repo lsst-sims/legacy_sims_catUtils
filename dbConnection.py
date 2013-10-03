@@ -28,18 +28,18 @@ class ChunkIterator(object):
         return self
 
     def next(self):
-	if self.chunk_size is None and not self.exec_query.closed:
-	    chunk = self.exec_query.fetchall()
-	    if len(chunk) == 0:
+        if self.chunk_size is None and not self.exec_query.closed:
+            chunk = self.exec_query.fetchall()
+            if len(chunk) == 0:
                 raise StopIteration
             return self.dbobj._postprocess_results(chunk)
-        elif self.chunk_size is None:
-	    raise StopIteration
-	else:
+        elif self.chunk_size is not None:
             chunk = self.exec_query.fetchmany(self.chunk_size)
             if len(chunk) == 0:
                 raise StopIteration
             return self.dbobj._postprocess_results(chunk)
+        else:
+            raise StopIteration
 
 
 class DBObjectMeta(type):
@@ -68,8 +68,19 @@ class DBObjectMeta(type):
         else:
             # add this class to the registry
             if cls.objid in cls.registry:
-                warnings.warn('duplicate object id %s specified' % cls.objid)
+                warnings.warn('duplicate object identifier %s specified' % cls.objid)
             cls.registry[cls.objid] = cls
+
+        # check if the list of unique ids is specified
+        # if not, then this is the base class: add the list    
+        if not hasattr(cls, 'objectTypeIdList'):
+            cls.objectTypeIdList = []
+        else:
+            if cls.objectTypeId in cls.objectTypeIdList:
+                warnings.warn('duplicate object type id %s specified.'%cls.objectTypeId+  \
+                              'Output object ids may not be unique')
+            else:
+                cls.objectTypeIdList.append(cls.objectTypeId)
 
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
@@ -94,9 +105,11 @@ class DBObject(object):
     objid = None
     tableid = None
     idColKey = None
-    appendint = None
+    objectTypeId = None
     spatialModel = None
     columns = None
+    generateDefaultColumnMap = True
+    dbDefaultValues = {}
     raColName = None
     decColName = None
     #: This is the default address.  Simply change this in the class definition for other
@@ -127,8 +140,8 @@ class DBObject(object):
         if (self.objid is None) or (self.tableid is None):
             raise ValueError("DBObject must be subclassed, and "
                              "define objid and tableid.")
-        if (self.appendint is None) or (self.spatialModel is None):
-            warnings.warn("Either appendint or spatialModel has not "
+        if (self.objectTypeId is None) or (self.spatialModel is None):
+            warnings.warn("Either objectTypeId or spatialModel has not "
                           "been set.  Input files for phosim are not "
                           "possible.")
 
@@ -142,7 +155,7 @@ class DBObject(object):
 
         #Need to do this after the table is instantiated so that
         #the default columns can be filled from the table object.
-        if self.columns is None:
+        if self.generateDefaultColumnMap:
             self._make_default_columns()
         # build column mapping and type mapping dicts from columns
         self._make_column_map()
@@ -164,7 +177,7 @@ class DBObject(object):
         return self.dbAddress
 
     def getObjectTypeId(self):
-        return self.appendint
+        return self.objectTypeId
 
     def getSpatialModel(self):
         return self.spatialModel
@@ -185,6 +198,7 @@ class DBObject(object):
                                                    bind=self.engine))
         self.metadata = MetaData()
         self.metadata.bind = self.engine
+
     def _make_column_map(self):
         self.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0]) 
                                      for el in self.columns])
@@ -193,10 +207,17 @@ class DBObject(object):
                                    for el in self.columns])
 
     def _make_default_columns(self):
-        self.columns = []
+        if self.columns:
+            colnames = [el[0] for el in self.columns]
+        else:
+            self.columns = []
+            colnames = []
         for col in self.table.c.keys():
             dbtypestr = self.table.c[col].type.__visit_name__
-            if dbtypestr in self.dbTypeMap.keys():
+            if col in colnames:
+                warnings.warn("Database column, %s, overridden in self.columns... "%(col)+\
+                            "Skipping default assignment.")
+            elif dbtypestr in self.dbTypeMap.keys():
                 self.columns.append((col, col)+self.dbTypeMap[dbtypestr])
             else:
                 warnings.warn("Can't create default column for %s.  There is no mapping "%(col)+\
@@ -214,7 +235,7 @@ class DBObject(object):
                 if c in self.columnMap.keys():
                     continue
                 else:
-                    print "%s not in columnMap"%(c)
+                    warnings.warn("%s not in columnMap"%(c))
             raise ValueError('entries in colnames must be in self.columnMap')
 
         # Get the first query
@@ -315,7 +336,7 @@ class DBObject(object):
         return results
 
     def _postprocess_results(self, results):
-        """Post-process the query results to put then
+        """Post-process the query results to put them
         in a structured array.
   
         **Parameters**
@@ -333,10 +354,18 @@ class DBObject(object):
         else:
             return results
         dtype = numpy.dtype([(k,)+self.typeMap[k] for k in cols])
-        retresults = numpy.zeros((len(results),), dtype=dtype)
-        for i, result in enumerate(results):
-            for k in cols:
-                retresults[i][k] = result[k]
+        if len(set(cols)&set(self.dbDefaultValues)) > 0:
+            retresults = numpy.empty((len(results),), dtype=dtype)
+            for i, result in enumerate(results):
+                for k in cols:
+                    if k in self.dbDefaultValues and not result[k]:
+                        retresults[i][k] = self.dbDefaultValues[k]
+                    else:
+                        print k
+                        retresults[i][k] = result[k]
+        else:
+            retresults = numpy.rec.fromrecords(results, dtype=dtype)
+        
         return self._final_pass(retresults)
 
     def query_columns(self, colnames=None, chunk_size=None,
@@ -375,4 +404,5 @@ class DBObject(object):
 
         if constraint is not None:
             query = query.filter(constraint)
+        print query
         return ChunkIterator(self, query, chunk_size)

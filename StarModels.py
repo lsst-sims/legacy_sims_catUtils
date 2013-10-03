@@ -7,8 +7,10 @@ class StarObj(DBObject):
     idColKey = 'id'
     raColName = 'ra'
     decColName = 'decl'
-    appendint = 4
+    objectTypeId = 4
     spatialModel = 'POINT'
+    dbDefaultValues = {'varsimobjid':-1, 'runid':-1, 'ismultiple':-1, 'run':-1,
+                       'runobjid':-1}
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified
     columns = [('id','simobjid', int),
@@ -39,5 +41,5 @@ class StarObj(DBObject):
     idColKey = 'id'
     raColName = 'ra'
     decColName = 'decl'
-    appendint = 99
+    objectTypeId = 99
     spatialModel = 'POINT'

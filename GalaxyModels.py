@@ -14,7 +14,7 @@ class MyGalaxyObj(DBObject):
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'decl'
-    appendint = 9
+    objectTypeId = 11
     #: There is no spatial model available for coadded galaxies 
     #: This will cause a warning, but it just means we can't make
     #: TRIM files with this object.    
@@ -73,15 +73,25 @@ class MyGalaxyObj(DBObject):
 class GalaxyObj(DBObject):
     objid = 'galaxyBase'
     #: This is the base table for the galaxies
-    tableid = 'galaxy'
+    tableid = 'galaxy_reclone'
     idColKey = 'galid'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
-    appendint = 9
+    objectTypeId = 9
     #: There is no spatial model available for coadded galaxies 
     #: This will cause a warning, but it just means we can't make
     #: TRIM files with this object.
     spatialModel = None
+
+    #: Numpy can't cast a NoneType to an integer.  This works with floats
+    #: as None is cast to nan, but for integers this raises and exception.
+    #: Typically it's not an issue as ints are usually ids of some sort, 
+    #: but in the case of the base galaxy catalog, it's possible for the 
+    #: varsimobjid to be None if the object does not contain an AGN.
+    #: I'm over riding the _postprocess_results method to take care of this.
+    #: I could also have refactored my database table so that no integer values
+    #: contain NULL values.
+    dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
 
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -141,13 +151,10 @@ class GalaxyObj(DBObject):
 
     def _final_pass(self, results):
         """This is to map the values from 0 - 2*PI() as ra goes negative currently"""
-        results['raJ2000'] = results['raJ2000']%(numpy.pi*2.)
-        results['raJ2000Bulge'] = results['raJ2000Bulge']%(numpy.pi*2.)
-        results['raJ2000Disk'] = results['raJ2000Disk']%(numpy.pi*2.)
-        results['raJ2000Agn'] = results['raJ2000Agn']%(numpy.pi*2.)
+        for ra in ('raJ2000','raJ2000Bulge','raJ2000Disk','raJ2000Agn'):
+            if ra in results.dtype.names:
+                results[ra] = results[ra]%(numpy.pi*2.)
         return results
-
-
 
 class GalaxyTileObj(DBObject):
     objid = 'galaxyTiled'
@@ -156,9 +163,19 @@ class GalaxyTileObj(DBObject):
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
-    appendint = 9
+    objectTypeId = 10
     #: There is no spatial model available for coadded galaxies 
     spatialModel = None
+
+    #: Numpy can't cast a NoneType to an integer.  This works with floats
+    #: as None is cast to nan, but for integers this raises and exception.
+    #: Typically it's not an issue as ints are usually ids of some sort, 
+    #: but in the case of the base galaxy catalog, it's possible for the 
+    #: varsimobjid to be None if the object does not contain an AGN.
+    #: I'm over riding the _postprocess_results method to take care of this.
+    #: I could also have refactored my database table so that no integer values
+    #: contain NULL values.
+    dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
 
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -302,7 +319,7 @@ class GalaxyBulgeObj(GalaxyTileObj):
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
-    appendint = 1
+    objectTypeId = 1
     spatialModel = 'SERSIC2D'
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -343,7 +360,7 @@ class GalaxyDiskObj(GalaxyTileObj):
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
-    appendint = 2
+    objectTypeId = 2
     spatialModel = 'SERSIC2D'
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -384,7 +401,7 @@ class GalaxyAgnObj(GalaxyTileObj):
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
-    appendint = 3
+    objectTypeId = 3
     spatialModel = 'ZPOINT'
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -410,4 +427,3 @@ class GalaxyAgnObj(GalaxyTileObj):
             ('lsst_i', 'i_ab'),
             ('lsst_z', 'z_ab'),
             ('lsst_y', 'y_ab')]
-

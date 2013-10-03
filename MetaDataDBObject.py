@@ -43,6 +43,7 @@ class MetaDataDBObject(DBObject):
     """
     objid = 'opsim3_61'
     tableid = 'output_opsim3_61'
+    objectTypeId = -1
     #: Note that identical observations may have more than one unique
     #: obshistid, so this is the id, but not for unique visits.
     #: To do that, group by expdate.
@@ -76,11 +77,6 @@ class MetaDataDBObject(DBObject):
         if (self.objid is None) or (self.tableid is None):
             raise ValueError("DBObject must be subclassed, and "
                              "define objid and tableid.")
-        if self.columns is None:
-            raise ValueError("DBObject must be subclasses, and define "
-                             "columns.  The columns variable is a list "
-                             "of tuples containing column name, mapping to "
-                             "database name, type")
 
         if address is None:
             address = self.getDbAddress()
@@ -89,6 +85,14 @@ class MetaDataDBObject(DBObject):
 
         self._connect_to_engine()
         self._get_table()
+
+        #Need to do this after the table is instantiated so that
+        #the default columns can be filled from the table object.
+        if self.columns is None:
+            self._make_default_columns()
+        # build column mapping and type mapping dicts from columns
+        self._make_column_map()
+        self._make_type_map()
 
     def getObjectTypeId(self):
         raise NotImplementedError("Metadata has no object type")
@@ -163,4 +167,5 @@ class MetaDataDBObject(DBObject):
                                   mjd_bounds['mjd_min'], mjd_bounds['mjd_max']))
         if constraint is not None:
             query = query.filter(constraint)
+            
         return ChunkIterator(self, query, chunk_size)
