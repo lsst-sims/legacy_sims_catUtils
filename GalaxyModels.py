@@ -56,7 +56,6 @@ class MyGalaxyObj(DBObject):
             ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
             ('internalAvDisk', 'av_d'),
             ('internalRvDisk', 'rv_d'),
-            ('redshift', None),
             ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
@@ -70,11 +69,13 @@ class MyGalaxyObj(DBObject):
         f=open("%s/dbLogin"%(home_path),"r")
         return (f.readline()).strip()
 
+
 class GalaxyObj(DBObject):
     objid = 'galaxyBase'
     #: This is the base table for the galaxies
-    tableid = 'galaxy_reclone'
-    idColKey = 'galid'
+    #tableid = 'final_clone_db'
+    tableid = 'galaxy'
+    idColKey = 'id'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
     objectTypeId = 9
@@ -127,26 +128,13 @@ class GalaxyObj(DBObject):
             ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
             ('internalAvDisk', 'av_d'),
             ('internalRvDisk', 'rv_d'),
-            ('redshift', None),
             ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),
             ('lsst_i', 'i_ab'),
             ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab'),
-            ('BulgeLSSTu', None),
-            ('BulgeLSSTg', None),
-            ('BulgeLSSTr', None),
-            ('BulgeLSSTi', None),
-            ('BulgeLSSTz', None),
-            ('BulgeLSSTy', None),
-            ('DiskLSSTu', None),
-            ('DiskLSSTg', None),
-            ('DiskLSSTr', None),
-            ('DiskLSSTi', None),
-            ('DiskLSSTz', None),
-            ('DiskLSSTy', None),
+            ('lsst_y', 'y_ab')
             ]
 
     def _final_pass(self, results):
@@ -156,11 +144,11 @@ class GalaxyObj(DBObject):
                 results[ra] = results[ra]%(numpy.pi*2.)
         return results
 
+
 class GalaxyTileObj(DBObject):
     objid = 'galaxyTiled'
     #: This is the base table for the galaxies
     tableid = 'galaxy'
-    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 10
@@ -212,7 +200,6 @@ class GalaxyTileObj(DBObject):
             ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
             ('internalAvDisk', 'av_d'),
             ('internalRvDisk', 'rv_d'),
-            ('redshift', None),
             ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
@@ -240,6 +227,9 @@ class GalaxyTileObj(DBObject):
         results['raJ2000'] = numpy.radians(results['raJ2000'])
         results['decJ2000'] = numpy.radians(results['decJ2000'])
         return results
+
+    def getIdColKey(self):
+        return 'galtileid'
 
     def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None):
         """Execute a query
@@ -316,7 +306,6 @@ class GalaxyBulgeObj(GalaxyTileObj):
     #: This is the base table for the galaxies
     #: with a bulge component
     tableid = 'galaxy_bulge'
-    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 1
@@ -343,7 +332,6 @@ class GalaxyBulgeObj(GalaxyTileObj):
             ('internalExtinctionModel', 'ext_model_b', str, 3),
             ('internalAv', 'av_b'),
             ('internalRv', 'rv_b'),
-            ('redshift', None),
             ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
@@ -357,7 +345,6 @@ class GalaxyDiskObj(GalaxyTileObj):
     #: This is the base table for the galaxies
     #: with a disk component
     tableid = 'galaxy'
-    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 2
@@ -384,7 +371,6 @@ class GalaxyDiskObj(GalaxyTileObj):
             ('internalExtinctionModel', 'ext_model_d', str, 3),
             ('internalAv', 'av_d'),
             ('internalRv', 'rv_d'),
-            ('redshift', None),
             ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
@@ -398,7 +384,6 @@ class GalaxyAgnObj(GalaxyTileObj):
     #: This is the base table for the galaxies
     #: with an agn component
     tableid = 'galaxy_agn'
-    idColKey = 'galid'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 3
@@ -418,7 +403,6 @@ class GalaxyAgnObj(GalaxyTileObj):
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_agn'),
             ('sedFilename', 'sedname_agn', unicode, 40),
-            ('redshift', None),
             ('radialVelocity', 'rad_vel'),
             ('variabilityParameters', 'varParamStr', str, 256),
             ('lsst_u', 'u_ab'),

@@ -122,7 +122,7 @@ class DBObject(object):
                  'NUMERIC':(decimal.Decimal,), 'SMALLINT':(int,), 'TINYINT':(int,), 'VARCHAR':(str, 256),\
                  'TEXT':(str, 256), 'CLOB':(str, 256), 'NVARCHAR':(str, 256),\
                  'NCLOB':(unicode, 256), 'NTEXT':(unicode, 256), 'CHAR':(str, 1), 'INT':(int,),\
-                 'REAL':(float,)}
+                 'REAL':(float,), 'DOUBLE':(float,)}
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -176,6 +176,9 @@ class DBObject(object):
     def getDbAddress(self):
         return self.dbAddress
 
+    def getIdColKey(self):
+        return self.idColKey
+
     def getObjectTypeId(self):
         return self.objectTypeId
 
@@ -183,11 +186,6 @@ class DBObject(object):
         return self.spatialModel
 
     def _get_table(self):
-        '''
-        self.table = Table(self.tableid, self.metadata,
-                           Column(self.columnMap[self.idColKey], BigInteger, primary_key=True),
-                           autoload=True)
-        '''
         self.table = Table(self.tableid, self.metadata,
                            autoload=True)
 
@@ -219,6 +217,9 @@ class DBObject(object):
                             "Skipping default assignment.")
             elif dbtypestr in self.dbTypeMap.keys():
                 self.columns.append((col, col)+self.dbTypeMap[dbtypestr])
+                #To reduce headaches with databases that are case sensitive
+                if not col.islower():
+                    self.columns.append((col.lower(), col)+self.dbTypeMap[dbtypestr])
             else:
                 warnings.warn("Can't create default column for %s.  There is no mapping "%(col)+\
                               "for type %s.  Modify the dbTypeMap, or make a custom columns "%(dbtypestr)+\
@@ -361,7 +362,6 @@ class DBObject(object):
                     if k in self.dbDefaultValues and not result[k]:
                         retresults[i][k] = self.dbDefaultValues[k]
                     else:
-                        print k
                         retresults[i][k] = result[k]
         else:
             retresults = numpy.rec.fromrecords(results, dtype=dtype)
@@ -404,5 +404,4 @@ class DBObject(object):
 
         if constraint is not None:
             query = query.filter(constraint)
-        print query
         return ChunkIterator(self, query, chunk_size)

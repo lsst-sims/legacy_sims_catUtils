@@ -14,12 +14,6 @@ class StarObj(DBObject):
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified
     columns = [('id','simobjid', int),
-               ('umag', None),
-               ('gmag', None),
-               ('rmag', None),
-               ('imag', None),
-               ('zmag', None),
-               ('ymag', None),
                ('raJ2000', 'ra*PI()/180.'),
                ('decJ2000', 'decl*PI()/180.'),
                ('glon', 'gal_l*PI()/180.'),
@@ -28,7 +22,6 @@ class StarObj(DBObject):
                ('properMotionRa', '(mudecl/(1000.*3600.))*PI()/180.'),
                ('properMotionDec', '(mura/(1000.*3600.))*PI()/180.'),
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
-               ('parallax', None),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', unicode, 40)]
