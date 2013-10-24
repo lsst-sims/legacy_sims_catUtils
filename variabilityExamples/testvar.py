@@ -1,3 +1,4 @@
+import scipy
 import time
 import lsst.sims.catalogs.measures.photometry.Variability as variability
 import numpy
