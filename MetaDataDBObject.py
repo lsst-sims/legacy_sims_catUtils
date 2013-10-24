@@ -44,6 +44,7 @@ class MetaDataDBObject(DBObject):
     objid = 'opsim3_61'
     tableid = 'output_opsim3_61'
     objectTypeId = -1
+    spatialModel = 'none'
     #: Note that identical observations may have more than one unique
     #: obshistid, so this is the id, but not for unique visits.
     #: To do that, group by expdate.
@@ -72,27 +73,8 @@ class MetaDataDBObject(DBObject):
                ('Opsim_expmjd', 'expmjd'),
                ('Opsim_altitude', 'altitude'),
                ('Opsim_azimuth', 'azimuth')]
-
     def __init__(self, address=None):
-        if (self.objid is None) or (self.tableid is None):
-            raise ValueError("DBObject must be subclassed, and "
-                             "define objid and tableid.")
-
-        if address is None:
-            address = self.getDbAddress()
-
-        self.dbAddress = address
-
-        self._connect_to_engine()
-        self._get_table()
-
-        #Need to do this after the table is instantiated so that
-        #the default columns can be filled from the table object.
-        if self.columns is None:
-            self._make_default_columns()
-        # build column mapping and type mapping dicts from columns
-        self._make_column_map()
-        self._make_type_map()
+        super(MetaDataDBObject, self).__init__(address=address)
 
     def getObjectTypeId(self):
         raise NotImplementedError("Metadata has no object type")

@@ -1,10 +1,12 @@
 import warnings
 import math
 import numpy
+import os
 from collections import OrderedDict
 from lsst.sims.catalogs.measures.instance import\
         InstanceCatalog
 
+from .utils import loadData
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 from sqlalchemy.sql import expression
 from sqlalchemy import (create_engine, ThreadLocalMetaData, MetaData,
@@ -76,12 +78,13 @@ class DBObjectMeta(type):
         if not hasattr(cls, 'objectTypeIdList'):
             cls.objectTypeIdList = []
         else:
-            if cls.objectTypeId in cls.objectTypeIdList:
-                warnings.warn('duplicate object type id %s specified.'%cls.objectTypeId+  \
+            if cls.skipRegistration:
+                pass
+            elif cls.objectTypeId in cls.objectTypeIdList:
+                warnings.warn('duplicate object type id %s specified.'%cls.objectTypeId+\
                               'Output object ids may not be unique')
             else:
                 cls.objectTypeIdList.append(cls.objectTypeId)
-
         return super(DBObjectMeta, cls).__init__(name, bases, dct)
 
     def __str__(cls):
@@ -102,6 +105,7 @@ class DBObject(object):
 
     """
     __metaclass__ = DBObjectMeta
+    skipRegistration = False
     objid = None
     tableid = None
     idColKey = None
@@ -118,11 +122,13 @@ class DBObject(object):
     #: Mapping of DDL types to python types.  Strings are assumed to be 256 characters
     #: this can be overridden by modifying the dbTypeMap or by making a custom columns
     #: list.
-    dbTypeMap = {'BIGINT':(int,), 'BOOLEAN':(bool,), 'FLOAT':(float,), 'INTEGER':(int,),\
-                 'NUMERIC':(decimal.Decimal,), 'SMALLINT':(int,), 'TINYINT':(int,), 'VARCHAR':(str, 256),\
-                 'TEXT':(str, 256), 'CLOB':(str, 256), 'NVARCHAR':(str, 256),\
-                 'NCLOB':(unicode, 256), 'NTEXT':(unicode, 256), 'CHAR':(str, 1), 'INT':(int,),\
-                 'REAL':(float,), 'DOUBLE':(float,)}
+    #: numpy doesn't know how to convert decimal.Decimal types, so I changed this to float
+    #: TODO this doesn't seem to make a difference but make sure.
+    dbTypeMap = {'BIGINT':(int,), 'BOOLEAN':(bool,), 'FLOAT':(float,), 'INTEGER':(int,),
+                 'NUMERIC':(float,), 'SMALLINT':(int,), 'TINYINT':(int,), 'VARCHAR':(str, 256),
+                 'TEXT':(str, 256), 'CLOB':(str, 256), 'NVARCHAR':(str, 256),
+                 'NCLOB':(unicode, 256), 'NTEXT':(unicode, 256), 'CHAR':(str, 1), 'INT':(int,),
+                 'REAL':(float,), 'DOUBLE':(float,), 'STRING':(str, 256)}
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -137,14 +143,15 @@ class DBObject(object):
         return cls(*args, **kwargs)
 
     def __init__(self, address=None):
-        if (self.objid is None) or (self.tableid is None):
+        if self.idColKey is None:
+            self.idColKey = self.getIdColKey()
+        if (self.objid is None) or (self.tableid is None) or (self.idColKey is None):
             raise ValueError("DBObject must be subclassed, and "
-                             "define objid and tableid.")
+                             "define objid, tableid and idColKey.")
         if (self.objectTypeId is None) or (self.spatialModel is None):
             warnings.warn("Either objectTypeId or spatialModel has not "
                           "been set.  Input files for phosim are not "
                           "possible.")
-
         if address is None:
             address = self.getDbAddress()
 
@@ -194,8 +201,7 @@ class DBObject(object):
         self.engine = create_engine(self.dbAddress, echo=False)
         self.session = scoped_session(sessionmaker(autoflush=True, 
                                                    bind=self.engine))
-        self.metadata = MetaData()
-        self.metadata.bind = self.engine
+        self.metadata = MetaData(bind=self.engine)
 
     def _make_column_map(self):
         self.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0]) 
@@ -212,28 +218,27 @@ class DBObject(object):
             colnames = []
         for col in self.table.c.keys():
             dbtypestr = self.table.c[col].type.__visit_name__
+            dbtypestr = dbtypestr.upper()
             if col in colnames:
-                warnings.warn("Database column, %s, overridden in self.columns... "%(col)+\
+                warnings.warn("Database column, %s, overridden in self.columns... "%(col)+
                             "Skipping default assignment.")
-            elif dbtypestr in self.dbTypeMap.keys():
+            elif dbtypestr in self.dbTypeMap:
                 self.columns.append((col, col)+self.dbTypeMap[dbtypestr])
-                #To reduce headaches with databases that are case sensitive
-                if not col.islower():
-                    self.columns.append((col.lower(), col)+self.dbTypeMap[dbtypestr])
             else:
-                warnings.warn("Can't create default column for %s.  There is no mapping "%(col)+\
-                              "for type %s.  Modify the dbTypeMap, or make a custom columns "%(dbtypestr)+\
+                warnings.warn("Can't create default column for %s.  There is no mapping "%(col)+
+                              "for type %s.  Modify the dbTypeMap, or make a custom columns "%(dbtypestr)+
                               "list.")
 
     def _get_column_query(self, colnames=None):
         """Given a list of valid column names, return the query object"""
         if colnames is None:
-            colnames = [k for k in self.columnMap.keys()]
+            colnames = [k for k in self.columnMap]
+        import pdb;pdb.set_trace()
         try:
             vals = [self.columnMap[k] for k in colnames]
         except KeyError:
-            for c in colnames:
-                if c in self.columnMap.keys():
+            for col in colnames:
+                if col in keys or l in lkeys:
                     continue
                 else:
                     warnings.warn("%s not in columnMap"%(c))
@@ -405,3 +410,43 @@ class DBObject(object):
         if constraint is not None:
             query = query.filter(constraint)
         return ChunkIterator(self, query, chunk_size)
+
+class fileDBObject(DBObject):
+    ''' Class to read a file into a database and then query it'''
+    #Column names to index.  Specify compound indexes using tuples of column names
+    indexCols = []
+    def __init__(self, dataLocatorString, runtable=None, dbAddress="sqlite:///:memory:",
+                dtype=None, numGuess=1000, delimiter=None, **kwargs):
+        """
+        Initialize an object for querying databases loaded from a file
+
+        Keyword arguments:
+        @param dataLocatorString: Path to the file to load
+        @param runtable: The name of the table to create.  If None, a random table name will be used.
+        @param dbAddress: Database connection string.  By defualt the database is loaded in memory
+        @param dtype: The numpy dtype to use when loading the file.  If None, it the dtype will be guessed.
+        @param numGuess: The number of lines to use in guessing the dtype from the file.
+        @param delimiter: The delimiter to use when parsing the file default is white space.
+        """
+        if(self.objid is None) or (self.idColKey is None):
+            raise ValueError("DBObject must be subclassed, and "
+                             "define objid and tableid and idColKey.")
+        if (self.objectTypeId is None) or (self.spatialModel is None):
+            warnings.warn("Either objectTypeId or spatialModel has not "
+                          "been set.  Input files for phosim are not "
+                          "possible.")
+
+        if os.path.exists(dataLocatorString):
+            self.dbAddress = dbAddress
+            self._connect_to_engine()
+            self.tableid = loadData(dataLocatorString, dtype, delimiter, runtable, self.idColKey,
+                                    self.engine, self.metadata, numGuess, indexCols=self.indexCols, **kwargs)
+            self._get_table()
+        else:
+            raise ValueError("Could not locate file %s."%(dataLocatorString))
+
+        if self.generateDefaultColumnMap:
+            self._make_default_columns()
+
+        self._make_column_map()
+        self._make_type_map()
