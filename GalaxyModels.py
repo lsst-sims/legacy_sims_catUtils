@@ -6,9 +6,9 @@ from dbConnection import ChunkIterator, DBObject
 from MetaDataDBObject import ObservationMetaData
 from sqlalchemy import Table, Column, BigInteger, MetaData
 
-class MyGalaxyObj(DBObject):
+class ExampleGalaxyObj(DBObject):
     
-    objid = 'mygalaxyBase'
+    objid = 'exampleGalaxyBase'
     #: This is the base table for the galaxies
     tableid = 'galaxies'
     idColKey = 'galid'
@@ -19,8 +19,6 @@ class MyGalaxyObj(DBObject):
     #: This will cause a warning, but it just means we can't make
     #: TRIM files with this object.    
     spatialModel = None
-
-
 
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
