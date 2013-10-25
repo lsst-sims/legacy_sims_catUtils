@@ -74,6 +74,7 @@ class MetaDataDBObject(DBObject):
                ('Opsim_altitude', 'altitude'),
                ('Opsim_azimuth', 'azimuth')]
     def __init__(self, address=None):
+        self.defaultColumns = [col[0] for col in self.columns]
         super(MetaDataDBObject, self).__init__(address=address)
 
     def getObjectTypeId(self):
@@ -82,8 +83,10 @@ class MetaDataDBObject(DBObject):
     def getSpatialModel(self):
         raise NotImplementedError("Metadata has no spatial model")
 
-    def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False):
-        chunks = self.query_columns(constraint="obshistid=%i"%obshistid)
+    def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False, colnames=None):
+        if colnames is None:
+            colnames = self.defaultColumns
+        chunks = self.query_columns(colnames=colnames, constraint="obshistid=%i"%obshistid)
         #The query will only return one row (hopefully)
         result = chunks.next()
         ra = result[self.raColKey][0]
