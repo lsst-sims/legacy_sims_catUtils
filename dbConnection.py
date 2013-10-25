@@ -233,7 +233,6 @@ class DBObject(object):
         """Given a list of valid column names, return the query object"""
         if colnames is None:
             colnames = [k for k in self.columnMap]
-        import pdb;pdb.set_trace()
         try:
             vals = [self.columnMap[k] for k in colnames]
         except KeyError:
