@@ -64,8 +64,8 @@ class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
             typ = md[k][1].kind
             templ = self.default_formats.get(typ, None)
             if templ is None:
-                warnings.warn("Using raw formatting for column '%s' "
-                              "with type %s" % (col, chunk_cols[i].dtype))
+                warnings.warn("Using raw formatting for header key %s "+\
+                              "with type %s" % (k, typ))
                 templ = "%s"
             templ = "%s "+templ
             if k in self.headerTransformations.keys():
