@@ -155,8 +155,8 @@ class GalaxyTileObj(DBObject):
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
     #: as None is cast to nan, but for integers this raises and exception.
-    #: Typically it's not an issue as ints are usually ids of some sort, 
-    #: but in the case of the base galaxy catalog, it's possible for the 
+    #: Typically it's not an issue as ints are usually ids of some sort,
+    #: but in the case of the base galaxy catalog, it's possible for the
     #: varsimobjid to be None if the object does not contain an AGN.
     #: I'm over riding the _postprocess_results method to take care of this.
     #: I could also have refactored my database table so that no integer values

@@ -74,7 +74,7 @@ class DBObjectMeta(type):
             cls.registry[cls.objid] = cls
 
         # check if the list of unique ids is specified
-        # if not, then this is the base class: add the list    
+        # if not, then this is the base class: add the list
         if not hasattr(cls, 'objectTypeIdList'):
             cls.objectTypeIdList = []
         else:
@@ -204,7 +204,7 @@ class DBObject(object):
         self.metadata = MetaData(bind=self.engine)
 
     def _make_column_map(self):
-        self.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0]) 
+        self.columnMap = OrderedDict([(el[0], el[1] if el[1] else el[0])
                                      for el in self.columns])
     def _make_type_map(self):
         self.typeMap = OrderedDict([(el[0], el[2:] if len(el)> 2 else (float,))
@@ -369,7 +369,6 @@ class DBObject(object):
                         retresults[i][k] = result[k]
         else:
             retresults = numpy.rec.fromrecords(results, dtype=dtype)
-        
         return self._final_pass(retresults)
 
     def query_columns(self, colnames=None, chunk_size=None,

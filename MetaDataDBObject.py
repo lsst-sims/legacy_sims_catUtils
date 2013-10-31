@@ -152,5 +152,4 @@ class MetaDataDBObject(DBObject):
                                   mjd_bounds['mjd_min'], mjd_bounds['mjd_max']))
         if constraint is not None:
             query = query.filter(constraint)
-            
         return ChunkIterator(self, query, chunk_size)
