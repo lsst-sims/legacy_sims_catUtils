@@ -83,13 +83,13 @@ def loadTable(datapath, datatable, delimiter, dtype, engine, indexCols=[], skipL
             engine.execute(datatable.insert(), [dict((name, numpy.asscalar(l[name])) for name in l.dtype.names) for l in dataArr])
 
     for col in indexCols:
-    	if hasattr(col, "__iter__"):
-    		print "Creating index on %s"%(",".join(col))
-    		colArr = (datatable.c[c] for c in col)
-    		i = Index('%sidx'%''.join(col), *colArr)
+            if hasattr(col, "__iter__"):
+            print "Creating index on %s"%(",".join(col))
+            colArr = (datatable.c[c] for c in col)
+            i = Index('%sidx'%''.join(col), *colArr)
         else:
-        	print "Creating index on %s"%(col)
-        	i = Index('%sidx'%col, datatable.c[col])
+            print "Creating index on %s"%(col)
+            i = Index('%sidx'%col, datatable.c[col])
 
         i.create(engine)
 
