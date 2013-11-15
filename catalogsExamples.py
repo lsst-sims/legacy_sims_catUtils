@@ -1,6 +1,9 @@
+import scipy
+import math
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.measures.example_utils.exampleCatalogDefinitions import RefCatalogGalaxyBase
 from lsst.sims.catalogs.measures.example_utils.exampleCatalogDefinitions import TrimCatalogPoint, TrimCatalogZPoint, TrimCatalogSersic2D
+from lsst.sims.catalogs.measures.example_utils import makeObsParamsAzAlt, makeObsParamsRaDec
 
 def exampleReferenceCatalog():
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01))
@@ -12,9 +15,6 @@ def exampleReferenceCatalog():
 def exampleTrimCatalogs():
     obsMD = DBObject.from_objid('opsim3_61')
     obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
-    obs_metadata_gal = ObservationMetaData(circ_bounds=dict(ra=.0,
-                                                        dec=.0,
-                                                        radius=0.1))
     objectDict = {}
     objectDict['testStars'] = {'dbobj':DBObject.from_objid('msstars'),
                                'constraint':None,
@@ -54,6 +54,31 @@ def exampleTrimCatalogs():
         t.write_catalog(filename, chunk_size=10)
         print " - finished"
 
+def exampleTrimNoOpSim():
+    raDeg= 15.
+    decDeg = -30.
+    mjd = 51999.75
+    md =  makeObsParamsRaDec(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
+    obs_metadata_rd = ObservationMetaData(circ_bounds=dict(ra=raDeg,
+                                                        dec=decDeg,
+                                                        radius=0.1),
+                                                        metadata=md)
+    azRad = math.radians(220.)
+    altRad = math.radians(79.)
+    md = makeObsParamsAzAlt(azRad, altRad, mjd, 'r')
+    raDeg = math.degrees(md['Unrefracted_RA'][0])
+    decDeg = math.degrees(md['Unrefracted_Dec'][0])
+    obs_metadata_aa = ObservationMetaData(circ_bounds=dict(ra=raDeg,
+                                                        dec=decDeg,
+                                                        radius=0.1),
+                                                        metadata=md)
+    dbobj = DBObject.from_objid('msstars')
+    t = dbobj.getCatalog('trim_catalog_POINT', obs_metadata= obs_metadata_rd)
+    t.write_catalog('catalog_test_stars_rd.dat')
+    t = dbobj.getCatalog('trim_catalog_POINT', obs_metadata= obs_metadata_aa)
+    t.write_catalog('catalog_test_stars_aa.dat')
+
 if __name__ == '__main__':
     exampleReferenceCatalog()
     exampleTrimCatalogs()
+    exampleTrimNoOpSim()
