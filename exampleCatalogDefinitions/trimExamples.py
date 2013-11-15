@@ -33,7 +33,7 @@ class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
-    filtMap = {'u':'0', 'g':'1', 'r':'2', 'i':'3', 'z':'4', 'y':'5'}
+    filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
     headerTransformations = {'Unrefracted_RA':numpy.degrees, 'Unrefracted_Dec':numpy.degrees, 
                        'Opsim_moonra':numpy.degrees, 'Opsim_moondec':numpy.degrees, 
