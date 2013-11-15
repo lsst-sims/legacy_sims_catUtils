@@ -1,18 +1,33 @@
 #!/usr/bin/env python
-from jobLogModel import *
+from jobLogModel import engine, session, metadata,\
+       CatalogEventLog, JobStateLog 
 from sqlalchemy import func
-import datetime as dt
-from pytz import timezone
 import socket
 import time
+from datetime import tzinfo, timedelta, datetime
+
+
+# A UTC class.
+
+class UTC(tzinfo):
+    _zero = timedelta(0)
+
+    def utcoffset(self, dt):
+                return self._zero
+
+    def tzname(self, dt):
+                return "UTC"
+
+    def dst(self, dt):
+                return self._zero
+
 
 class LogEvents(object):
   def __init__(self, jobdescription="", jobid=None, ip = None):
-    setup_all()
-    create_all()
     self._tasknumber = None
+    self._conn = engine.connect()
     if jobid is None:
-      jobid = b_session.query(func.max(CatalogEventLog.jobid)).one()[0]
+      jobid = session.query(func.max(CatalogEventLog.c.jobid)).one()[0]
       if jobid is None:
         self._jobid = 1
       else:
@@ -27,17 +42,16 @@ class LogEvents(object):
     self.persist('__REGISTRATION__', 'Registered job %i'%self._jobid, '')
 
   def persist(self, key, value, description):
-    CatalogEventLog(jobid=self._jobid, pkey=unicode(key),
-            pvalue=unicode(value),
-            time=dt.datetime(1,1,1).now(timezone('UTC')),
+    ins = CatalogEventLog.insert().values(jobid=self._jobid, pkey=unicode(key),
+            pvalue=unicode(value), time=datetime(1,1,1).now(UTC()),
             taskNumber=self._tasknumber, ip=self._ip,
             description=unicode(description))
-    b_session.commit()
+    result = self._conn.execute(ins)
 
   def registerTaskStart(self, tasknumber=None):
     key = "TASK_START" 
     if tasknumber is None:
-      tasknumber = b_session.query(func.max(CatalogEventLog.taskNumber)).one()[0]
+      tasknumber = session.query(func.max(CatalogEventLog.c.taskNumber)).one()[0]
       if tasknumber is None:
         tasknumber = 1
     else:
@@ -71,11 +85,11 @@ class JobId(object):
 
 class JobState(object):
   def __init__(self, jobid=None):
-    setup_all()
     self._jobid = None
     self._states = {}
+    self._conn = engine.connect()
     if jobid is None:
-      jobid = b_session.query(func.max(JobStateLog.jobid)).one()[0]
+      jobid = session.query(func.max(JobStateLog.c.jobid)).one()[0]
       if jobid is None:
         self._jobid = JobId(1)
       else:
@@ -87,10 +101,10 @@ class JobState(object):
         self._jobid = JobId(jobid)
       else:
         raise Exception("The jobid is not an int or JobId class")
-      statearr = JobStateLog.query.filter("jobid = %i and owner =\
+      statearr = session.query(JobStateLog).filter("jobid = %i and owner =\
               '%s'"%(self._jobid.getId(),self._jobid.getOwner())).all()
       for state in statearr:
-        self._states[state.pkey] = state
+        self._states[state.pkey] = state.pvalue
     self.updateState("__Registration__", "Completed job registration")
 
   def getJobId(self):
@@ -98,7 +112,7 @@ class JobState(object):
 
   def getJobIdsByOwner(self, owner):
     jids = []
-    idarr = b_session.query(func.distinct(JobStateLog.jobid)).filter("owner = '%s'"%(owner)).all()
+    idarr = session.query(func.distinct(JobStateLog.c.jobid)).filter("owner = '%s'"%(owner)).all()
     for id in idarr:
       jids.append(JobId(id[0], owner))
     return jids
@@ -106,37 +120,36 @@ class JobState(object):
 
   def updateState(self, key, state):
     if self._states.has_key(key):
-      self._states[key].pvalue = unicode(state)
-      self._states[key].time = dt.datetime(1,1,1).now(timezone('UTC'))
-      b_session.commit()
+      self._states[key] = unicode(state)
+      stmt = JobStateLog.update().where(
+              JobStateLog.c.jobid == self._jobid.getId() and
+              JobStateLog.c.owser == self._jobid.getOwner() and
+              JobStateLog.c.pkey == unicode(key)).\
+              values(pvalue=unicode(state), 
+                     time=datetime.now(UTC()))
+      result = self._conn.execute(stmt)  
     else:
-      self._states[key] = JobStateLog(jobid=self._jobid.getId(),
-              owner=self._jobid.getOwner(), pkey=unicode(key),
-              pvalue=unicode(state),
-              time=dt.datetime(1,1,1).now(timezone('UTC')))
-      b_session.commit()
+      self._states[key] = unicode(state)
+      ins = JobStateLog.insert().values(jobid=self._jobid.getId(), owner=self._jobid.getOwner(),
+              pkey=unicode(key), pvalue=unicode(state), 
+              time=datetime.now(UTC()))
+      result = self._conn.execute(ins)
 
   def queryState(self, key):
     if self._states.has_key(key):
-      b_session.refresh(self._states[key])
-      return self._states[key].pvalue
+      return self._states[key]
     else:
       return None
 
   def showStates(self):
     states = {}
-    keys = self._states.keys()
-    for k in self._states.keys():
-      b_session.refresh(self._states[k])
-      #print k, self._states[k].pvalue
-      states[k] = self._states[k].pvalue
+    for k in self._states:
+      states[k] = self._states[k]
     return states
-
-  def refreshStates(self):
-    for k in self._states.keys():
-      b_session.refresh(self._states[k])
 
   def deleteStates(self):
     for key in self._states.keys():
-      self._states[key].delete()
-    b_session.commit()
+      delstate = JobStateLog.delete().where(JobStateLog.c.jobid == self._jobid.getId() and
+                                            JobStateLog.c.owner == self._jobid.getOwner() and 
+                                            JobStateLog.c.pkey == unicode(key))
+      result = self._conn.execute(delstate)

@@ -83,7 +83,7 @@ def loadTable(datapath, datatable, delimiter, dtype, engine, indexCols=[], skipL
             engine.execute(datatable.insert(), [dict((name, numpy.asscalar(l[name])) for name in l.dtype.names) for l in dataArr])
 
     for col in indexCols:
-            if hasattr(col, "__iter__"):
+        if hasattr(col, "__iter__"):
             print "Creating index on %s"%(",".join(col))
             colArr = (datatable.c[c] for c in col)
             i = Index('%sidx'%''.join(col), *colArr)
@@ -94,8 +94,8 @@ def loadTable(datapath, datatable, delimiter, dtype, engine, indexCols=[], skipL
         i.create(engine)
 
 def loadData(dataPath, dtype, delimiter, tableId, idCol, engine, metaData, numGuess, **kwargs):
-	if dtype is None:
-		dtype = guessDtype(dataPath, numGuess, delimiter)
-	dataTable = createSQLTable(dtype, tableId, idCol, metaData)
-	loadTable(dataPath, dataTable, delimiter, dtype, engine, **kwargs)
-	return dataTable.name
+    if dtype is None:
+        dtype = guessDtype(dataPath, numGuess, delimiter)
+    dataTable = createSQLTable(dtype, tableId, idCol, metaData)
+    loadTable(dataPath, dataTable, delimiter, dtype, engine, **kwargs)
+    return dataTable.name

@@ -1,4 +1,4 @@
-#from .jobDB import *
+from .jobDB import *
 from .GalaxyModels import *
 from .StarModels import *
 from .MetaDataDBObject import *
