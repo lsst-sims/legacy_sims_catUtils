@@ -45,6 +45,7 @@ class MetaDataDBObject(DBObject):
     tableid = 'output_opsim3_61'
     objectTypeId = -1
     spatialModel = 'none'
+    generateDefaultColumnMap = False
     #: Note that identical observations may have more than one unique
     #: obshistid, so this is the id, but not for unique visits.
     #: To do that, group by expdate.
@@ -53,8 +54,8 @@ class MetaDataDBObject(DBObject):
     raColKey = 'Unrefracted_RA'
     decColKey = 'Unrefracted_Dec'
     #: These are interpreted as SQL strings.
-    raColName = 'fieldra'
-    decColName = 'fielddec'
+    raColName = 'fieldra*180./PI()'
+    decColName = 'fielddec*180./PI()'
     mjdColName = 'expmjd'
     columns = [('SIM_SEED', 'expdate', int),
                ('Unrefracted_RA', 'fieldra'),
@@ -148,7 +149,7 @@ class MetaDataDBObject(DBObject):
         query = self.filter(query, circ_bounds=circ_bounds, 
                     box_bounds=box_bounds)
         if mjd_bounds is not None:
-            query = query.filter("%s between %f and %f)"%(self.mjdColName,
+            query = query.filter("%s between %f and %f"%(self.mjdColName,
                                   mjd_bounds['mjd_min'], mjd_bounds['mjd_max']))
         if constraint is not None:
             query = query.filter(constraint)
