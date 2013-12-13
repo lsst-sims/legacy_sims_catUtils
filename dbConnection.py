@@ -128,7 +128,8 @@ class DBObject(object):
                  'NUMERIC':(float,), 'SMALLINT':(int,), 'TINYINT':(int,), 'VARCHAR':(str, 256),
                  'TEXT':(str, 256), 'CLOB':(str, 256), 'NVARCHAR':(str, 256),
                  'NCLOB':(unicode, 256), 'NTEXT':(unicode, 256), 'CHAR':(str, 1), 'INT':(int,),
-                 'REAL':(float,), 'DOUBLE':(float,), 'STRING':(str, 256)}
+                 'REAL':(float,), 'DOUBLE':(float,), 'STRING':(str, 256), 'DOUBLE_PRECISION':(float,),
+                 'DECIMAL':(float,)}
 
     @classmethod
     def from_objid(cls, objid, *args, **kwargs):
@@ -237,10 +238,10 @@ class DBObject(object):
             vals = [self.columnMap[k] for k in colnames]
         except KeyError:
             for col in colnames:
-                if col in self.columnMap:
+                if col in keys or l in lkeys:
                     continue
                 else:
-                    warnings.warn("%s not in columnMap"%(col))
+                    warnings.warn("%s not in columnMap"%(c))
             raise ValueError('entries in colnames must be in self.columnMap')
 
         # Get the first query
