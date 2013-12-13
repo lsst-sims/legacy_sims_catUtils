@@ -12,7 +12,7 @@ def id_generator(size=8, chars=string.ascii_lowercase):
 
 def make_engine(dbAddress):
     """create and connect to a database engine"""
-    engine = create_engine(dbAddress, echo=True)
+    engine = create_engine(dbAddress, echo=False)
     metadata = MetaData(bind=engine)
     return engine, metadata
 
@@ -105,9 +105,20 @@ def loadTable(datapath, datatable, delimiter, dtype, engine, indexCols=[], skipL
 
         i.create(engine)
 
-def loadData(dataPath, dtype, delimiter, tableId, idCol, engine, metaData, numGuess, **kwargs):
+def loadData(dataPath, dtype, delimiter, tableId, idCol, engine, metaData, numGuess, append=False, **kwargs):
     if dtype is None:
         dtype = guessDtype(dataPath, numGuess, delimiter)
-    dataTable = createSQLTable(dtype, tableId, idCol, metaData)
+
+    if tableId is not None:
+        tableExists = engine.dialect.has_table(engine.connect(), tableId)
+
+    if append and tableId is None:
+        raise ValueError("Cannot append if the table name is missing")
+    elif tableExists and not append:
+        raise ValueError("Append is False but table exists")
+    elif not tableExists:
+        dataTable = createSQLTable(dtype, tableId, idCol, metaData)
+    else:
+        dataTable = Table(tableId, metaData, autoload=True)
     loadTable(dataPath, dataTable, delimiter, dtype, engine, **kwargs)
     return dataTable.name
