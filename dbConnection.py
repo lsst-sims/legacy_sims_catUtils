@@ -237,10 +237,10 @@ class DBObject(object):
             vals = [self.columnMap[k] for k in colnames]
         except KeyError:
             for col in colnames:
-                if col in keys or l in lkeys:
+                if col in self.columnMap:
                     continue
                 else:
-                    warnings.warn("%s not in columnMap"%(c))
+                    warnings.warn("%s not in columnMap"%(col))
             raise ValueError('entries in colnames must be in self.columnMap')
 
         # Get the first query
