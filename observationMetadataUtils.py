@@ -57,15 +57,43 @@ def altAzToRaDec(altRad, azRad, longRad, latRad, mjd):
     raRad = math.radians(last*15.) - haRad
     return raRad, decRad
 
+def calcPa(azRad, decRad, latRad):
+    """
+    Calculate the Parallactic angle 
+    azRad is the azimuth of the object assuming OpSim conventions (radians)
+    latRad is the latitude of the observatory (radians)
+    decRad is the declination of the object (radians)
+    """
+    try:
+        paRad = math.asin(math.sin(azRad)*math.cos(latRad)/math.cos(decRad))
+    except ValueError, e:
+        if not math.fabs(decRad) > math.fabs(latRad):
+            raise ValueError("The point is circumpolar but the Azimuth is not valid: Az=%.2f"%(math.degrees(azRad)))
+        else:
+            raise e
+    return paRad
+
 def getRotSkyPos(azRad, decRad, latRad, rotTelRad):
     """
-    azdeg is the azimuth of the object assuming opSim conventions (degrees)
-    decdeg is the declination of the object (degrees)
-    rotteldeg is the angle of the camera rotator assuming opSim
-    conventions (degrees)
+    azRad is the azimuth of the object assuming opSim conventions (radians)
+    decRad is the declination of the object (radians)
+    latRad is the latitude of the observatory (radians)
+    rotTelRad is the angle of the camera rotator assuming OpSim
+    conventions (radians)
     """
-    paRad = math.asin(math.sin(azRad)*math.cos(latRad)/math.cos(decRad))
+    paRad = calcPa(azRad, decRad, latRad)
     return (rotTelRad - paRad + math.pi)%(2.*math.pi)
+
+def getRotTelPos(azRad, decRad, latRad, rotSkyRad):
+    """
+    azRad is the azimuth of the object assuming opSim conventions (radians)
+    decRad is the declination of the object (radians)
+    latRad is the latitude of the observatory (radians)
+    rotSkyRad is the angle of the field of view relative to the South pole given
+    a rotator angle in OpSim conventions (radians)
+    """
+    paRad = calcPa(azRad, decRad, latRad)
+    return (rotSkyRad + paRad - math.pi)%(2.*math.pi)
 
 def haversine(long1, lat1, long2, lat2):
     #From http://en.wikipedia.org/wiki/Haversine_formula
@@ -100,7 +128,7 @@ def makeObservationMetadata(metaData):
     return OrderedDict([(k,(metaData[k], numpy.asarray(metaData[k]).dtype))
                          for k in metaData])
 
-def makeObsParamsAzAlt(azRad, altRad, mjd, band, rotTelRad=0., longRad=-1.2320792, latRad=-0.517781017, **kwargs):
+def makeObsParamsAzAltTel(azRad, altRad, mjd, band, rotTelRad=0., longRad=-1.2320792, latRad=-0.517781017, **kwargs):
     '''
     Calculate a minimal set of observing parameters give the ra, dec, and time of the observation.
     altRad -- Altitude of the boresite of the observation in radians
@@ -118,7 +146,24 @@ def makeObsParamsAzAlt(azRad, altRad, mjd, band, rotTelRad=0., longRad=-1.232079
     obsMd.update(kwargs)
     return makeObservationMetadata(obsMd)
 
-def makeObsParamsRaDec(raRad, decRad, mjd, band, rotTelRad=0., longRad=-1.2320792, latRad=-0.517781017, **kwargs):
+def makeObsParamsAzAltSky(azRad, altRad, mjd, band, rotSkyRad=math.pi, longRad=-1.2320792, latRad=-0.517781017, **kwargs):
+    '''
+    Calculate a minimal set of observing parameters give the ra, dec, and time of the observation.
+    altRad -- Altitude of the boresite of the observation in radians
+    azRad -- Azimuth of the boresite of the observation in radians
+    mjd -- MJD of the observation
+    band -- bandpass of the observation e.g. 'r'
+    rotTelRad -- Rotation of the field of view relative to the North pole in radians Default=0.
+    longRad -- Longitude of the observatory in radians Default=-1.2320792
+    latRad -- Latitude of the observatory in radians Default=-0.517781017
+    **kwargs -- The kwargs will be put in the returned dictionary overriding the default value if it exists
+    '''
+    raRad, decRad = altAzToRaDec(altRad, azRad, longRad, latRad, mjd)
+    rotTelRad = getRotTelPos(azRad, decRad, latRad, rotSkyRad)
+    return makeObsParamsAzAltTel(azRad, altRad, mjd, band, rotTelRad=rotTelRad, longRad=longRad, latRad=latRad, **kwargs)
+
+
+def makeObsParamsRaDecTel(raRad, decRad, mjd, band, rotTelRad=0., longRad=-1.2320792, latRad=-0.517781017, **kwargs):
     '''
     Calculate a minimal set of observing parameters give the ra, dec, and time of the observation.
     raRad -- RA of the boresite of the observation in radians
@@ -134,3 +179,19 @@ def makeObsParamsRaDec(raRad, decRad, mjd, band, rotTelRad=0., longRad=-1.232079
     obsMd = calcObsDefaults(raRad, decRad, altRad, azRad, rotTelRad, mjd, band, longRad, latRad)
     obsMd.update(kwargs)
     return makeObservationMetadata(obsMd)
+
+def makeObsParamsRaDecSky(raRad, decRad, mjd, band, rotSkyRad=math.pi, longRad=-1.2320792, latRad=-0.517781017, **kwargs):
+    '''
+    Calculate a minimal set of observing parameters give the ra, dec, and time of the observation.
+    raRad -- RA of the boresite of the observation in radians
+    decRad -- Dec of the boresite of the observation in radians
+    mjd -- MJD of the observation
+    band -- bandpass of the observation e.g. 'r'
+    rotSkyRad -- Rotation of the field of view relative to the North pole in radians Default=0.
+    longRad -- Longitude of the observatory in radians Default=-1.2320792
+    latRad -- Latitude of the observatory in radians Default=-0.517781017
+    **kwargs -- The kwargs will be put in the returned dictionary overriding the default value if it exists
+    '''
+    altRad, azRad = raDecToAltAz(raRad, decRad, longRad, latRad, mjd)
+    rotTelRad = getRotTelPos(azRad, decRad, latRad, rotSkyRad)
+    return makeObsParamsRaDecTel(raRad, decRad, mjd, band, rotTelRad=rotTelRad, longRad=longRad, latRad=latRad, **kwargs)
