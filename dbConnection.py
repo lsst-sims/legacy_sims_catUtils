@@ -3,8 +3,6 @@ import math
 import numpy
 import os
 from collections import OrderedDict
-from lsst.sims.catalogs.measures.instance import\
-        InstanceCatalog
 
 from .utils import loadData
 from sqlalchemy.orm import scoped_session, sessionmaker, mapper
@@ -179,7 +177,12 @@ class DBObject(object):
 
 
     def getCatalog(self, ftype, *args, **kwargs):
-        return InstanceCatalog.new_catalog(ftype, self, *args, **kwargs)
+        try:
+            from lsst.sims.catalogs.measures.instance import\
+                    InstanceCatalog
+            return InstanceCatalog.new_catalog(ftype, self, *args, **kwargs)
+        except ImportError:
+            raise ImportError("sims_catalogs_measures not set up.  Cannot get InstanceCatalog from the object.")
 
     def getDbAddress(self):
         return self.dbAddress
@@ -238,10 +241,10 @@ class DBObject(object):
             vals = [self.columnMap[k] for k in colnames]
         except KeyError:
             for col in colnames:
-                if col in keys or l in lkeys:
+                if col in columnMap:
                     continue
                 else:
-                    warnings.warn("%s not in columnMap"%(c))
+                    warnings.warn("%s not in columnMap"%(col))
             raise ValueError('entries in colnames must be in self.columnMap')
 
         # Get the first query
