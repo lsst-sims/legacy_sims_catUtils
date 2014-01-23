@@ -120,8 +120,8 @@ def calcObsDefaults(raRad, decRad, altRad, azRad, rotTelRad, mjd, band, longRad,
     obsMd['Unrefracted_Dec'] = decRad
     obsMd['Opsim_rotskypos'] = rotSkyPos
     obsMd['Opsim_rottelpos'] = rotTelRad
-    obsMd['Opsim_altitude'] = altRad
-    obsMd['Opsim_azimuth'] = azRad
+    obsMd['Unrefracted_Altitude'] = altRad
+    obsMd['Unrefracted_Azimuth'] = azRad
     return obsMd
 
 def makeObservationMetadata(metaData):
