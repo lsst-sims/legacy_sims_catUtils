@@ -93,7 +93,7 @@ class TrimCatalogZPoint(TrimCatalogPoint, AstrometryMixin, PhotometryMixin):
 
 class TrimCatalogSersic2D(TrimCatalogZPoint, AstrometryMixin, PhotometryMixin):
     catalog_type = 'trim_catalog_SERSIC2D'
-    column_outputs = ['prefix', 'uniqueId','objId','raTrim','decTrim','magNorm','sedFilepath',
+    column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','majorAxis','minorAxis','positionAngle','sindex',
                       'galacticExtinctionModel','galacticAv','galacticRv',
