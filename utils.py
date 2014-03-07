@@ -109,9 +109,10 @@ def loadData(dataPath, dtype, delimiter, tableId, idCol, engine, metaData, numGu
     if dtype is None:
         dtype = guessDtype(dataPath, numGuess, delimiter)
 
+    tableExists = False
+
     if tableId is not None:
         tableExists = engine.dialect.has_table(engine.connect(), tableId)
-
     if append and tableId is None:
         raise ValueError("Cannot append if the table name is missing")
     elif tableExists and not append:
