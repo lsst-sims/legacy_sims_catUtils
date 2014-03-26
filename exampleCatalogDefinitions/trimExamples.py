@@ -1,27 +1,10 @@
 """Instance Catalog"""
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
+from lsst.sims.catalogs.measures.astrometry.Astrometry import Astrometry
+from lsst.sims.catalogs.measures.photometry.photUtils import Photometry
 
-class PhotometryMixin(object):
-    def get_ug_color(self):
-        u = self.column_by_name('umag')
-        g = self.column_by_name('gmag')
-        return u - g
-
-    def get_gr_color(self):
-        g = self.column_by_name('gmag')
-        r = self.column_by_name('rmag')
-        return g - r
-
-
-class AstrometryMixin(object):
-    @compound('ra_corr', 'dec_corr')
-    def get_points(self):
-        return (self.column_by_name('raJ2000') + 0.001,
-                self.column_by_name('decJ2000') - 0.001)
-
-
-class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
+class TrimCatalogPoint(InstanceCatalog, Astrometry, Photometry):
     catalog_type = 'trim_catalog_POINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -75,7 +58,7 @@ class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
             file_handle.write(templ%(k, outval)+"\n") 
 
 
-class TrimCatalogZPoint(TrimCatalogPoint, AstrometryMixin, PhotometryMixin):
+class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, Photometry):
     catalog_type = 'trim_catalog_ZPOINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -91,7 +74,7 @@ class TrimCatalogZPoint(TrimCatalogPoint, AstrometryMixin, PhotometryMixin):
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
 
-class TrimCatalogSersic2D(TrimCatalogZPoint, AstrometryMixin, PhotometryMixin):
+class TrimCatalogSersic2D(TrimCatalogZPoint, Astrometry, Photometry):
     catalog_type = 'trim_catalog_SERSIC2D'
     column_outputs = ['prefix', 'uniqueId','objId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
