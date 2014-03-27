@@ -92,7 +92,11 @@ def loadTable(datapath, datatable, delimiter, dtype, engine, indexCols=[], skipL
         #Clean up the last chunk
         if len(tmpstr) > 0:
             dataArr = numpy.genfromtxt(StringIO(tmpstr), dtype=dtype, delimiter=delimiter, **kwargs)
-            engine.execute(datatable.insert(), [dict((name, numpy.asscalar(l[name])) for name in l.dtype.names) for l in dataArr])
+            try:
+                engine.execute(datatable.insert(), [dict((name, numpy.asscalar(l[name])) for name in l.dtype.names) for l in dataArr])
+            # If the file only has one line, the result of genfromtxt is a 0-d array, so cannot be iterated
+            except TypeError:
+                engine.execute(datatable.insert(), [dict((name, numpy.asscalar(dataArr[name])) for name in dataArr.dtype.names),])
 
     for col in indexCols:
         if hasattr(col, "__iter__"):
