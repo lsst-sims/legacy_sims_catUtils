@@ -3,8 +3,9 @@ import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
 from lsst.sims.catalogs.measures.astrometry.Astrometry import Astrometry
 from lsst.sims.catalogs.measures.photometry.photUtils import Photometry
+from lsst.sims.catalogs.measures.photometry.EBV import EBVmixin
 
-class TrimCatalogPoint(InstanceCatalog, Astrometry, Photometry):
+class TrimCatalogPoint(InstanceCatalog, Astrometry, Photometry,EBVmixin):
     catalog_type = 'trim_catalog_POINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -39,6 +40,7 @@ class TrimCatalogPoint(InstanceCatalog, Astrometry, Photometry):
         chunkiter = xrange(len(self._current_chunk))
         return numpy.array([self.db_obj.getSpatialModel() for i in
                chunkiter], dtype=(str, 7))
+                        
     def write_header(self, file_handle):
         md = self.obs_metadata.metadata
         if md is None:
@@ -58,7 +60,7 @@ class TrimCatalogPoint(InstanceCatalog, Astrometry, Photometry):
             file_handle.write(templ%(k, outval)+"\n") 
 
 
-class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, Photometry):
+class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, Photometry,EBVmixin):
     catalog_type = 'trim_catalog_ZPOINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -74,7 +76,7 @@ class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, Photometry):
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
 
-class TrimCatalogSersic2D(TrimCatalogZPoint, Astrometry, Photometry):
+class TrimCatalogSersic2D(TrimCatalogZPoint, Astrometry, Photometry,EBVmixin):
     catalog_type = 'trim_catalog_SERSIC2D'
     column_outputs = ['prefix', 'uniqueId','objId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
