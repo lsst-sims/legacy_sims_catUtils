@@ -3,7 +3,7 @@ import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
 from lsst.sims.coordUtils.Astrometry import Astrometry
 from lsst.sims.photUtils.Photometry import PhotometryStars
-from lsst.sims.catalogs.measures.photometry.EBV import EBVmixin
+from lsst.sims.photUtils.EBV import EBVmixin
 
 class TrimCatalogPoint(InstanceCatalog, Astrometry, PhotometryStars,EBVmixin):
     catalog_type = 'trim_catalog_POINT'
