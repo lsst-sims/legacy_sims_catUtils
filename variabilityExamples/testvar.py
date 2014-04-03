@@ -3,11 +3,6 @@ import time
 import lsst.sims.photUtils.Variability as variability
 import numpy
 
-"""
-As of 3 April 2014, I no longer think this script runs.
-It assumes a very old variability API. 
-Scott Daniel -- scott.f.daniel@gmail.com
-"""
 
 def getParams(filename):
     fh = open(filename)
@@ -30,10 +25,18 @@ if __name__ == "__main__":
     startmjd = 51000.
     endmjd = 51100.
     steps = 4800
-    var = variability.Variability(cache=True)
+    #var = variability.Variability(cache=True)
+    
+    var = variability.Variability()
+    var.initializeVariability(doCache=True)
+    
     mjds = numpy.linspace(startmjd, endmjd, steps)
-    arr = getParams("mflare.dat")
+    
     """
+    #data files for this commented-out section no longer seem to exist
+    
+    arr = getParams("mflare.dat")
+    
     for a in arr:
         fhout = open("lcs/mflare_%i.out"%(a['varsimobjid']),"w")
         t0 = time.time()
@@ -49,7 +52,7 @@ if __name__ == "__main__":
                     dmags['z'][i], dmags['y'][i]]
             fhout.write(",".join([str(el) for el in line])+"\n")
         fhout.close()
-    """
+    
 
     arr = getParams("bh_microlens.dat")
     for a in arr:
@@ -124,7 +127,8 @@ if __name__ == "__main__":
                     dmags['z'][i], dmags['y'][i]]
             fhout.write(",".join([str(el) for el in line])+"\n")
         fhout.close()
-
+    """
+   
     arr = getParams("agn.dat")
     mag_o = 20.
     for a in arr: 
