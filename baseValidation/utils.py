@@ -8,9 +8,9 @@ import pickle
 import matplotlib.pyplot as plt
 import lsst.afw.coord as afwCoord
 import lsst.afw.geom as afwGeom
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
-from lsst.sims.catalogs.measures.photometry import EBV
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
+from lsst.sims.photUtils import EBV
 import copy
 
 def read_ACS_cat(filename, limit=None):

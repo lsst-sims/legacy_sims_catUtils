@@ -1,7 +1,12 @@
 import scipy
 import time
-import lsst.sims.catalogs.measures.photometry.Variability as variability
+import lsst.sims.photUtils.Variability as variability
 import numpy
+
+"""
+As of 3 April 2014, I no longer think this script runs.
+It assumes a very old variability API.
+"""
 
 def getParams(filename):
     fh = open(filename)
