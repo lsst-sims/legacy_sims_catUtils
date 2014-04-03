@@ -2,8 +2,8 @@
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catalogs.measures.example_utils import ValidationUtils
-from lsst.sims.catalogs.measures.astrometry.Astrometry import Astrometry
-from lsst.sims.catalogs.measures.photometry.Photometry import PhotometryGalaxies, PhotometryStars
+from lsst.sims.coordUtils.Astrometry import Astrometry
+from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 
 class RefCatalogGalaxyBase(InstanceCatalog, Astrometry, PhotometryGalaxies):
     comment_char = ''
