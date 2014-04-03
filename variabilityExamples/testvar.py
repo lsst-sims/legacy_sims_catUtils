@@ -5,7 +5,8 @@ import numpy
 
 """
 As of 3 April 2014, I no longer think this script runs.
-It assumes a very old variability API.
+It assumes a very old variability API. 
+Scott Daniel -- scott.f.daniel@gmail.com
 """
 
 def getParams(filename):
