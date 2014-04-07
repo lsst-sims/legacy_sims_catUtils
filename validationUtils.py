@@ -17,7 +17,7 @@ class ValidationUtils(object):
             phiarray=None, dlambda=None):
         if sedKey is None or sedKey == 'None' or magNorm is None or numpy.isnan(magNorm):
             return None, None, None, None
-        datadir = os.environ.get("SED_DATA")
+        datadir = os.path.join(os.environ.get("CAT_SHARE_DATA"), "data")
         if cls.sedDict.has_key(sedKey):
             sed = copy.deepcopy(cls.sedDict[sedKey])
         else:
