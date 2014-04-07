@@ -126,7 +126,7 @@ def get_Ebv(result):
     return EBV.calculateEbv(gLon, gLat, ebvMapNorth, ebvMapSouth, interp = True)
 
 def get_TotalSDSSMags(result, bandpasses=('u','g','r','i','z')):
-    datadir = os.environ.get("SED_DATA")
+    datadir = os.path.join(os.environ.get("CAT_SHARE_DATA"), "data")
     tpath = os.getenv('SDSS_THROUGHPUTS')
     bands = {"u":None, "g":None, "r":None, "i":None, "z":None}
     for k in bands.keys():
@@ -203,7 +203,7 @@ def get_TotalSDSSMags(result, bandpasses=('u','g','r','i','z')):
     return retMags
 
 def get_TotalMags(result, bandpasses=('u','g','r','i','z','y')):
-    datadir = os.environ.get("SED_DATA")
+    datadir = os.path.join(os.environ.get("CAT_SHARE_DATA"), "data")
     tpath = os.getenv('LSST_THROUGHPUTS_DEFAULT')
     bands = {"u":None, "g":None, "r":None, "i":None, "z":None, "y":None}
     for k in bands.keys():
