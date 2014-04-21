@@ -106,6 +106,7 @@ class MetaDataDBObject(DBObject):
         else:
             raise ValueErr("Need either circ_bounds or box_bounds")
         return ObservationMetaData(circ_bounds=circ_bounds, box_bounds=box_bounds, 
+                           mjd=result['Opsim_expmjd'][0],
                            metadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
 
     def query_columns(self, colnames=None, chunk_size=None,
