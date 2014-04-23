@@ -29,7 +29,7 @@ class ObservationMetaData(object):
 
     """
             
-    def __init__(self, circ_bounds=None, box_bounds=None, mjd=None, Opsim_filter='i', epoch=2000, metadata=None):
+    def __init__(self, circ_bounds=None, box_bounds=None, mjd=None, epoch=2000, metadata=None):
         if circ_bounds is not None and box_bounds is not None:
             raise ValueError("Passing both circ_bounds and box_bounds")
         self.circ_bounds = circ_bounds
@@ -37,7 +37,6 @@ class ObservationMetaData(object):
         self.mjd = mjd
         self.epoch = epoch
         self.metadata = metadata
-        self.Opsim_filter = Opsim_filter
 
 class MetaDataDBObject(DBObject):
     """Meta Data Database Object base class
@@ -109,7 +108,7 @@ class MetaDataDBObject(DBObject):
             raise ValueErr("Need either circ_bounds or box_bounds")
         
         return ObservationMetaData(circ_bounds=circ_bounds, box_bounds=box_bounds, 
-                           mjd=result['Opsim_expmjd'][0], Opsim_filter = result['Opsim_filter'][0],
+                           mjd=result['Opsim_expmjd'][0],
                            metadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
 
     def query_columns(self, colnames=None, chunk_size=None,
