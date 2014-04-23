@@ -29,13 +29,12 @@ class ObservationMetaData(object):
 
     """
             
-    def __init__(self, circ_bounds=None, box_bounds=None, mjd=None, epoch=2000, metadata=None):
+    def __init__(self, circ_bounds=None, box_bounds=None, mjd=None, metadata=None):
         if circ_bounds is not None and box_bounds is not None:
             raise ValueError("Passing both circ_bounds and box_bounds")
         self.circ_bounds = circ_bounds
         self.box_bounds = box_bounds
         self.mjd = mjd
-        self.epoch = epoch
         self.metadata = metadata
 
 class MetaDataDBObject(DBObject):
