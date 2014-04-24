@@ -1,27 +1,11 @@
 """Instance Catalog"""
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
+from lsst.sims.coordUtils.Astrometry import Astrometry
+from lsst.sims.photUtils.Photometry import PhotometryStars
+from lsst.sims.photUtils.EBV import EBVmixin
 
-class PhotometryMixin(object):
-    def get_ug_color(self):
-        u = self.column_by_name('umag')
-        g = self.column_by_name('gmag')
-        return u - g
-
-    def get_gr_color(self):
-        g = self.column_by_name('gmag')
-        r = self.column_by_name('rmag')
-        return g - r
-
-
-class AstrometryMixin(object):
-    @compound('ra_corr', 'dec_corr')
-    def get_points(self):
-        return (self.column_by_name('raJ2000') + 0.001,
-                self.column_by_name('decJ2000') - 0.001)
-
-
-class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
+class TrimCatalogPoint(InstanceCatalog, Astrometry, PhotometryStars,EBVmixin):
     catalog_type = 'trim_catalog_POINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -29,7 +13,7 @@ class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
                       'internalExtinctionModel']
     default_columns = [('redshift', 0., float),('shear1', 0., float), ('shear2', 0., float), 
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float), 
-                       ('galacticExtinctionModel', 'CCM', (str,3)), ('galacticRv', 3.1, float),
+                       ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
@@ -56,6 +40,7 @@ class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
         chunkiter = xrange(len(self._current_chunk))
         return numpy.array([self.db_obj.getSpatialModel() for i in
                chunkiter], dtype=(str, 7))
+                        
     def write_header(self, file_handle):
         md = self.obs_metadata.metadata
         if md is None:
@@ -75,7 +60,7 @@ class TrimCatalogPoint(InstanceCatalog, AstrometryMixin, PhotometryMixin):
             file_handle.write(templ%(k, outval)+"\n") 
 
 
-class TrimCatalogZPoint(TrimCatalogPoint, AstrometryMixin, PhotometryMixin):
+class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, PhotometryStars,EBVmixin):
     catalog_type = 'trim_catalog_ZPOINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -83,7 +68,7 @@ class TrimCatalogZPoint(TrimCatalogPoint, AstrometryMixin, PhotometryMixin):
                       'internalExtinctionModel']
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
-                       ('galacticExtinctionModel', 'CCM', (str,3)), ('galacticRv', 3.1, float),
+                       ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('galacticAv', 0.1, float),
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
@@ -91,7 +76,7 @@ class TrimCatalogZPoint(TrimCatalogPoint, AstrometryMixin, PhotometryMixin):
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
 
-class TrimCatalogSersic2D(TrimCatalogZPoint, AstrometryMixin, PhotometryMixin):
+class TrimCatalogSersic2D(TrimCatalogZPoint, Astrometry, PhotometryStars,EBVmixin):
     catalog_type = 'trim_catalog_SERSIC2D'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -100,7 +85,7 @@ class TrimCatalogSersic2D(TrimCatalogZPoint, AstrometryMixin, PhotometryMixin):
                       'internalExtinctionModel','internalAv','internalRv']
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float), ('galacticAv', 0.1, float),
-                       ('galacticExtinctionModel', 'CCM', (str,3)), ('galacticRv', 3.1, float),
+                       ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('internalExtinctionModel', 'CCM', (str,3)), ('internalAv', 0., float),
                        ('internalRv', 3.1, float) ]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
