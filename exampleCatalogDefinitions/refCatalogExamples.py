@@ -1,11 +1,11 @@
 """Instance Catalog"""
 import numpy
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.example_utils import ValidationUtils
-from lsst.sims.coordUtils.Astrometry import Astrometry
+from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 
-class RefCatalogGalaxyBase(InstanceCatalog, Astrometry, PhotometryGalaxies):
+class RefCatalogGalaxyBase(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies):
     comment_char = ''
     catalog_type = 'ref_catalog_galaxy'
     column_outputs = ['uniqueId', 'objId', 'galid', 'meanRaJ2000', 'meanDecJ2000', 'redshift',

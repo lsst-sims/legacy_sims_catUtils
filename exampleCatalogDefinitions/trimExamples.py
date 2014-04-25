@@ -1,31 +1,18 @@
 """Instance Catalog"""
 import numpy
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
-from lsst.sims.coordUtils.Astrometry import Astrometry
-from lsst.sims.photUtils.Photometry import PhotometryStars
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
+from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin
 
-class TrimCatalogPoint(InstanceCatalog, Astrometry, PhotometryStars,EBVmixin):
-    catalog_type = 'trim_catalog_POINT'
-    column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
-                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
-                      'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
-                      'internalExtinctionModel']
-    default_columns = [('redshift', 0., float),('shear1', 0., float), ('shear2', 0., float), 
-                       ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float), 
-                       ('galacticExtinctionModel', 'CCM', (str,3)),
-                       ('internalExtinctionModel', 'none', (str,4))]
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
+class PhosimInputBase(InstanceCatalog):
     filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
-    transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
     headerTransformations = {'Unrefracted_RA':numpy.degrees, 'Unrefracted_Dec':numpy.degrees, 
                        'Opsim_moonra':numpy.degrees, 'Opsim_moondec':numpy.degrees, 
                        'Opsim_rotskypos':numpy.degrees, 'Opsim_rottelpos':numpy.degrees, 
                        'Opsim_sunalt':numpy.degrees, 'Opsim_moonalt':numpy.degrees, 
                        'Opsim_dist2moon':numpy.degrees, 'Opsim_altitude':numpy.degrees, 
                        'Opsim_azimuth':numpy.degrees, 'Opsim_filter':filtMap.get}
-
     def get_prefix(self):
         chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
         return numpy.array(['object' for i in chunkiter], dtype=(str, 6))
@@ -59,8 +46,22 @@ class TrimCatalogPoint(InstanceCatalog, Astrometry, PhotometryStars,EBVmixin):
                 outval = md[k][0]
             file_handle.write(templ%(k, outval)+"\n") 
 
+class TrimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmixin):
+    catalog_type = 'trim_catalog_POINT'
+    column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
+                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
+                      'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
+                      'internalExtinctionModel']
+    default_columns = [('redshift', 0., float),('shear1', 0., float), ('shear2', 0., float), 
+                       ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float), 
+                       ('galacticExtinctionModel', 'CCM', (str,3)),
+                       ('internalExtinctionModel', 'none', (str,4))]
+    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    delimiter = " "
+    transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
-class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, PhotometryStars,EBVmixin):
+
+class TrimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies, EBVmixin):
     catalog_type = 'trim_catalog_ZPOINT'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -76,7 +77,7 @@ class TrimCatalogZPoint(TrimCatalogPoint, Astrometry, PhotometryStars,EBVmixin):
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
 
-class TrimCatalogSersic2D(TrimCatalogZPoint, Astrometry, PhotometryStars,EBVmixin):
+class TrimCatalogSersic2D(TrimCatalogZPoint):
     catalog_type = 'trim_catalog_SERSIC2D'
     column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
