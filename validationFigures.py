@@ -1,10 +1,6 @@
-"""Instance Catalog"""
-import warnings
 import numpy
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.measures.example_utils import ValidationUtils, SersicUtils
-from lsst.sims.catalogs.measures.example_utils.exampleCatalogDefinitions import RefCatalogGalaxyBase
 import argparse
 
 def galaxyCountValidation(dbobj, doSaveFigs, fileBase):

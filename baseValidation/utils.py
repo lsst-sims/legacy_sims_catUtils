@@ -112,10 +112,10 @@ def read_Durham_counts(filename):
 
 def get_Ebv(result):
     ebvMapNorth = EBV.EbvMap()
-    datadir = os.environ.get("CAT_SHARE_DATA")
-    ebvMapNorth.readMapFits(os.path.join(datadir, "data/Dust/SFD_dust_4096_ngp.fits"))
+    datadir = os.environ.get("SIMS_DUSTMAPS_DIR")
+    ebvMapNorth.readMapFits(os.path.join(datadir, "DustMaps/SFD_dust_4096_ngp.fits"))
     ebvMapSouth = EBV.EbvMap()
-    ebvMapSouth.readMapFits(os.path.join(datadir, "data/Dust/SFD_dust_4096_sgp.fits"))
+    ebvMapSouth.readMapFits(os.path.join(datadir, "DustMaps/SFD_dust_4096_sgp.fits"))
     # Calculate galactic coordinates:
     gLon = []
     gLat = []
@@ -126,7 +126,7 @@ def get_Ebv(result):
     return EBV.calculateEbv(gLon, gLat, ebvMapNorth, ebvMapSouth, interp = True)
 
 def get_TotalSDSSMags(result, bandpasses=('u','g','r','i','z')):
-    datadir = os.path.join(os.environ.get("CAT_SHARE_DATA"), "data")
+    datadir = os.environ.get("SIMS_SED_LIBRARY_DIR")
     tpath = os.getenv('SDSS_THROUGHPUTS')
     bands = {"u":None, "g":None, "r":None, "i":None, "z":None}
     for k in bands.keys():
@@ -203,7 +203,7 @@ def get_TotalSDSSMags(result, bandpasses=('u','g','r','i','z')):
     return retMags
 
 def get_TotalMags(result, bandpasses=('u','g','r','i','z','y')):
-    datadir = os.path.join(os.environ.get("CAT_SHARE_DATA"), "data")
+    datadir = os.environ.get("SIMS_SED_LIBRARY_DIR")
     tpath = os.getenv('LSST_THROUGHPUTS_DEFAULT')
     bands = {"u":None, "g":None, "r":None, "i":None, "z":None, "y":None}
     for k in bands.keys():
