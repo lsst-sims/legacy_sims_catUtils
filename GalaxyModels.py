@@ -1,5 +1,4 @@
 import warnings
-import math
 import numpy
 import os
 from dbConnection import ChunkIterator, DBObject
@@ -14,7 +13,7 @@ class ExampleGalaxyObj(DBObject):
     idColKey = 'galid'
     raColName = 'ra'
     decColName = 'decl'
-    objectTypeId = 11
+    objectTypeId = 23
     #: There is no spatial model available for coadded galaxies 
     #: This will cause a warning, but it just means we can't make
     #: TRIM files with this object.    
@@ -54,7 +53,6 @@ class ExampleGalaxyObj(DBObject):
             ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
             ('internalAvDisk', 'av_d'),
             ('internalRvDisk', 'rv_d'),
-            ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),
@@ -76,7 +74,7 @@ class GalaxyObj(DBObject):
     idColKey = 'id'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
-    objectTypeId = 9
+    objectTypeId = 24
     #: There is no spatial model available for coadded galaxies 
     #: This will cause a warning, but it just means we can't make
     #: TRIM files with this object.
@@ -126,7 +124,6 @@ class GalaxyObj(DBObject):
             ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
             ('internalAvDisk', 'av_d'),
             ('internalRvDisk', 'rv_d'),
-            ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),
@@ -149,7 +146,7 @@ class GalaxyTileObj(DBObject):
     tableid = 'galaxy'
     raColName = 'ra'
     decColName = 'dec'
-    objectTypeId = 10
+    objectTypeId = 25
     #: There is no spatial model available for coadded galaxies 
     spatialModel = None
 
@@ -198,7 +195,6 @@ class GalaxyTileObj(DBObject):
             ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
             ('internalAvDisk', 'av_d'),
             ('internalRvDisk', 'rv_d'),
-            ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),
@@ -306,7 +302,7 @@ class GalaxyBulgeObj(GalaxyTileObj):
     tableid = 'galaxy_bulge'
     raColName = 'ra'
     decColName = 'dec'
-    objectTypeId = 1
+    objectTypeId = 26
     spatialModel = 'SERSIC2D'
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -330,7 +326,6 @@ class GalaxyBulgeObj(GalaxyTileObj):
             ('internalExtinctionModel', 'ext_model_b', str, 3),
             ('internalAv', 'av_b'),
             ('internalRv', 'rv_b'),
-            ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),
@@ -345,7 +340,7 @@ class GalaxyDiskObj(GalaxyTileObj):
     tableid = 'galaxy'
     raColName = 'ra'
     decColName = 'dec'
-    objectTypeId = 2
+    objectTypeId = 27
     spatialModel = 'SERSIC2D'
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -369,7 +364,6 @@ class GalaxyDiskObj(GalaxyTileObj):
             ('internalExtinctionModel', 'ext_model_d', str, 3),
             ('internalAv', 'av_d'),
             ('internalRv', 'rv_d'),
-            ('radialVelocity', 'rad_vel'),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),
@@ -384,7 +378,7 @@ class GalaxyAgnObj(GalaxyTileObj):
     tableid = 'galaxy_agn'
     raColName = 'ra'
     decColName = 'dec'
-    objectTypeId = 3
+    objectTypeId = 28
     spatialModel = 'ZPOINT'
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -401,8 +395,60 @@ class GalaxyAgnObj(GalaxyTileObj):
             ('decJ2000', 'dec'),
             ('magNorm', 'magnorm_agn'),
             ('sedFilename', 'sedname_agn', unicode, 40),
-            ('radialVelocity', 'rad_vel'),
             ('variabilityParameters', 'varParamStr', str, 256),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
+
+class ImageAgnObj(DBObject):
+    objid = 'imageagn'
+    tableid = 'image'
+    idColKey = 'galid'
+    raColName = 'ra'
+    decColName = 'dec'
+    objectTypeId = 29
+    spatialModel = 'ZPOINT'
+    dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
+    columns = [('galid', 'id', int),
+            ('raJ2000', 'ra*PI()/180.'),
+            ('decJ2000', 'dec*PI()/180.'),
+            ('magNorm', 'magnorm_agn'),
+            ('sedFilename', 'sedname_agn', unicode, 40),
+            ('variabilityParameters', 'varParamStr', str, 256),
+            ('lsst_u', 'u_ab'),
+            ('lsst_g', 'g_ab'),
+            ('lsst_r', 'r_ab'),
+            ('lsst_i', 'i_ab'),
+            ('lsst_z', 'z_ab'),
+            ('lsst_y', 'y_ab')]
+
+class LensGalaxyObj(DBObject):
+    objid = 'lensgalaxy'
+    tableid = 'lens'
+    idColKey = 'galid'
+    raColName = 'ra'
+    decColName = 'dec'
+    objectTypeId = 30
+    spatialModel = 'SERSIC2D'
+    dbDefaultValues = {'varsimobjid':-1, 'myid':-1, 'variabilityParameters':None}
+    #: The following maps column names to database schema.  The tuples
+    #: must be at least length 2.  If column name is the same as the name
+    #: in the DB the mapping element may be None.  The rest of the tuple
+    #: should be formatted like a numpy.dtype.  If ommitted, the dtype
+    #: is assumed to be float.
+    columns = [('galid', 'id', int),
+            ('raJ2000', 'ra_bulge*PI()/180.'),
+            ('decJ2000', 'dec_bulge'),
+            ('magNorm', 'magnorm_bulge*PI()/180.'),
+            ('sedFilename', 'sedname_bulge', unicode, 40),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
             ('lsst_r', 'r_ab'),

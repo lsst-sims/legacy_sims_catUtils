@@ -135,10 +135,6 @@ class DBObject(object):
     def from_objid(cls, objid, *args, **kwargs):
         """Given a string objid, return an instance of
         the appropriate DBObject class.
-
-        objid should map to an entry in the objectMap.dat configuration
-        file.  If objid does not match any subclass of DBObjectBase,
-        then a generic DBObject will be returned.
         """
         cls = cls.registry.get(objid, DBObject)
         return cls(*args, **kwargs)
@@ -460,3 +456,11 @@ class fileDBObject(DBObject):
 
         self._make_column_map()
         self._make_type_map()
+
+    @classmethod
+    def from_objid(cls, objid, *args, **kwargs):
+        """Given a string objid, return an instance of
+        the appropriate fileDBObject class.
+        """
+        cls = cls.registry.get(objid, DBObject)
+        return cls(None, *args, **kwargs)
