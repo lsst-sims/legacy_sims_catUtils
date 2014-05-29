@@ -1,6 +1,7 @@
-import scipy
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.catalogs.measures.example_utils.exampleCatalogDefinitions import RefCatalogGalaxyBase
+#The following is to get the object ids in the registry
+import lsst.sims.catUtils.baseCatalogModels as bcm
+from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase
 
 if __name__ == '__main__':
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.1))

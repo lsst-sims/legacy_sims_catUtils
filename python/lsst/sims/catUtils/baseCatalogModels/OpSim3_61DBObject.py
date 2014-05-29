@@ -42,7 +42,7 @@ class OpSim3_61DBObject(DBObject):
                ('Opsim_azimuth', 'azimuth')]
     def __init__(self, address=None):
         self.defaultColumns = [col[0] for col in self.columns]
-        super(MetaDataDBObject, self).__init__(address=address)
+        super(OpSim3_61DBObject, self).__init__(address=address)
 
     def getObjectTypeId(self):
         raise NotImplementedError("Metadata has no object type")

@@ -1,9 +1,10 @@
-import scipy
 import math
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.catalogs.measures.example_utils.exampleCatalogDefinitions import RefCatalogGalaxyBase
-from lsst.sims.catalogs.measures.example_utils.exampleCatalogDefinitions import TrimCatalogPoint, TrimCatalogZPoint, TrimCatalogSersic2D
-from lsst.sims.catalogs.measures.example_utils import makeObsParamsAzAlt, makeObsParamsRaDec
+#The following is to get the object ids in the registry
+import lsst.sims.catUtils.baseCatalogModels as bcm
+from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, TrimCatalogPoint,\
+                                                         TrimCatalogZPoint, TrimCatalogSersic2D
+from lsst.sims.catUtils import makeObsParamsAzAltTel, makeObsParamsRaDecTel
 
 def exampleReferenceCatalog():
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01))
@@ -58,19 +59,23 @@ def exampleTrimNoOpSim():
     raDeg= 15.
     decDeg = -30.
     mjd = 51999.75
-    md =  makeObsParamsRaDec(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
+    md =  makeObsParamsRaDecTel(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
     obs_metadata_rd = ObservationMetaData(circ_bounds=dict(ra=raDeg,
                                                         dec=decDeg,
                                                         radius=0.1),
+                                                        mjd=mjd,
+                                                        bandpassName='r',
                                                         metadata=md)
     azRad = math.radians(220.)
     altRad = math.radians(79.)
-    md = makeObsParamsAzAlt(azRad, altRad, mjd, 'r')
+    md = makeObsParamsAzAltTel(azRad, altRad, mjd, 'r')
     raDeg = math.degrees(md['Unrefracted_RA'][0])
     decDeg = math.degrees(md['Unrefracted_Dec'][0])
     obs_metadata_aa = ObservationMetaData(circ_bounds=dict(ra=raDeg,
                                                         dec=decDeg,
                                                         radius=0.1),
+                                                        mjd=mjd,
+                                                        bandpassName='r',
                                                         metadata=md)
     dbobj = DBObject.from_objid('msstars')
     t = dbobj.getCatalog('trim_catalog_POINT', obs_metadata= obs_metadata_rd)

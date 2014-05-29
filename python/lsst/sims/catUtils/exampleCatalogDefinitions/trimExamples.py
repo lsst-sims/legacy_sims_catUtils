@@ -19,10 +19,6 @@ class PhosimInputBase(InstanceCatalog):
     def get_sedFilepath(self):
         return numpy.array([self.specFileMap[k] 
                          for k in self.column_by_name('sedFilename')])
-    def get_raTrim(self):
-        return self.column_by_name('ra_corr')
-    def get_decTrim(self):
-        return self.column_by_name('dec_corr')
     def get_spatialmodel(self):
         chunkiter = xrange(len(self._current_chunk))
         return numpy.array([self.db_obj.getSpatialModel() for i in

@@ -1,0 +1,15 @@
+*.~
+*.dylib
+*.o
+*.os
+*.pyc
+*.so
+*.db
+*.sqlite
+.sconf_temp
+.sconsign.dblite
+config.log
+doc/htmlDir
+tests/.tests
+ups/*.cfgc
+python/lsst/sims/catalogs/generation/version.py

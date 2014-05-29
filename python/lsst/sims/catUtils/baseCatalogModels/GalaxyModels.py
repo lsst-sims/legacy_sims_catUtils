@@ -1,8 +1,7 @@
 import warnings
 import numpy
 import os
-from dbConnection import ChunkIterator, DBObject
-from MetaDataDBObject import ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
 from sqlalchemy import Table, Column, BigInteger, MetaData
 
 class ExampleGalaxyObj(DBObject):
@@ -80,6 +79,10 @@ class GalaxyObj(DBObject):
     #: TRIM files with this object.
     spatialModel = None
 
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.1),
+                                                  mjd=52000., bandpassName='r')
+
     #: Numpy can't cast a NoneType to an integer.  This works with floats
     #: as None is cast to nan, but for integers this raises and exception.
     #: Typically it's not an issue as ints are usually ids of some sort, 
@@ -149,6 +152,10 @@ class GalaxyTileObj(DBObject):
     objectTypeId = 25
     #: There is no spatial model available for coadded galaxies 
     spatialModel = None
+
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=173., dec=-60., radius=0.1),
+                                                  mjd=52000., bandpassName='r')
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
     #: as None is cast to nan, but for integers this raises and exception.
@@ -304,6 +311,9 @@ class GalaxyBulgeObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 26
     spatialModel = 'SERSIC2D'
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=10., dec=-45., radius=0.1),
+                                                  mjd=53000., bandpassName='i')
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -342,6 +352,9 @@ class GalaxyDiskObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 27
     spatialModel = 'SERSIC2D'
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=66., dec=-80., radius=0.1),
+                                                  mjd=53730., bandpassName='g')
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -380,6 +393,9 @@ class GalaxyAgnObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 28
     spatialModel = 'ZPOINT'
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=234., dec=-15., radius=0.1),
+                                                  mjd=51000., bandpassName='y')
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -411,6 +427,10 @@ class ImageAgnObj(DBObject):
     decColName = 'dec'
     objectTypeId = 29
     spatialModel = 'ZPOINT'
+    doRunTest = True
+    #all sky since this is a small set.
+    testObservationMetaData = ObservationMetaData(circ_bounds=None,
+                                                  mjd=53000., bandpassName='i')
     dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -438,6 +458,10 @@ class LensGalaxyObj(DBObject):
     decColName = 'dec'
     objectTypeId = 30
     spatialModel = 'SERSIC2D'
+    doRunTest = True
+    #all sky since this is a small set.
+    testObservationMetaData = ObservationMetaData(circ_bounds=None,
+                                                  mjd=53000., bandpassName='i')
     dbDefaultValues = {'varsimobjid':-1, 'myid':-1, 'variabilityParameters':None}
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name

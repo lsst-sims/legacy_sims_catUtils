@@ -1,5 +1,5 @@
 import warnings
-from dbConnection import ChunkIterator, DBObject
+from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
 
 class SolarSystemObj(DBObject):
     objid = 'ssm'
@@ -7,6 +7,10 @@ class SolarSystemObj(DBObject):
     tableid = ''
     objectTypeId = 40
     spatialModel = 'MOVINGPOINT'
+
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=2.0),
+                                                  mjd=51200., bandpassName='r')
 
     #Turn off default column mapping since we are querying a dynamic resource
     generateDefaultColumnMap = False

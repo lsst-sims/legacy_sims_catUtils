@@ -1,6 +1,8 @@
 import numpy
+#The following is to get the object ids in the registry
+import lsst.sims.catUtils.baseCatalogModels as bcm
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.catalogs.measures.example_utils import ValidationUtils, SersicUtils
+from lsst.sims.catUtils import ValidationUtils, SersicUtils
 import argparse
 
 def galaxyCountValidation(dbobj, doSaveFigs, fileBase):

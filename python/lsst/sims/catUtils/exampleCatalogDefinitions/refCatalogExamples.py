@@ -1,7 +1,7 @@
 """Instance Catalog"""
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.measures.example_utils import ValidationUtils
+from lsst.sims.catUtils import ValidationUtils
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 
@@ -33,7 +33,7 @@ class GalaxyPhotometry(RefCatalogGalaxyBase):
     column_outputs = ['uniqueId', 'objId', 'galid', 'meanRaJ2000', 'meanDecJ2000', 'redshift',
                       'majorAxisDisk', 'minorAxisDisk', 'positionAngleDisk',
                       'majorAxisBulge', 'minorAxisBulge', 'positionAngleBulge', 
-		      'internalAvBulge', 'internalAvDisk',
+                      'internalAvBulge', 'internalAvDisk',
                       'uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
