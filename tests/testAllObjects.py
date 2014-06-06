@@ -15,7 +15,6 @@ class TestCat(InstanceCatalog):
 class basicAccessTest(unittest.TestCase):
     def testObjects(self):
         for objname, objcls in DBObject.registry.iteritems():
-            print objname
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
                 continue
             dbobj = objcls(verbose=False)

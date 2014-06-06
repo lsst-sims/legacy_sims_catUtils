@@ -1,5 +1,10 @@
 # Retrieved from http://astro.dur.ac.uk/~nm/pubhtml/counts/idata.txt
 # May 6, 2013
+# first column is the magnitude bin in I unless noted otherwise
+# second column is log galaxy counts
+# third column is either -ve error or corrected counts
+# fourth column is -ve error if there are corrected counts or +ve error otherwise
+# fifth column is +ve error
 #          Metcalfe et al. 2000 MNRAS in press, INT 2000sec (10 fields) Raw counts Ikc [2-10] dereddened by 0.04m
 18.68     2.823 0.058 0.067
 19.19     2.888 0.066 0.077
