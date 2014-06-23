@@ -13,7 +13,6 @@ obs_metadata = obsMD.getObservationMetaData(88625744, 0.33, makeCircBounds = Tru
 
 doHeader= True
 for starName in starObjNames:
-    print "starName"
     stars = DBObject.from_objid(starName)
     star_trim=TrimCatalogPoint(stars,obs_metadata=obs_metadata)
     if (doHeader):
