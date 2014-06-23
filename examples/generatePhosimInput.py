@@ -1,3 +1,13 @@
+"""
+This file shows how to generate two trim files (input files for PhoSim):
+
+phoSim_stellar_output.txt will be a trim file containing stars
+
+phoSim_galaxy_output.txt will be a trim file containing the components of galaxies
+(by components, I mean bulges, disks, and AGNs)
+
+"""
+
 from __future__ import with_statement
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
