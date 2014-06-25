@@ -26,23 +26,23 @@ for starName in starObjNames:
     stars = DBObject.from_objid(starName)
     star_trim=TrimCatalogPoint(stars,obs_metadata=obs_metadata)
     if (doHeader):
-        with open("phoSim_stellar_output.txt","w") as fh:
+        with open("phoSim_example.txt","w") as fh:
             star_trim.write_header(fh)
         doHeader = False
-    star_trim.write_catalog("phoSim_stellar_output.txt",write_mode='a',write_header=False,chunk_size=20000)
+    star_trim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 
 gals = DBObject.from_objid('galaxyBulge')
 galaxy_trim = TrimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_bulge is not NULL")
-galaxy_trim.write_catalog("phoSim_galaxy_output.txt",write_mode='a',write_header=False,chunk_size=20000)
+galaxy_trim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = DBObject.from_objid('galaxyDisk')
 galaxy_trim = TrimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_disk is not NULL")
-galaxy_trim.write_catalog("phoSim_galaxy_output.txt",write_mode='a',write_header=False,chunk_size=20000)
+galaxy_trim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = DBObject.from_objid('galaxyAgn')
 galaxy_trim = TrimCatalogZPoint(gals, obs_metadata=obs_metadata,constraint="sedname_agn is not NULL")
-galaxy_trim.write_catalog("phoSim_galaxy_output.txt",write_mode='a',write_header=False,chunk_size=20000)
+galaxy_trim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 
 
