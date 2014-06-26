@@ -34,6 +34,8 @@ class StarObj(StarBase):
     tableid = 'starsALL_forceseek'
     objectTypeId = 4
     doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=210., dec=-30., radius=0.1),
+                                                  mjd=52000., bandpassName='g')
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified
     columns = [('id','simobjid', int),
@@ -54,6 +56,8 @@ class MsStarObj(StarBase):
     tableid = 'starsMSRGB_forceseek'
     objectTypeId = 5
     doRunTest = True
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=210., dec=-30., radius=0.1),
+                                                  mjd=52000., bandpassName='g')
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified
     columns = [('id','simobjid', int),
@@ -206,7 +210,7 @@ class DwarfGalStarObj(StarBase):
     tableid = 'dwarfGalaxies'
     objectTypeId = 12
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=None,
+    testObservationMetaData = ObservationMetaData(circ_bounds={'ra':2., 'dec':-0.3, 'radius':0.1},
                                                   mjd=52000., bandpassName='g')
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified

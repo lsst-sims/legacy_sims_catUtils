@@ -80,7 +80,7 @@ class GalaxyObj(DBObject):
     spatialModel = None
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.1),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01),
                                                   mjd=52000., bandpassName='r')
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
@@ -154,7 +154,7 @@ class GalaxyTileObj(DBObject):
     spatialModel = None
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=173., dec=-60., radius=0.1),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=173., dec=-60., radius=0.01),
                                                   mjd=52000., bandpassName='r')
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
@@ -312,7 +312,7 @@ class GalaxyBulgeObj(GalaxyTileObj):
     objectTypeId = 26
     spatialModel = 'SERSIC2D'
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=10., dec=-45., radius=0.1),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=10., dec=-45., radius=0.01),
                                                   mjd=53000., bandpassName='i')
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -353,7 +353,7 @@ class GalaxyDiskObj(GalaxyTileObj):
     objectTypeId = 27
     spatialModel = 'SERSIC2D'
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=66., dec=-80., radius=0.1),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=66., dec=-80., radius=0.01),
                                                   mjd=53730., bandpassName='g')
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -394,7 +394,7 @@ class GalaxyAgnObj(GalaxyTileObj):
     objectTypeId = 28
     spatialModel = 'ZPOINT'
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=234., dec=-15., radius=0.1),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=234., dec=-15., radius=0.01),
                                                   mjd=51000., bandpassName='y')
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name

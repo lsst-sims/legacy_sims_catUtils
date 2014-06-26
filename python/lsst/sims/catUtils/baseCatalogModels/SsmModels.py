@@ -9,7 +9,7 @@ class SolarSystemObj(DBObject):
     spatialModel = 'MOVINGPOINT'
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=2.0),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=1.0),
                                                   mjd=51200., bandpassName='r')
 
     #Turn off default column mapping since we are querying a dynamic resource
