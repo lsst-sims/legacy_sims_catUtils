@@ -10,7 +10,6 @@ class OpSim3_61DBObject(DBObject):
     objid = 'opsim3_61'
     tableid = 'output_opsim3_61'
     objectTypeId = -1
-    spatialModel = 'none'
     generateDefaultColumnMap = False
     #: Note that identical observations may have more than one unique
     #: obshistid, so this is the id, but not for unique visits.
