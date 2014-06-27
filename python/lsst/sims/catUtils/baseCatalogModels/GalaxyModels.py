@@ -13,10 +13,6 @@ class ExampleGalaxyObj(DBObject):
     raColName = 'ra'
     decColName = 'decl'
     objectTypeId = 23
-    #: There is no spatial model available for coadded galaxies 
-    #: This will cause a warning, but it just means we can't make
-    #: TRIM files with this object.    
-    spatialModel = None
 
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -74,10 +70,6 @@ class GalaxyObj(DBObject):
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
     objectTypeId = 24
-    #: There is no spatial model available for coadded galaxies 
-    #: This will cause a warning, but it just means we can't make
-    #: TRIM files with this object.
-    spatialModel = None
 
     doRunTest = True
     testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01),
@@ -150,8 +142,6 @@ class GalaxyTileObj(DBObject):
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 25
-    #: There is no spatial model available for coadded galaxies 
-    spatialModel = None
 
     doRunTest = True
     testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=173., dec=-60., radius=0.01),
@@ -310,7 +300,6 @@ class GalaxyBulgeObj(GalaxyTileObj):
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 26
-    spatialModel = 'SERSIC2D'
     doRunTest = True
     testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=10., dec=-45., radius=0.01),
                                                   mjd=53000., bandpassName='i')
@@ -351,7 +340,6 @@ class GalaxyDiskObj(GalaxyTileObj):
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 27
-    spatialModel = 'SERSIC2D'
     doRunTest = True
     testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=66., dec=-80., radius=0.01),
                                                   mjd=53730., bandpassName='g')
@@ -392,7 +380,6 @@ class GalaxyAgnObj(GalaxyTileObj):
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 28
-    spatialModel = 'ZPOINT'
     doRunTest = True
     testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=234., dec=-15., radius=0.01),
                                                   mjd=51000., bandpassName='y')
@@ -426,7 +413,6 @@ class ImageAgnObj(DBObject):
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 29
-    spatialModel = 'ZPOINT'
     doRunTest = True
     #all sky since this is a small set.
     testObservationMetaData = ObservationMetaData(circ_bounds=None,
@@ -457,7 +443,6 @@ class LensGalaxyObj(DBObject):
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 30
-    spatialModel = 'SERSIC2D'
     doRunTest = True
     #all sky since this is a small set.
     testObservationMetaData = ObservationMetaData(circ_bounds=None,
