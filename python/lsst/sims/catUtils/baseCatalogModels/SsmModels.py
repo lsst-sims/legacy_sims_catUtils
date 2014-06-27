@@ -6,7 +6,6 @@ class SolarSystemObj(DBObject):
     # There is no materialized table since this is a table valued function
     tableid = ''
     objectTypeId = 40
-    spatialModel = 'MOVINGPOINT'
 
     doRunTest = True
     testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=1.0),
