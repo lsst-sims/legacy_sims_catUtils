@@ -1,10 +1,5 @@
 """
-This file shows how to generate two trim files (input files for PhoSim):
-
-phoSim_stellar_output.txt will be a trim file containing stars
-
-phoSim_galaxy_output.txt will be a trim file containing the components of galaxies
-(by components, I mean bulges, disks, and AGNs)
+This file shows how to generate a phoSim input catalog named phoSim_example.txt
 
 """
 
