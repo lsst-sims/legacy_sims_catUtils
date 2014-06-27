@@ -6,7 +6,6 @@ class StarBase(DBObject):
     raColName = 'ra'
     decColName = 'decl'
     objectTypeId = -1
-    spatialModel = 'POINT'
     #Don't run test on base class
     doRunTest = False
     #default observation metadata
