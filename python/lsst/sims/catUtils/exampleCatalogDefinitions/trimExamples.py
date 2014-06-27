@@ -21,8 +21,8 @@ class PhosimInputBase(InstanceCatalog):
                          for k in self.column_by_name('sedFilename')])
     def get_spatialmodel(self):
         chunkiter = xrange(len(self._current_chunk))
-        return numpy.array([self.db_obj.getSpatialModel() for i in
-               chunkiter], dtype=(str, 7))
+        return numpy.array([self.spatialModel for i in
+               chunkiter], dtype=(str, 8))
                         
     def write_header(self, file_handle):
         md = self.obs_metadata.metadata
@@ -54,6 +54,7 @@ class TrimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmix
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
+    spatialModel = "point"
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
 
@@ -70,6 +71,7 @@ class TrimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies,
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
+    spatialModel = "point"
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
 
 
@@ -87,6 +89,7 @@ class TrimCatalogSersic2D(TrimCatalogZPoint):
                        ('internalRv', 3.1, float) ]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
+    spatialModel = "sersic2d"
     transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees, 'positionAngle':numpy.degrees, 
     'majorAxis':numpy.degrees, 'minorAxis':numpy.degrees} 
 
