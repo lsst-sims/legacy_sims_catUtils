@@ -107,10 +107,10 @@ def exampleAirMass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     obsMetaData = obsMD.getObservationMetaData(q[0][0],radiusDeg,makeBoxBounds=makeBoxBounds,
                    makeCircBounds=makeCircBounds)
 
-    dbobj = DBObject.from_objid('msstars')
+    dbobj = DBObject.from_objid('allstars')
     catalog = dbobj.getCatalog('ref_catalog_star', obs_metadata = obsMetaData)
                #constraint = 'sedname_disk is not NULL')
-    catalog.write_catalog('msStars_airmass_test.txt')
+    catalog.write_catalog('stars_airmass_test.txt')
     
 
 if __name__ == '__main__':
