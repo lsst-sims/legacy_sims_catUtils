@@ -96,28 +96,21 @@ def exampleAirMass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     raMax = ra + tol
     decMin = dec - tol
     decMax = dec + tol
-    
-    mjdMin = 51999.0
-    mjdMax = 52001.0
         
     skyBounds = dict(ra_min=raMin, ra_max=raMax, dec_min=decMin, dec_max=decMax)
-    mjdBounds = dict(mjd_min=mjdMin, mjd_max=mjdMax)
-    
-    #constraint = "obshistid = 88544919"
     
     query = obsMD.query_columns(colnames=colNames, chunk_size = 1, box_bounds=skyBounds,
                     constraint = airmassConstraint)
      
     q=query.next()
-    print q[0][0],q[0][1],q[0][2],q[0][3]*180.0/3.141592654,q[0][4]*180.0/3.141592654 
-    print q[0][5]*180.0/3.141592654, q[0][6]*180.0/3.141592654
+
     obsMetaData = obsMD.getObservationMetaData(q[0][0],radiusDeg,makeBoxBounds=makeBoxBounds,
                    makeCircBounds=makeCircBounds)
 
-    dbobj = DBObject.from_objid('galaxyBase')
-    catalog = dbobj.getCatalog('ref_catalog_galaxy', obs_metadata = obsMetaData)
+    dbobj = DBObject.from_objid('msstars')
+    catalog = dbobj.getCatalog('ref_catalog_star', obs_metadata = obsMetaData)
                #constraint = 'sedname_disk is not NULL')
-    catalog.write_catalog('airmass_test.sav')
+    catalog.write_catalog('airmass_test.txt')
     
 
 if __name__ == '__main__':
