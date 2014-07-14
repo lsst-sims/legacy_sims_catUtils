@@ -83,35 +83,41 @@ def examplePhoSimNoOpSim():
     t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_aa)
     t.write_catalog('catalog_test_stars_aa.dat')
 
-def exampleAirMass(airmass,ra = 50.0, dec = 0.0, tol = 10.0, radiusDeg = 0.05, 
+def exampleAirMass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1, 
             makeBoxBounds=False, makeCircBounds=True):
     
     obsMD=DBObject.from_objid('opsim3_61')
-    colNames = ['Opsim_obshistid','airmass','Unrefracted_RA','Unrefracted_Dec']
+    colNames = ['Opsim_obshistid','Opsim_expmjd','airmass','Unrefracted_RA','Unrefracted_Dec','Opsim_altitude', 'Opsim_azimuth']
     
     airmassConstraint = "airmass="+str(airmass) #an SQL constraint that the airmass must be equal to
                                                 #the passed value
     
-    print "constraint: ",airmassConstraint
     raMin = ra - tol
     raMax = ra + tol
     decMin = dec - tol
     decMax = dec + tol
+    
+    mjdMin = 51999.0
+    mjdMax = 52001.0
         
     skyBounds = dict(ra_min=raMin, ra_max=raMax, dec_min=decMin, dec_max=decMax)
+    mjdBounds = dict(mjd_min=mjdMin, mjd_max=mjdMax)
+    
+    #constraint = "obshistid = 88544919"
     
     query = obsMD.query_columns(colnames=colNames, chunk_size = 1, box_bounds=skyBounds,
                     constraint = airmassConstraint)
      
     q=query.next()
-    print q[0][1],q[0][2],q[0][3]
-     
+    print q[0][0],q[0][1],q[0][2],q[0][3]*180.0/3.141592654,q[0][4]*180.0/3.141592654 
+    print q[0][5]*180.0/3.141592654, q[0][6]*180.0/3.141592654
     obsMetaData = obsMD.getObservationMetaData(q[0][0],radiusDeg,makeBoxBounds=makeBoxBounds,
                    makeCircBounds=makeCircBounds)
 
     dbobj = DBObject.from_objid('galaxyBase')
     catalog = dbobj.getCatalog('ref_catalog_galaxy', obs_metadata = obsMetaData)
-    catalog.write_catalog('airmass_test.sav',chunk_size=10)
+               #constraint = 'sedname_disk is not NULL')
+    catalog.write_catalog('airmass_test.sav')
     
 
 if __name__ == '__main__':
