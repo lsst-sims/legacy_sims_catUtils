@@ -39,3 +39,20 @@ class GalaxyPhotometry(RefCatalogGalaxyBase):
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab'] 
+
+class RefCatalogStarBase(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies):
+    comment_char = ''
+    catalog_type = 'ref_catalog_star'
+    column_outputs = ['uniqueId', 'objId', 'id', 'meanRaJ2000', 'meanDecJ2000', 
+                      'umag', 'gmag', 'rmag', 'imag', 'zmag', 'ymag'] 
+    default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
+    transformations = {'meanRaJ2000':numpy.degrees, 'meanDecJ2000':numpy.degrees}
+
+    def get_objectId(self): 
+        return self.column_by_name(self.refIdCol)
+
+    def get_meanRaJ2000(self):
+        return self.column_by_name('raJ2000')
+
+    def get_meanDecJ2000(self):
+        return self.column_by_name('decJ2000')
