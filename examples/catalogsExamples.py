@@ -7,6 +7,15 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, P
 from lsst.sims.catUtils import makeObsParamsAzAltTel, makeObsParamsRaDecTel
 
 def exampleReferenceCatalog():
+    """
+    This method outputs a reference catalog of galaxies (i.e. a catalog of
+    galaxies in which the columns are simply the data stored in the database).
+    
+    The catalog class is defined in 
+    python/lsst/sims/catUtils/exampleCatalogDefinitions/refCatalogExamples.py
+    
+    The catalog is output to the file test_reference.dat
+    """
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01))
     dbobj = DBObject.from_objid('galaxyBase')
     t = dbobj.getCatalog('ref_catalog_galaxy', obs_metadata=obs_metadata)
@@ -14,6 +23,20 @@ def exampleReferenceCatalog():
     t.write_catalog(filename, chunk_size=10)
 
 def examplePhoSimCatalogs():
+    """
+    This method outputs several phoSim input files consisting of different
+    types of objects(stars, galaxy bulges, galaxy disks, and AGNs)
+    
+    The files created are
+    catalog_test_msstars.dat
+    catalog_test_galaxyDisk.dat
+    catalog_test_galaxyBulge.dat
+    catalog_test_galaxyAgn.dat
+    
+    (versions are also created that end in _chunked.dat; these should have
+    the same contents)
+    
+    """
     obsMD = DBObject.from_objid('opsim3_61')
     obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
     objectDict = {}
@@ -55,7 +78,16 @@ def examplePhoSimCatalogs():
         t.write_catalog(filename, chunk_size=10)
         print " - finished"
 
+
 def examplePhoSimNoOpSim():
+    """
+    This method outputs phoSim input files based on arbitrary input coordinates
+    (rather than an OpSim pointing).
+    
+    catalog_test_stars_rd.dat is a file created from a specified RA, Dec pointing
+    
+    catalog_test_stars_aa.dat is a file created from a specified Alt, Az pointing
+    """
     raDeg= 15.
     decDeg = -30.
     mjd = 51999.75
@@ -85,6 +117,14 @@ def examplePhoSimNoOpSim():
 
 def exampleAirMass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1, 
             makeBoxBounds=False, makeCircBounds=True):
+    """
+    This method will output a catalog of stars based on an OpSim pointing with
+    a specific airmass.  It searches OpSim for pointings with the specified airmass
+    and RA, Dec within a box bounded by tol (in degrees).  It creates observation meta
+    data out of the first pointing found and uses that to construct the catalog.
+    
+    The catalog is output ot stars_airmass_test.dat
+    """
     
     obsMD=DBObject.from_objid('opsim3_61')
     colNames = ['Opsim_obshistid','Opsim_expmjd','airmass','Unrefracted_RA','Unrefracted_Dec','Opsim_altitude', 'Opsim_azimuth']
@@ -110,7 +150,7 @@ def exampleAirMass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     dbobj = DBObject.from_objid('allstars')
     catalog = dbobj.getCatalog('ref_catalog_star', obs_metadata = obsMetaData)
                #constraint = 'sedname_disk is not NULL')
-    catalog.write_catalog('stars_airmass_test.txt')
+    catalog.write_catalog('stars_airmass_test.dat')
     
 
 if __name__ == '__main__':
