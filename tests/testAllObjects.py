@@ -13,12 +13,19 @@ class TestCat(InstanceCatalog):
     catalog_type = 'unit_test_catalog'
     column_outputs = ['raJ2000', 'decJ2000']
 
+retry = 5
+
 class basicAccessTest(unittest.TestCase):
     def testObjects(self):
         for objname, objcls in DBObject.registry.iteritems():
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
                 continue
-            dbobj = objcls(verbose=False)
+            for i in range(retry):   
+                try:
+                    dbobj = objcls(verbose=False)
+                    break
+                except:
+                    continue
             obs_metadata = dbobj.testObservationMetaData
             print "Running tests for", objname
             #Get results all at once
@@ -44,7 +51,12 @@ class basicAccessTest(unittest.TestCase):
 
     def testObsCat(self):
         objname = 'wdstars'
-        dbobj = DBObject.from_objid(objname)
+        for i in range(retry):   
+            try:
+                dbobj = DBObject.from_objid(objname)
+                break
+            except:
+                continue
         obs_metadata = dbobj.testObservationMetaData
         # To cover the central ~raft
         obs_metadata.circ_bounds['radius'] = 0.4
