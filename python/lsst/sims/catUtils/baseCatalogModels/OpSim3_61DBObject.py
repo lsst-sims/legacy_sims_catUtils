@@ -57,17 +57,22 @@ class OpSim3_61DBObject(DBObject):
         result = chunks.next()
         ra = result[self.raColKey][0]
         dec = result[self.decColKey][0]
-        if makeCircBounds:
-            circ_bounds = dict(ra=math.degrees(ra), 
-                                    dec=math.degrees(dec), 
-                                    radius=radiusDeg)
-            box_bounds = None
-        elif makeBoxBounds:
+        
+        #because makeCircBounds defaults to True, check whether the user is
+        #requesting boxBounds before deciding to instantiate 
+        #circBounds
+        
+        if makeBoxBounds:
             box_bounds = dict(ramin=math.degrees(ra)-radiusDeg/math.cos(dec), 
                               ramax=math.degrees(ra)+radiusDeg/math.cos(dec),
                               decmin=math.degrees(dec)-radiusDeg,
                               decmax=math.degrees(dec)+radiusDeg)
             circ_bounds = None
+        elif makeCircBounds:
+            circ_bounds = dict(ra=math.degrees(ra), 
+                                    dec=math.degrees(dec), 
+                                    radius=radiusDeg)
+            box_bounds = None
         else:
             raise ValueErr("Need either circ_bounds or box_bounds")
         
