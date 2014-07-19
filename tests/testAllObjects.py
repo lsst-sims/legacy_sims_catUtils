@@ -50,7 +50,7 @@ class basicAccessTest(unittest.TestCase):
                     os.unlink('testCat.out')
 
     @unittest.skip("Can't use focal plane conversion until a new mid "+\
-                   "cycle release is made. 7/14/2014"
+                   "cycle release is made. 7/14/2014")
     def testObsCat(self):
         objname = 'wdstars'
         for i in range(retry):   
