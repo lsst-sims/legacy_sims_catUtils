@@ -24,8 +24,11 @@ for starName in starObjNames:
         with open("phoSim_example.txt","w") as fh:
             star_phoSim.write_header(fh)
         doHeader = False
-    star_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
+    #below, write_header=Fales prevents the code from overwriting the header just written
+    #write_mode = 'a' allows the code to append the new objects to the output file, rather
+    #than overwriting the file for each different class of object.    
+    star_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = DBObject.from_objid('galaxyBulge')
 galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_bulge is not NULL")
