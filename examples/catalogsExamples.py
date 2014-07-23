@@ -78,7 +78,6 @@ def examplePhoSimCatalogs():
         t.write_catalog(filename, chunk_size=10)
         print " - finished"
 
-
 def examplePhoSimNoOpSim():
     """
     This method outputs phoSim input files based on arbitrary input coordinates
