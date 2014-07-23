@@ -2,7 +2,6 @@ import warnings
 import numpy
 import os
 from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
-from sqlalchemy import Table, Column, BigInteger, MetaData
 
 class ExampleGalaxyObj(DBObject):
     
@@ -269,23 +268,21 @@ class GalaxyTileObj(DBObject):
                 box_bounds = obs_metadata.box_bounds
         
         if circ_bounds is not None:
-            RA = circ_bounds['ra']
-            DEC = circ_bounds['dec']
-            radius = circ_bounds['radius']
+            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'], 
+                                                        60.*circ_bounds['radius'])
         elif box_bounds is not None:
-            raise NotImplementedError("There is no way to specify a box "
-                                      "for the galaxy stored procedure")
+            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'], 
+                                                         box_bounds['ra_max'],box_bounds['dec_max'])
         else:
-            RA, DEC, radius = (180., 0., 180.)
+            regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'
             warnings.warn("Searching over entire sky "
                           "since no circ_bounds specified. "
                           "This could be a very bad idea "
                           "if the database is large")
 
 
-        query = "EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint2013]\
-               @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
-               @ColumnNames = '%s'" % (RA, DEC, radius * 60., mappedcolnames)
+        query = "EXECUTE [LSST].[dbo].[GalaxySearch2014] \
+               @ApertureStr = '%s', @ColumnNames = '%s'" % (regionStr, mappedcolnames)
 
         if constraint is not None:
             query += ", @WhereClause = '%s'"%(constraint)
