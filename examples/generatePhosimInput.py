@@ -19,7 +19,8 @@ obs_metadata = obsMD.getObservationMetaData(88625744, 0.33, makeCircBounds = Tru
 doHeader= True
 for starName in starObjNames:
     stars = DBObject.from_objid(starName)
-    star_phoSim=PhoSimCatalogPoint(stars,obs_metadata=obs_metadata)
+    star_phoSim=PhoSimCatalogPoint(stars,obs_metadata=obs_metadata) #the class for phoSim input files 
+                                                                #containing point sources
     if (doHeader):
         with open("phoSim_example.txt","w") as fh:
             star_phoSim.write_header(fh)
@@ -31,16 +32,31 @@ for starName in starObjNames:
     star_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = DBObject.from_objid('galaxyBulge')
+<<<<<<< HEAD
 galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_bulge is not NULL")
 galaxy_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
+=======
+
+#now append a bunch of objects with 2D sersic profiles to our output file
+galaxy_trim = TrimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_bulge is not NULL")
+galaxy_trim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
+>>>>>>> added more comments to generatePhosimInput.py
 
 gals = DBObject.from_objid('galaxyDisk')
 galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_disk is not NULL")
 galaxy_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = DBObject.from_objid('galaxyAgn')
+<<<<<<< HEAD
 galaxy_phoSim = PhoSimCatalogZPoint(gals, obs_metadata=obs_metadata,constraint="sedname_agn is not NULL")
 galaxy_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
+=======
+
+#TrimCatalogZPoint is the phoSim input class for extragalactic point sources (there will be no parallax
+#or proper motion)
+galaxy_trim = TrimCatalogZPoint(gals, obs_metadata=obs_metadata,constraint="sedname_agn is not NULL")
+galaxy_trim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
+>>>>>>> added more comments to generatePhosimInput.py
 
 
 
