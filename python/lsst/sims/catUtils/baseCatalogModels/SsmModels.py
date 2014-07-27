@@ -77,7 +77,7 @@ class SolarSystemObj(DBObject):
         """
         if colnames is None:
             colnames = [k for k in self.columnMap.keys()]
-        
+
         mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
         circ_bounds = None
@@ -88,13 +88,13 @@ class SolarSystemObj(DBObject):
                 circ_bounds = obs_metadata.circ_bounds
             if obs_metadata.box_bounds is not None:
                 box_bounds = obs_metadata.box_bounds
-        
+
         if circ_bounds is not None:
-            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'], 
+            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],
                                                         60.*circ_bounds['radius'])
 
         elif box_bounds is not None:
-            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'], 
+            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'],
                                                          box_bounds['ra_max'],box_bounds['dec_max'])
         else:
             regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'

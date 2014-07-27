@@ -68,14 +68,14 @@ class StarBase(DBObject):
                 circ_bounds = obs_metadata.circ_bounds
             if obs_metadata.box_bounds is not None:
                 box_bounds = obs_metadata.box_bounds
-        
+
         if circ_bounds is not None:
-            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'], 
+            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],
                                                         60.*circ_bounds['radius'])
 
 
         elif box_bounds is not None:
-            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'], 
+            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'],
                                                          box_bounds['ra_max'],box_bounds['dec_max'])
 
 
@@ -87,7 +87,7 @@ class StarBase(DBObject):
                           "if the database is large")
 
         if obs_metadata is not None and regionStr is not None:
-            #add spatial constraints to query. 
+            #add spatial constraints to query.
 
             #Hint sql engine to seek on htmid
             if not self.tableid.endswith('forceseek'):
@@ -98,12 +98,12 @@ class StarBase(DBObject):
             select_from(func.fHtmCoverBinaryAdvanced(
                     func.sph.fSimplifyString(regionStr))).alias()
 
-            #Range join on htmid ranges 
-            query = query.join(htmid_range_alias, 
-                       self.table.c['htmID'].between(htmid_range_alias.c.htmidstart, 
+            #Range join on htmid ranges
+            query = query.join(htmid_range_alias,
+                       self.table.c['htmID'].between(htmid_range_alias.c.htmidstart,
                                                      htmid_range_alias.c.htmidend)
                        )
-            query = query.filter(func.sph.fRegionContainsXYZ(func.sph.fSimplifyString(regionStr), 
+            query = query.filter(func.sph.fRegionContainsXYZ(func.sph.fSimplifyString(regionStr),
                      self.table.c.cx, self.table.c.cy, self.table.c.cz) == 1)
 
 
