@@ -29,11 +29,23 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
         
         """
         idNames = self.column_by_name('galid')
-        bandPassList = ['u','g','r','i','z']
+        bandPassNames = ['u','g','r','i','z']
         bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
         bandPassRoot = 'sdss_'
-        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassDir = bandPassDir, 
-                                           bandPassRoot = bandPassRoot)
+        
+        """
+        Here is where we need some code to load a list of bandPass objects
+        into self.bandPassList and then call self.setupPhiArray_dict()
+        so that the bandPasses are available to the mixin.  Ideally, we
+        would only do this once for the whole catalog
+        """
+        if self.bandPassList is None or self.phiArray is None:
+            self.loadBandPassesFromFiles(bandPassNames, 
+                     bandPassRoot = bandPassRoot,
+                     bandPassDir = bandPassDir)
+            self.setupPhiArray_dict()
+        
+        return self.meta_magnitudes_getter(idNames)
 
 
 
@@ -51,11 +63,23 @@ class sdssStars(InstanceCatalog,PhotometryStars):
         the bandpasses are stored
         """
         idNames = self.column_by_name('id')
-        bandPassList = ['u','g','r','i','z']
+        bandPassNames = ['u','g','r','i','z']
         bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
         bandPassRoot = 'sdss_'
-        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassDir = bandPassDir,
-                                           bandPassRoot = bandPassRoot)
+        
+        """
+        Here is where we need some code to load a list of bandPass objects
+        into self.bandPassList and then call self.setupPhiArray_dict()
+        so that the bandPasses are available to the mixin.  Ideally, we
+        would only do this once for the whole catalog
+        """
+        if self.bandPassList is None or self.phiArray is None:
+            self.loadBandPassesFromFiles(bandPassNames, 
+                     bandPassRoot = bandPassRoot,
+                     bandPassDir = bandPassDir)
+            self.setupPhiArray_dict()
+        
+        return self.meta_magnitudes_getter(idNames)
 
 
 obs_metadata_pointed = ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
