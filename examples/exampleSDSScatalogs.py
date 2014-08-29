@@ -10,13 +10,13 @@ from lsst.sims.catUtils.baseCatalogModels import *
 class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
     
     catalog_type = 'sdssGalaxies'
-    column_outputs = ['galid','sdss_uRecalc','sdss_gRecalc','sdss_rRecalc','sdss_iRecalc','sdss_zRecalc',
+    column_outputs = ['galid','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z',
                       'sdss_uBulge','sdss_gBulge','sdss_rBulge','sdss_iBulge','sdss_zBulge',
                       'sdss_uDisk','sdss_gDisk','sdss_rDisk','sdss_iDisk','sdss_zDisk',
                       'sdss_uAgn','sdss_gAgn','sdss_rAgn','sdss_iAgn','sdss_zAgn']
     
-    @compound('sdss_uRecalc', 'sdss_gRecalc', 'sdss_rRecalc', 
-              'sdss_iRecalc', 'sdss_zRecalc',
+    @compound('sdss_u', 'sdss_g', 'sdss_r', 
+              'sdss_i', 'sdss_z',
               'sdss_uBulge', 'sdss_gBulge', 'sdss_rBulge', 'sdss_iBulge', 'sdss_zBulge',
               'sdss_uDisk', 'sdss_gDisk', 'sdss_rDisk', 'sdss_iDisk', 'sdss_zDisk',
               'sdss_uAgn', 'sdss_gAgn', 'sdss_rAgn', 'sdss_iAgn', 'sdss_zAgn')
