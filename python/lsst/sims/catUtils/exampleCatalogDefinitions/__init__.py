@@ -1,3 +1,3 @@
 from .refCatalogExamples import *
-from .trimExamples import *
+from .phoSimCatalogExamples import *
 from .obsCatalogExamples import *
