@@ -2,8 +2,8 @@ import math
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
-from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, TrimCatalogPoint,\
-                                                         TrimCatalogZPoint, TrimCatalogSersic2D
+from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, PhoSimCatalogPoint,\
+                                                         PhoSimCatalogZPoint, PhoSimCatalogSersic2D
 from lsst.sims.catUtils import makeObsParamsAzAltTel, makeObsParamsRaDecTel
 
 def exampleReferenceCatalog():
@@ -13,25 +13,25 @@ def exampleReferenceCatalog():
     filename = 'test_reference.dat'
     t.write_catalog(filename, chunk_size=10)
 
-def exampleTrimCatalogs():
+def examplePhoSimCatalogs():
     obsMD = DBObject.from_objid('opsim3_61')
     obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
     objectDict = {}
     objectDict['testStars'] = {'dbobj':DBObject.from_objid('msstars'),
                                'constraint':None,
-                               'filetype':'trim_catalog_POINT',
+                               'filetype':'phoSim_catalog_POINT',
                                'obsMetadata':obs_metadata}
     objectDict['testGalaxyBulge'] = {'dbobj':DBObject.from_objid('galaxyBulge'),
                                'constraint':"mass_bulge > 1. and sedname_bulge is not NULL",
-                               'filetype':'trim_catalog_SERSIC2D',
+                               'filetype':'phoSim_catalog_SERSIC2D',
                                'obsMetadata':obs_metadata}
     objectDict['testGalaxyDisk'] = {'dbobj':DBObject.from_objid('galaxyDisk'),
                                'constraint':"DiskLSSTg < 20. and sedname_disk is not NULL",
-                               'filetype':'trim_catalog_SERSIC2D',
+                               'filetype':'phoSim_catalog_SERSIC2D',
                                'obsMetadata':obs_metadata}
     objectDict['testGalaxyAgn'] = {'dbobj':DBObject.from_objid('galaxyAgn'),
                                'constraint':"sedname_agn is not NULL",
-                               'filetype':'trim_catalog_ZPOINT',
+                               'filetype':'phoSim_catalog_ZPOINT',
                                'obsMetadata':obs_metadata}
 
     for objKey in objectDict.keys():
@@ -55,7 +55,7 @@ def exampleTrimCatalogs():
         t.write_catalog(filename, chunk_size=10)
         print " - finished"
 
-def exampleTrimNoOpSim():
+def examplePhoSimNoOpSim():
     raDeg= 15.
     decDeg = -30.
     mjd = 51999.75
@@ -78,12 +78,12 @@ def exampleTrimNoOpSim():
                                                         bandpassName='r',
                                                         metadata=md)
     dbobj = DBObject.from_objid('msstars')
-    t = dbobj.getCatalog('trim_catalog_POINT', obs_metadata= obs_metadata_rd)
+    t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_rd)
     t.write_catalog('catalog_test_stars_rd.dat')
-    t = dbobj.getCatalog('trim_catalog_POINT', obs_metadata= obs_metadata_aa)
+    t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_aa)
     t.write_catalog('catalog_test_stars_aa.dat')
 
 if __name__ == '__main__':
     exampleReferenceCatalog()
-    exampleTrimCatalogs()
-    exampleTrimNoOpSim()
+    examplePhoSimCatalogs()
+    examplePhoSimNoOpSim()
