@@ -2,10 +2,9 @@ import warnings
 import numpy
 import os
 from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
-from sqlalchemy import Table, Column, BigInteger, MetaData
 
 class ExampleGalaxyObj(DBObject):
-    
+
     objid = 'exampleGalaxyBase'
     #: This is the base table for the galaxies
     tableid = 'galaxies'
@@ -252,8 +251,8 @@ class GalaxyTileObj(DBObject):
         """
         if colnames is None:
             colnames = [k for k in self.columnMap.keys()]
-        
-        #We know that galtileid comes back with the query, but we don't want 
+
+        #We know that galtileid comes back with the query, but we don't want
         #to add it to the query since it's generated on the fly.
         while 'galtileid' in colnames:
             colnames.remove('galtileid')
@@ -267,25 +266,23 @@ class GalaxyTileObj(DBObject):
                  circ_bounds = obs_metadata.circ_bounds
             if obs_metadata.box_bounds is not None:
                 box_bounds = obs_metadata.box_bounds
-        
+
         if circ_bounds is not None:
-            RA = circ_bounds['ra']
-            DEC = circ_bounds['dec']
-            radius = circ_bounds['radius']
+            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],
+                                                        60.*circ_bounds['radius'])
         elif box_bounds is not None:
-            raise NotImplementedError("There is no way to specify a box "
-                                      "for the galaxy stored procedure")
+            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'],
+                                                         box_bounds['ra_max'],box_bounds['dec_max'])
         else:
-            RA, DEC, radius = (180., 0., 180.)
+            regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'
             warnings.warn("Searching over entire sky "
                           "since no circ_bounds specified. "
                           "This could be a very bad idea "
                           "if the database is large")
 
 
-        query = "EXECUTE [LSST].[dbo].[GalaxySearchSpecColsConstraint2013]\
-               @RaSearch = %f, @DecSearch = %f, @apertureRadius = %f,\
-               @ColumnNames = '%s'" % (RA, DEC, radius * 60., mappedcolnames)
+        query = "EXECUTE [LSST].[dbo].[GalaxySearch2014] \
+               @ApertureStr = '%s', @ColumnNames = '%s'" % (regionStr, mappedcolnames)
 
         if constraint is not None:
             query += ", @WhereClause = '%s'"%(constraint)

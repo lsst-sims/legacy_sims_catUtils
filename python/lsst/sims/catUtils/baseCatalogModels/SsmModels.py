@@ -8,7 +8,7 @@ class SolarSystemObj(DBObject):
     objectTypeId = 40
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=1.0),
+    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.1),
                                                   mjd=51200., bandpassName='r')
 
     #Turn off default column mapping since we are querying a dynamic resource
@@ -77,7 +77,7 @@ class SolarSystemObj(DBObject):
         """
         if colnames is None:
             colnames = [k for k in self.columnMap.keys()]
-        
+
         mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
         circ_bounds = None
@@ -85,26 +85,26 @@ class SolarSystemObj(DBObject):
 
         if obs_metadata is not None:
             if obs_metadata.circ_bounds is not None:
-                 circ_bounds = obs_metadata.circ_bounds
+                circ_bounds = obs_metadata.circ_bounds
             if obs_metadata.box_bounds is not None:
                 box_bounds = obs_metadata.box_bounds
-        
+
         if circ_bounds is not None:
-            RA = circ_bounds['ra']
-            DEC = circ_bounds['dec']
-            radius = circ_bounds['radius']
+            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],
+                                                        60.*circ_bounds['radius'])
+
         elif box_bounds is not None:
-            raise NotImplementedError("There is no way to specify a box "
-                                      "for the ssm stored procedure")
+            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'],
+                                                         box_bounds['ra_max'],box_bounds['dec_max'])
         else:
-            RA, DEC, radius = (180., 0., 180.)
+            regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'
             warnings.warn("Searching over entire sky "
                           "since no circ_bounds specified. "
                           "This could be a very bad idea "
                           "if the database is large")
 
-        query = "select %s from [LSST].[dbo].fSSMAll("%(mappedcolnames)+\
-                "%f, %f, %f, %f)"%(obs_metadata.mjd, RA, DEC, radius*60.)
+        query = "select %s from [LSST].[dbo].fSSMAllBase("%(mappedcolnames)+\
+                "%f, '%s')"%(obs_metadata.mjd, regionStr)
 
         if constraint is not None:
             query += "where %s"%(constraint)
