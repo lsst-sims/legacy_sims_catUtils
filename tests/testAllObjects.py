@@ -67,7 +67,7 @@ class basicAccessTest(unittest.TestCase):
         opsMetadata = {'Opsim_rotskypos':(0., float),
                        'Unrefracted_RA':(obs_metadata.circ_bounds['ra'], float),
                        'Unrefracted_Dec':(obs_metadata.circ_bounds['dec'], float)}
-        obs_metadata.metadata = opsMetadata
+        obs_metadata.phoSimMetadata = opsMetadata
         cat = dbobj.getCatalog('obs_star_cat', obs_metadata)
         if os.path.exists('testCat.out'):
             os.unlink('testCat.out')
