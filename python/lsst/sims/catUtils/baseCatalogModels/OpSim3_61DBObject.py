@@ -77,7 +77,7 @@ class OpSim3_61DBObject(DBObject):
             raise ValueErr("Need either circ_bounds or box_bounds")
         
         return ObservationMetaData(circ_bounds=circ_bounds, box_bounds=box_bounds, 
-                           metadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
+                           phoSimMetadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
 
     def query_columns(self, colnames=None, chunk_size=None,
                       circ_bounds=None, box_bounds=None, mjd_bounds=None,
