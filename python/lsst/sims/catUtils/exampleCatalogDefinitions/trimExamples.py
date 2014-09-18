@@ -25,9 +25,9 @@ class PhosimInputBase(InstanceCatalog):
                chunkiter], dtype=(str, 8))
                         
     def write_header(self, file_handle):
-        md = self.obs_metadata.metadata
+        md = self.obs_metadata.phoSimMetadata
         if md is None:
-            raise RuntimeError("Can't write a trim without a full metadata dictionary")
+            raise RuntimeError("Can't write a trim without a full phoSimMetadata dictionary")
         for k in md:
             typ = md[k][1].kind
             templ = self.default_formats.get(typ, None)
