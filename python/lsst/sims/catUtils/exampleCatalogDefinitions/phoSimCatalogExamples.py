@@ -27,7 +27,7 @@ class PhosimInputBase(InstanceCatalog):
     def write_header(self, file_handle):
         md = self.obs_metadata.phoSimMetadata
         if md is None:
-            raise RuntimeError("Can't write a trim without a full phoSimMetadata dictionary")
+            raise RuntimeError("Can't write a phoSim catalog without a full phoSimMetadata dictionary")
         for k in md:
             typ = md[k][1].kind
             templ = self.default_formats.get(typ, None)
@@ -42,9 +42,9 @@ class PhosimInputBase(InstanceCatalog):
                 outval = md[k][0]
             file_handle.write(templ%(k, outval)+"\n") 
 
-class TrimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmixin):
-    catalog_type = 'trim_catalog_POINT'
-    column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
+class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmixin):
+    catalog_type = 'phoSim_catalog_POINT'
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
                       'internalExtinctionModel']
@@ -55,12 +55,12 @@ class TrimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmix
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
     spatialModel = "point"
-    transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
+    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 
-class TrimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies, EBVmixin):
-    catalog_type = 'trim_catalog_ZPOINT'
-    column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
+class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies, EBVmixin):
+    catalog_type = 'phoSim_catalog_ZPOINT'
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
                       'internalExtinctionModel']
@@ -72,12 +72,12 @@ class TrimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies,
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
     spatialModel = "point"
-    transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees}
+    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 
-class TrimCatalogSersic2D(TrimCatalogZPoint):
-    catalog_type = 'trim_catalog_SERSIC2D'
-    column_outputs = ['prefix', 'uniqueId','raTrim','decTrim','magNorm','sedFilepath',
+class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
+    catalog_type = 'phoSim_catalog_SERSIC2D'
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','majorAxis','minorAxis','positionAngle','sindex',
                       'galacticExtinctionModel','galacticAv','galacticRv',
@@ -90,6 +90,6 @@ class TrimCatalogSersic2D(TrimCatalogZPoint):
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
     spatialModel = "sersic2d"
-    transformations = {'raTrim':numpy.degrees, 'decTrim':numpy.degrees, 'positionAngle':numpy.degrees, 
+    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees, 'positionAngle':numpy.degrees, 
     'majorAxis':numpy.degrees, 'minorAxis':numpy.degrees} 
 
