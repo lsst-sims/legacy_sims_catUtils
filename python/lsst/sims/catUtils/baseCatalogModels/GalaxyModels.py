@@ -144,6 +144,11 @@ class GalaxyObj(DBObject):
 
 
 class GalaxyTileObj(DBObject):
+    """
+    This is the parent class for galaxy DBObjects that sample the whole
+    sky (rather than just a very small patch as in GalaxyObj)
+    """
+    
     objid = 'galaxyTiled'
     #: This is the base table for the galaxies
     tableid = 'galaxy'

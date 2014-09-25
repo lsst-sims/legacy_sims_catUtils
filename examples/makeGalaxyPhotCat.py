@@ -8,5 +8,5 @@ if __name__ == '__main__':
     dbobj = DBObject.from_objid('galaxyBase')
     t = dbobj.getCatalog('galaxy_photometry_cat', obs_metadata=obs_metadata)
     filename = 'galaxy_photometry_test.dat'
-    t.write_catalog(filename, chunk_size=1000)
+    t.write_catalog(filename, chunk_size=10000)
 

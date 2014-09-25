@@ -128,7 +128,7 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     and RA, Dec within a box bounded by tol (in degrees).  It creates observation meta
     data out of the first pointing found and uses that to construct the catalog.
 
-    The catalog is output ot stars_airmass_test.dat
+    The catalog is output to stars_airmass_test.dat
     """
 
     obsMD=DBObject.from_objid('opsim3_61')
