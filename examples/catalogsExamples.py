@@ -4,16 +4,16 @@ from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 import lsst.sims.catUtils.baseCatalogModels as bcm
 from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, PhoSimCatalogPoint,\
                                                          PhoSimCatalogZPoint, PhoSimCatalogSersic2D
-from lsst.sims.catUtils import makeObsParamsAzAltTel, makeObsParamsRaDecTel
+from lsst.sims.catalogs.generation.db import makeObsParamsAzAltTel, makeObsParamsRaDecTel
 
 def exampleReferenceCatalog():
     """
     This method outputs a reference catalog of galaxies (i.e. a catalog of
     galaxies in which the columns are simply the data stored in the database).
-    
-    The catalog class is defined in 
+
+    The catalog class is defined in
     python/lsst/sims/catUtils/exampleCatalogDefinitions/refCatalogExamples.py
-    
+
     The catalog is output to the file test_reference.dat
     """
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01))
@@ -26,16 +26,16 @@ def examplePhoSimCatalogs():
     """
     This method outputs several phoSim input files consisting of different
     types of objects(stars, galaxy bulges, galaxy disks, and AGNs)
-    
+
     The files created are
     catalog_test_msstars.dat
     catalog_test_galaxyDisk.dat
     catalog_test_galaxyBulge.dat
     catalog_test_galaxyAgn.dat
-    
+
     (versions are also created that end in _chunked.dat; these should have
     the same contents)
-    
+
     """
     obsMD = DBObject.from_objid('opsim3_61')
     obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
@@ -60,7 +60,7 @@ def examplePhoSimCatalogs():
     for objKey in objectDict.keys():
         dbobj = objectDict[objKey]['dbobj']
         t = dbobj.getCatalog(objectDict[objKey]['filetype'],
-                             obs_metadata=objectDict[objKey]['obsMetadata'], 
+                             obs_metadata=objectDict[objKey]['obsMetadata'],
                              constraint=objectDict[objKey]['constraint'])
 
         print
@@ -70,7 +70,7 @@ def examplePhoSimCatalogs():
         print "These are the columns that will be output to the file:"
         print t.column_outputs
         print
-    
+
         filename = 'catalog_test_%s.dat'%(dbobj.objid)
         print "querying and writing catalog to %s:" % filename
         t.write_catalog(filename)
@@ -82,27 +82,27 @@ def examplePhoSimNoOpSim():
     """
     This method outputs phoSim input files based on arbitrary input coordinates
     (rather than an OpSim pointing).
-    
+
     catalog_test_stars_rd.dat is a file created from a specified RA, Dec pointing
-    
+
     catalog_test_stars_aa.dat is a file created from a specified Alt, Az pointing
     """
     raDeg= 15.
     decDeg = -30.
     mjd = 51999.75
-    
+
     #source code for the method below is found in python.lsst.sims.catUtils.observationMetaDataUtils.py
     #
     #basically, it returns a dict of data needed by phoSim to specify a given pointing
     #(ra and dec of the moon, rotation of the sky relative to the telescope, etc.)
     md =  makeObsParamsRaDecTel(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
-    
+
     obs_metadata_rd = ObservationMetaData(circ_bounds=dict(ra=raDeg,
                                                         dec=decDeg,
                                                         radius=0.1),
                                                         mjd=mjd,
                                                         bandpassName='r',
-                                                        metadata=md)
+                                                        phoSimMetadata=md)
     azRad = math.radians(220.)
     altRad = math.radians(79.)
     md = makeObsParamsAzAltTel(azRad, altRad, mjd, 'r')
@@ -113,46 +113,46 @@ def examplePhoSimNoOpSim():
                                                         radius=0.1),
                                                         mjd=mjd,
                                                         bandpassName='r',
-                                                        metadata=md)
+                                                        phoSimMetadata=md)
     dbobj = DBObject.from_objid('msstars')
     t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_rd)
     t.write_catalog('catalog_test_stars_rd.dat')
     t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_aa)
     t.write_catalog('catalog_test_stars_aa.dat')
 
-def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1, 
+def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
             makeBoxBounds=False, makeCircBounds=True):
     """
     This method will output a catalog of stars based on an OpSim pointing with
     a specific airmass.  It searches OpSim for pointings with the specified airmass
     and RA, Dec within a box bounded by tol (in degrees).  It creates observation meta
     data out of the first pointing found and uses that to construct the catalog.
-    
+
     The catalog is output ot stars_airmass_test.dat
     """
-    
+
     obsMD=DBObject.from_objid('opsim3_61')
-    
-    
+
+
     #The code below will query the OpSim data base object created above.
     #The query will be based on a box in RA, Dec and a specific airmass value
     colNames = ['Opsim_obshistid','Opsim_expmjd','airmass','Unrefracted_RA','Unrefracted_Dec','Opsim_altitude', 'Opsim_azimuth']
-    
+
     airmassConstraint = "airmass="+str(airmass) #an SQL constraint that the airmass must be equal to
                                                 #the passed value
     raMin = ra - tol
     raMax = ra + tol
     decMin = dec - tol
     decMax = dec + tol
-        
+
     skyBounds = dict(ra_min=raMin, ra_max=raMax, dec_min=decMin, dec_max=decMax)
-    
+
     query = obsMD.query_columns(colnames=colNames, chunk_size = 1, box_bounds=skyBounds,
                     constraint = airmassConstraint)
-     
+
     q=query.next() #q now contains the first row returned by our query
-    
-    
+
+
     #convert q into observation meta data for use in a catalog
     obsMetaData = obsMD.getObservationMetaData(q[0][0],radiusDeg,makeBoxBounds=makeBoxBounds,
                    makeCircBounds=makeCircBounds)
@@ -161,7 +161,7 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     dbobj = DBObject.from_objid('allstars')
     catalog = dbobj.getCatalog('ref_catalog_star', obs_metadata = obsMetaData)
     catalog.write_catalog('stars_airmass_test.dat')
-    
+
 
 if __name__ == '__main__':
     exampleReferenceCatalog()
