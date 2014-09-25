@@ -61,6 +61,15 @@ class ExampleGalaxyObj(DBObject):
 
 
 class GalaxyObj(DBObject):
+    """
+    Note: building a catalog out of this object will directly call the 
+    'galaxy' table.  This table only contains objects for
+    
+    -2.5 deg < RA < 2.5 deg, -2.5 deg < Dec < 2.5 deg
+    
+    In order to cover the whole sky, call one of the objects that
+    inherits from GalaxyTileObj
+    """
     objid = 'galaxyBase'
     #: This is the base table for the galaxies
     #tableid = 'final_clone_db'
@@ -135,6 +144,11 @@ class GalaxyObj(DBObject):
 
 
 class GalaxyTileObj(DBObject):
+    """
+    This is the parent class for galaxy DBObjects that sample the whole
+    sky (rather than just a very small patch as in GalaxyObj)
+    """
+    
     objid = 'galaxyTiled'
     #: This is the base table for the galaxies
     tableid = 'galaxy'

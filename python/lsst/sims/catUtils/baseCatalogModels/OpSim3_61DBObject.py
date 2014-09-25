@@ -38,7 +38,10 @@ class OpSim3_61DBObject(DBObject):
                ('Opsim_obshistid', 'obshistid', numpy.int64),
                ('Opsim_expmjd', 'expmjd'),
                ('Opsim_altitude', 'altitude'),
-               ('Opsim_azimuth', 'azimuth')]
+               ('Opsim_azimuth', 'azimuth'),
+               ('exptime', 'exptime'),
+               ('airmass', 'airmass')]
+               
     def __init__(self, address=None):
         self.defaultColumns = [col[0] for col in self.columns]
         super(OpSim3_61DBObject, self).__init__(address=address)
