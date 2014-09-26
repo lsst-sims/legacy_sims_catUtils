@@ -1,7 +1,7 @@
 import unittest
 import numpy
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
@@ -31,7 +31,7 @@ class testCatalogBounds(unittest.TestCase):
         because the test depends on a network connection.
         """
         column_outputs = ['raJ2000', 'decJ2000']
-        for objname, objcls in DBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest \
             or (objcls.testObservationMetaData is None) \
             or (objcls.testObservationMetaData.circ_bounds is None):
@@ -64,7 +64,7 @@ class testCatalogBounds(unittest.TestCase):
         because test depends on a network connection.
         """
         column_outputs = ['raJ2000', 'decJ2000']
-        for objname, objcls in DBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest \
             or (objcls.testObservationMetaData is None) \
             or (objcls.testObservationMetaData.circ_bounds is None):

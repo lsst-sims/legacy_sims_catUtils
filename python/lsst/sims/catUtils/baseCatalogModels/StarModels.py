@@ -1,8 +1,8 @@
 import warnings
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData, ChunkIterator
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, ChunkIterator
 from sqlalchemy.sql import select, func, column
 
-class StarBase(DBObject):
+class StarBase(CatalogDBObject):
     objid = 'starbase'
     tableid = None
     idColKey = 'id'

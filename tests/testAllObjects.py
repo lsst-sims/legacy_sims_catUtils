@@ -2,7 +2,7 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catUtils.exampleCatalogDefinitions import ObsStarCatalogBase
 #The following is to get the object ids in the registry
@@ -18,7 +18,7 @@ retry = 5
 class basicAccessTest(unittest.TestCase):
     @unittest.expectedFailure
     def testObjects(self):
-        for objname, objcls in DBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
                 continue
             for i in range(retry):   
@@ -57,7 +57,7 @@ class basicAccessTest(unittest.TestCase):
         objname = 'wdstars'
         for i in range(retry):   
             try:
-                dbobj = DBObject.from_objid(objname)
+                dbobj = CatalogDBObject.from_objid(objname)
                 break
             except:
                 continue

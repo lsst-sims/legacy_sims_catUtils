@@ -1,7 +1,7 @@
 import numpy
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils import ValidationUtils, SersicUtils
 import argparse
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                         default=8., type=float)
     args = parser.parse_args()
     obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=args.boxsize/2.))
-    dbobj = DBObject.from_objid('galaxyBase')
+    dbobj = CatalogDBObject.from_objid('galaxyBase')
     filename = None
     if not args.skipCounts:
         galaxyCountValidation(dbobj, args.savePlots, args.baseOutputName)

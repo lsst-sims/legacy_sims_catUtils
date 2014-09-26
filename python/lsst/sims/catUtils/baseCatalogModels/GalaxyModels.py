@@ -1,9 +1,9 @@
 import warnings
 import numpy
 import os
-from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 
-class ExampleGalaxyObj(DBObject):
+class ExampleGalaxyObj(CatalogDBObject):
 
     objid = 'exampleGalaxyBase'
     #: This is the base table for the galaxies
@@ -60,7 +60,7 @@ class ExampleGalaxyObj(DBObject):
         return (f.readline()).strip()
 
 
-class GalaxyObj(DBObject):
+class GalaxyObj(CatalogDBObject):
     """
     Note: building a catalog out of this object will directly call the 
     'galaxy' table.  This table only contains objects for
@@ -143,9 +143,9 @@ class GalaxyObj(DBObject):
         return results
 
 
-class GalaxyTileObj(DBObject):
+class GalaxyTileObj(CatalogDBObject):
     """
-    This is the parent class for galaxy DBObjects that sample the whole
+    This is the parent class for galaxy CatalogDBObjects that sample the whole
     sky (rather than just a very small patch as in GalaxyObj)
     """
     
@@ -417,7 +417,7 @@ class GalaxyAgnObj(GalaxyTileObj):
             ('lsst_z', 'z_ab'),
             ('lsst_y', 'y_ab')]
 
-class ImageAgnObj(DBObject):
+class ImageAgnObj(CatalogDBObject):
     objid = 'imageagn'
     tableid = 'image'
     idColKey = 'galid'
@@ -447,7 +447,7 @@ class ImageAgnObj(DBObject):
             ('lsst_z', 'z_ab'),
             ('lsst_y', 'y_ab')]
 
-class LensGalaxyObj(DBObject):
+class LensGalaxyObj(CatalogDBObject):
     objid = 'lensgalaxy'
     tableid = 'lens'
     idColKey = 'galid'

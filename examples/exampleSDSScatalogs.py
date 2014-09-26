@@ -3,7 +3,7 @@ import os
 from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin
 from lsst.sims.catalogs.measures.instance import compound, InstanceCatalog
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 
 from lsst.sims.catUtils.baseCatalogModels import *
 
@@ -85,13 +85,13 @@ class sdssStars(InstanceCatalog,PhotometryStars):
 obs_metadata_pointed = ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
 obs_metadata_pointed.metadata = {}
 obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-dbObj = DBObject.from_objid('rrlystars')
+dbObj = CatalogDBObject.from_objid('rrlystars')
 sdssStars = sdssStars(dbObj, obs_metadata = obs_metadata_pointed)
 sdssStars.write_catalog("example_sdss_stars.txt")
 
 obs_metadata_pointed = ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius = 0.01))
 obs_metadata_pointed.metadata = {}
 obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-dbObj = DBObject.from_objid('galaxyBase')
+dbObj = CatalogDBObject.from_objid('galaxyBase')
 sdssGalaxies = sdssGalaxies(dbObj, obs_metadata = obs_metadata_pointed)
 sdssGalaxies.write_catalog("example_sdss_galaxies.txt")

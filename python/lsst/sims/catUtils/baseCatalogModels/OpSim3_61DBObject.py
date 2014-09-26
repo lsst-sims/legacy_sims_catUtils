@@ -1,9 +1,9 @@
-from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 from collections import OrderedDict
 import numpy
 import math
 
-class OpSim3_61DBObject(DBObject):
+class OpSim3_61DBObject(CatalogDBObject):
     """Meta Data Database Object base class
 
     """
