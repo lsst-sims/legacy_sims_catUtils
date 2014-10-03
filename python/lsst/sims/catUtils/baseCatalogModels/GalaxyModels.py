@@ -90,8 +90,8 @@ class GalaxyObj(CatalogDBObject):
     objectTypeId = 24
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01),
-                                                  mjd=52000., bandpassName='r')
+    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=0.0, unrefractedDec=0.0,
+                                                  boundLength=0.01, mjd=52000., bandpassName='r', m5 = 22.0)
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
     #: as None is cast to nan, but for integers this raises and exception.
@@ -172,8 +172,8 @@ class GalaxyTileObj(CatalogDBObject):
     objectTypeId = 25
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=173., dec=-60., radius=0.01),
-                                                  mjd=52000., bandpassName='r')
+    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=173.0, unrefractedDec=-60.0,
+                                                  boundLength=0.01, mjd=52000., bandpassName='r', m5=22.0)
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
     #: as None is cast to nan, but for integers this raises and exception.
@@ -291,10 +291,12 @@ class GalaxyTileObj(CatalogDBObject):
         box_bounds = None
 
         if obs_metadata is not None:
-            if obs_metadata.circ_bounds is not None:
-                 circ_bounds = obs_metadata.circ_bounds
-            if obs_metadata.box_bounds is not None:
-                box_bounds = obs_metadata.box_bounds
+            if obs_metadata.boundType == 'circle':
+                 circ_bounds = obs_metadata.bounds
+            elif obs_metadata.boundType == 'box' or obs_metadata.boundType == 'square':
+                box_bounds = obs_metadata.bounds
+            elif obs_metadata.boundType is not None:
+                raise RuntimeError("GalaxyTileObj does not know about boundType %s " % obs_metadata.boundType)
 
         if circ_bounds is not None:
             regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],
@@ -327,8 +329,8 @@ class GalaxyBulgeObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 26
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=10., dec=-45., radius=0.01),
-                                                  mjd=53000., bandpassName='i')
+    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=10.0, unrefractedDec=-45.0,
+                                                  boundLength=0.01, mjd=53000., bandpassName='i', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -367,8 +369,8 @@ class GalaxyDiskObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 27
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=66., dec=-80., radius=0.01),
-                                                  mjd=53730., bandpassName='g')
+    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=66.0, unrefractedDec=-80.0,
+                                                  boundLength=0.01, mjd=53730., bandpassName='g', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -407,8 +409,8 @@ class GalaxyAgnObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 28
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=234., dec=-15., radius=0.01),
-                                                  mjd=51000., bandpassName='y')
+    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=234.0, unrefractedDec=-15.0,
+                                                  boundLength=0.01, mjd=51000., bandpassName='y', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -446,8 +448,8 @@ class ImageAgnObj(CatalogDBObject):
     objectTypeId = 29
     doRunTest = True
     #all sky since this is a small set.
-    testObservationMetaData = ObservationMetaData(circ_bounds=None,
-                                                  mjd=53000., bandpassName='i')
+    testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='i', m5=22.0)
+
     dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -481,8 +483,8 @@ class LensGalaxyObj(CatalogDBObject):
     objectTypeId = 30
     doRunTest = True
     #all sky since this is a small set.
-    testObservationMetaData = ObservationMetaData(circ_bounds=None,
-                                                  mjd=53000., bandpassName='i')
+    testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='i', m5=22.0)
+
     dbDefaultValues = {'varsimobjid':-1, 'myid':-1, 'variabilityParameters':None}
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name

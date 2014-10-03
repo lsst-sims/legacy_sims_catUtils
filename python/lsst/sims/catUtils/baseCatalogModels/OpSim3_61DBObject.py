@@ -70,26 +70,26 @@ class OpSim3_61DBObject(CatalogDBObject):
         #requesting boxBounds before deciding to instantiate 
         #circBounds
         
+        boundType = None
+        boundLength = None
         if makeBoxBounds:
-            box_bounds = dict(ramin=math.degrees(ra)-radiusDeg/math.cos(dec), 
-                              ramax=math.degrees(ra)+radiusDeg/math.cos(dec),
-                              decmin=math.degrees(dec)-radiusDeg,
-                              decmax=math.degrees(dec)+radiusDeg)
-            circ_bounds = None
+            boundType = 'box'
+            boundLength = numpy.array([radiusDeg/math.cos(dec),radiusDeg])
         elif makeCircBounds:
-            circ_bounds = dict(ra=math.degrees(ra), 
-                                    dec=math.degrees(dec), 
-                                    radius=radiusDeg)
-            box_bounds = None
+            boundType = 'circle'
+            boundLength = radiusDeg
         else:
-            raise ValueErr("Need either circ_bounds or box_bounds")
+            raise ValueErr("Need either makeBoxBounds or makeCircBounds")
         
-        return ObservationMetaData(circ_bounds=circ_bounds, box_bounds=box_bounds, 
+        return ObservationMetaData(boundType=boundType,
+                           unrefractedRA=math.degrees(ra), unrefractedDec=math.degrees(dec),
+                           boundLength=boundLength,
                            phoSimMetadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
 
     def query_columns(self, colnames=None, chunk_size=None,
-                      circ_bounds=None, box_bounds=None, mjd_bounds=None,
-                      constraint=None):
+                      boundType=None, boundLength=None,
+                      unrefractedRA=None, unrefractedDec=None,
+                      mjd_bounds=None, constraint=None):
         """Execute a query
 
         **Parameters**
@@ -124,6 +124,31 @@ class OpSim3_61DBObject(CatalogDBObject):
 
         """
         query = self._get_column_query(colnames)
+
+        circ_bounds=None
+        box_bounds=None
+
+        if boundType is not None:
+            if unrefractedRA is None or unrefractedDec is None or boundLength is None:
+                raise RuntimeError("in Opsim3_61DBObject query_columns, bound improperly specified")
+
+        if boundType == 'circle':
+            circ_bounds={'ra':unrefractedRA, 'dec':unrefractedDec, 'radius':boundLength}
+        elif boundType == 'box':
+            if not isinstance(boundLength, numpy.ndarray):
+                raise RuntimeError("in Opsim3_61DBObject boundLength must be numpy array for boundType square")
+
+            if len(boundLength) != 2:
+                raise RuntimeError("in Opsim3_61DBObject boundLength must have length of 2")
+
+            box_bounds={'ra_min':unrefractedRA-boundLength[0], 'ra_max':unrefractedRA+boundLength[0],
+                        'dec_min':unrefractedDec-boundLength[1], 'dec_max':unrefractedDec+boundLength[1]}
+
+        elif boundType == 'square':
+            box_bounds={'ra_min':unrefractedRA-boundLength, 'ra_max':unrefractedRA+boundLength,
+                        'dec_min':unrefractedDec-boundLength, 'dec_max':unrefractedDec+boundLength}
+        elif boundType is not None:
+            raise RuntimeError("Opsim3_61DBObject does not know boundType %s" % boundType)
 
         query = self.filter(query, circ_bounds=circ_bounds, 
                     box_bounds=box_bounds)

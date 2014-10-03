@@ -16,8 +16,11 @@ def exampleReferenceCatalog():
 
     The catalog is output to the file test_reference.dat
     """
-    obs_metadata = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.01))
-    dbobj = CatalogDBObject.from_objid('galaxyBase')
+
+    obs_metadata = ObservationMetaData(boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                       boundLength=0.01)
+    dbobj = DBObject.from_objid('galaxyBase')
+
     t = dbobj.getCatalog('ref_catalog_galaxy', obs_metadata=obs_metadata)
     filename = 'test_reference.dat'
     t.write_catalog(filename, chunk_size=10)
@@ -97,9 +100,8 @@ def examplePhoSimNoOpSim():
     #(ra and dec of the moon, rotation of the sky relative to the telescope, etc.)
     md =  makeObsParamsRaDecTel(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
 
-    obs_metadata_rd = ObservationMetaData(circ_bounds=dict(ra=raDeg,
-                                                        dec=decDeg,
-                                                        radius=0.1),
+    obs_metadata_rd = ObservationMetaData(boundType='circle',unrefractedRA=raDeg,unrefractedDec=decDeg,
+                                                        boundLength=0.1,
                                                         mjd=mjd,
                                                         bandpassName='r',
                                                         phoSimMetadata=md)
@@ -108,9 +110,8 @@ def examplePhoSimNoOpSim():
     md = makeObsParamsAzAltTel(azRad, altRad, mjd, 'r')
     raDeg = math.degrees(md['Unrefracted_RA'][0])
     decDeg = math.degrees(md['Unrefracted_Dec'][0])
-    obs_metadata_aa = ObservationMetaData(circ_bounds=dict(ra=raDeg,
-                                                        dec=decDeg,
-                                                        radius=0.1),
+    obs_metadata_aa = ObservationMetaData(boundType='circle',unrefractedRA=raDeg,unrefractedDec=decDeg,
+                                                        boundLength=0.1,
                                                         mjd=mjd,
                                                         bandpassName='r',
                                                         phoSimMetadata=md)
@@ -147,8 +148,9 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
 
     skyBounds = dict(ra_min=raMin, ra_max=raMax, dec_min=decMin, dec_max=decMax)
 
-    query = obsMD.query_columns(colnames=colNames, chunk_size = 1, box_bounds=skyBounds,
-                    constraint = airmassConstraint)
+    query = obsMD.query_columns(colnames=colNames, chunk_size = 1, boundType='square',
+                                unrefractedRA=ra, unrefractedDec=dec, boundLength=tol,
+                                constraint = airmassConstraint)
 
     q=query.next() #q now contains the first row returned by our query
 

@@ -63,10 +63,10 @@ class basicAccessTest(unittest.TestCase):
                 continue
         obs_metadata = dbobj.testObservationMetaData
         # To cover the central ~raft
-        obs_metadata.circ_bounds['radius'] = 0.4
+        obs_metadata.boundLength = 0.4
         opsMetadata = {'Opsim_rotskypos':(0., float),
-                       'Unrefracted_RA':(obs_metadata.circ_bounds['ra'], float),
-                       'Unrefracted_Dec':(obs_metadata.circ_bounds['dec'], float)}
+                       'Unrefracted_RA':(obs_metadata.unrefractedRA, float),
+                       'Unrefracted_Dec':(obs_metadata.unrefractedDec, float)}
         obs_metadata.phoSimMetadata = opsMetadata
         cat = dbobj.getCatalog('obs_star_cat', obs_metadata)
         if os.path.exists('testCat.out'):

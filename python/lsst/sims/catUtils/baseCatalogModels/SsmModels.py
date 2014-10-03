@@ -13,8 +13,9 @@ class SolarSystemObj(CatalogDBObject):
     objectTypeId = 40
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(circ_bounds=dict(ra=0., dec=0., radius=0.1),
-                                                  mjd=51200., bandpassName='r')
+    testObservationMetaData = ObservationMetaData(boundType = 'circle',
+                                                  unrefractedRA = 0.0, unrefractedDec = 0.0,
+                                                  boundLength = 0.1, mjd=51200., bandpassName='r', m5=22.0)
 
     #Turn off default column mapping since we are querying a dynamic resource
     generateDefaultColumnMap = False
@@ -89,10 +90,12 @@ class SolarSystemObj(CatalogDBObject):
         box_bounds = None
 
         if obs_metadata is not None:
-            if obs_metadata.circ_bounds is not None:
-                circ_bounds = obs_metadata.circ_bounds
-            if obs_metadata.box_bounds is not None:
-                box_bounds = obs_metadata.box_bounds
+            if obs_metadata.boundType == 'circle':
+                circ_bounds = obs_metadata.bounds
+            elif obs_metadata.boundType ==  'box' or obs_metadata.boundType == 'square':
+                box_bounds = obs_metadata.bounds
+            elif obs_metadata.boundType is not None:
+                raise RuntimeError("SolarSystemObj does not know boundType %s" % obs_metadata.boundType)
 
         if circ_bounds is not None:
             regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],

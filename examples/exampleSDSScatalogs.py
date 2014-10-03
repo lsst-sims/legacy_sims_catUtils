@@ -82,14 +82,18 @@ class sdssStars(InstanceCatalog,PhotometryStars):
         return self.meta_magnitudes_getter(idNames)
 
 
-obs_metadata_pointed = ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
+obs_metadata_pointed = ObservationMetaData(mjd=2013.23, boundType='circle',
+                          unrefractedRA=200.0, unrefractedDec=-30.0, boundLength=1.0)
+
 obs_metadata_pointed.metadata = {}
 obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
 dbObj = CatalogDBObject.from_objid('rrlystars')
 sdssStars = sdssStars(dbObj, obs_metadata = obs_metadata_pointed)
 sdssStars.write_catalog("example_sdss_stars.txt")
 
-obs_metadata_pointed = ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius = 0.01))
+obs_metadata_pointed = ObservationMetaData(mjd=50000.0, boundType='circle',
+                         unrefractedRA=0.0, unrefractedDec=0.0, boundLength=0.01)
+
 obs_metadata_pointed.metadata = {}
 obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
 dbObj = CatalogDBObject.from_objid('galaxyBase')
