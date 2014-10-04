@@ -34,7 +34,8 @@ class testCatalogBounds(unittest.TestCase):
         for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest \
             or (objcls.testObservationMetaData is None) \
-            or (objcls.testObservationMetaData.boundType != 'circle'):
+            or (objcls.testObservationMetaData.bounds is None) \
+            or (objcls.testObservationMetaData.bounds.boundType != 'circle'):
                 continue
             print "Running tests for", objname
             obs_metadata = objcls.testObservationMetaData
@@ -52,7 +53,7 @@ class testCatalogBounds(unittest.TestCase):
                 raise RuntimeError("No results for %s."%(objname))
 
             #confirm radius > distance from all points to center
-            self.assertGreater(obs_metadata.bounds['radius'] + 1.e-4,
+            self.assertGreater(obs_metadata.bounds.radius + 1.e-4,
                            max(vDistanceBetweenPoints(numpy.radians(obs_metadata.unrefractedRA),
                                                       numpy.radians(obs_metadata.unrefractedDec),
                                                     result['raJ2000'], result['decJ2000'])))
@@ -67,14 +68,16 @@ class testCatalogBounds(unittest.TestCase):
         for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest \
             or (objcls.testObservationMetaData is None) \
-            or (objcls.testObservationMetaData.boundType != 'circle'):
+            or (objcls.testObservationMetaData.bounds is None) \
+            or (objcls.testObservationMetaData.bounds.boundType != 'circle'):
                 continue
             print "Running tests for", objname
             circ_bounds = objcls.testObservationMetaData.bounds
-            raCenter = circ_bounds['ra']+circ_bounds['radius']
-            decCenter = circ_bounds['dec']+circ_bounds['radius']
-            obs_metadata = ObservationMetaData(boundType='square',unrefractedRA=raCenter,unrefractedDec=decCenter,
-                                               boundLength=circ_bounds['radius'],
+            length = circ_bounds.radius
+            raCenter = circ_bounds.RA+length
+            decCenter = circ_bounds.DEC+length
+            obs_metadata = ObservationMetaData(boundType='box',unrefractedRA=raCenter,unrefractedDec=decCenter,
+                                               boundLength=length,
                                                mjd=51000., bandpassName='i')
             for i in range(5):
                 try:
@@ -90,11 +93,11 @@ class testCatalogBounds(unittest.TestCase):
             except StopIteration:
                 raise RuntimeError("No results for %s."%(objname))
 
-            self.assertLess(max(result['raJ2000']), numpy.radians(obs_metadata.bounds['ra_max']))
-            self.assertGreater(min(result['raJ2000']), numpy.radians(obs_metadata.bounds['ra_min']))
+            self.assertLess(max(result['raJ2000']), numpy.radians(raCenter+length))
+            self.assertGreater(min(result['raJ2000']), numpy.radians(raCenter-length))
 
-            self.assertLess(max(result['decJ2000']), numpy.radians(obs_metadata.bounds['dec_max']))
-            self.assertGreater(max(result['decJ2000']), numpy.radians(obs_metadata.bounds['dec_min']))
+            self.assertLess(max(result['decJ2000']), numpy.radians(decCenter+length))
+            self.assertGreater(max(result['decJ2000']), numpy.radians(decCenter-length))
 
 
 def suite():

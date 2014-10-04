@@ -290,13 +290,14 @@ class GalaxyTileObj(CatalogDBObject):
         circ_bounds = None
         box_bounds = None
 
-        if obs_metadata is not None:
-            if obs_metadata.boundType == 'circle':
-                 circ_bounds = obs_metadata.bounds
-            elif obs_metadata.boundType == 'box' or obs_metadata.boundType == 'square':
-                box_bounds = obs_metadata.bounds
-            elif obs_metadata.boundType is not None:
-                raise RuntimeError("GalaxyTileObj does not know about boundType %s " % obs_metadata.boundType)
+        if obs_metadata is not None and obs_metadata.bounds is not None:
+            if obs_metadata.bounds.boundType == 'circle':
+                 circ_bounds = {'ra':obs_metadata.bounds.RA,'dec':obs_metadata.bounds.DEC,'radius':obs_metadata.bounds.radius}
+            elif obs_metadata.bounds.boundType == 'box':
+                box_bounds = {'ra_min':obs_metadata.bounds.RAmin,'ra_max':obs_metadata.bounds.RAmax,
+                              'dec_min':obs_metadata.bounds.DECmin,'dec_max':obs_metadata.bounds.DECmax}
+            else:
+                raise RuntimeError("GalaxyTileObj does not know about boundType %s " % obs_metadata.bounds.boundType)
 
         if circ_bounds is not None:
             regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],

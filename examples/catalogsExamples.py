@@ -148,7 +148,7 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
 
     skyBounds = dict(ra_min=raMin, ra_max=raMax, dec_min=decMin, dec_max=decMax)
 
-    query = obsMD.query_columns(colnames=colNames, chunk_size = 1, boundType='square',
+    query = obsMD.query_columns(colnames=colNames, chunk_size = 1, boundType='box',
                                 unrefractedRA=ra, unrefractedDec=dec, boundLength=tol,
                                 constraint = airmassConstraint)
 
