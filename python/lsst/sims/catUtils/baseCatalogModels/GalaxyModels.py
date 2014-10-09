@@ -7,6 +7,11 @@ class ExampleGalaxyObj(CatalogDBObject):
 
     objid = 'exampleGalaxyBase'
     #: This is the base table for the galaxies
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = 'galaxies'
     idColKey = 'galid'
     raColName = 'ra'
@@ -71,6 +76,11 @@ class GalaxyObj(CatalogDBObject):
     inherits from GalaxyTileObj
     """
     objid = 'galaxyBase'
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     #: This is the base table for the galaxies
     #tableid = 'final_clone_db'
     tableid = 'galaxy'
@@ -151,6 +161,11 @@ class GalaxyTileObj(CatalogDBObject):
     
     objid = 'galaxyTiled'
     #: This is the base table for the galaxies
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = 'galaxy'
     raColName = 'ra'
     decColName = 'dec'
@@ -419,6 +434,11 @@ class GalaxyAgnObj(GalaxyTileObj):
 
 class ImageAgnObj(CatalogDBObject):
     objid = 'imageagn'
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = 'image'
     idColKey = 'galid'
     raColName = 'ra'
@@ -449,6 +469,11 @@ class ImageAgnObj(CatalogDBObject):
 
 class LensGalaxyObj(CatalogDBObject):
     objid = 'lensgalaxy'
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = 'lens'
     idColKey = 'galid'
     raColName = 'ra'

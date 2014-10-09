@@ -4,6 +4,11 @@ from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, Obs
 class SolarSystemObj(CatalogDBObject):
     objid = 'ssm'
     # There is no materialized table since this is a table valued function
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = ''
     objectTypeId = 40
 

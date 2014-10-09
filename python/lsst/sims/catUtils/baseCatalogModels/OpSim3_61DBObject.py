@@ -8,6 +8,11 @@ class OpSim3_61DBObject(CatalogDBObject):
 
     """
     objid = 'opsim3_61'
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = 'output_opsim3_61'
     objectTypeId = -1
     generateDefaultColumnMap = False

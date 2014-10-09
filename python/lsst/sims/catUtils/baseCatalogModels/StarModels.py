@@ -4,6 +4,11 @@ from sqlalchemy.sql import select, func, column
 
 class StarBase(CatalogDBObject):
     objid = 'starbase'
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = None
     idColKey = 'id'
     raColName = 'ra'
