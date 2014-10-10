@@ -1,13 +1,18 @@
-from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 from collections import OrderedDict
 import numpy
 import math
 
-class OpSim3_61DBObject(DBObject):
+class OpSim3_61DBObject(CatalogDBObject):
     """Meta Data Database Object base class
 
     """
     objid = 'opsim3_61'
+
+    #: This is the default address.  Simply change this in the class definition for other
+    #: endpoints.
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
     tableid = 'output_opsim3_61'
     objectTypeId = -1
     generateDefaultColumnMap = False
