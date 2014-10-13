@@ -7,6 +7,9 @@ from lsst.sims.photUtils.EBV import EBVmixin
 
 class PhosimInputBase(InstanceCatalog):
     filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
+
+    cannot_be_null = ['sedFilepath']
+
     headerTransformations = {'Unrefracted_RA':numpy.degrees, 'Unrefracted_Dec':numpy.degrees, 
                        'Opsim_moonra':numpy.degrees, 'Opsim_moondec':numpy.degrees, 
                        'Opsim_rotskypos':numpy.degrees, 'Opsim_rottelpos':numpy.degrees, 
@@ -17,7 +20,7 @@ class PhosimInputBase(InstanceCatalog):
         chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
         return numpy.array(['object' for i in chunkiter], dtype=(str, 6))
     def get_sedFilepath(self):
-        return numpy.array([self.specFileMap[k] 
+        return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None 
                          for k in self.column_by_name('sedFilename')])
     def get_spatialmodel(self):
         chunkiter = xrange(len(self._current_chunk))
