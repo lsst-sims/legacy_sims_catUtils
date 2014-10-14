@@ -1,4 +1,4 @@
-from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.db.spatialBounds import SpatialBounds
 from collections import OrderedDict
 import numpy
