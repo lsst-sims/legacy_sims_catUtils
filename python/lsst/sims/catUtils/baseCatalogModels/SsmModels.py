@@ -94,11 +94,11 @@ class SolarSystemObj(CatalogDBObject):
                                                             60.*obs_metadata.bounds.radius)
             elif obs_metadata.bounds.boundType == 'box':
                 regionStr = 'REGION RECT J2000 %f %f %f %f'%(obs_metadata.bounds.RAmin,
-                                                             obs_metadata.bounds.RAmax,
                                                              obs_metadata.bounds.DECmin,
+                                                             obs_metadata.bounds.RAmax,
                                                              obs_metadata.bounds.DECmax)
             else:
-                raise RuntimeError("GalaxyTileObj does not know about boundType %s "
+                raise RuntimeError("SolarSystemObj does not know about boundType %s "
                                    % obs_metadata.bounds.boundType)
         else:
             regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'
