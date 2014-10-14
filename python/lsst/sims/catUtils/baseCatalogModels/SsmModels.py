@@ -86,30 +86,24 @@ class SolarSystemObj(CatalogDBObject):
 
         mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
-        circ_bounds = None
-        box_bounds = None
 
         if obs_metadata is not None and obs_metadata.bounds is not None:
             if obs_metadata.bounds.boundType == 'circle':
-                circ_bounds = {'ra':obs_metadata.bounds.RA, 'dec':obs_metadata.bounds.DEC,
-                               'radius':obs_metadata.bounds.radius}
-            elif obs_metadata.bounds.boundType ==  'box':
-                box_bounds = {'ra_min':obs_metadata.bounds.RAmin, 'ra_max':obs_metadata.bounds.RAmax,
-                              'dec_min':obs_metadata.bounds.DECmin, 'dec_max':obs_metadata.bounds.DECmax}
+                regionStr = 'REGION CIRCLE J2000 %f %f %f'%(obs_metadata.bounds.RA,
+                                                            obs_metadata.bounds.DEC,
+                                                            60.*obs_metadata.bounds.radius)
+            elif obs_metadata.bounds.boundType == 'box':
+                regionStr = 'REGION RECT J2000 %f %f %f %f'%(obs_metadata.bounds.RAmin,
+                                                             obs_metadata.bounds.RAmax,
+                                                             obs_metadata.bounds.DECmin,
+                                                             obs_metadata.bounds.DECmax)
             else:
-                raise RuntimeError("SolarSystemObj does not know boundType %s" % obs_metadata.boundType)
-
-        if circ_bounds is not None:
-            regionStr = 'REGION CIRCLE J2000 %f %f %f'%(circ_bounds['ra'], circ_bounds['dec'],
-                                                        60.*circ_bounds['radius'])
-
-        elif box_bounds is not None:
-            regionStr = 'REGION RECT J2000 %f %f %f %f'%(box_bounds['ra_min'], box_bounds['dec_min'],
-                                                         box_bounds['ra_max'],box_bounds['dec_max'])
+                raise RuntimeError("GalaxyTileObj does not know about boundType %s "
+                                   % obs_metadata.bounds.boundType)
         else:
             regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'
             warnings.warn("Searching over entire sky "
-                          "since no circ_bounds specified. "
+                          "since no bounds specified. "
                           "This could be a very bad idea "
                           "if the database is large")
 

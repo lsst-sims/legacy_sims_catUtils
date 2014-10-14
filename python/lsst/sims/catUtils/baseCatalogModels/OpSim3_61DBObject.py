@@ -1,5 +1,5 @@
 from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
-from lsst.sims.catalogs.generation.db.fieldOfView import FieldOfView
+from lsst.sims.catalogs.generation.db.spatialBounds import SpatialBounds
 from collections import OrderedDict
 import numpy
 import math
@@ -131,7 +131,7 @@ class OpSim3_61DBObject(CatalogDBObject):
         if boundType is not None:
             if unrefractedRA is None or unrefractedDec is None or boundLength is None:
                 raise RuntimeError("in Opsim3_61DBObject query_columns, bound improperly specified")
-            bounds = FieldOfView.getFieldOfView(boundType,unrefractedRA,unrefractedDec,boundLength)
+            bounds = SpatialBounds.getSpatialBounds(boundType,unrefractedRA,unrefractedDec,boundLength)
 
         query = self.filter(query, bounds)
         if mjd_bounds is not None:
