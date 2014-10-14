@@ -83,7 +83,7 @@ class sdssStars(InstanceCatalog,PhotometryStars):
 
 
 obs_metadata_pointed = ObservationMetaData(mjd=2013.23, boundType='circle',
-                          unrefractedRA=200.0, unrefractedDec=-30.0, boundLength=1.0)
+                                           unrefractedRA=200.0, unrefractedDec=-30.0, boundLength=1.0)
 
 obs_metadata_pointed.metadata = {}
 obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
