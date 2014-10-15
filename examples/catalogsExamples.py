@@ -19,7 +19,7 @@ def exampleReferenceCatalog():
 
     obs_metadata = ObservationMetaData(boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                        boundLength=0.01)
-    dbobj = DBObject.from_objid('galaxyBase')
+    dbobj = CatalogDBObject.from_objid('galaxyBase')
 
     t = dbobj.getCatalog('ref_catalog_galaxy', obs_metadata=obs_metadata)
     filename = 'test_reference.dat'
