@@ -1,5 +1,6 @@
 import os
 import unittest
+import lsst.utils.tests as utilsTests
 import sqlite3
 import numpy
 import json
@@ -260,18 +261,54 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     conn.close()
     return obs_metadata
 
+class PhoSimCatalogTest(unittest.TestCase):
 
-obs_metadata = makePhoSimTestDB(size=10)
-bulgeDB = testGalaxyBulge(address='sqlite:///PhoSimTestDatabase.db')
-testBulge = PhoSimCatalogSersic2D(bulgeDB, obs_metadata = obs_metadata)
-diskDB = testGalaxyDisk(address='sqlite:///PhoSimTestDatabase.db')
-testDisk = PhoSimCatalogSersic2D(diskDB, obs_metadata = obs_metadata)
-agnDB = testGalaxyAgn(address='sqlite:///PhoSimTestDatabase.db')
-testAgn = PhoSimCatalogZPoint(agnDB, obs_metadata = obs_metadata)
-starDB = testStars(address='sqlite:///PhoSimTestDatabase.db')
-testStar = PhoSimCatalogPoint(starDB, obs_metadata = obs_metadata)
+    def setUp(self):
+        self.obs_metadata = makePhoSimTestDB(size=10)
+        self.bulgeDB = testGalaxyBulge(address='sqlite:///PhoSimTestDatabase.db')
+        self.diskDB = testGalaxyDisk(address='sqlite:///PhoSimTestDatabase.db')
+        self.agnDB = testGalaxyAgn(address='sqlite:///PhoSimTestDatabase.db')
+        self.starDB = testStars(address='sqlite:///PhoSimTestDatabase.db')
+        baseLineFileName = os.getenv('SIMS_CATUTILS_DIR')+'/tests/testData/phoSimControlCatalog.txt'
+        self.baseLineFile = open(baseLineFileName,'r')
 
-testBulge.write_catalog('phoSim_unittest_example.txt')
-testDisk.write_catalog('phoSim_unittest_example.txt', write_header=False, write_mode='a')
-testAgn.write_catalog('phoSim_unittest_example.txt', write_header=False, write_mode='a')
-testStar.write_catalog('phoSim_unittest_example.txt', write_header=False, write_mode='a')
+    def tearDown(self):
+
+        self.baseLineFile.close()
+
+        if os.path.exists('PhoSimTestDatabase.db'):
+            os.unlink('PhoSimTestDatabase.db')
+
+    def testCatalog(self):
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
+        testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
+        testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
+        testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
+
+        catName = 'phoSimTestCatalog.txt'
+        testBulge.write_catalog(catName)
+        testDisk.write_catalog(catName, write_header=False, write_mode='a')
+        testAgn.write_catalog(catName, write_header=False, write_mode='a')
+        testStar.write_catalog(catName, write_header=False, write_mode='a')
+
+        testFile = open(catName,'r')
+        testLines = testFile.readlines()
+        controlLines = self.baseLineFile.readlines()
+        for line in testLines:
+            self.assertTrue(line in controlLines)
+        testFile.close()
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+def suite():
+    utilsTests.init()
+    suites = []
+    suites += unittest.makeSuite(PhoSimCatalogTest)
+
+    return unittest.TestSuite(suites)
+
+def run(shouldExit = False):
+    utilsTests.run(suite(), shouldExit)
+if __name__ == "__main__":
+    run(True)
