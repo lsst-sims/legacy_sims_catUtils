@@ -216,7 +216,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     vrad = numpy.random.sample(size)*1.0
     parallax = 0.00045+numpy.random.sample(size)*0.00001
 
-    galtileid = 0
+    #write the data to the tables.
     for i in range(size):
 
         cmd = '''INSERT INTO galaxy_bulge VALUES (%i, %i, %f, %f, %f, %f, %f,
