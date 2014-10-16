@@ -34,16 +34,16 @@ for starName in starObjNames:
 gals = CatalogDBObject.from_objid('galaxyBulge')
 
 #now append a bunch of objects with 2D sersic profiles to our output file
-galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_bulge is not NULL")
+galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata)
 galaxy_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = CatalogDBObject.from_objid('galaxyDisk')
-galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata,constraint="sedname_disk is not NULL")
+galaxy_phoSim = PhoSimCatalogSersic2D(gals, obs_metadata=obs_metadata)
 galaxy_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
 
 gals = CatalogDBObject.from_objid('galaxyAgn')
 
 #PhoSimCatalogZPoint is the phoSim input class for extragalactic point sources (there will be no parallax
 #or proper motion)
-galaxy_phoSim = PhoSimCatalogZPoint(gals, obs_metadata=obs_metadata,constraint="sedname_agn is not NULL")
+galaxy_phoSim = PhoSimCatalogZPoint(gals, obs_metadata=obs_metadata)
 galaxy_phoSim.write_catalog("phoSim_example.txt",write_mode='a',write_header=False,chunk_size=20000)
