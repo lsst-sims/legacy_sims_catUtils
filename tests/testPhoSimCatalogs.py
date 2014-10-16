@@ -22,7 +22,7 @@ class SearchReversion(CatalogDBObject):
 
     def query_columns(self, *args, **kwargs):
         return CatalogDBObject.query_columns(self, *args, **kwargs)
-                
+     
 class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
     objid = 'phoSimTestBulges'
     objectTypeId = 88
@@ -85,16 +85,16 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     @param size: Number of rows in the database
     @param seedVal: Random seed to use
     """
-    
+
     if os.path.exists(filename):
         os.unlink(filename)
-    
+
     #just an example of some valid SED file names
     galaxy_seds = ['Const.80E07.02z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
     agn_sed = 'agn.spec'
     star_seds = ['km20_5750.fits_g40_5790','m2.0Full.dat','bergeron_6500_85.dat_6700']
     numpy.random.seed(seedVal)
-    
+
     mjd = 52000.0
     alt = numpy.pi/2.0
     az = 0.0
@@ -105,7 +105,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
 
     obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band, 
                  testSite.longitude, testSite.latitude)
-    
+
     obsDict['Opsim_expmjd'] = mjd
     radius = 0.1
     phoSimMetadata = OrderedDict([
@@ -156,14 +156,14 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     theta = numpy.random.sample(size)*2.0*numpy.pi
     ra = numpy.degrees(centerRA + rr*numpy.cos(theta))
     dec = numpy.degrees(centerDec + rr*numpy.sin(theta))
-    
+
     bra = numpy.radians(ra+numpy.random.sample(size)*0.01*radius)
     bdec = numpy.radians(dec+numpy.random.sample(size)*0.01*radius)
     dra = numpy.radians(ra + numpy.random.sample(size)*0.01*radius)
     ddec = numpy.radians(dec + numpy.random.sample(size)*0.01*radius)
     agnra = numpy.radians(ra + numpy.random.sample(size)*0.01*radius)
     agndec = numpy.radians(dec + numpy.random.sample(size)*0.01*radius)
-    
+
     magnorm_bulge = numpy.random.sample(size)*4.0 + 17.0
     magnorm_disk = numpy.random.sample(size)*5.0 + 17.0
     magnorm_agn = numpy.random.sample(size)*5.0 + 17.0
@@ -187,7 +187,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     z_ab = numpy.random.sample(size)*4.0 + 17.0
     y_ab = numpy.random.sample(size)*4.0 +17.0
     redshift = numpy.random.sample(size)*2.0
-    
+
     t0_mjd = numpy.random.sample(size)*10.0+mjd
     agn_tau = numpy.random.sample(size)*1000.0 + 1000.0
     agnSeed = numpy.random.random_integers(low=2, high=4000, size=size)
@@ -197,18 +197,18 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     agn_sfi = numpy.random.sample(size)
     agn_sfz = numpy.random.sample(size)
     agn_sfy = numpy.random.sample(size)
-    
+
     rrStar = numpy.random.sample(size)*numpy.radians(radius)
     thetaStar = numpy.random.sample(size)*2.0*numpy.pi
     raStar = centerRA + rrStar*numpy.cos(thetaStar)
     decStar = centerDec + rrStar*numpy.sin(thetaStar)
     gal_l, gal_b = AstrometryBase.equatorialToGalactic(raStar, decStar)
-    
+
     raStar = numpy.degrees(raStar)
     decStar = numpy.degrees(decStar)
     gal_l = numpy.degrees(gal_l)
     gal_b = numpy.degrees(gal_b)
-    
+
     magnormStar = numpy.random.sample(size)*4.0 + 17.0
     mudecl = numpy.random.sample(size)*0.0001
     mura = numpy.random.sample(size)*0.0001
@@ -249,7 +249,6 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
                                                u_ab[i], g_ab[i], r_ab[i], i_ab[i],
                                                z_ab[i], y_ab[i], redshift[i])
         c.execute(cmd)
-
 
         cmd = '''INSERT INTO starsALL_forceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
                   (i, raStar[i], decStar[i], gal_l[i], gal_b[i], magnormStar[i], mudecl[i], mura[i],
