@@ -13,6 +13,16 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, 
 from lsst.sims.coordUtils import AstrometryBase
 
 class SearchReversion(CatalogDBObject):
+    """
+    This is a mixin which is used below to force the galaxy CatalogDBObjects created for
+    this unittest to use the methods defined in the CatalogDBObject class.  This is because
+    we are using classes which inherit from GalaxyTileObj but do not actually want to use
+    the tiled query routines.
+
+    We also use this mixin for our stellar database object.  This is because StarObj
+    implements a query search based on htmid, which the test database for this unit
+    test will not have.
+    """
 
     def _get_column_query(self, *args, **kwargs):
         return CatalogDBObject._get_column_query(self,*args, **kwargs)
@@ -24,8 +34,19 @@ class SearchReversion(CatalogDBObject):
         return CatalogDBObject.query_columns(self, *args, **kwargs)
      
 class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
+    """
+    A class for storing galaxy bulges
+    """
     objid = 'phoSimTestBulges'
     objectTypeId = 88
+
+    #The code below makes sure that we can store RA, Dec in degrees
+    #in the database but use radians in our calculations.
+    #We had to overwrite the original columns list because
+    #GalaxyTileObject daughter classes assume that RA and Dec are stored
+    #in radians in the database.  This is a side effect of the tiling
+    #scheme used to cover the whole sky.
+
     columns = GalaxyBulgeObj.columns
     _to_remove = []
     for entry in columns:
@@ -40,6 +61,14 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 class testGalaxyDisk(SearchReversion, GalaxyDiskObj):
     objid = 'phoSimTestDisks'
     objectTypeId = 89
+
+    #The code below makes sure that we can store RA, Dec in degrees
+    #in the database but use radians in our calculations.
+    #We had to overwrite the original columns list because
+    #GalaxyTileObject daughter classes assume that RA and Dec are stored
+    #in radians in the database.  This is a side effect of the tiling
+    #scheme used to cover the whole sky.
+
     columns = GalaxyDiskObj.columns
     _to_remove = []
     for entry in columns:
@@ -54,6 +83,14 @@ class testGalaxyDisk(SearchReversion, GalaxyDiskObj):
 class testGalaxyAgn(SearchReversion, GalaxyAgnObj):
     objid = 'phoSimTestAgn'
     objectTypeId = 90
+
+    #The code below makes sure that we can store RA, Dec in degrees
+    #in the database but use radians in our calculations.
+    #We had to overwrite the original columns list because
+    #GalaxyTileObject daughter classes assume that RA and Dec are stored
+    #in radians in the database.  This is a side effect of the tiling
+    #scheme used to cover the whole sky.
+
     columns = GalaxyAgnObj.columns
     _to_remove = []
     for entry in columns:
@@ -68,6 +105,12 @@ class testGalaxyAgn(SearchReversion, GalaxyAgnObj):
 class testStars(SearchReversion, StarObj):
     objid = 'phoSimTestStars'
     objectTypeId = 91
+
+    #The code below removes the definitions of galacticAv and magNorm
+    #from this database object.  The definitions of those columns which
+    #are implemented in StarObj rely on mathematical functions which
+    #are not defined in sqlite.
+
     columns = StarObj.columns
     _to_remove = []
     for entry in columns:
@@ -81,9 +124,11 @@ class testStars(SearchReversion, StarObj):
 
 def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **kwargs):
     """
-    Make a test database to serve information to the myTestGals object
-    @param size: Number of rows in the database
-    @param seedVal: Random seed to use
+    Make a test database to storing cartoon information for the test phoSim input
+    catalog to use.
+
+    The method will return an ObservationMetaData object guaranteed to encompass the
+    objects in this database.
     """
 
     if os.path.exists(filename):
@@ -93,8 +138,10 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     galaxy_seds = ['Const.80E07.02z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
     agn_sed = 'agn.spec'
     star_seds = ['km20_5750.fits_g40_5790','m2.0Full.dat','bergeron_6500_85.dat_6700']
+
     numpy.random.seed(seedVal)
 
+    #create the ObservationMetaData object
     mjd = 52000.0
     alt = numpy.pi/2.0
     az = 0.0
@@ -115,6 +162,8 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
                                        unrefractedDec = numpy.degrees(centerDec), boundLength = 2.0*radius,
                                        phoSimMetadata=phoSimMetadata)
 
+    #Now begin building the database.
+    #First create the tables.
     conn = sqlite3.connect(filename)
     c = conn.cursor()
     try:
@@ -152,6 +201,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     except:
         raise RuntimeError("Error creating starsALL_forceseek table.")
 
+    #Now generate the data to be stored in the tables.
     rr = numpy.random.sample(size)*numpy.radians(radius)
     theta = numpy.random.sample(size)*2.0*numpy.pi
     ra = numpy.degrees(centerRA + rr*numpy.cos(theta))
@@ -279,6 +329,10 @@ class PhoSimCatalogTest(unittest.TestCase):
             os.unlink('PhoSimTestDatabase.db')
 
     def testCatalog(self):
+        """
+        This test writes a PhoSim input catalog and compares it, one line at a time
+        to a previously written catalog that should be identical.
+        """
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
         testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
