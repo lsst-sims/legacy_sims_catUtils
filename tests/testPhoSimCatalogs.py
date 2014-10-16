@@ -214,21 +214,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
     galacticAv = numpy.random.sample(size)*0.05*3.1
     vrad = numpy.random.sample(size)*1.0
     parallax = 0.00045+numpy.random.sample(size)*0.00001
-    
-    print 'ra:',ra
-    print 'dec: ',dec
-    print 'raStar: ',raStar
-    print 'decStar: ',decStar
-    
-    #just keep filling in
 
-    #in order to really test the phoSim infrastructure, we should make the fake database such
-    #that it can be interfaced with the existing catalogmodels in GalaxyModels.py
-    
-    #okay: what we will do is sub-class GalaxyBulgeObj, GalaxyDiskObj, etc.
-    #but then re-direct the query methods to the original CatalogDBObject query
-    #methods, rather than the GalaxyTileObj query methods
-    
     galtileid = 0
     for i in range(size):
 
@@ -289,5 +275,3 @@ testBulge.write_catalog('phoSim_unittest_example.txt')
 testDisk.write_catalog('phoSim_unittest_example.txt', write_header=False, write_mode='a')
 testAgn.write_catalog('phoSim_unittest_example.txt', write_header=False, write_mode='a')
 testStar.write_catalog('phoSim_unittest_example.txt', write_header=False, write_mode='a')
-
-print agnDB.columns
