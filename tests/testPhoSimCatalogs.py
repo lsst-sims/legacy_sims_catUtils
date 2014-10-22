@@ -167,7 +167,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, **
 
     obs_metadata = ObservationMetaData(boundType = 'circle', unrefractedRA = numpy.degrees(centerRA),
                                        unrefractedDec = numpy.degrees(centerDec), boundLength = 2.0*radius,
-                                       phoSimMetadata=phoSimMetadata)
+                                       phoSimMetadata=phoSimMetadata, site=testSite)
 
     #Now begin building the database.
     #First create the tables.
