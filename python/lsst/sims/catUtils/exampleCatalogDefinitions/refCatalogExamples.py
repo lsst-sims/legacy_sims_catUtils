@@ -5,6 +5,8 @@ from lsst.sims.catUtils import ValidationUtils
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 
+__all__ = ["RefCatalogGalaxyBase", "GalaxyPhotometry", "RefCatalogStarBase"]
+
 class RefCatalogGalaxyBase(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies):
     comment_char = ''
     catalog_type = 'ref_catalog_galaxy'

@@ -5,6 +5,9 @@ from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin
 
+__all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint", 
+           "PhoSimCatalogSersic2D"]
+
 class PhosimInputBase(InstanceCatalog):
     filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
 

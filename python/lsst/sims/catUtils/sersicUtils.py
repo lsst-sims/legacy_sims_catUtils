@@ -2,6 +2,8 @@ from scipy.special import gammainc
 from scipy.interpolate import interp1d
 import numpy
 
+__all__ = ["SersicUtils"]
+
 class SersicUtils(object):
     
     def __init__(self, comp_n, min_log_s=-6, max_log_s=6, dlog_s=0.001):

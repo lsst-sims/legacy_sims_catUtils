@@ -4,6 +4,8 @@ from collections import OrderedDict
 import numpy
 import math
 
+__all__ = ["OpSim3_61DBObject"]
+
 class OpSim3_61DBObject(CatalogDBObject):
     """Meta Data Database Object base class
 
