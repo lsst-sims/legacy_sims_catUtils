@@ -111,10 +111,10 @@ def read_Durham_counts(filename):
 
 
 def get_Ebv(result):
-    ebvMapNorth = EBV.EbvMap()
+    ebvMapNorth = EBV.EBVmap()
     datadir = os.environ.get("SIMS_DUSTMAPS_DIR")
     ebvMapNorth.readMapFits(os.path.join(datadir, "DustMaps/SFD_dust_4096_ngp.fits"))
-    ebvMapSouth = EBV.EbvMap()
+    ebvMapSouth = EBV.EBVmap()
     ebvMapSouth.readMapFits(os.path.join(datadir, "DustMaps/SFD_dust_4096_sgp.fits"))
     # Calculate galactic coordinates:
     gLon = []
