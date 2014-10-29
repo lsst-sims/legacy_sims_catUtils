@@ -39,7 +39,7 @@ class SearchReversion(CatalogDBObject):
 
     def query_columns(self, *args, **kwargs):
         return CatalogDBObject.query_columns(self, *args, **kwargs)
-     
+
 class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
     """
     A class for storing galaxy bulges
