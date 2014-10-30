@@ -7,6 +7,8 @@ import numpy
 import copy
 import os
 
+__all__ = ["ValidationUtils"]
+
 class ValidationUtils(object):
     sedDict = {}
     imsimband = Bandpass()

@@ -6,6 +6,8 @@ from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.photUtils.Photometry import PhotometryStars
 from lsst.obs.lsstSim.utils import loadCamera
 
+__all__ = ["ObsStarCatalogBase"]
+
 class ObsStarCatalogBase(InstanceCatalog, AstrometryStars, PhotometryStars, CameraCoords):
     comment_char = ''
     camera = loadCamera(eups.productDir('obs_lsstSim'))

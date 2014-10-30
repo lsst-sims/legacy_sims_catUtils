@@ -3,6 +3,9 @@ import numpy
 import os
 from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 
+__all__ = ["ExampleGalaxyObj", "GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj", 
+           "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj"]
+
 class ExampleGalaxyObj(CatalogDBObject):
 
     objid = 'exampleGalaxyBase'

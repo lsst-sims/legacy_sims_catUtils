@@ -1,6 +1,8 @@
 import warnings
 from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 
+__all__ = ["SolarSystemObj"]
+
 class SolarSystemObj(CatalogDBObject):
     objid = 'ssm'
     # There is no materialized table since this is a table valued function
