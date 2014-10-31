@@ -15,19 +15,11 @@ class OpSim3_61DBObject(DBObject):
     dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
     tableid = 'output_opsim3_61'
-    objectTypeId = -1
-    generateDefaultColumnMap = False
-    #: Note that identical observations may have more than one unique
-    #: obshistid, so this is the id, but not for unique visits.
-    #: To do that, group by expdate.
-    idColKey = 'Opsim_obshistid'
-    bandColKey = 'Opsim_filter'
-    raColKey = 'Unrefracted_RA'
-    decColKey = 'Unrefracted_Dec'
+    
     #: These are interpreted as SQL strings.
     raColName = 'fieldra*180./PI()'
     decColName = 'fielddec*180./PI()'
-    mjdColName = 'expmjd'
+
     columnNames = [('Opsim_obshistid','obshistid'),
                ('SIM_SEED','expdate'),
                ('Unrefracted_RA','fieldra'),
@@ -84,8 +76,8 @@ class OpSim3_61DBObject(DBObject):
         
         result = self.execute_arbitrary(query, dtype=dtype)
         
-        ra = result[self.raColKey][0]
-        dec = result[self.decColKey][0]
+        ra = result['Unrefracted_RA'][0]
+        dec = result['Unrefracted_Dec'][0]
         
         #because makeCircBounds defaults to True, check whether the user is
         #requesting boxBounds before deciding to instantiate 
