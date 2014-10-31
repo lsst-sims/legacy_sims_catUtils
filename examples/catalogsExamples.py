@@ -136,6 +136,7 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
 
     #The code below will query the OpSim data base object created above.
     #The query will be based on a box in RA, Dec and a specific airmass value
+
     airmassConstraint = "airmass="+str(airmass) #an SQL constraint that the airmass must be equal to
                                                 #the passed value
 
