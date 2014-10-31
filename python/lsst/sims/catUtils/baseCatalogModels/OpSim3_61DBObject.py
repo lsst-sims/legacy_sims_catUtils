@@ -10,8 +10,6 @@ class OpSim3_61DBObject(DBObject):
     """Meta Data Database Object base class
 
     """
-    objid = 'opsim3_61'
-
     #: This is the default address.  Simply change this in the class definition for other
     #: endpoints.
     dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
