@@ -1,4 +1,4 @@
-from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, DBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.db.spatialBounds import SpatialBounds
 from collections import OrderedDict
 import numpy
@@ -6,7 +6,7 @@ import math
 
 __all__ = ["OpSim3_61DBObject"]
 
-class OpSim3_61DBObject(CatalogDBObject):
+class OpSim3_61DBObject(DBObject):
     """Meta Data Database Object base class
 
     """
@@ -30,28 +30,31 @@ class OpSim3_61DBObject(CatalogDBObject):
     raColName = 'fieldra*180./PI()'
     decColName = 'fielddec*180./PI()'
     mjdColName = 'expmjd'
-    columns = [('SIM_SEED', 'expdate', int),
-               ('Unrefracted_RA', 'fieldra'),
-               ('Unrefracted_Dec', 'fielddec'),
-               ('Opsim_moonra', 'moonra'),
-               ('Opsim_moondec', 'moondec'),
-               ('Opsim_rotskypos', 'rotskypos'),
-               ('Opsim_rottelpos', 'rottelpos'),
-               ('Opsim_filter', 'filter', str, 1),
-               ('Opsim_rawseeing', 'rawseeing'),
-               ('Opsim_sunalt', 'sunalt'),
-               ('Opsim_moonalt', 'moonalt'),
-               ('Opsim_dist2moon', 'dist2moon'),
-               ('Opsim_moonphase', 'moonphase'),
-               ('Opsim_obshistid', 'obshistid', numpy.int64),
-               ('Opsim_expmjd', 'expmjd'),
-               ('Opsim_altitude', 'altitude'),
-               ('Opsim_azimuth', 'azimuth'),
-               ('exptime', 'exptime'),
-               ('airmass', 'airmass')]
+    columnNames = [('SIM_SEED','expdate'),
+               ('Unrefracted_RA','fieldra'),
+               ('Unrefracted_Dec','fielddec'),
+               ('Opsim_moonra','moonra'),
+               ('Opsim_moondec','moondec'),
+               ('Opsim_rotskypos','rotskypos'),
+               ('Opsim_rottelpos','rottelpos'),
+               ('Opsim_filter','filter'),
+               ('Opsim_rawseeing','rawseeing'),
+               ('Opsim_sunalt','sunalt'),
+               ('Opsim_moonalt','moonalt'),
+               ('Opsim_dist2moon','dist2moon'),
+               ('Opsim_moonphase','moonphase'),
+               ('Opsim_obshistid','obshistid'),
+               ('Opsim_expmjd','expmjd'),
+               ('Opsim_altitude','altitude'),
+               ('Opsim_azimuth','azimuth'),
+               ('exptime','exptime'),
+               ('airmass','airmass')]
+    
+    columnTypes ={'SIM_SEED':int,
+                  'Opsim_filter':(str,1),
+                  'Opsim_obshistid':numpy.int64}
                
     def __init__(self, address=None):
-        self.defaultColumns = [col[0] for col in self.columns]
         super(OpSim3_61DBObject, self).__init__(address=address)
 
     def getObjectTypeId(self):
@@ -61,11 +64,19 @@ class OpSim3_61DBObject(CatalogDBObject):
         raise NotImplementedError("Metadata has no spatial model")
 
     def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False, colnames=None):
-        if colnames is None:
-            colnames = self.defaultColumns
-        chunks = self.query_columns(colnames=colnames, constraint="obshistid=%i"%obshistid)
-        #The query will only return one row (hopefully)
-        result = chunks.next()
+        
+        query = 'SELECT '
+        for name in self.columnNames:
+            if query != 'SELECT ':
+                query += ', '
+            query += name[1]
+        query += ' FROM ' + self.tableid
+        query += ' WHERE obshistid = %i' % obshistid
+        
+        dtype=numpy.dtype([(name[0], self.columnTypes[name[0]]) if name[0] in self.columnTypes else (name[0], float) for name in self.columnNames])
+
+        result = self.execute_arbitrary(query, dtype=dtype)
+        
         ra = result[self.raColKey][0]
         dec = result[self.decColKey][0]
         
