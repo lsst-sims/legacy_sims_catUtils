@@ -56,19 +56,34 @@ class OpSim3_61DBObject(DBObject):
                
     def __init__(self, address=None):
         super(OpSim3_61DBObject, self).__init__(address=address)
-
-    def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False, colnames=None):
-        
+    
+    def getBasicQuery(self):
         query = 'SELECT '
         for name in self.columnNames:
             if query != 'SELECT ':
                 query += ', '
             query += name[1]
         query += ' FROM ' + self.tableid
-        query += ' WHERE obshistid = %i' % obshistid
         
         dtype=numpy.dtype([(name[0], self.columnTypes[name[0]]) if name[0] in self.columnTypes else (name[0], float) for name in self.columnNames])
 
+        return query, dtype
+   
+    def executeConstrainedQuery(self, spatialBound, constraint=None):
+        query, dtype = self.getBasicQuery()
+        query += ' WHERE '+spatialBound.to_SQL(self.raColName, self.decColName)
+        if constraint is not None:
+            query += ' and %s' % constraint
+       
+        
+        results = self.execute_arbitrary(query, dtype=dtype)
+        return results
+        
+    def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False, colnames=None):
+        
+        query, dtype = self.getBasicQuery()
+        query += ' WHERE obshistid = %i' % obshistid
+        
         result = self.execute_arbitrary(query, dtype=dtype)
         
         ra = result[self.raColKey][0]
