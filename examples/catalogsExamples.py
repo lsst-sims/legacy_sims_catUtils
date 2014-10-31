@@ -138,6 +138,7 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     #The query will be based on a box in RA, Dec and a specific airmass value
     airmassConstraint = "airmass="+str(airmass) #an SQL constraint that the airmass must be equal to
                                                 #the passed value
+
     skyBounds = SpatialBounds.getSpatialBounds('box', ra, dec, tol)
 
     query = obsMD.executeConstrainedQuery(skyBounds, constraint=airmassConstraint)
