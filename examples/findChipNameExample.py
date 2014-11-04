@@ -14,33 +14,10 @@ from lsst.afw.cameraGeom.cameraConfig import CameraConfig
 from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
+from lsst.obs.lsstSim import LsstSimMapper
 
-def convertAmpNames(rawName):
-   #This method takes the names of detectors as stored in a CameraConfig object
-   #and converts them into the roots of the fits files storing amplifier information
-
-   name = rawName.replace(':','')
-   name = name.replace(',','')
-   name = name.replace(' ','')
-   name = name.replace('S','_S')
-   return name
-
-def makeLSSTcamera():
-    filedir = os.path.join(os.getenv('OBS_LSSTSIM_DIR'), 'description/camera/')
-    #this directory contains camera.py, which describes the lay out of
-    #detectors on the LSST camera, as well as fits files that describe
-    #the amplifiers on those detectors
-
-    filename = os.path.join(filedir, 'camera.py')
-    myCameraConfig = CameraConfig()
-    myCameraConfig.load(filename)
-    #converts the camera.py file into a CameraConfig object
-
-    camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
-    #reads in the CameraConfig file as well as the fits files describing the
-    #amplifiers and makes an afwCameraGeom.Camera object out of them
-
-    return camera
+mapper = LsstSimMapper()
+camera = mapper.camera
 
 epoch = 2000.0
 
@@ -51,8 +28,6 @@ OpSimDB = CatalogDBObject.from_objid('opsim3_61')
 obs_metadata = OpSimDB.getObservationMetaData(obshistid, radiusDegrees, makeCircBounds=True)
 
 myCamCoords = CameraCoords()
-
-camera = makeLSSTcamera()
 
 #generate some random RA and Dec to find chips for
 nsamples = 10
