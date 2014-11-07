@@ -33,7 +33,12 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     catalog_type = 'galsim_galaxy'
     column_outputs = GalSimBase.column_outputs
-    column_outputs += ['redshift','positionAngle','galacticAv','galacticRv',
+    column_outputs += ['raObserved','decObserved',
+                       'redshift','positionAngle','galacticAv','galacticRv',
                        'internalAv','internalRv','majorAxis','minorAxis',
-                       'sindex']
+                       'sindex','halfLightRadius']
+    transformations = {'halfLightRadius':radiansToArcsec,
+                       'raObserved':numpy.degrees,
+                       'decObserved':numpy.degrees}
+    transformations.update(GalSimBase.transformations)                 
     default_columns = [('galacticAv', 0.1, float)]
