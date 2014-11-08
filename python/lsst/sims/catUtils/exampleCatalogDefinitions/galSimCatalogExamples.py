@@ -37,8 +37,7 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
                        'redshift','positionAngle','galacticAv','galacticRv',
                        'internalAv','internalRv','majorAxis','minorAxis',
                        'sindex','halfLightRadius']
-    transformations = {'halfLightRadius':radiansToArcsec,
-                       'raObserved':numpy.degrees,
+    transformations = {'raObserved':numpy.degrees,
                        'decObserved':numpy.degrees}
     transformations.update(GalSimBase.transformations)                 
     default_columns = [('galacticAv', 0.1, float)]
