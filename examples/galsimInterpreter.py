@@ -3,103 +3,110 @@ import numpy
 import galsim
 from lsst.sims.photUtils import Sed, Bandpass
 
-imsimband = Bandpass()
-imsimband.imsimBandpass()
-scale = 0.2
-bigfft = galsim.GSParams(maximum_fft_size=10000)
-image = None
 
-bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
-bandPassFile = os.path.join(bandPassDir,'total_g.dat')
+class GalSimInterpreter(object):
 
-sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
-dataNeeded = ['x_pupil', 'y_pupil', 'magNorm', 'sedFilepath',
-              'redshift', 'positionAngle',
-              'galacticAv', 'galacticRv', 'internalAv', 'internalRv',
-              'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius']
-
-dataTypes={
-    'x_pupil':float, 'y_pupil':float, 'magNorm':float,
-    'sedFilepath':(str,126), 'redshift':float, 'positionAngle': float,
-    'galacticAv':float, 'galacticRv':float, 'internalAv':float,
-    'internalRv':float, 'majorAxis':float, 'minorAxis':float,
-    'sindex':float, 'halfLightRadius':float
-    }
-
-defaultType = (str,126)
-
-fileName = 'galSim_example.txt'
-
-data = open(fileName,'r')
-lines = data.readlines()
-data.close()
-firstline = lines[0].replace("#","").strip()
-ll = numpy.array(firstline.split(', '))
+    def __init__(self, scale=0.2):
+        self.imsimband = Bandpass()
+        self.imsimband.imsimBandpass()
+        self.scale = scale
+        self.bigfft = galsim.GSParams(maximum_fft_size=10000)
+        self.sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
+        self.data = None
+        self.image = None
 
 
-dtype = numpy.dtype(
-        [(ww, dataTypes[ww]) if ww in dataTypes else (ww, defaultType) for ww in ll]
-        )
+    def readCatalog(self,catalogFile):
+        dataNeeded = ['x_pupil', 'y_pupil', 'magNorm', 'sedFilepath',
+                      'redshift', 'positionAngle',
+                      'galacticAv', 'galacticRv', 'internalAv', 'internalRv',
+                      'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius']
 
-data = numpy.genfromtxt(fileName, dtype=dtype, delimiter=', ')
+        dataTypes={
+                   'x_pupil':float, 'y_pupil':float, 'magNorm':float,
+                   'sedFilepath':(str,126), 'redshift':float, 'positionAngle': float,
+                   'galacticAv':float, 'galacticRv':float, 'internalAv':float,
+                   'internalRv':float, 'majorAxis':float, 'minorAxis':float,
+                   'sindex':float, 'halfLightRadius':float, 'galSimType':(str,126)
+                   }
 
-bandPass = galsim.Bandpass(bandPassFile)
+        defaultType = (str,126)
 
-xCenter = data['x_pupil'].mean()
-yCenter = data['y_pupil'].mean()
+        cat = open(catalogFile,'r')
+        lines = cat.readlines()
+        cat.close()
+        firstline = lines[0].replace("#","").strip()
+        ll = numpy.array(firstline.split(', '))
 
-xMin = data['x_pupil'].min()-2.0*data['halfLightRadius'].max()
-xMax = data['x_pupil'].max()+2.0*data['halfLightRadius'].max()
-yMin = data['y_pupil'].min()-2.0*data['halfLightRadius'].max()
-yMax = data['y_pupil'].max()+2.0*data['halfLightRadius'].max()
+        dtype = numpy.dtype(
+                [(ww, dataTypes[ww]) if ww in dataTypes else (ww, defaultType) for ww in ll]
+                )
 
-nx = int((xMax-xMin)/scale)
-ny = int((yMax-yMin)/scale)
+        self.data = numpy.genfromtxt(catalogFile, dtype=dtype, delimiter=', ')
+   
+        if self.image is None:
+            self.xMin = self.data['x_pupil'].min()-2.0*self.data['halfLightRadius'].max()
+            self.xMax = self.data['x_pupil'].max()+2.0*self.data['halfLightRadius'].max()
+            self.yMin = self.data['y_pupil'].min()-2.0*self.data['halfLightRadius'].max()
+            self.yMax = self.data['y_pupil'].max()+2.0*self.data['halfLightRadius'].max()
 
-image = galsim.Image(nx,ny)
+            nx = int((self.xMax-self.xMin)/self.scale)
+            ny = int((self.yMax-self.yMin)/self.scale)
+            
+            self.xCenter = 0.5*(self.xMin + self.xMax)
+            self.yCenter = 0.5*(self.yMin + self.yMax)
 
-for (xPupil, yPupil, magNorm, redshift, sedpath, internalAv, internalRv,
-     galacticAv, galacticRv, majorAxis, minorAxis, halfLightRadius,
-     positionAngle, index) in \
-     zip(data['x_pupil'], data['y_pupil'], data['magNorm'], data['redshift'],
-         data['sedFilepath'], data['internalAv'], data['internalRv'],
-         data['galacticAv'], data['galacticRv'], data['majorAxis'],
-         data['minorAxis'], data['halfLightRadius'], data['positionAngle'],
-         data['sindex']):
+            self.image = galsim.Image(nx,ny)
 
+    def drawCatalog(self, bandPass):
+        self.bandPass = galsim.Bandpass(bandPass)
+        if self.data is not None:
+            for entry in self.data:
+                print entry
+                if entry['galSimType'] == 'galaxy':
+                    print 'drawing'
+                    self.drawGalaxy(entry)
+                else:
+                    print entry['galSimType']
 
-    sedFile = os.path.join(sedDir,sedpath)
+    def drawGalaxy(self,entry):
+
+        sedFile = os.path.join(self.sedDir,entry['sedFilepath'])
         
-    obj = galsim.Sersic(n=index, half_light_radius=halfLightRadius,
-                        gsparams=bigfft)
+        obj = galsim.Sersic(n=entry['sindex'], half_light_radius=entry['halfLightRadius'],
+                            gsparams=self.bigfft)
         
-    obj = obj.shear(q=minorAxis/majorAxis, beta=positionAngle*galsim.radians)
+        obj = obj.shear(q=entry['minorAxis']/entry['majorAxis'], beta=entry['positionAngle']*galsim.radians)
     
-    dx=xPupil-xCenter
-    dy=yPupil-yCenter
+        dx=entry['x_pupil']-self.xCenter
+        dy=entry['y_pupil']-self.yCenter
     
-    print xPupil-xMin,yPupil-yMin,halfLightRadius
-    
-    obj = obj.shift(dx, dy)
+        obj = obj.shift(dx, dy)
                          
-    sed = Sed()
-    sed.readSED_flambda(sedFile)
-    fNorm = sed.calcFluxNorm(magNorm, imsimband)
-    sed.multiplyFluxNorm(fNorm)
-    a_int, b_int = sed.setupCCMab()
-    sed.addCCMDust(a_int, b_int, A_v=internalAv, R_v=internalRv)
-    sed.redshiftSED(redshift, dimming=False)
-    sed.addCCMDust(a_int, b_int, A_v=galacticAv, R_v=galacticRv)
+        sed = Sed()
+        sed.readSED_flambda(sedFile)
+        fNorm = sed.calcFluxNorm(entry['magNorm'], self.imsimband)
+        sed.multiplyFluxNorm(fNorm)
+        a_int, b_int = sed.setupCCMab()
+        sed.addCCMDust(a_int, b_int, A_v=entry['internalAv'], R_v=entry['internalRv'])
+        sed.redshiftSED(entry['redshift'], dimming=False)
+        sed.addCCMDust(a_int, b_int, A_v=entry['galacticAv'], R_v=entry['galacticRv'])
         
-    spectrum = galsim.SED(spec = lambda ll:
+        spectrum = galsim.SED(spec = lambda ll:
                                  numpy.interp(ll, sed.wavelen, sed.flambda),
                                  flux_type='flambda')
         
-    obj = obj*spectrum
+        obj = obj*spectrum
         
-    if image is None:
-        image = obj.drawImage(bandpass=bandPass, scale=scale, method='real_space')
-    else:
-        image = obj.drawImage(bandpass=bandPass, scale=scale, image=image, add_to_image=True, method='real_space')
-        
-image.write('testImage.fits')
+        self.image = obj.drawImage(bandpass=self.bandPass, scale=self.scale, image=self.image,
+                                  add_to_image=True, method='real_space')
+ 
+
+
+bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
+
+gs = GalSimInterpreter()
+gs.readCatalog('galsim_example.txt')
+gs.drawCatalog(bandPass)
+   
+gs.image.write('testImage.fits')

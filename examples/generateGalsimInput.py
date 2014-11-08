@@ -19,7 +19,6 @@ import numpy
 obsMD = CatalogDBObject.from_objid('opsim3_61')
 obs_metadata = obsMD.getObservationMetaData(88625744, 0.01, makeCircBounds = True)
 
-print numpy.degrees(obs_metadata.unrefractedRA),numpy.degrees(obs_metadata.unrefractedDec)
 gals = CatalogDBObject.from_objid('galaxyBulge')
 
 #now append a bunch of objects with 2D sersic profiles to our output file

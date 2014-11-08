@@ -20,7 +20,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     cannot_be_null = ['sedFilepath']
 
-    column_outputs = ['x_pupil', 'y_pupil', 'sedFilepath','magNorm']
+    column_outputs = ['galSimType', 'x_pupil', 'y_pupil', 'sedFilepath', 'magNorm',
+                      'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius',
+                      'positionAngle', 'redshift',
+                      'internalAv', 'internalRv', 'galacticAv', 'galacticRv']
 
     transformations = {'x_pupil':radiansToArcsec,
                        'y_pupil':radiansToArcsec}
@@ -31,13 +34,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                          for k in self.column_by_name('sedFilename')])
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
-    catalog_type = 'galsim_galaxy'
-    column_outputs = GalSimBase.column_outputs
-    column_outputs += ['raObserved','decObserved',
-                       'redshift','positionAngle','galacticAv','galacticRv',
-                       'internalAv','internalRv','majorAxis','minorAxis',
-                       'sindex','halfLightRadius']
-    transformations = {'raObserved':numpy.degrees,
-                       'decObserved':numpy.degrees}
-    transformations.update(GalSimBase.transformations)                 
-    default_columns = [('galacticAv', 0.1, float)]
+    catalog_type = 'galsim_galaxy'               
+    default_columns = [('galacticAv', 0.1, float),
+                       ('galSimType', 'galaxy', (str,6))]
