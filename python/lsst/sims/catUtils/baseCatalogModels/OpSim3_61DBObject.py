@@ -144,3 +144,4 @@ class OpSim3_61DBObject(DBObject):
                            unrefractedRA=math.degrees(ra), unrefractedDec=math.degrees(dec),
                            boundLength=boundLength,
                            phoSimMetadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
+
