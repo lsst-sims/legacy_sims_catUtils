@@ -23,7 +23,7 @@ class GalSimInterpreter(object):
                       'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius']
 
         dataTypes={
-                   'x_pupil':float, 'y_pupil':float, 'magNorm':float,
+                   'x_pupil':float, 'y_pupil':float, 'magNorm':float, 'chipName':(str, 126),
                    'sedFilepath':(str,126), 'redshift':float, 'positionAngle': float,
                    'galacticAv':float, 'galacticRv':float, 'internalAv':float,
                    'internalRv':float, 'majorAxis':float, 'minorAxis':float,

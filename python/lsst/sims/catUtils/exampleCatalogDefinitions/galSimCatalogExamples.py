@@ -8,6 +8,8 @@ import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
 from lsst.sims.photUtils import EBVmixin
+import lsst.afw.cameraGeom.testUtils as camTestUtils
+from lsst.obs.lsstSim import LsstSimMapper
 
 __all__ = ["GalSimGalaxies"]
 
@@ -20,7 +22,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     cannot_be_null = ['sedFilepath']
 
-    column_outputs = ['galSimType', 'x_pupil', 'y_pupil', 'sedFilepath', 'magNorm',
+    column_outputs = ['galSimType', 'chipName', 'x_pupil', 'y_pupil', 'sedFilepath', 'magNorm',
                       'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius',
                       'positionAngle', 'redshift',
                       'internalAv', 'internalRv', 'galacticAv', 'galacticRv']
@@ -28,6 +30,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     transformations = {'x_pupil':radiansToArcsec,
                        'y_pupil':radiansToArcsec}
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+
+    #camera = camTestUtils.CameraWrapper().camera
+    camera = LsstSimMapper().camera
 
     def get_sedFilepath(self):
         return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None 
