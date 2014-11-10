@@ -18,8 +18,6 @@ def radiansToArcsec(value):
 
 class GalSimBase(InstanceCatalog, CameraCoords):
 
-    camera = None
-
     cannot_be_null = ['sedFilepath']
 
     column_outputs = ['galSimType', 'chipName', 'x_pupil', 'y_pupil', 'sedFilepath', 'magNorm',
@@ -30,10 +28,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     transformations = {'x_pupil':radiansToArcsec,
                        'y_pupil':radiansToArcsec}
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-
-    #camera = camTestUtils.CameraWrapper().camera
-    camera = LsstSimMapper().camera
-
+    
+    #camera = LsstSimMapper().camera
+    camera = camTestUtils.CameraWrapper().camera
+    
     def get_sedFilepath(self):
         return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None 
                          for k in self.column_by_name('sedFilename')])
