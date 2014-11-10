@@ -29,16 +29,16 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     transformations = {'x_pupil':radiansToArcsec,
                        'y_pupil':radiansToArcsec}
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    
+
     #camera = LsstSimMapper().camera
     camera = camTestUtils.CameraWrapper().camera
-    
+
     def get_sedFilepath(self):
-        return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None 
+        return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
                          for k in self.column_by_name('sedFilename')])
 
     def write_header(self, file_handle):
-        
+
         for dd in self.camera:
             cs = dd.makeCameraSys(PUPIL)
             center = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
@@ -57,20 +57,20 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                     ymax = pp.getY()
                 if ymin is None or pp.getY() < ymin:
                     ymin = pp.getY()
-            
+
             xcenter = 3600.0*numpy.degrees(center.getX())
             ycenter = 3600.0*numpy.degrees(center.getY())
             xmin = 3600.0*numpy.degrees(xmin)
             xmax = 3600.0*numpy.degrees(xmax)
             ymin = 3600.0*numpy.degrees(ymin)
             ymax = 3600.0*numpy.degrees(ymax)
-            
+
             file_handle.write('#detector %s %f %f %f %f %f %f\n' %
                              (dd.getName(), xcenter, ycenter, xmin, xmax, ymin, ymax))
-            
+
         InstanceCatalog.write_header(self, file_handle)
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
-    catalog_type = 'galsim_galaxy'               
+    catalog_type = 'galsim_galaxy'
     default_columns = [('galacticAv', 0.1, float),
                        ('galSimType', 'galaxy', (str,6))]
