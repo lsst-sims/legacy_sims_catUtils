@@ -92,9 +92,11 @@ class GalSimInterpreter(object):
         ny = int((detector.yMax - detector.yMin)/self.scale)
         image = galsim.Image(nx,ny)
         
+        drawn = 0
         if self.data is not None:
             for entry in self.data:
                 if entry['chipName'] == detector.name:
+                    drawn += 1
                     print entry
                     if entry['chipName'] != detector.name:
                         print 'WARNING wrong chip ',entry['chipName'],detectorName
@@ -106,7 +108,8 @@ class GalSimInterpreter(object):
                     else:
                         print entry['galSimType']
         
-        image.write(fileName)
+        if drawn>0:
+            image.write(fileName)
         
     def drawGalaxy(self, entry=None, image=None, detector=None):
 
