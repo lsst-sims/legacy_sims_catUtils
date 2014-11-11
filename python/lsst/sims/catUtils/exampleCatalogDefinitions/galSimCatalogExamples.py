@@ -30,6 +30,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                        'y_pupil':radiansToArcsec}
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
+    delimiter = ';'
+
     #camera = LsstSimMapper().camera
     camera = camTestUtils.CameraWrapper().camera
 
@@ -65,7 +67,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
             ymin = 3600.0*numpy.degrees(ymin)
             ymax = 3600.0*numpy.degrees(ymax)
 
-            file_handle.write('#detector %s %f %f %f %f %f %f\n' %
+            file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f\n' %
                              (dd.getName(), xcenter, ycenter, xmin, xmax, ymin, ymax))
 
         InstanceCatalog.write_header(self, file_handle)

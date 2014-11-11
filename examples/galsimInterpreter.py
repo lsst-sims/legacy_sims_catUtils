@@ -3,6 +3,17 @@ import numpy
 import galsim
 from lsst.sims.photUtils import Sed, Bandpass
 
+class GalSimDetector(object):
+    def __init__(self, name=None, xCenter=None, yCenter=None,
+                 xMin=None, xMax=None, yMin=None, yMax=None):
+    
+        self.name = name
+        self.xCenter = xCenter
+        self.yCenter = yCenter
+        self.xMin = xMin
+        self.xMax = xMax
+        self.yMin = yMin
+        self.yMax = yMax
 
 class GalSimInterpreter(object):
 
@@ -13,10 +24,9 @@ class GalSimInterpreter(object):
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
         self.sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
         self.data = None
-        self.image = None
-
-
-    def readCatalog(self,catalogFile):
+        self.detectors = []
+        
+    def readCatalog(self, catalogFile):
         dataNeeded = ['x_pupil', 'y_pupil', 'magNorm', 'sedFilepath',
                       'redshift', 'positionAngle',
                       'galacticAv', 'galacticRv', 'internalAv', 'internalRv',
@@ -35,41 +45,70 @@ class GalSimInterpreter(object):
         cat = open(catalogFile,'r')
         lines = cat.readlines()
         cat.close()
-        firstline = lines[0].replace("#","").strip()
-        ll = numpy.array(firstline.split(', '))
-
-        dtype = numpy.dtype(
-                [(ww, dataTypes[ww]) if ww in dataTypes else (ww, defaultType) for ww in ll]
-                )
-
-        self.data = numpy.genfromtxt(catalogFile, dtype=dtype, delimiter=', ')
-   
-        if self.image is None:
-            self.xMin = self.data['x_pupil'].min()-2.0*self.data['halfLightRadius'].max()
-            self.xMax = self.data['x_pupil'].max()+2.0*self.data['halfLightRadius'].max()
-            self.yMin = self.data['y_pupil'].min()-2.0*self.data['halfLightRadius'].max()
-            self.yMax = self.data['y_pupil'].max()+2.0*self.data['halfLightRadius'].max()
-
-            nx = int((self.xMax-self.xMin)/self.scale)
-            ny = int((self.yMax-self.yMin)/self.scale)
+        
+        for line in lines:
+            if line[0] != '#':
+                break
+       
+            line = line.replace("#","").strip()
+            line = numpy.array(line.split(';'))
             
-            self.xCenter = 0.5*(self.xMin + self.xMax)
-            self.yCenter = 0.5*(self.yMin + self.yMax)
-
-            self.image = galsim.Image(nx,ny)
-
-    def drawCatalog(self, bandPass):
+            if line[0] == 'galSimType':
+                dtype = numpy.dtype(
+                        [(ww, dataTypes[ww]) if ww in dataTypes else (ww, defaultType) for ww in line]
+                        )
+                        
+            if line[0] == 'detector':
+                name = line[1]
+                xCenter = float(line[2])
+                yCenter = float(line[3])
+                xMin = float(line[4])
+                xMax = float(line[5])
+                yMin = float(line[6])
+                yMax = float(line[7])
+                
+                detector = GalSimDetector(name=name, xCenter=xCenter, yCenter=yCenter,
+                                          xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+                self.detectors.append(detector)
+        
+        print 'n_detectors ',len(self.detectors)
+        self.data = numpy.genfromtxt(catalogFile, dtype=dtype, delimiter=';')
+    
+    def drawCatalog(self, fileNameRoot=None, bandPass=None):
+        for detector in self.detectors:
+            self.drawImage(fileNameRoot=fileNameRoot, bandPass=bandPass, detector=detector)
+    
+    def drawImage(self, fileNameRoot=None, bandPass=None, detector=None):
         self.bandPass = galsim.Bandpass(bandPass)
+        
+        detectorName = detector.name
+        detectorName = detectorName.replace(',','_')
+        detectorName = detectorName.replace(':','_')
+        detectorName = detectorName.replace(' ','_')
+        
+        fileName = fileNameRoot+detectorName+'.fits'
+        
+        nx = int((detector.xMax - detector.xMin)/self.scale)
+        ny = int((detector.yMax - detector.yMin)/self.scale)
+        image = galsim.Image(nx,ny)
+        
         if self.data is not None:
             for entry in self.data:
-                print entry
-                if entry['galSimType'] == 'galaxy':
-                    print 'drawing'
-                    self.drawGalaxy(entry)
-                else:
-                    print entry['galSimType']
+                if entry['chipName'] == detector.name:
+                    print entry
+                    if entry['chipName'] != detector.name:
+                        print 'WARNING wrong chip ',entry['chipName'],detectorName
+                        exit()
 
-    def drawGalaxy(self,entry):
+                    if entry['galSimType'] == 'galaxy':
+                        print 'drawing'
+                        self.drawGalaxy(entry=entry, image=image, detector=detector)
+                    else:
+                        print entry['galSimType']
+        
+        image.write(fileName)
+        
+    def drawGalaxy(self, entry=None, image=None, detector=None):
 
         sedFile = os.path.join(self.sedDir,entry['sedFilepath'])
         
@@ -78,8 +117,8 @@ class GalSimInterpreter(object):
         
         obj = obj.shear(q=entry['minorAxis']/entry['majorAxis'], beta=entry['positionAngle']*galsim.radians)
     
-        dx=entry['x_pupil']-self.xCenter
-        dy=entry['y_pupil']-self.yCenter
+        dx=entry['x_pupil']-detector.xCenter
+        dy=entry['y_pupil']-detector.yCenter
     
         obj = obj.shift(dx, dy)
                          
@@ -98,7 +137,7 @@ class GalSimInterpreter(object):
         
         obj = obj*spectrum
         
-        self.image = obj.drawImage(bandpass=self.bandPass, scale=self.scale, image=self.image,
+        image = obj.drawImage(bandpass=self.bandPass, scale=self.scale, image=image,
                                   add_to_image=True, method='real_space')
  
 
@@ -107,6 +146,7 @@ bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
 
 gs = GalSimInterpreter()
 gs.readCatalog('galsim_example.txt')
-gs.drawCatalog(bandPass)
-   
-gs.image.write('testImage.fits')
+
+name = 'galsimTest_'
+gs.drawCatalog(bandPass=bandPass, fileNameRoot=name)
+ 
