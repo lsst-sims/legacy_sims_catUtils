@@ -79,69 +79,69 @@ class GalSimInterpreter(object):
 
         print 'n_detectors ',len(self.detectors)
         self.data = numpy.genfromtxt(catalogFile, dtype=dtype, delimiter=';')
-        
+
         self.chipsImpinged = []
         for entry in self.data:
             chipList = []
             chipList.append(entry['chipName'])
             for detector in self.detectors:
                 if detector.name not in chipList and self._doesObjectImpingeOnChip(obj=entry, detector=detector):
-                    chipList.append(detector.name)            
+                    chipList.append(detector.name)
 
             self.chipsImpinged.append(chipList)
 
     def _doesObjectImpingeOnChip(self, obj=None, detector=None):
         if obj['x_pupil'] >= detector.xMin and \
            obj['x_pupil'] <= detector.xMax:
-        
+
             isBetweenX = True
         else:
             isBetweenX = False
-        
+
         if obj['y_pupil'] >= detector.yMin and \
            obj['y_pupil'] <= detector.yMax:
-        
+
             isBetweenY = True
         else:
             isBetweenY = False
-        
+
         if isBetweenX and isBetweenY:
             return True
-        
+
         radius = 3.0*obj['halfLightRadius']
         ratio = obj['minorAxis']/obj['majorAxis']
         majorAxis = radius/numpy.sqrt(ratio)
-        
+
         if isBetweenY:
             if obj['x_pupil'] <= detector.xMin and detector.xMin - obj['x_pupil'] < majorAxis:
                 return True
-        
+
             if obj['x_pupil'] >= detector.xMax and obj['x_pupil'] - detector.xMax < majorAxis:
-                return True    
-        
+                return True
+
         if isBetweenX:
             if obj['y_pupil'] <= detector.yMin and detector.yMin - obj['y_pupil'] < majorAxis:
                 return True
-        
+
             if obj['y_pupil'] >= detector.yMax and obj['y_pupil'] - detector.yMax <majorAxis:
                 return True
-        
+
         for xx in [detector.xMin, detector.xMax]:
             for yy in [detector.yMin, detector.yMax]:
                 distance = numpy.sqrt(numpy.power(xx - obj['x_pupil'],2) + \
                            numpy.power(yy - obj['y_pupil'],2))
-                
+
                 if distance < majorAxis:
                     return True
-        
-        return False        
-         
+
+        return False
+
     def drawCatalog(self, fileNameRoot=None, bandPass=None):
         for detector in self.detectors:
             self.drawImage(fileNameRoot=fileNameRoot, bandPass=bandPass, detector=detector)
 
     def drawImage(self, fileNameRoot=None, bandPass=None, detector=None):
-        
+
         self.bandPass = galsim.Bandpass(bandPass)
 
         detectorName = detector.name
