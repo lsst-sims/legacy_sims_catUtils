@@ -11,7 +11,9 @@ from lsst.sims.photUtils import EBVmixin
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
-from lsst.obs.lsstSim import LsstSimMapper
+
+#if you want to use the actual LSST camera:
+#from lsst.obs.lsstSim import LsstSimMapper
 
 __all__ = ["GalSimGalaxies"]
 
@@ -29,19 +31,26 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     transformations = {'x_pupil':radiansToArcsec,
                        'y_pupil':radiansToArcsec}
-                       
+
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
     delimiter = ';'
 
-    #camera = LsstSimMapper().camera
     camera = camTestUtils.CameraWrapper().camera
 
+    #if you want to use the actual LSST camera
+    #camera = LsstSimMapper().camera
+
     def get_sedFilepath(self):
+        #copied from the phoSim catalogs
         return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
                          for k in self.column_by_name('sedFilename')])
 
     def write_header(self, file_handle):
+        """
+        Overwrite the write_header method from InstanceCatalog because, in order to run GalSim,
+        we need to print information about the detectors into the header of the catalog file
+        """
 
         for dd in self.camera:
             cs = dd.makeCameraSys(PUPIL)
