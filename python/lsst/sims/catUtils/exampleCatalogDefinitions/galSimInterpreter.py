@@ -1,7 +1,7 @@
 import os
 import numpy
 import galsim
-from lsst.sims.photUtils import Sed, Bandpass
+from lsst.sims.photUtils import Sed, Bandpass, CosmologyWrapper
 
 __all__ = ["GalSimInterpreter"]
 
@@ -57,6 +57,9 @@ class GalSimInterpreter(object):
         #(in case an object is near the edge of a detector and some
         #of the light from the object falls on that detector)
         self.chipsImpinged = None
+
+        #code to calculate cosmological distance modulus for a galaxy
+        self.cosmology = CosmologyWrapper()
 
     def readCatalog(self, catalogFile):
         """
@@ -309,6 +312,12 @@ class GalSimInterpreter(object):
 
         #apply redshift; do not dim the SED; that should be left to the CosmologyWrapper
         sed.redshiftSED(entry['redshift'], dimming=False)
+
+        #apply cosmological distance modulus
+        luminosity = sed.calcFlux(self.imsimband)
+        distanceModulus = self.cosmology.distanceModulus(redshift=entry['redshift'])
+        flux = luminosity * numpy.power(10.0, -0.4*distanceModulus)
+        sed.multiplyFluxNorm(flux)
 
         #apply dust extinction (galactic)
         sed.addCCMDust(a_int, b_int, A_v=entry['galacticAv'], R_v=entry['galacticRv'])
