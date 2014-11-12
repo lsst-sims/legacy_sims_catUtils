@@ -75,6 +75,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
             xmax = 3600.0*numpy.degrees(xmax)
             ymin = 3600.0*numpy.degrees(ymin)
             ymax = 3600.0*numpy.degrees(ymax)
+            plateScale = 3600.0*numpy.degrees(plateScale)
 
             file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
                              (dd.getName(), xcenter, ycenter, xmin, xmax, ymin, ymax, plateScale))
