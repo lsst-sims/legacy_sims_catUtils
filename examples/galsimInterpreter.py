@@ -100,13 +100,11 @@ class GalSimInterpreter(object):
             for entry in self.data:
                 if entry['chipName'] == detector.name:
                     drawn += 1
-                    print entry
                     if entry['chipName'] != detector.name:
                         print 'WARNING wrong chip ',entry['chipName'],detectorName
                         exit()
 
                     if entry['galSimType'] == 'galaxy':
-                        print 'drawing'
                         self.drawGalaxy(entry=entry, image=image, detector=detector)
                     else:
                         print entry['galSimType']
