@@ -5,7 +5,8 @@ from lsst.sims.photUtils import Sed, Bandpass
 
 class GalSimDetector(object):
     def __init__(self, name=None, xCenter=None, yCenter=None,
-                 xMin=None, xMax=None, yMin=None, yMax=None):
+                 xMin=None, xMax=None, yMin=None, yMax=None,
+                 plateScale=None):
 
         self.name = name
         self.xCenter = xCenter
@@ -14,13 +15,13 @@ class GalSimDetector(object):
         self.xMax = xMax
         self.yMin = yMin
         self.yMax = yMax
+        self.plateScale = plateScale
 
 class GalSimInterpreter(object):
 
     def __init__(self, scale=0.2):
         self.imsimband = Bandpass()
         self.imsimband.imsimBandpass()
-        self.scale = scale
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
         self.sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
         self.data = None
@@ -66,9 +67,11 @@ class GalSimInterpreter(object):
                 xMax = float(line[5])
                 yMin = float(line[6])
                 yMax = float(line[7])
+                plateScale = float(line[8])
 
                 detector = GalSimDetector(name=name, xCenter=xCenter, yCenter=yCenter,
-                                          xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+                                          xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax,
+                                          plateScale=plateScale)
                 self.detectors.append(detector)
 
         print 'n_detectors ',len(self.detectors)
@@ -88,8 +91,8 @@ class GalSimInterpreter(object):
 
         fileName = fileNameRoot+detectorName+'.fits'
 
-        nx = int((detector.xMax - detector.xMin)/self.scale)
-        ny = int((detector.yMax - detector.yMin)/self.scale)
+        nx = int((detector.xMax - detector.xMin)/detector.plateScale)
+        ny = int((detector.yMax - detector.yMin)/detector.plateScale)
         image = galsim.Image(nx,ny)
 
         drawn = 0
@@ -140,7 +143,7 @@ class GalSimInterpreter(object):
 
         obj = obj*spectrum
 
-        image = obj.drawImage(bandpass=self.bandPass, scale=self.scale, image=image,
+        image = obj.drawImage(bandpass=self.bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
 
 
