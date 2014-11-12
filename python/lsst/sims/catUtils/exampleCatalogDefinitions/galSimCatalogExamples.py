@@ -86,3 +86,5 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     catalog_type = 'galsim_galaxy'
     default_columns = [('galacticAv', 0.1, float),
                        ('galSimType', 'galaxy', (str,6))]
+
+

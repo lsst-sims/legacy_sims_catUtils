@@ -3,6 +3,8 @@ import numpy
 import galsim
 from lsst.sims.photUtils import Sed, Bandpass
 
+__all__ = ["GalSimInterpreter"]
+
 class GalSimDetector(object):
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
@@ -19,7 +21,7 @@ class GalSimDetector(object):
 
 class GalSimInterpreter(object):
 
-    def __init__(self, scale=0.2):
+    def __init__(self):
         self.imsimband = Bandpass()
         self.imsimband.imsimBandpass()
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
@@ -143,14 +145,4 @@ class GalSimInterpreter(object):
 
         image = obj.drawImage(bandpass=self.bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
-
-
-
-bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
-
-gs = GalSimInterpreter()
-gs.readCatalog('galsim_example.txt')
-
-name = 'galsimTest_'
-gs.drawCatalog(bandPass=bandPass, fileNameRoot=name)
 
