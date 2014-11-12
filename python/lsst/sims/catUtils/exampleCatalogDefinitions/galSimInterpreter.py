@@ -268,7 +268,9 @@ class GalSimInterpreter(object):
                     if entry['galSimType'] == 'galaxy':
                         self.drawGalaxy(entry=entry, image=image, detector=detector)
                     else:
+                        print "Apologies: the GalSimInterpreter does not yet have a method to draw '
                         print entry['galSimType']
+                        print "objects\n"
 
         if drawn>0:
             image.write(fileName)
@@ -331,6 +333,11 @@ class GalSimInterpreter(object):
         obj = obj*spectrum
 
         #add this object to the image, integrating over the bandPass
+        #Note: by specifying method='real_space', we are asking GalSim
+        #to directly integrate over the pixels.  Other options are to use
+        #method='fft' and integrate using a Fourier transform (though this method can
+        #be finnicky for large images) or method='phot' in which case photons are drawn
+        #from the SED and shot at the chip (a la phoSim)
         image = obj.drawImage(bandpass=self.bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
 
