@@ -9,6 +9,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
 from lsst.sims.photUtils import EBVmixin
 import lsst.afw.cameraGeom.testUtils as camTestUtils
+import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.obs.lsstSim import LsstSimMapper
 
@@ -43,7 +44,15 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         for dd in self.camera:
             cs = dd.makeCameraSys(PUPIL)
-            center = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
+            centerPupil = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
+            centerPixel = dd.getCenter(PIXELS).getPoint()
+
+            translationPixel = afwGeom.Point2D(centerPixel.getX()+1, centerPixel.getY()+1)
+            translationPupil = self.camera.transform(
+                                    dd.makeCameraPoint(translationPixel, PIXELS), cs).getPoint()
+
+            plateScale = numpy.sqrt(numpy.power(translationPupil.getX()-centerPupil.getX(),2)+
+                                    numpy.power(translationPupil.getY()-centerPupil.getY(),2))/numpy.sqrt(2.0)
             xmax = None
             xmin = None
             ymax = None
@@ -60,15 +69,15 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                 if ymin is None or pp.getY() < ymin:
                     ymin = pp.getY()
 
-            xcenter = 3600.0*numpy.degrees(center.getX())
-            ycenter = 3600.0*numpy.degrees(center.getY())
+            xcenter = 3600.0*numpy.degrees(centerPupil.getX())
+            ycenter = 3600.0*numpy.degrees(centerPupil.getY())
             xmin = 3600.0*numpy.degrees(xmin)
             xmax = 3600.0*numpy.degrees(xmax)
             ymin = 3600.0*numpy.degrees(ymin)
             ymax = 3600.0*numpy.degrees(ymax)
 
-            file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f\n' %
-                             (dd.getName(), xcenter, ycenter, xmin, xmax, ymin, ymax))
+            file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
+                             (dd.getName(), xcenter, ycenter, xmin, xmax, ymin, ymax, plateScale))
 
         InstanceCatalog.write_header(self, file_handle)
 
