@@ -13,7 +13,7 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 
 #if you want to use the actual LSST camera:
-#from lsst.obs.lsstSim import LsstSimMapper
+from lsst.obs.lsstSim import LsstSimMapper
 
 __all__ = ["GalSimGalaxies"]
 
@@ -36,10 +36,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     delimiter = ';'
 
-    camera = camTestUtils.CameraWrapper().camera
+    #camera = camTestUtils.CameraWrapper().camera
 
     #if you want to use the actual LSST camera
-    #camera = LsstSimMapper().camera
+    camera = LsstSimMapper().camera
 
     def get_sedFilepath(self):
         #copied from the phoSim catalogs

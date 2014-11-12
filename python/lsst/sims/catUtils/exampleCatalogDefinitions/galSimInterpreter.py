@@ -268,7 +268,7 @@ class GalSimInterpreter(object):
                     if entry['galSimType'] == 'galaxy':
                         self.drawGalaxy(entry=entry, image=image, detector=detector)
                     else:
-                        print "Apologies: the GalSimInterpreter does not yet have a method to draw '
+                        print "Apologies: the GalSimInterpreter does not yet have a method to draw "
                         print entry['galSimType']
                         print "objects\n"
 
