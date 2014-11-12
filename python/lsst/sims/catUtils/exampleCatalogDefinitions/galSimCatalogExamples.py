@@ -28,7 +28,16 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                       'internalAv', 'internalRv', 'galacticAv', 'galacticRv']
 
     transformations = {'x_pupil':radiansToArcsec,
-                       'y_pupil':radiansToArcsec}
+                       'y_pupil':radiansToArcsec
+                       'majorAxis':numpy.degrees,
+                       'minorAxis':numpy.degrees}
+                       #Note: the conversion of majorAxis and minorAxis to
+                       #degrees is incorrect; however, it is necessary to
+                       #reflect the (also incorrect) conversion of majorAxis
+                       #and minorAxis into radians in GalaxyModels.py
+                       #These variables are stored in the database as
+                       #arcseconds, not degrees, as GalaxyModels.py assumes
+                       
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
     delimiter = ';'
