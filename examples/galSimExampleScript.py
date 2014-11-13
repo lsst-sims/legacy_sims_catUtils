@@ -37,6 +37,14 @@ gals = CatalogDBObject.from_objid('galaxyBulge')
 galaxy_galSim = GalSimGalaxies(gals, obs_metadata=obs_metadata)
 galaxy_galSim.write_catalog('galSim_example.txt')
 
+#If you do not have GalSim installed for the version of python you use to 
+#run the stack, you need to stop here and copy the code below into 
+#a different script and run it using the version of python for which
+#you do have GalSim installed.  Be sure to do this inside a shell in which
+#the LSST environment variables have been set.  That will allow you to still
+#import the photUtils functionality needed to make the GalSimInterpreter work
+
+
 #specify a bandpass through which to observe the galaxies
 bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
 
