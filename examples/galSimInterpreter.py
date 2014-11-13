@@ -1,3 +1,12 @@
+"""
+This script contains all of the methods needed to turn a GalSimCatalog
+(see exampleCatalogExamples/galSimCatalogExamples.py) into FITS images
+
+There is the class GalSimInterpreter, which can be imported into other scripts
+(assuming you are running a stack-enabled Python) and a main function which uses
+it to create FITS images.
+"""
+
 import os
 import numpy
 import galsim
@@ -300,7 +309,7 @@ class GalSimInterpreter(object):
 
 def main():
     """
-    This script reads in the galSim_example.txt catalog created by
+    This method reads in the galSim_example.txt catalog created by
     galSimCatalogGenerator.py and uses it to draw FITS files for each
     of the detectors defined in that catalog.
 
@@ -313,9 +322,7 @@ def main():
     variables have been set, otherwise you will not have access to all of the
     photUtils functionality needed by the GalSimInterpreter.
     """
-    
-    print "running main"
-    
+
     #specify a bandpass through which to observe the galaxies
     bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
 

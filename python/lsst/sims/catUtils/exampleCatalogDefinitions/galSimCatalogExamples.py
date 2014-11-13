@@ -2,6 +2,18 @@
 The catalog examples in this file will write catalog files that can be read
 by galSimInterpreter.py (to be written), which will use galSim to turn them
 into an image.
+
+Because of the bug documented here
+
+stackoverflow.com/questions/23771608/trouble-installing-galsim-on-osx-with-anaconda
+
+this code must do all of the processing of the object SEDs.  We cannot assume
+that the python which will convert the SEDs into images will have access to the
+stack.  Therefore, the catalogs will write the processed (redshifted, dust extincted, etc.)
+SEDs to a scratch directory which the image-creating script will read from.
+
+See get_galSimSedName() in the class GalSimBase and calculateGalSimSed in its daughter
+classes to see how this is implemented.
 """
 
 import numpy
@@ -37,7 +49,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     delimiter = ';'
 
     objectCounter = 0
-    sedDirName = 'galSimSedDir'
+    sedDirName = 'galSimSedDir' #this is the name of the scratch directory which will contain SEDs
+                                #(it will be created in the current working directory)
 
     camera = camTestUtils.CameraWrapper().camera
 
@@ -50,13 +63,22 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                          for k in self.column_by_name('sedFilename')])
 
     def get_galSimSedName(self):
+        """
+        This returns the full (absolute path) name of the SED file as written in the scratch
+        directory.  It calls self.caclulateGalSimSed which actually processes the SED, writes
+        it to the scratch directory, and returns a numpy array of galSimSed names.
+
+        Any new GalSimCatalog classes must define their own calculateGalSimSed to appropriately
+        process the SEDs
+        """
+        
+        #create the scratch directory
         if os.path.exists(self.sedDirName):
             if not os.path.isdir(self.sedDirName):
                 os.unlink(self.sedDirName)
         if not os.path.exists(self.sedDirName):
             os.mkdir(self.sedDirName)
 
-        returnNames = []
         directory = os.path.join(os.getcwd(),self.sedDirName)
         return self.calculateGalSimSed(directory)
 
@@ -112,6 +134,15 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
                        ('galSimType', 'galaxy', (str,6))]
 
     def calculateGalSimSed(self, outputDirectory):
+        """
+        Apply any physical corrections to the objects' SEDS (redshift them, apply dust, etc.).
+        Write the SEDs to a scratch directory.
+        Return a numpy array of the names of the final SED files.
+        These filenames should contain the absolute path of the scratch directory.
+        
+        param [in] outputDirectory is a string indicating the scratch directory where the
+        SEDs are written.
+        """
         actualSEDnames = self.column_by_name('sedFilepath')
         redshift = self.column_by_name('redshift')
         internalAv = self.column_by_name('internalAv')
@@ -125,8 +156,6 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
         #for setting magNorm
         imsimband = Bandpass()
         imsimband.imsimBandpass()
-
-        cosmology = CosmologyWrapper()
 
         outputNames=[]
 

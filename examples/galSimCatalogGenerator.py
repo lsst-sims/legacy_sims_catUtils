@@ -1,7 +1,7 @@
 """
 This file shows how to generate a GalSim input catalog named galSim_example.txt.
-galSimDrawingScript.py will read that file in using the GalSimInterpreter class (defined in
-exampleCatalogDefinitions/galSimInterpeter.py) and turn them into FITS images.
+galSimInterpreter.py will read that file in using the GalSimInterpreter class (see
+galSimInterpeter.py) and turn them into FITS images.
 
 This somewhat convoluted API (writing the catalog to a file and then reading it
 in with a separate script that uses GalSim to produce an image) is made necessary
