@@ -8,7 +8,7 @@ import numpy
 import os
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
-from lsst.sims.photUtils import EBVmixin, Sed, CosmologyWrapper, Bandpass
+from lsst.sims.photUtils import EBVmixin, Sed, Bandpass
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
@@ -149,14 +149,10 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
                 a_int, b_int = sed.setupCCMab()
                 sed.addCCMDust(a_int, b_int, A_v=iAv, R_v=iRv)
 
-                #apply redshift; do not dim the SED; that should be left to the CosmologyWrapper
-                sed.redshiftSED(zz, dimming=False)
-
-                #apply cosmological distance modulus
-                luminosity = sed.calcFlux(imsimband)
-                distanceModulus = cosmology.distanceModulus(zz)
-                flux = luminosity * numpy.power(10.0, -0.4*distanceModulus)
-                sed.multiplyFluxNorm(flux)
+                #13 November 2014
+                #apply redshift; there is no need to apply the distance modulus from
+                #sims/photUtils/CosmologyWrapper; I believemagNorm takes that into account
+                sed.redshiftSED(zz, dimming=True)
 
                 #apply dust extinction (galactic)
                 a_int, b_int = sed.setupCCMab()
