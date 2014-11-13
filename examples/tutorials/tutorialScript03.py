@@ -55,12 +55,15 @@ class TutorialDB(CatalogDBObject):
 
 makeTestDB('tutorialDB.db', size=10)
 myDB = TutorialDB(address='sqlite:///tutorialDB.db')
+
 print 'First show all of the columns in the database'
 myDB.show_db_columns()
 print '\n'
+
 print 'Then show all of the columns in the CatalogDBObject'
 myDB.show_mapped_columns()
 print '\n'
+
 print 'now do a rough, by-hand query of the columns (this returns all of the columns)'
 colNames = ['rowNumber', '2xc1', 'col1']
 result = myDB.query_columns(colnames=colNames, chunk_size=5)
