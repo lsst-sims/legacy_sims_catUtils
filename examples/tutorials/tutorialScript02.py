@@ -5,7 +5,7 @@ This tutorial will show an example of incorporating actual mixins from the stack
 import numpy
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, haversine
 from lsst.sims.catUtils.baseCatalogModels import *
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, compound
+from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
 from lsst.sims.coordUtils import AstrometryStars
 from lsst.sims.photUtils import PhotometryStars
 
@@ -17,6 +17,7 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
                        'shift':numpy.degrees}
 
+    @cached
     def get_shift(self):
         r0 = self.column_by_name('raJ2000')
         d0 = self.column_by_name('decJ2000')
