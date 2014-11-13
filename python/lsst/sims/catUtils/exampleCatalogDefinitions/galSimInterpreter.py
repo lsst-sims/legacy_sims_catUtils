@@ -226,8 +226,11 @@ class GalSimInterpreter(object):
         """
         
         print "start drawing"
+        
+        #read in the bandpass
+        bp = galsim.Bandpass(bandPass)
         for detector in self.detectors:
-            self.drawImage(fileNameRoot=fileNameRoot, bandPass=bandPass, detector=detector)
+            self.drawImage(fileNameRoot=fileNameRoot, bandPass=bp, detector=detector)
 
     def drawImage(self, fileNameRoot=None, bandPass=None, detector=None):
         """
@@ -246,8 +249,6 @@ class GalSimInterpreter(object):
         """
         
         print "drawing ",detector.name
-        #read in the bandpass
-        self.bandPass = galsim.Bandpass(bandPass)
 
         #format the name of the detector to add to the name of the FITS file
         detectorName = detector.name
