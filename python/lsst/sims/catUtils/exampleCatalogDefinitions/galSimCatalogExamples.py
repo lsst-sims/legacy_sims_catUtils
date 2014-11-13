@@ -40,7 +40,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     sedDirName = 'galSimSedDir'
 
     camera = camTestUtils.CameraWrapper().camera
-    
+
     #if you want to use the actual LSST camera
     #camera = LsstSimMapper().camera
 
@@ -119,20 +119,20 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
         galacticAv = self.column_by_name('galacticAv')
         galacticRv = self.column_by_name('galacticRv')
         magNorm = self.column_by_name('magNorm')
-        
+
         sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
 
         #for setting magNorm
         imsimband = Bandpass()
         imsimband.imsimBandpass()
-        
+
         cosmology = CosmologyWrapper()
-        
+
         outputNames=[]
-        
+
         for (sedName, zz, iAv, iRv, gAv, gRv, norm) in \
             zip(actualSEDnames, redshift, internalAv, internalRv, galacticAv, galacticRv, magNorm):
-            
+
             if is_null(sedName):
                 outputNames.append('None')
             else:
@@ -161,12 +161,12 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
                 #apply dust extinction (galactic)
                 a_int, b_int = sed.setupCCMab()
                 sed.addCCMDust(a_int, b_int, A_v=gAv, R_v=gRv)
-            
+
                 individualName = ('galSimSed_galaxy_%d.dat' % self.objectCounter)
                 name = os.path.join(outputDirectory,individualName)
                 outputNames.append(name)
                 self.objectCounter += 1
-                
+
                 sed.writeSED(name)
 
         return numpy.array(outputNames)
