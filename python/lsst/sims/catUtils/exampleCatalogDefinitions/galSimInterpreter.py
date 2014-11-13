@@ -241,9 +241,7 @@ class GalSimInterpreter(object):
         fileNameRoot_R_0_0_S_1_2.fits, etc.
 
 
-        param [in] bandPass is a string containing the name of the file which contains the filter
-        bandpass over which you want to integrate the flux.  This file should be two columns: wavelength
-        in nanometers and throughput from 0.0 to 1.0
+        param [in] bandPass is galsim.bandpass object denoting the bandpass over which to integrate flux
 
         param [in] detector is a GalSimDetector object indicating the detector for which to draw the FITS file
         """
@@ -270,7 +268,7 @@ class GalSimInterpreter(object):
                 if detector.name in self.chipsImpinged[ii]:
                     drawn += 1
                     if entry['galSimType'] == 'galaxy':
-                        self.drawGalaxy(entry=entry, image=image, detector=detector)
+                        self.drawGalaxy(entry=entry, image=image, detector=detector, bandPass=bandPass)
                     else:
                         print "Apologies: the GalSimInterpreter does not yet have a method to draw "
                         print entry['galSimType']
@@ -279,7 +277,7 @@ class GalSimInterpreter(object):
         if drawn>0:
             image.write(fileName)
 
-    def drawGalaxy(self, entry=None, image=None, detector=None):
+    def drawGalaxy(self, entry=None, image=None, detector=None, bandPass=None):
         """
         Draw the image of a galaxy.
 
@@ -288,6 +286,8 @@ class GalSimInterpreter(object):
         param [in] image is a galsim Image object into which we will draw this object
 
         param [in] detector is a GalSimDetector object denoting the detectror with which the image is associated
+        
+        param [in] bandPass is a galsim.bandpass object denoting the bandpass over which to integrate flux
         """
 
         #create a Sersic profile
@@ -342,6 +342,6 @@ class GalSimInterpreter(object):
         #method='fft' and integrate using a Fourier transform (though this method can
         #be finnicky for large images) or method='phot' in which case photons are drawn
         #from the SED and shot at the chip (a la phoSim)
-        image = obj.drawImage(bandpass=self.bandPass, scale=detector.plateScale, image=image,
+        image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
 
