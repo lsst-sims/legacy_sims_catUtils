@@ -56,7 +56,7 @@ class TutorialDB(CatalogDBObject):
 makeTestDB('tutorialDB.db', size=10)
 myDB = TutorialDB(address='sqlite:///tutorialDB.db')
 
-print 'First show all of the columns in the database'
+print 'First show all of the columns in the raw database'
 myDB.show_db_columns()
 print '\n'
 
