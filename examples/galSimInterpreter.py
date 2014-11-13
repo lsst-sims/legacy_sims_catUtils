@@ -1,7 +1,6 @@
 import os
 import numpy
 import galsim
-from lsst.sims.photUtils import Sed, Bandpass, CosmologyWrapper
 
 __all__ = ["GalSimInterpreter"]
 
@@ -40,15 +39,8 @@ class GalSimInterpreter(object):
 
     def __init__(self):
 
-        #for setting magNorm
-        self.imsimband = Bandpass()
-        self.imsimband.imsimBandpass()
-
         #in case we want to draw images using the Fourier transform
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
-
-        #default location of SED library
-        self.sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
 
         self.data = None
         self.detectors = []
@@ -57,9 +49,6 @@ class GalSimInterpreter(object):
         #(in case an object is near the edge of a detector and some
         #of the light from the object falls on that detector)
         self.chipsImpinged = None
-
-        #code to calculate cosmological distance modulus for a galaxy
-        self.cosmology = CosmologyWrapper()
 
     def readCatalog(self, catalogFile):
         """
@@ -74,23 +63,16 @@ class GalSimInterpreter(object):
         exampleCatalogDefinitions/galSimCatalogExamples.py
         """
 
-        #These are the columns expected from the catalog
-        dataNeeded = ['x_pupil', 'y_pupil', 'magNorm', 'sedFilepath',
-                      'redshift', 'positionAngle',
-                      'galacticAv', 'galacticRv', 'internalAv', 'internalRv',
-                      'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius']
-
         #these are the datatypes associated with each of the columns
         dataTypes={
-                   'x_pupil':float, 'y_pupil':float, 'magNorm':float, 'chipName':(str, 126),
-                   'sedFilepath':(str,126), 'redshift':float, 'positionAngle': float,
-                   'galacticAv':float, 'galacticRv':float, 'internalAv':float,
-                   'internalRv':float, 'majorAxis':float, 'minorAxis':float,
+                   'x_pupil':float, 'y_pupil':float, 'chipName':(str, 126),
+                   'galSimSedName':(str,200), 'positionAngle': float,
+                   'majorAxis':float, 'minorAxis':float,
                    'sindex':float, 'halfLightRadius':float, 'galSimType':(str,126)
                    }
 
         #this is the datatype used for any extraneous columns that make it into the catalog
-        defaultType = (str,126)
+        defaultType = (str,200)
 
         cat = open(catalogFile,'r')
         lines = cat.readlines()
@@ -299,34 +281,8 @@ class GalSimInterpreter(object):
         dy=entry['y_pupil']-detector.yCenter
         obj = obj.shift(dx, dy)
 
-        #load the SED of the object
-        sedFile = os.path.join(self.sedDir, entry['sedFilepath'])
-        sed = Sed()
-        sed.readSED_flambda(sedFile)
-
-        #normalize the SED
-        fNorm = sed.calcFluxNorm(entry['magNorm'], self.imsimband)
-        sed.multiplyFluxNorm(fNorm)
-
-        #apply dust extinction (internal)
-        a_int, b_int = sed.setupCCMab()
-        sed.addCCMDust(a_int, b_int, A_v=entry['internalAv'], R_v=entry['internalRv'])
-
-        #apply redshift; do not dim the SED; that should be left to the CosmologyWrapper
-        sed.redshiftSED(entry['redshift'], dimming=False)
-
-        #apply cosmological distance modulus
-        luminosity = sed.calcFlux(self.imsimband)
-        distanceModulus = self.cosmology.distanceModulus(redshift=entry['redshift'])
-        flux = luminosity * numpy.power(10.0, -0.4*distanceModulus)
-        sed.multiplyFluxNorm(flux)
-
-        #apply dust extinction (galactic)
-        sed.addCCMDust(a_int, b_int, A_v=entry['galacticAv'], R_v=entry['galacticRv'])
-
         #declare a spectrum() function for galSim to use
-        spectrum = galsim.SED(spec = lambda ll:
-                                 numpy.interp(ll, sed.wavelen, sed.flambda),
+        spectrum = galsim.SED(entry['galSimSedName'],
                                  flux_type='flambda')
 
         #convolve the Sersic profile with the spectrum
@@ -341,3 +297,36 @@ class GalSimInterpreter(object):
         image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
 
+
+def main():
+    """
+    This script reads in the galSim_example.txt catalog created by
+    galSimCatalogGenerator.py and uses it to draw FITS files for each
+    of the detectors defined in that catalog.
+
+    See the documentation at the top of galSimCatalogGenerator.py for an
+    explanation of why the two scripts must be separate.
+
+    Run this script using the python for which you have GalSim installed.
+
+    Be sure to run it in a shell in which all of the LSST stack environment
+    variables have been set, otherwise you will not have access to all of the
+    photUtils functionality needed by the GalSimInterpreter.
+    """
+    
+    print "running main"
+    
+    #specify a bandpass through which to observe the galaxies
+    bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
+
+    gs = GalSimInterpreter()
+
+    #read in our catalog of galaxy bulges
+    gs.readCatalog('galSim_example.txt')
+
+    #write the images to files of the name galsimTest_detectorName.fits
+    name = 'galsimTest_'
+    gs.drawCatalog(bandPass=bandPass, fileNameRoot=name)
+
+if __name__ == "__main__":
+    main()
