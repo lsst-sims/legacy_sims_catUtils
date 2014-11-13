@@ -1,18 +1,28 @@
-#If you do not have GalSim installed for the version of python you use to 
-#run the stack, you need to stop here and copy the code below into 
-#a different script and run it using the version of python for which
-#you do have GalSim installed.  Be sure to do this inside a shell in which
-#the LSST environment variables have been set.  That will allow you to still
-#import the photUtils functionality needed to make the GalSimInterpreter work
+"""
+This script reads in the galSim_example.txt catalog created by
+galSimCatalogGenerator.py and uses it to draw FITS files for each
+of the detectors defined in that catalog.
 
-exit()
+See the documentation at the top of galSimCatalogGenerator.py for an
+explanation of why the two scripts must be separate.
+
+Run this script using the python for which you have GalSim installed.
+
+Be sure to run it in a shell in which all of the LSST stack environment
+variables have been set, otherwise you will not have access to all of the
+photUtils functionality needed by the GalSimInterpreter.
+"""
+
+import os
+from lsst.sims.catUtils.exampleCatalogDefinitions import GalSimInterpreter
+
 #specify a bandpass through which to observe the galaxies
 bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
 
 gs = GalSimInterpreter()
 
 #read in our catalog of galaxy bulges
-gs.readCatalog('galsim_example.txt')
+gs.readCatalog('galSim_example.txt')
 
 #write the images to files of the name galsimTest_detectorName.fits
 name = 'galsimTest_'
