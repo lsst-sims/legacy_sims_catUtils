@@ -71,7 +71,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         Any new GalSimCatalog classes must define their own calculateGalSimSed to appropriately
         process the SEDs
         """
-        
+
         #create the scratch directory
         if os.path.exists(self.sedDirName):
             if not os.path.isdir(self.sedDirName):
@@ -139,7 +139,7 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
         Write the SEDs to a scratch directory.
         Return a numpy array of the names of the final SED files.
         These filenames should contain the absolute path of the scratch directory.
-        
+
         param [in] outputDirectory is a string indicating the scratch directory where the
         SEDs are written.
         """
