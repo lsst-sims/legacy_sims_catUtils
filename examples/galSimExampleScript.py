@@ -44,7 +44,7 @@ galaxy_galSim.write_catalog('galSim_example.txt')
 #the LSST environment variables have been set.  That will allow you to still
 #import the photUtils functionality needed to make the GalSimInterpreter work
 
-
+exit()
 #specify a bandpass through which to observe the galaxies
 bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
 

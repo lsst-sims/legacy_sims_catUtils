@@ -224,6 +224,8 @@ class GalSimInterpreter(object):
         bandpass over which you want to integrate the flux.  This file should be two columns: wavelength
         in nanometers and throughput from 0.0 to 1.0
         """
+        
+        print "start drawing"
         for detector in self.detectors:
             self.drawImage(fileNameRoot=fileNameRoot, bandPass=bandPass, detector=detector)
 
@@ -242,7 +244,8 @@ class GalSimInterpreter(object):
 
         param [in] detector is a GalSimDetector object indicating the detector for which to draw the FITS file
         """
-
+        
+        print "drawing ",detector.name
         #read in the bandpass
         self.bandPass = galsim.Bandpass(bandPass)
 
