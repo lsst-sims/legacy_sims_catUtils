@@ -71,3 +71,11 @@ result = myDB.query_columns(colnames=colNames, chunk_size=5)
 for chunk in result:
     for row in chunk:
         print row
+print '\n'
+
+print 'now apply a constraint to the query'
+result = myDB.query_columns(colnames=colNames, constraint='id<6', chunk_size=5)
+for chunk in result:
+    for row in chunk:
+        print row
+print '\n'
