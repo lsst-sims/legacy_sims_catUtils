@@ -9,8 +9,11 @@ from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, compound
 
 class TutorialCatalog(InstanceCatalog):
-    column_outputs = ['raJ2000', 'decJ2000', 'sum', 'difference', 'quotient']
-    
+    column_outputs = ['raJ2000', 'decJ2000', 'sum', 'difference', 'quotient',
+                      'df1', 'df2']
+
+    default_columns = [('df1', 3.5, float), ('df2', 'default', (str,7))]
+
     @cached
     def get_quotient(self):
         ra = self.column_by_name('raJ2000')
