@@ -1,3 +1,8 @@
+"""
+This script shows how all the pieces of CatSim fit together without much
+attempt at explanation
+"""
+
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import *
 
