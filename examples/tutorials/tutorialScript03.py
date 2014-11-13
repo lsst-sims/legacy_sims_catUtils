@@ -65,7 +65,7 @@ myDB.show_mapped_columns()
 print '\n'
 
 print 'now do a rough, by-hand query of the columns (this returns all of the columns)'
-colNames = ['rowNumber', '2xc1', 'col1']
+colNames = ['rowNumber', '2xc1', 'col1', '3xc2', 'col2']
 result = myDB.query_columns(colnames=colNames, chunk_size=5)
 
 for chunk in result:
