@@ -17,6 +17,8 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
                        'shift':numpy.degrees}
 
+    catalog_type = 'tutorial_catalog'
+
     @cached
     def get_shift(self):
         r0 = self.column_by_name('raJ2000')
@@ -33,3 +35,10 @@ obs_metadata = ObservationMetaData(unrefractedRA=220.0, unrefractedDec=19.0,
 
 cat = TutorialCatalog(myDB, obs_metadata=obs_metadata)
 cat.write_catalog('tutorial_on_actual_getters.txt')
+
+obs_metadata = ObservationMetaData(unrefractedRA=120.0, unrefractedDec=-5.0,
+                                   boundType='circle', boundLength=0.1, 
+                                   mjd=52000.0)
+
+cat = myDB.getCatalog('tutorial_catalog', obs_metadata=obs_metadata)
+cat.write_catalog('tutorial_on_get_catalog.txt')
