@@ -323,8 +323,14 @@ def main():
     photUtils functionality needed by the GalSimInterpreter.
     """
 
-    #specify a bandpass through which to observe the galaxies
-    bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
+    try:
+        #specify a bandpass through which to observe the galaxies
+        bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
+    except AttributeError:
+        print "You must set the environment variable THROUGPUTS_DIR to point"
+        print "to wherever the LSST throughputs are stored on your machine\n"
+        print "probably something like $LSST_HOME/yourOS/throughputs/version/"
+        exit()
 
     gs = GalSimInterpreter()
 
