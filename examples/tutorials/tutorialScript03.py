@@ -19,7 +19,7 @@ def makeTestDB(filename='tutorialDatabase.db', size=1000, seedVal=None, **kwargs
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE example
-                     (col1 int, col2 int, col3 real, col4 real, col5 text)''')
+                     (id int, col1 int, col2 int, col3 real, col4 real, col5 text)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -34,9 +34,9 @@ def makeTestDB(filename='tutorialDatabase.db', size=1000, seedVal=None, **kwargs
     
     for i in xrange(size):
         c5 = '%sth_row' % i
-        qstr = '''INSERT INTO example VALUES (%i, %i, %f, %f,
+        qstr = '''INSERT INTO example VALUES (%i, %i, %i, %f, %f,
                      '%s')'''%\
-                   (c1[i],c2[i],c3[i],c4[i],c5)
+                   (i,c1[i],c2[i],c3[i],c4[i],c5)
         c.execute(qstr)
 
     conn.commit()
@@ -46,17 +46,25 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject
 
 class TutorialDB(CatalogDBObject):
     tableid = 'example'
-    idColKey = 'c1'
+    idColKey = 'id'
     objid = 'tutorial_DBobject'
     
-    columns = [('2xc1','2.0*c1'),
-              ('3xc2','3.0*c2'),
-              ('rowNumber','c5',str,10)]
+    columns = [('2xc1','2.0*col1'),
+              ('3xc2','3.0*col2'),
+              ('rowNumber','col5',str,10)]
 
-makeTestDB('tutorialDB.db')
+makeTestDB('tutorialDB.db', size=10)
 myDB = TutorialDB(address='sqlite:///tutorialDB.db')
 print 'First show all of the columns in the database'
 myDB.show_db_columns()
 print '\n'
 print 'Then show all of the columns in the CatalogDBObject'
 myDB.show_mapped_columns()
+print '\n'
+print 'now do a rough, by-hand query of the columns (this returns all of the columns)'
+colNames = ['rowNumber', '2xc1', 'col1']
+result = myDB.query_columns(colnames=colNames, chunk_size=5)
+
+for chunk in result:
+    for row in chunk:
+        print row
