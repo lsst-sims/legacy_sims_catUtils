@@ -187,7 +187,7 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
                 a_int, b_int = sed.setupCCMab()
                 sed.addCCMDust(a_int, b_int, A_v=gAv, R_v=gRv)
 
-                individualName = ('galSimSed_galaxy_%d.dat' % self.objectCounter)
+                individualName = ('galSimSed_galaxy_%d_%d.dat' % (self.db_obj.objectTypeId,self.objectCounter))
                 name = os.path.join(outputDirectory,individualName)
                 outputNames.append(name)
                 self.objectCounter += 1
