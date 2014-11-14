@@ -12,7 +12,6 @@ from lsst.sims.catalogs.generation.db import ObservationMetaData, \
 from lsst.sims.coordUtils import CameraCoords
 from lsst.afw.cameraGeom.cameraConfig import CameraConfig
 from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
-from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
 from lsst.obs.lsstSim import LsstSimMapper
 
@@ -24,7 +23,7 @@ epoch = 2000.0
 #generate an ObservationMetaData object based on an actual OpSim pointing
 obshistid = 88625744
 radiusDegrees = 3.0
-OpSimDB = CatalogDBObject.from_objid('opsim3_61')
+OpSimDB = OpSim3_61DBObject()
 obs_metadata = OpSimDB.getObservationMetaData(obshistid, radiusDegrees, makeCircBounds=True)
 
 myCamCoords = CameraCoords()
