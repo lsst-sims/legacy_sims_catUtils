@@ -49,8 +49,8 @@ class TutorialDB(CatalogDBObject):
     idColKey = 'id'
     objid = 'tutorial_DBobject'
     
-    columns = [('2xc1','2.0*col1'),
-              ('3xc2','3.0*col2'),
+    columns = [('TwiceColumn1','2.0*col1'),
+              ('ThreeTimesColumn2','3.0*col2'),
               ('rowNumber','col5',str,10)]
 
 makeTestDB('tutorialDB.db', size=10)
@@ -65,7 +65,7 @@ myDB.show_mapped_columns()
 print '\n'
 
 print 'now do a rough, by-hand query of the columns (this returns all of the columns)'
-colNames = ['rowNumber', '2xc1', 'col1', '3xc2', 'col2']
+colNames = ['rowNumber', 'TwiceColumn1', 'col1', 'ThreeTimesColumn2', 'col2']
 result = myDB.query_columns(colnames=colNames, chunk_size=5)
 
 for chunk in result:
