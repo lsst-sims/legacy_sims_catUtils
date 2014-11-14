@@ -5,7 +5,8 @@ This file shows how to generate a phoSim input catalog named phoSim_example.txt
 
 from __future__ import with_statement
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ObservationMetaData, CatalogDBObject
+from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
 from lsst.sims.catUtils.exampleCatalogDefinitions.phoSimCatalogExamples import \
         PhoSimCatalogPoint, PhoSimCatalogSersic2D, PhoSimCatalogZPoint
 
@@ -13,8 +14,8 @@ from lsst.sims.catUtils.baseCatalogModels import *
 
 starObjNames = ['msstars', 'bhbstars', 'wdstars', 'rrlystars', 'cepheidstars']
 
-obsMD = CatalogDBObject.from_objid('opsim3_61')
-obs_metadata = obsMD.getObservationMetaData(88625744, 0.33, makeCircBounds = True)
+obsMD = OpSim3_61DBObject()
+obs_metadata = obsMD.getObservationMetaData(88625744, 0.05, makeCircBounds = True)
 
 doHeader= True
 for starName in starObjNames:

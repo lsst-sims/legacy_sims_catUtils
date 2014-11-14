@@ -4,7 +4,7 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaDat
 import lsst.sims.catUtils.baseCatalogModels as bcm
 from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, PhoSimCatalogPoint,\
                                                          PhoSimCatalogZPoint, PhoSimCatalogSersic2D
-from lsst.sims.catalogs.generation.db import makeObsParamsAzAltTel, makeObsParamsRaDecTel
+from lsst.sims.catalogs.generation.db import makeObsParamsAzAltTel, makeObsParamsRaDecTel, SpatialBounds
 
 def exampleReferenceCatalog():
     """
@@ -40,7 +40,7 @@ def examplePhoSimCatalogs():
     the same contents)
 
     """
-    obsMD = CatalogDBObject.from_objid('opsim3_61')
+    obsMD = bcm.OpSim3_61DBObject()
     obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
     objectDict = {}
     objectDict['testStars'] = {'dbobj':CatalogDBObject.from_objid('msstars'),
@@ -132,31 +132,20 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     The catalog is output to stars_airmass_test.dat
     """
 
-    obsMD=CatalogDBObject.from_objid('opsim3_61')
-
+    obsMD=bcm.OpSim3_61DBObject()
 
     #The code below will query the OpSim data base object created above.
     #The query will be based on a box in RA, Dec and a specific airmass value
-    colNames = ['Opsim_obshistid','Opsim_expmjd','airmass','Unrefracted_RA','Unrefracted_Dec','Opsim_altitude', 'Opsim_azimuth']
 
     airmassConstraint = "airmass="+str(airmass) #an SQL constraint that the airmass must be equal to
                                                 #the passed value
-    raMin = ra - tol
-    raMax = ra + tol
-    decMin = dec - tol
-    decMax = dec + tol
 
-    skyBounds = dict(ra_min=raMin, ra_max=raMax, dec_min=decMin, dec_max=decMax)
+    skyBounds = SpatialBounds.getSpatialBounds('box', ra, dec, tol) #bounds on region of sky
 
-    query = obsMD.query_columns(colnames=colNames, chunk_size = 1, boundType='box',
-                                unrefractedRA=ra, unrefractedDec=dec, boundLength=tol,
-                                constraint = airmassConstraint)
-
-    q=query.next() #q now contains the first row returned by our query
-
+    query = obsMD.executeConstrainedQuery(skyBounds, constraint=airmassConstraint)
 
     #convert q into observation meta data for use in a catalog
-    obsMetaData = obsMD.getObservationMetaData(q[0][0],radiusDeg,makeBoxBounds=makeBoxBounds,
+    obsMetaData = obsMD.getObservationMetaData(query['Opsim_obshistid'][0],radiusDeg,makeBoxBounds=makeBoxBounds,
                    makeCircBounds=makeCircBounds)
 
     #create and output a reference catalog of stars based on our query to opSim
