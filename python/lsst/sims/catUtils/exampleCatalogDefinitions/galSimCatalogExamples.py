@@ -43,7 +43,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     calculate their SEDs (corrected for redshift, dust extinction, magNorm, etc.)
     and write them to the specified directory.  calculateGalSimSed() will then return
     a numpy array containing the full names (absolute path) of the SEDs written for
-    each object in the catalog.
+    each object in the catalog.  The catalog will contain these filenames so that
+    GalSimInterpreter (defined in examples/galSimInterpreter.py) can find the SEDs when
+    it is writing FITS images from the catalog.
 
     This class also assigns a placeholder camera to the catalog.  If the user wishes
     to use a different camera, they can assign it directly at run time after instantiating
@@ -143,6 +145,13 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         InstanceCatalog.write_header(self, file_handle)
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
+    """
+    This is a GalSimCatalog class for galaxy components (i.e. objects that are shaped
+    like Sersic profiles).
+
+    See the docstring in GalSimBase for explanation of how this class should be used.
+    """
+
     catalog_type = 'galsim_galaxy'
     default_columns = [('galacticAv', 0.1, float),
                        ('galSimType', 'galaxy', (str,6))]
