@@ -45,6 +45,21 @@ class GalSimDetector(object):
         self.plateScale = plateScale
 
 class GalSimInterpreter(object):
+    """
+    This class will read in a GalSimCatalog from a file and write
+    FITS images for each of the detectors specified in the catalog.
+
+    The basic work flow is:
+
+    myInterpreter = GalSimInterpreter()
+
+    myInterpreter.readCatalog('myCatalog.dat')
+
+    myInterpreter.drawCatalog(fileNameRoot='myFitsImages', bandpass='/path/to/bandpass/file.dat')
+
+    This will produce a series of FITS files named myFitsImages_R_0_0_S_0_0.fits, etc., one for each
+    detector in the catalog.
+    """
 
     def __init__(self):
 
