@@ -1,6 +1,16 @@
 """
 This tutorial will start to examine what goes into a CatalogDBObject
+
+After reading this script, you should probably look at the classes defined
+by the scripts in
+
+sims_catUtils/python/lsst/sims/catUtils/baseCatalogModels/
+
+These files will contain most of the CatalogDBObject daughter classes that
+have so far been defined.  Here you can see how the functionality described
+below is implemented for actual, physically interesting cases.
 """
+
 import os
 import numpy
 import sqlite3
