@@ -54,7 +54,7 @@ the desired InstanceCatalog daughter class.
 """
 
 import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, haversine
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, compound
 
