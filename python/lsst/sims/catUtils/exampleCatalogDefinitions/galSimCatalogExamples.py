@@ -28,9 +28,23 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 __all__ = ["GalSimGalaxies"]
 
 def radiansToArcsec(value):
+    """
+    Accepts value in radians; converts to arcseconds and returns
+    """
     return 3600.0*numpy.degrees(value)
 
 class GalSimBase(InstanceCatalog, CameraCoords):
+    """
+    This is the base class from which all GalSim catalog classes will inherit.
+    It sets the column outputs and getters.
+
+    Daughter classes of this class must set self.calculateGalSimSed() which accepts
+    the name of a directory.  This method will loop through the objects in the catalog,
+    calculate their SEDs (corrected for redshift, dust extinction, magNorm, etc.)
+    and write them to the specified directory.  calculateGalSimSed() will then return
+    a numpy array containing the full names (absolute path) of the SEDs written for
+    each object in the catalog.
+    """
 
     cannot_be_null = ['galSimSedName']
 
