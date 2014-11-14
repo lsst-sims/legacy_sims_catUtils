@@ -23,21 +23,24 @@ from lsst.sims.photUtils import PhotometryStars
 
 class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
 
-    #lsst_u is defined in PhotometryStars in Photometry.py; it is the magnitude in the LSST u band
-    #ra/decObserved are defined in AstrometryStars i Astrometry.py; they are the RA and Dec corrected
-    #               for precession, nutation, aberration, and refraction
-    #shift is a column defined by a getter below; it is the difference between (raJ2000, decJ2000) and
-    #             (raObserved, decObserved)
     column_outputs = ['raJ2000', 'decJ2000', 'lsst_u', 'raObserved', 'decObserved',
                       'shift']
+    #to see where lsst_u comes from, see the PhotometryStars class in
+    #sims_photUtils/python/lsst/sims/photUtils/Photometry.py
+    #
+    #to see where raObserved and decObserved come from, see the AstrometryStars class in
+    #sims_coordUtils/python/lsst/sims/coordUtils/Astrometry.py
+
 
     #transform all of the angles into degrees
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,
                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
                        'shift':numpy.degrees}
 
+
     #a handle to be passed to CatalogDBObject.getCatalog() (see tutorial02)
     catalog_type = 'tutorial_catalog'
+
 
     @cached
     def get_shift(self):
