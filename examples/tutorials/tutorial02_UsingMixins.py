@@ -107,6 +107,10 @@ class TutorialCatalog(InstanceCatalog, ExampleMixin):
     #in order to instantiate a TutorialCatalog
     catalog_type = 'tutorial_catalog'
 
+
+
+
+
 myDB = CatalogDBObject.from_objid('allstars')
 obs_metadata = ObservationMetaData(unrefractedRA=220.0, unrefractedDec=19.0,
                                    boundType='circle', boundLength=0.1,
