@@ -44,6 +44,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     and write them to the specified directory.  calculateGalSimSed() will then return
     a numpy array containing the full names (absolute path) of the SEDs written for
     each object in the catalog.
+
+    This class also assigns a placeholder camera to the catalog.  If the user wishes
+    to use a different camera, they can assign it directly at run time after instantiating
+    the GalSimCatalog class (see examples/galSimCatalogGenerator.py for a demonstration).
     """
 
     cannot_be_null = ['galSimSedName']
