@@ -24,6 +24,9 @@ from lsst.sims.catUtils.exampleCatalogDefinitions.galSimCatalogExamples import \
 
 from lsst.sims.catUtils.baseCatalogModels import *
 
+#if you want to use the actual LSST camera
+#from lsst.obs.lsstSim import LsstSimMapper
+
 #select an OpSim pointing
 obsMD = CatalogDBObject.from_objid('opsim3_61')
 obs_metadata = obsMD.getObservationMetaData(88625744, 0.01, makeCircBounds = True)
@@ -33,4 +36,11 @@ gals = CatalogDBObject.from_objid('galaxyBulge')
 
 #now append a bunch of objects with 2D sersic profiles to our output file
 galaxy_galSim = GalSimGalaxies(gals, obs_metadata=obs_metadata)
+
+#If you want to use the LSST camera, uncomment the line below.
+#You can similarly assign any camera object you want here, as long
+#as you do it immediately after instantiating GalSimGalaxies
+#galaxy_galSim.camera = LsstSimMapper().camera
+
+
 galaxy_galSim.write_catalog('galSim_example.txt')

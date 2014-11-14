@@ -25,9 +25,6 @@ import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 
-#if you want to use the actual LSST camera:
-#from lsst.obs.lsstSim import LsstSimMapper
-
 __all__ = ["GalSimGalaxies"]
 
 def radiansToArcsec(value):
@@ -52,10 +49,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     sedDirName = 'galSimSedDir' #this is the name of the scratch directory which will contain SEDs
                                 #(it will be created in the current working directory)
 
+    #This is just a place holder.  If you want to assign a different camera,
+    #you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
-
-    #if you want to use the actual LSST camera
-    #camera = LsstSimMapper().camera
 
     def get_sedFilepath(self):
         #copied from the phoSim catalogs
