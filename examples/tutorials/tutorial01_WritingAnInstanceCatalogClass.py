@@ -4,6 +4,15 @@ class.  Recall that the InstanceCatalog class is defined in
 
 sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/InstanceCatalog.py
 
+After reading this script, you should look at the classes defined in
+the scripts in
+
+sims_catUtils/python/lsst/sims/catUtils/exampleCatalogDefinitions/
+
+These files contain most of the physically interesint InstanceCatalog
+daughter classes defined thus far.  This will show you how the functionality
+described below is implemented in actual use cases.
+
 Because InstanceCatalog has its own __init__() method that needs to be called
 to set up member variables on which the catalog relies (and because we do not
 want to be wed to python's Super() API), InstanceCatalog daughter classes should
