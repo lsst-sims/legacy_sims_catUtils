@@ -23,8 +23,8 @@ The most important member variable of any InstanceCatalog daughter class is
 the list column_outputs.  column_outputs is a list of the names of the columns
 that are to be output to the catalog.
 
-InstanceCatalog and its daughter classes find the data fill in these columns in
-three ways.  In this order they:
+InstanceCatalog and its daughter classes find the data to fill in these columns in
+three ways.  In this order, they:
 
 1) assess whether or not they have a method to calculate the column value
 
@@ -33,7 +33,7 @@ associated CatalogDBObject
 
 3) assess whether they know any default values for those columns.
 
-Obviously, (1) and (3) must be defined in the InstanceCatalog daughter class.
+(1) and (3) must be defined in the InstanceCatalog daughter class.
 (2) is provided by the CatalogDBObject that has been passed to __init__() when
 the InstanceCatalog daughter class is instantiated.
 
@@ -65,14 +65,13 @@ def get_manyColumns(self):
     ...some math...
     return numpy.array([col1Values, col2Values])
 
-In this case, the getter must return an N-D numpy array (in which N is the number
-of columns calculated by the getter) in which each row is a different set of
-column values and the column values occur in the same order that the occur
+In this case, the getter must return an 2-D numpy array in which each row is a different
+set of column values and the column values occur in the same order that they occur
 in @compound()
 
 (3) -- setting column values from a default -- relies on the member variable
 default_columns.  default_columns is a list of tuples.  Each tuple consists of
-three elements: the name of the column being defaulted; the devault value of
+three elements: the name of the column being defaulted; the default value of
 that column; the datatype of that column.
 
 The script below defines the InstanceCatalog daughter class
@@ -112,6 +111,9 @@ class TutorialCatalog(InstanceCatalog):
         """
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
+
+        #because self.column_by_name() returns a numpy array, we can use
+        #numpy array's matrix formalism to calculate the result
         return ra/dec
 
     @compound('sum', 'difference')

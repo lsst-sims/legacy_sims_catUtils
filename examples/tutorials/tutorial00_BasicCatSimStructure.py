@@ -58,8 +58,8 @@ The ObservationMetaData class is defined in
 
 sims_catalogs_generation/python/lsst/sims/catalogs/generation/db/ObservationMetaData.py
 
-Generally, an ObservatioMetaData is defined by an unrefractedRA, unrefractedDec (these
-are the above-atmosphere directions of the pointing; in degrees), and boundType
+Generally, an ObservationMetaData is defined by an unrefractedRA, unrefractedDec (these
+are the above-atmosphere directions of the pointing; in degrees), a boundType
 (either 'circle' or 'box') defining the shape of the field of view, a boundLength
 (either a float or a numpy array) defining the size of the field of view in degrees,
 and an MJD defining the date of the observation (though this is optional if you do not

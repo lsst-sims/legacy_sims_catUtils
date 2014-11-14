@@ -2,7 +2,7 @@
 This tutorial will introduce how we use mixins to compartmentalize InstanceCatalog functionality.
 
 Not every InstanceCatalog will have the same outputs.  Even those that do have the same outputs
-may require different getters (one examples that comes to mind is doing photometry on stars and
+may require different getters (one example that comes to mind is doing photometry on stars and
 galaxies; for galaxies, one must consider flux from the bulge, the disk, and the agn, all of which
 are stored separately in the database; for stars there is only one source of flux to consider).
 Therefore, we try as much as possible to define commonly used getters in mixins.  Mixins are
@@ -10,7 +10,9 @@ classes that define methods explicitly for the purpose of being inherited by oth
 (though, occasionally you will find a mixin with classmethods that are meant to be called
 independently).  Thus mixins should not have an __init__() (since they will rely on InstanceCatalog's
 __init__()).  Indeed, in the context of InstanceCatalogs, they should only contain getters and
-methods in support of getters that InstanceCatalog daughter classes may need.
+methods in support of getters that InstanceCatalog daughter classes may need.  When writing
+an InstanceCatalog daughter class, the user can simple inherit from the required mixins and ignore
+all other mixins.
 
 Below, we show an example of a mixin and how it interacts with an example InstanceCatalog.
 The class TutorialCatalog calls for the columns 'raPlusOneRadian', 'sum', and 'difference.'
@@ -38,7 +40,7 @@ transformations = {'raJ2000':numpy.degrees}
 
 Then, the values in 'raJ2000' will be passed through numpy.degrees() before being written to the
 catalog.  We illustrate this method by converting all of the columns in TutorialCatalog to degrees
-and by additionally writing out the contrived case of 'raInArcSec,' which converts the value of
+and by additionally writing out the contrived case of 'raInArcSec,' which prints the value of
 'raJ2000' into arc seconds.
 
 2) CatalogDBObject.getCatalog()
@@ -94,9 +96,10 @@ class TutorialCatalog(InstanceCatalog, ExampleMixin):
     column_outputs = ['raJ2000', 'decJ2000', 'raPlusOneRadian', 'sum', 'difference',
                      'raInArcSec']
 
-    #Recall that all angled are manipulated as radians inside the code.
+    #Recall that all angles are manipulated as radians inside the code.
     #Therefore, to get outputs in degrees, we must define transformations
     #for the columns we want to transform.
+    #
     #Note that 'raPlusOneRadian' is not converted and will thus be written
     #in radians.
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,

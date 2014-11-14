@@ -98,7 +98,7 @@ member variable columns.
 
 columns is a list.  It is somewhat analogous to the default_columns member
 variable of InstanceCatalog.  Each entry in the list is a tuple.  The first
-element of each tuple is the name of the transformed columns.  The second
+element of each tuple is the name of the transformed column.  The second
 element is an expression calculating that column from a column stored in the
 database.  The (optional) third element is the datatype of the transformed
 column.
@@ -128,7 +128,7 @@ Ths list tells the Catalog DBObject that:
 
     'raJ2000' is 'ra' converted from degrees to radians (the type is implicit)
 
-    ditto for 'decJ2000' through 'glat'
+    ditto for 'decJ2000', 'glon', and 'glat'
 
     'magNorm' is determined from 'flux_scale' using the relationship between
     magnitude and flux
@@ -207,7 +207,7 @@ print '\n'
 """
 Now we will use the query_columns method to query the database.
 Ordinarily, the user should not have to do this.  InstanceCatalog does it
-for them.  This is just for illustrative purposes.
+automatically.  This is just for illustrative purposes.
 
 query_columns returns a ChunkIterator as definee in
 
@@ -233,7 +233,8 @@ print '\n'
 
 """
 One also has the option of passing a constraint to query_columns to limit the
-rows that are returned by the query
+rows that are returned by the query.  In many cases, this constraint is supplied
+by the ObservationMetaData (specifically the ObservationMetaData.bounds member variable)
 """
 
 print 'now apply a constraint to the query'

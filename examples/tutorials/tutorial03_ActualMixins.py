@@ -2,7 +2,7 @@
 Here we demonstrate using actual mixins that have already been defined
 to calculate physically real values.
 
-Many mixins exist through out the stack.  The two biggest collections of them
+Many mixins exist throughout the stack.  The biggest collections of them
 are in
 
 sims_coordUtils/python/lsst/sims/coordUtils/Astrometry.py  -- astrometry-related code
@@ -55,7 +55,7 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
         d0 = self.column_by_name('decJ2000')
         r1 = self.column_by_name('raObserved')
         d1 = self.column_by_name('decObserved')
-        
+
         return haversine(r0, d0, r1, d1)
 
 
@@ -64,7 +64,7 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
 #write the catalog directly
 myDB = CatalogDBObject.from_objid('allstars')
 obs_metadata = ObservationMetaData(unrefractedRA=220.0, unrefractedDec=19.0,
-                                   boundType='circle', boundLength=0.1, 
+                                   boundType='circle', boundLength=0.1,
                                    mjd=52000.0)
 
 cat = TutorialCatalog(myDB, obs_metadata=obs_metadata)
@@ -74,7 +74,7 @@ cat.write_catalog('tutorial_astrometry_photometry.txt')
 
 #write the catalog using CatalogDBObject.getCatalog()
 obs_metadata = ObservationMetaData(unrefractedRA=120.0, unrefractedDec=-5.0,
-                                   boundType='circle', boundLength=0.1, 
+                                   boundType='circle', boundLength=0.1,
                                    mjd=52000.0)
 
 cat = myDB.getCatalog('tutorial_catalog', obs_metadata=obs_metadata)
