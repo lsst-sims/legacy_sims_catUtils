@@ -166,10 +166,13 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         testFile = open(catName,'r')
         testLines = testFile.readlines()
+        testFile.close()
         controlLines = self.baseLineFile.readlines()
         for line in testLines:
             self.assertTrue(line in controlLines)
-        testFile.close()
+
+        for line in controlLines:
+            self.assertTrue(line in testLines)
 
         if os.path.exists(catName):
             os.unlink(catName)
