@@ -19,10 +19,8 @@ from __future__ import with_statement
 import os
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
-from lsst.sims.catUtils.exampleCatalogDefinitions.galSimCatalogExamples import \
-        GalSimGalaxies
-
 from lsst.sims.catUtils.baseCatalogModels import *
+from lsst.sims.catUtils.galSimInterface import *
 
 #if you want to use the actual LSST camera
 #from lsst.obs.lsstSim import LsstSimMapper
