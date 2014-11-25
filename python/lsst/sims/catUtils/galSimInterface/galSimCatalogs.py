@@ -20,19 +20,13 @@ import numpy
 import os
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
-from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
+from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector, radiansToArcsec
 from lsst.sims.photUtils import EBVmixin, Sed, Bandpass
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 
 __all__ = ["GalSimGalaxies"]
-
-def radiansToArcsec(value):
-    """
-    Accepts value in radians; converts to arcseconds and returns
-    """
-    return 3600.0*numpy.degrees(value)
 
 class GalSimBase(InstanceCatalog, CameraCoords):
     """
@@ -159,10 +153,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
             if name in self.hasBeenDrawn:
                 raise RuntimeError('Trying to draw %s more than once' % str(name))
             self.hasBeenDrawn.append(name)
-            chips = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
-                                                        minorAxis=minor, majorAxis=major,
-                                                        halfLightRadius=hl)
-            output.append(chips)
+            chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
+                                                                         minorAxis=minor, majorAxis=major,
+                                                                         halfLightRadius=hl)
+            output.append(chipsString)
         return numpy.array(output)
 
     def write_header(self, file_handle):

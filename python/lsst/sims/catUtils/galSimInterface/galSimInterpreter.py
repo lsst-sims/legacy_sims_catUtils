@@ -157,17 +157,19 @@ class GalSimInterpreter(object):
 
 
     def findAllChips(self, xPupil=None, yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None):
-        output = ''
+        outputString = ''
+        outputList = []
         for dd in self.detectors:
             if self._doesObjectImpingeOnChip(xPupil=radiansToArcsec(xPupil), yPupil=radiansToArcsec(yPupil),
                                              halfLightRadius=radiansToArcsec(halfLightRadius),
                                              minorAxis=radiansToArcsec(minorAxis), majorAxis=radiansToArcsec(majorAxis),
                                              detector=dd):
             
-                if output != '':
-                    output += '//'
-                output += dd.name
-        return output
+                if outputString != '':
+                    outputString += '//'
+                outputString += dd.name
+                outputList.append(dd)
+        return outputString, outputList
 
     def drawCatalog(self, fileNameRoot=None, bandPass=None):
         """
