@@ -52,11 +52,11 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     the GalSimCatalog class (see examples/galSimCatalogGenerator.py for a demonstration).
     """
 
-    cannot_be_null = ['galSimSedName']
+    cannot_be_null = ['sedFilepath']
 
-    column_outputs = ['galSimType', 'chipName', 'x_pupil', 'y_pupil', 'galSimSedName',
+    column_outputs = ['galSimType', 'uniqueId', 'chipName', 'x_pupil', 'y_pupil', 'sedFilepath',
                       'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius',
-                      'positionAngle']
+                      'positionAngle','fitsFiles']
 
     transformations = {'x_pupil':radiansToArcsec,
                        'y_pupil':radiansToArcsec}
@@ -65,38 +65,92 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     delimiter = ';'
 
-    objectCounter = 0
-    sedDirName = 'galSimSedDir' #this is the name of the scratch directory which will contain SEDs
-                                #(it will be created in the current working directory)
-
     #This is just a place holder.  If you want to assign a different camera,
     #you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
+
+    hasBeenDrawn = []
+    uniqueSeds = {}
 
     def get_sedFilepath(self):
         #copied from the phoSim catalogs
         return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
                          for k in self.column_by_name('sedFilename')])
 
-    def get_galSimSedName(self):
+    def _calculateGalSimSeds(self):
         """
-        This returns the full (absolute path) name of the SED file as written in the scratch
-        directory.  It calls self.caclulateGalSimSed which actually processes the SED, writes
-        it to the scratch directory, and returns a numpy array of galSimSed names.
-
-        Any new GalSimCatalog classes must define their own calculateGalSimSed to appropriately
-        process the SEDs
+        Apply any physical corrections to the objects' SEDS (redshift them, apply dust, etc.).
+        Return a list of Sed objects containing the SEDS
         """
+        
+        sedList = []
+        actualSEDnames = self.column_by_name('sedFilepath')
+        redshift = self.column_by_name('redshift')
+        internalAv = self.column_by_name('internalAv')
+        internalRv = self.column_by_name('internalRv')
+        galacticAv = self.column_by_name('galacticAv')
+        galacticRv = self.column_by_name('galacticRv')
+        magNorm = self.column_by_name('magNorm')
 
-        #create the scratch directory
-        if os.path.exists(self.sedDirName):
-            if not os.path.isdir(self.sedDirName):
-                os.unlink(self.sedDirName)
-        if not os.path.exists(self.sedDirName):
-            os.mkdir(self.sedDirName)
+        sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
 
-        directory = os.path.join(os.getcwd(),self.sedDirName)
-        return self.calculateGalSimSed(directory)
+        #for setting magNorm
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
+
+        outputNames=[]
+
+        for (sedName, zz, iAv, iRv, gAv, gRv, norm) in \
+            zip(actualSEDnames, redshift, internalAv, internalRv, galacticAv, galacticRv, magNorm):
+
+            if is_null(sedName):
+                sedList.append(None)
+            else:
+                if sedName in self.uniqueSeds:
+                    sed = Sed(wavelen=self.uniqueSeds[sedName].wavelen,
+                              flambda=self.uniqueSeds[sedName].flambda,
+                              fnu=self.uniqueSeds[sedName].fnu,
+                              name=self.uniqueSeds[sedName].name)
+                else:
+                    #load the SED of the object
+                    sed = Sed()
+                    sedFile = os.path.join(sedDir, sedName)
+                    sed.readSED_flambda(sedFile)
+                    sedCopy = Sed(wavelen=sed.wavelen, flambda=sed.flambda,
+                                  fnu=sed.fnu, name=sed.name)
+                    self.uniqueSeds[sedName] = sedCopy
+
+                #normalize the SED
+                fNorm = sed.calcFluxNorm(norm, imsimband)
+                sed.multiplyFluxNorm(fNorm)
+
+                #apply dust extinction (internal)
+                a_int, b_int = sed.setupCCMab()
+                sed.addCCMDust(a_int, b_int, A_v=iAv, R_v=iRv)
+
+                #13 November 2014
+                #apply redshift; there is no need to apply the distance modulus from
+                #sims/photUtils/CosmologyWrapper; I believemagNorm takes that into account
+                sed.redshiftSED(zz, dimming=True)
+
+                #apply dust extinction (galactic)
+                a_int, b_int = sed.setupCCMab()
+                sed.addCCMDust(a_int, b_int, A_v=gAv, R_v=gRv)
+                sedList.append(sed)
+
+        return sedList
+
+    @cached
+    def get_fitsFiles(self):
+        objectNames = self.column_by_name('uniqueId')
+        sedList = self._calculateGalSimSeds()
+        output = []
+        for name in objectNames:
+            if name in self.hasBeenDrawn:
+                raise RuntimeError('Trying to draw %s more than once' % str(name))
+            self.hasBeenDrawn.append(name)
+            output.append('drawn')
+        return numpy.array(output)
 
     def write_header(self, file_handle):
         """
@@ -144,6 +198,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         InstanceCatalog.write_header(self, file_handle)
 
+
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """
     This is a GalSimCatalog class for galaxy components (i.e. objects that are shaped
@@ -156,65 +211,4 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     default_columns = [('galacticAv', 0.1, float),
                        ('galSimType', 'galaxy', (str,6))]
 
-    def calculateGalSimSed(self, outputDirectory):
-        """
-        Apply any physical corrections to the objects' SEDS (redshift them, apply dust, etc.).
-        Write the SEDs to a scratch directory.
-        Return a numpy array of the names of the final SED files.
-        These filenames should contain the absolute path of the scratch directory.
 
-        param [in] outputDirectory is a string indicating the scratch directory where the
-        SEDs are written.
-        """
-        actualSEDnames = self.column_by_name('sedFilepath')
-        redshift = self.column_by_name('redshift')
-        internalAv = self.column_by_name('internalAv')
-        internalRv = self.column_by_name('internalRv')
-        galacticAv = self.column_by_name('galacticAv')
-        galacticRv = self.column_by_name('galacticRv')
-        magNorm = self.column_by_name('magNorm')
-
-        sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
-
-        #for setting magNorm
-        imsimband = Bandpass()
-        imsimband.imsimBandpass()
-
-        outputNames=[]
-
-        for (sedName, zz, iAv, iRv, gAv, gRv, norm) in \
-            zip(actualSEDnames, redshift, internalAv, internalRv, galacticAv, galacticRv, magNorm):
-
-            if is_null(sedName):
-                outputNames.append('None')
-            else:
-                #load the SED of the object
-                sedFile = os.path.join(sedDir, sedName)
-                sed = Sed()
-                sed.readSED_flambda(sedFile)
-
-                #normalize the SED
-                fNorm = sed.calcFluxNorm(norm, imsimband)
-                sed.multiplyFluxNorm(fNorm)
-
-                #apply dust extinction (internal)
-                a_int, b_int = sed.setupCCMab()
-                sed.addCCMDust(a_int, b_int, A_v=iAv, R_v=iRv)
-
-                #13 November 2014
-                #apply redshift; there is no need to apply the distance modulus from
-                #sims/photUtils/CosmologyWrapper; I believemagNorm takes that into account
-                sed.redshiftSED(zz, dimming=True)
-
-                #apply dust extinction (galactic)
-                a_int, b_int = sed.setupCCMab()
-                sed.addCCMDust(a_int, b_int, A_v=gAv, R_v=gRv)
-
-                individualName = ('galSimSed_galaxy_%d_%d.dat' % (self.db_obj.objectTypeId,self.objectCounter))
-                name = os.path.join(outputDirectory,individualName)
-                outputNames.append(name)
-                self.objectCounter += 1
-
-                sed.writeSED(name)
-
-        return numpy.array(outputNames)
