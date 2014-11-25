@@ -146,13 +146,23 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     @cached
     def get_fitsFiles(self):
         objectNames = self.column_by_name('uniqueId')
+        xPupil = self.column_by_name('x_pupil')
+        yPupil = self.column_by_name('y_pupil')
+        halfLight = self.column_by_name('halfLightRadius')
+        minorAxis = self.column_by_name('minorAxis')
+        majorAxis = self.column_by_name('majorAxis')
         sedList = self._calculateGalSimSeds()
         output = []
-        for name in objectNames:
+        for (name, xp, yp, hl, minor, major) in \
+            zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis):
+            
             if name in self.hasBeenDrawn:
                 raise RuntimeError('Trying to draw %s more than once' % str(name))
             self.hasBeenDrawn.append(name)
-            output.append('drawn')
+            chips = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
+                                                        minorAxis=minor, majorAxis=major,
+                                                        halfLightRadius=hl)
+            output.append(chips)
         return numpy.array(output)
 
     def write_header(self, file_handle):

@@ -11,7 +11,13 @@ import os
 import numpy
 import galsim
 
-__all__ = ["GalSimInterpreter", "GalSimDetector"]
+__all__ = ["GalSimInterpreter", "GalSimDetector", "radiansToArcsec"]
+
+def radiansToArcsec(value):
+    """
+    Accepts value in radians; converts to arcseconds and returns
+    """
+    return 3600.0*numpy.degrees(value)
 
 class GalSimDetector(object):
     """
@@ -78,82 +84,9 @@ class GalSimInterpreter(object):
         #of the light from the object falls on that detector)
         self.chipsImpinged = None
 
-    def readCatalog(self, catalogFile):
-        """
-        A method to read in a catalog file
 
-        param [in] catalogFile is a string denoting the name of the catalog file to be read
-
-        This method will store the objects in the catalog in self.data and the detectors
-        in the camera (also described by the catalog file) in self.detectors
-
-        For an example of the type of catalog file desired, look at the catalog classes in
-        exampleCatalogDefinitions/galSimCatalogExamples.py
-        """
-
-        #these are the datatypes associated with each of the columns
-        dataTypes={
-                   'x_pupil':float, 'y_pupil':float, 'chipName':(str, 126),
-                   'galSimSedName':(str,200), 'positionAngle': float,
-                   'majorAxis':float, 'minorAxis':float,
-                   'sindex':float, 'halfLightRadius':float, 'galSimType':(str,126)
-                   }
-
-        #this is the datatype used for any extraneous columns that make it into the catalog
-        defaultType = (str,200)
-
-        cat = open(catalogFile,'r')
-        lines = cat.readlines()
-        cat.close()
-
-        #read in the header data from the catalog
-        for line in lines:
-            if line[0] != '#':
-                #we have now read in all of the header data from the catalog
-                break
-
-            line = line.replace("#","").strip()
-            line = numpy.array(line.split(';'))
-
-            #read in the columns and construct a numpy.dtype from them
-            if line[0] == 'galSimType':
-                dtype = numpy.dtype(
-                        [(ww, dataTypes[ww]) if ww in dataTypes else (ww, defaultType) for ww in line]
-                        )
-
-            #read in the data describing a detector
-            if line[0] == 'detector':
-                name = line[1]
-                xCenter = float(line[2])
-                yCenter = float(line[3])
-                xMin = float(line[4])
-                xMax = float(line[5])
-                yMin = float(line[6])
-                yMax = float(line[7])
-                plateScale = float(line[8])
-
-                detector = GalSimDetector(name=name, xCenter=xCenter, yCenter=yCenter,
-                                          xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax,
-                                          plateScale=plateScale)
-
-                self.detectors.append(detector)
-
-        #now read in the data from the catalogFile
-        self.data = numpy.genfromtxt(catalogFile, dtype=dtype, delimiter=';')
-
-        #now go through each object in self.data and check to see if it is likely to
-        #illumine a detector other than the one it is assigned to
-        self.chipsImpinged = []
-        for entry in self.data:
-            chipList = []
-            chipList.append(entry['chipName'])
-            for detector in self.detectors:
-                if detector.name not in chipList and self._doesObjectImpingeOnChip(obj=entry, detector=detector):
-                    chipList.append(detector.name)
-
-            self.chipsImpinged.append(chipList)
-
-    def _doesObjectImpingeOnChip(self, obj=None, detector=None):
+    def _doesObjectImpingeOnChip(self, xPupil=None, yPupil=None, halfLightRadius=None,
+                                 minorAxis=None, majorAxis=None, detector=None):
         """
         Compare an object to a detector and determine whether or not that object will cast any
         light on that detector (in case the object is near the edge of a detector and will cast some
@@ -174,15 +107,15 @@ class GalSimInterpreter(object):
         #This was meant to be a very safe estimate (choosing detectors that are farther from the object
         #than they probably need to be).  Something more clever and targeted is welcome
 
-        if obj['x_pupil'] >= detector.xMin and \
-           obj['x_pupil'] <= detector.xMax:
+        if xPupil >= detector.xMin and \
+           xPupil <= detector.xMax:
 
             isBetweenX = True
         else:
             isBetweenX = False
 
-        if obj['y_pupil'] >= detector.yMin and \
-           obj['y_pupil'] <= detector.yMax:
+        if yPupil >= detector.yMin and \
+           yPupil <= detector.yMax:
 
             isBetweenY = True
         else:
@@ -192,35 +125,49 @@ class GalSimInterpreter(object):
             #the object falls on the detector directly
             return True
 
-        radius = 3.0*obj['halfLightRadius']
-        ratio = obj['minorAxis']/obj['majorAxis']
-        majorAxis = radius/numpy.sqrt(ratio)
+        radius = 3.0*halfLightRadius
+        ratio = minorAxis/majorAxis
+        distance = radius/numpy.sqrt(ratio)
 
         #check if light from the object bleed across any of the detector's boundaries
         if isBetweenY:
-            if obj['x_pupil'] <= detector.xMin and detector.xMin - obj['x_pupil'] < majorAxis:
+            if xPupil <= detector.xMin and detector.xMin - xPupil < distance:
                 return True
 
-            if obj['x_pupil'] >= detector.xMax and obj['x_pupil'] - detector.xMax < majorAxis:
+            if xPupil >= detector.xMax and xPupil - detector.xMax < distance:
                 return True
 
         if isBetweenX:
-            if obj['y_pupil'] <= detector.yMin and detector.yMin - obj['y_pupil'] < majorAxis:
+            if yPupil <= detector.yMin and detector.yMin - yPupil < distance:
                 return True
 
-            if obj['y_pupil'] >= detector.yMax and obj['y_pupil'] - detector.yMax <majorAxis:
+            if yPupil >= detector.yMax and yPupil - detector.yMax < distance:
                 return True
 
         #see if light from the object bleeds through any of the detector's corners
         for xx in [detector.xMin, detector.xMax]:
             for yy in [detector.yMin, detector.yMax]:
-                distance = numpy.sqrt(numpy.power(xx - obj['x_pupil'],2) + \
-                           numpy.power(yy - obj['y_pupil'],2))
+                testDistance = numpy.sqrt(numpy.power(xx - xPupil,2) + \
+                           numpy.power(yy - yPupil,2))
 
-                if distance < majorAxis:
+                if testDistance < distance:
                     return True
 
         return False
+
+
+    def findAllChips(self, xPupil=None, yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None):
+        output = ''
+        for dd in self.detectors:
+            if self._doesObjectImpingeOnChip(xPupil=radiansToArcsec(xPupil), yPupil=radiansToArcsec(yPupil),
+                                             halfLightRadius=radiansToArcsec(halfLightRadius),
+                                             minorAxis=radiansToArcsec(minorAxis), majorAxis=radiansToArcsec(majorAxis),
+                                             detector=dd):
+            
+                if output != '':
+                    output += '//'
+                output += dd.name
+        return output
 
     def drawCatalog(self, fileNameRoot=None, bandPass=None):
         """
