@@ -11,7 +11,7 @@ import os
 import numpy
 import galsim
 
-__all__ = ["GalSimInterpreter"]
+__all__ = ["GalSimInterpreter", "GalSimDetector"]
 
 class GalSimDetector(object):
     """
@@ -61,13 +61,17 @@ class GalSimInterpreter(object):
     detector in the catalog.
     """
 
-    def __init__(self):
+    def __init__(self, detectors=None):
 
         #in case we want to draw images using the Fourier transform
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
 
         self.data = None
-        self.detectors = []
+        
+        if detectors is None:
+            raise RuntimeError("Will not create images; you passed no detectors to the GalSimInterpreter")
+        
+        self.detectors = detectors
 
         #this is a list of which detectors which objects fall on
         #(in case an object is near the edge of a detector and some

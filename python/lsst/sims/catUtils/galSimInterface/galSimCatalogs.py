@@ -20,6 +20,7 @@ import numpy
 import os
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
+from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
 from lsst.sims.photUtils import EBVmixin, Sed, Bandpass
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
@@ -160,6 +161,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         we need to print information about the detectors into the header of the catalog file
         """
 
+        detectors = []
         for dd in self.camera:
             cs = dd.makeCameraSys(PUPIL)
             centerPupil = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
@@ -187,17 +189,24 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                 if ymin is None or pp.getY() < ymin:
                     ymin = pp.getY()
 
-            xcenter = 3600.0*numpy.degrees(centerPupil.getX())
-            ycenter = 3600.0*numpy.degrees(centerPupil.getY())
-            xmin = 3600.0*numpy.degrees(xmin)
-            xmax = 3600.0*numpy.degrees(xmax)
-            ymin = 3600.0*numpy.degrees(ymin)
-            ymax = 3600.0*numpy.degrees(ymax)
+            xCenter = 3600.0*numpy.degrees(centerPupil.getX())
+            yCenter = 3600.0*numpy.degrees(centerPupil.getY())
+            xMin = 3600.0*numpy.degrees(xmin)
+            xMax = 3600.0*numpy.degrees(xmax)
+            yMin = 3600.0*numpy.degrees(ymin)
+            yMax = 3600.0*numpy.degrees(ymax)
             plateScale = 3600.0*numpy.degrees(plateScale)
 
             file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
-                             (dd.getName(), xcenter, ycenter, xmin, xmax, ymin, ymax, plateScale))
+                             (dd.getName(), xCenter, yCenter, xMin, xMax, yMin, yMax, plateScale))
 
+            detector = GalSimDetector(name=dd.getName(), xCenter=xCenter, yCenter=yCenter,
+                                      xMin=xMin, yMin=yMin, xMax=xMax, yMax=yMax,
+                                      plateScale=plateScale)
+        
+            detectors.append(detector)
+        
+        self.galSimInterpreter = GalSimInterpreter(detectors=detectors)
         InstanceCatalog.write_header(self, file_handle)
 
 

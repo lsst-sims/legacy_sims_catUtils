@@ -1,2 +1,2 @@
-from .galSimCatalogs import *
 from .galSimInterpreter import *
+from .galSimCatalogs import *
