@@ -125,13 +125,15 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                 sed.multiplyFluxNorm(fNorm)
 
                 #apply dust extinction (internal)
-                a_int, b_int = sed.setupCCMab()
-                sed.addCCMDust(a_int, b_int, A_v=iAv, R_v=iRv)
+                if iAv != 0.0 and iRv != 0.0:
+                    a_int, b_int = sed.setupCCMab()
+                    sed.addCCMDust(a_int, b_int, A_v=iAv, R_v=iRv)
 
                 #13 November 2014
                 #apply redshift; there is no need to apply the distance modulus from
                 #sims/photUtils/CosmologyWrapper; I believemagNorm takes that into account
-                sed.redshiftSED(zz, dimming=True)
+                if zz != 0.0:
+                    sed.redshiftSED(zz, dimming=True)
 
                 #apply dust extinction (galactic)
                 a_int, b_int = sed.setupCCMab()
