@@ -1,4 +1,5 @@
 import warnings
+import numpy
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, ChunkIterator
 from sqlalchemy.sql import select, func, column
 
@@ -72,14 +73,14 @@ class StarBase(CatalogDBObject):
 
         if obs_metadata is not None and obs_metadata.bounds is not None:
             if obs_metadata.bounds.boundType == 'circle':
-                regionStr = 'REGION CIRCLE J2000 %f %f %f'%(obs_metadata.bounds.RA,
-                                                            obs_metadata.bounds.DEC,
-                                                            60.*obs_metadata.bounds.radius)
+                regionStr = 'REGION CIRCLE J2000 %f %f %f'%(numpy.degrees(obs_metadata.bounds.RA),
+                                                            numpy.degrees(obs_metadata.bounds.DEC),
+                                                            60.*numpy.degrees(obs_metadata.bounds.radius))
             elif obs_metadata.bounds.boundType == 'box':
-                regionStr = 'REGION RECT J2000 %f %f %f %f'%(obs_metadata.bounds.RAmin,
-                                                             obs_metadata.bounds.DECmin,
-                                                             obs_metadata.bounds.RAmax,
-                                                             obs_metadata.bounds.DECmax)
+                regionStr = 'REGION RECT J2000 %f %f %f %f'%(obs_metadata.bounds.RAminDeg,
+                                                             obs_metadata.bounds.DECminDeg,
+                                                             obs_metadata.bounds.RAmaxDeg,
+                                                             obs_metadata.bounds.DECmaxDeg)
             else:
                 raise RuntimeError("StarBase does not know about boundType %s "
                                    % obs_metadata.bounds.boundType)
