@@ -3,16 +3,16 @@ import numpy
 import os
 from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 
-__all__ = ["GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj", 
+__all__ = ["GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj",
            "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj"]
 
 class GalaxyObj(CatalogDBObject):
     """
-    Note: building a catalog out of this object will directly call the 
+    Note: building a catalog out of this object will directly call the
     'galaxy' table.  This table only contains objects for
-    
+
     -2.5 deg < RA < 2.5 deg, -2.5 deg < Dec < 2.5 deg
-    
+
     In order to cover the whole sky, call one of the objects that
     inherits from GalaxyTileObj
     """
@@ -36,8 +36,8 @@ class GalaxyObj(CatalogDBObject):
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
     #: as None is cast to nan, but for integers this raises and exception.
-    #: Typically it's not an issue as ints are usually ids of some sort, 
-    #: but in the case of the base galaxy catalog, it's possible for the 
+    #: Typically it's not an issue as ints are usually ids of some sort,
+    #: but in the case of the base galaxy catalog, it's possible for the
     #: varsimobjid to be None if the object does not contain an AGN.
     #: I'm over riding the _postprocess_results method to take care of this.
     #: I could also have refactored my database table so that no integer values
@@ -99,7 +99,7 @@ class GalaxyTileObj(CatalogDBObject):
     This is the parent class for galaxy CatalogDBObjects that sample the whole
     sky (rather than just a very small patch as in GalaxyObj)
     """
-    
+
     objid = 'galaxyTiled'
     #: This is the base table for the galaxies
 
