@@ -1,6 +1,7 @@
 """Instance Catalog"""
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.generation.db import radiansToArcsec
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin
@@ -97,5 +98,5 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
     delimiter = " "
     spatialModel = "sersic2d"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees, 'positionAngle':numpy.degrees, 
-    'majorAxis':numpy.degrees, 'minorAxis':numpy.degrees} 
+    'majorAxis':radiansToArcsec, 'minorAxis':radiansToArcsec} 
 
