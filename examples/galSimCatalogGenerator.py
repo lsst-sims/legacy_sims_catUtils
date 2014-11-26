@@ -26,7 +26,7 @@ from lsst.sims.catUtils.galSimInterface import *
 #from lsst.obs.lsstSim import LsstSimMapper
 
 #select an OpSim pointing
-obsMD = CatalogDBObject.from_objid('opsim3_61')
+obsMD = OpSim3_61DBObject()
 obs_metadata = obsMD.getObservationMetaData(88625744, 0.01, makeCircBounds = True)
 
 #grab a database of galaxies (in this case, galaxy bulges)
