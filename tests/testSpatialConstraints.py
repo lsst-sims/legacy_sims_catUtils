@@ -13,13 +13,13 @@ def distanceToPoint(lon1, lat1, lon2, lat2):
     nx2 = numpy.cos(lat2) * numpy.cos(lon2)
     ny2 = numpy.cos(lat2) * numpy.sin(lon2)
     nz2 = numpy.sin(lat2)
-    return numpy.rad2deg(2 * numpy.arcsin(
+    return 2 * numpy.arcsin(
                              numpy.sqrt((nx1 - nx2) * (nx1 - nx2)
                                       + (ny1 - ny2) * (ny1 - ny2)
                                       + (nz1 - nz2) * (nz1 - nz2)
                                         ) / 2.
                                         )
-                        )
+                        
 
 vDistanceBetweenPoints = numpy.vectorize(distanceToPoint)
 
@@ -54,9 +54,9 @@ class testCatalogBounds(unittest.TestCase):
 
             #confirm radius > distance from all points to center
             self.assertGreater(obs_metadata.bounds.radius + 1.e-4,
-                           max(vDistanceBetweenPoints(numpy.radians(obs_metadata.unrefractedRA),
-                                                      numpy.radians(obs_metadata.unrefractedDec),
-                                                    result['raJ2000'], result['decJ2000'])))
+                           max(vDistanceBetweenPoints(obs_metadata.unrefractedRA,
+                                                      obs_metadata.unrefractedDec,
+                                                      result['raJ2000'], result['decJ2000'])))
 
     @unittest.expectedFailure
     def testBoxBounds(self):
@@ -73,9 +73,9 @@ class testCatalogBounds(unittest.TestCase):
                 continue
             print "Running tests for", objname
             circ_bounds = objcls.testObservationMetaData.bounds
-            length = circ_bounds.radius
-            raCenter = circ_bounds.RA+length
-            decCenter = circ_bounds.DEC+length
+            length = numpy.degrees(circ_bounds.radius)
+            raCenter = numpy.degrees(circ_bounds.RA)+length
+            decCenter = numpy.degrees(circ_bounds.DEC)+length
             obs_metadata = ObservationMetaData(boundType='box',unrefractedRA=raCenter,unrefractedDec=decCenter,
                                                boundLength=length,
                                                mjd=51000., bandpassName='i')
