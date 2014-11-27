@@ -1,27 +1,10 @@
 import unittest
 import numpy
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, haversine
 
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
-
-def distanceToPoint(lon1, lat1, lon2, lat2):
-    nx1 = numpy.cos(lat1) * numpy.cos(lon1)
-    ny1 = numpy.cos(lat1) * numpy.sin(lon1)
-    nz1 = numpy.sin(lat1)
-    nx2 = numpy.cos(lat2) * numpy.cos(lon2)
-    ny2 = numpy.cos(lat2) * numpy.sin(lon2)
-    nz2 = numpy.sin(lat2)
-    return 2 * numpy.arcsin(
-                             numpy.sqrt((nx1 - nx2) * (nx1 - nx2)
-                                      + (ny1 - ny2) * (ny1 - ny2)
-                                      + (nz1 - nz2) * (nz1 - nz2)
-                                        ) / 2.
-                                        )
-                        
-
-vDistanceBetweenPoints = numpy.vectorize(distanceToPoint)
 
 class testCatalogBounds(unittest.TestCase):
     @unittest.expectedFailure
@@ -54,7 +37,7 @@ class testCatalogBounds(unittest.TestCase):
 
             #confirm radius > distance from all points to center
             self.assertGreater(obs_metadata.bounds.radius + 1.e-4,
-                           max(vDistanceBetweenPoints(obs_metadata.unrefractedRA,
+                           max(haversine(obs_metadata.unrefractedRA,
                                                       obs_metadata.unrefractedDec,
                                                       result['raJ2000'], result['decJ2000'])))
 
