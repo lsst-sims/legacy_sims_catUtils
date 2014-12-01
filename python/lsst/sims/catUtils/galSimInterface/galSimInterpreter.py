@@ -190,25 +190,6 @@ class GalSimInterpreter(object):
                 outputList.append(dd)
         return outputString, outputList
 
-    def drawCatalog(self, fileNameRoot=None, bandPass=None):
-        """
-        Loop through the detectors read in by readCatalog and create FITS images for each
-
-        param [in] fileNameRoot is a string containing the root of the names of the resulting FITS
-        files.  The output files will be named fileNameRoot_detectorName.fits, i.e.
-        fileNameRoot_R_0_0_S_1_2.fits, etc.
-
-        param [in] bandPass is a string containing the name of the file which contains the filter
-        bandpass over which you want to integrate the flux.  This file should be two columns: wavelength
-        in nanometers and throughput from 0.0 to 1.0
-        """
-
-        #read in the bandpass
-        bp = galsim.Bandpass(bandPass)
-        for detector in self.detectors:
-            self.drawImage(fileNameRoot=fileNameRoot, bandPass=bp, detector=detector)
-
-
     def initializeImage(self, detector=None):
         """
         Draw the FITS file associated with a specific detector
@@ -308,42 +289,3 @@ class GalSimInterpreter(object):
     def writeImages(self):
         for imageName in self.detectorImages:
             self.detectorImages[imageName].write(file_name=imageName)
-            
-
-
-def main():
-    """
-    This method reads in the galSim_example.txt catalog created by
-    galSimCatalogGenerator.py and uses it to draw FITS files for each
-    of the detectors defined in that catalog.
-
-    See the documentation at the top of galSimCatalogGenerator.py for an
-    explanation of why the two scripts must be separate.
-
-    Run this script using the python for which you have GalSim installed.
-
-    Be sure to run it in a shell in which all of the LSST stack environment
-    variables have been set, otherwise you will not have access to all of the
-    photUtils functionality needed by the GalSimInterpreter.
-    """
-
-    try:
-        #specify a bandpass through which to observe the galaxies
-        bandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
-    except AttributeError:
-        print "You must set the environment variable THROUGPUTS_DIR to point"
-        print "to wherever the LSST throughputs are stored on your machine\n"
-        print "probably something like $LSST_HOME/yourOS/throughputs/version/"
-        exit()
-
-    gs = GalSimInterpreter()
-
-    #read in our catalog of galaxy bulges
-    gs.readCatalog('galSim_example.txt')
-
-    #write the images to files of the name galsimTest_detectorName.fits
-    name = 'galsimTest_'
-    gs.drawCatalog(bandPass=bandPass, fileNameRoot=name)
-
-if __name__ == "__main__":
-    main()
