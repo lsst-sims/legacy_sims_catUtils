@@ -65,7 +65,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
 
-    hasBeenDrawn = []
+    objectHasBeenDrawn = []
     uniqueSeds = {}
 
     def get_sedFilepath(self):
@@ -151,9 +151,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         for (name, xp, yp, hl, minor, major) in \
             zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis):
             
-            if name in self.hasBeenDrawn:
+            if name in self.objectHasBeenDrawn:
                 raise RuntimeError('Trying to draw %s more than once' % str(name))
-            self.hasBeenDrawn.append(name)
+            self.objectHasBeenDrawn.append(name)
             chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
                                                                          minorAxis=minor, majorAxis=major,
                                                                          halfLightRadius=hl)
