@@ -151,8 +151,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         sindex = self.column_by_name('sindex')
         sedList = self._calculateGalSimSeds()
 
-        testBandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
-
         output = []
         for (name, xp, yp, hlr, minor, major, pa, ss, sn) in \
             zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis, positionAngle,
@@ -166,7 +164,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                                          halfLightRadius=hlr)
             output.append(chipsString)
             self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
-                                              bandPassName=testBandPass, sindex=sn, minorAxis=minor,
+                                              sindex=sn, minorAxis=minor,
                                               majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                               x_pupil=xp, y_pupil=yp, sed=ss)
         
@@ -223,7 +221,12 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         
             detectors.append(detector)
         
-        self.galSimInterpreter = GalSimInterpreter(detectors=detectors)
+        testBandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
+        
+        bandPassNames = ['g']
+        bandPassFiles = [testBandPass]
+        
+        self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames, bandPassFiles=bandPassFiles)
         InstanceCatalog.write_header(self, file_handle)
 
     def write_catalog(self, *args, **kwargs):
