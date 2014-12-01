@@ -21,7 +21,7 @@ class GalSimDetector(object):
 
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
-                 plateScale=None):
+                 plateScale=None, fileNameRoot=''):
         """
         param [in] name is a string denoting the name of the detector (this should be the
         same name that will be returned by the astrometry method findChipName()
@@ -44,6 +44,18 @@ class GalSimDetector(object):
         self.yMin = yMin
         self.yMax = yMax
         self.plateScale = plateScale
+        self.fileName = self._getFileName(fileNameRoot=fileNameRoot)
+
+
+    def _getFileName(self, fileNameRoot=''):
+        #format the name of the detector to add to the name of the FITS file
+        detectorName = self.name
+        detectorName = detectorName.replace(',','_')
+        detectorName = detectorName.replace(':','_')
+        detectorName = detectorName.replace(' ','_')
+
+        name = fileNameRoot+detectorName+'.fits'
+        return name
 
 class GalSimInterpreter(object):
     """
@@ -187,17 +199,8 @@ class GalSimInterpreter(object):
         for detector in self.detectors:
             self.drawImage(fileNameRoot=fileNameRoot, bandPass=bp, detector=detector)
 
-    def _getImageName(self, fileNameRoot='', detector=None):
-        #format the name of the detector to add to the name of the FITS file
-        detectorName = detector.name
-        detectorName = detectorName.replace(',','_')
-        detectorName = detectorName.replace(':','_')
-        detectorName = detectorName.replace(' ','_')
 
-        fileName = fileNameRoot+detectorName+'.fits'
-        return fileName
-
-    def initializeImage(self, fileName='', detector=None):
+    def initializeImage(self, detector=None):
         """
         Draw the FITS file associated with a specific detector
 
@@ -215,7 +218,7 @@ class GalSimInterpreter(object):
         ny = int((detector.yMax - detector.yMin)/detector.plateScale)
         image = galsim.Image(nx,ny)
         
-        self.detectorImages[fileName] = image
+        self.detectorImages[detector.fileName] = image
 
     def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', bandPassName=None, **kwargs):
         if bandPassName is None:
@@ -230,20 +233,18 @@ class GalSimInterpreter(object):
         #draw all of the objects who illumine this detector
         fileNameList = []
         for dd in detectorList:
-            fileName = self._getImageName(fileNameRoot=fileNameRoot, detector=dd)
-            fileNameList.append(fileName)
-            if fileName not in self.detectorImages:    
-                self.initializeImage(fileName=fileName, detector=dd)
+            if dd.fileName not in self.detectorImages:    
+                self.initializeImage(detector=dd)
         
         if galSimType == 'galaxy':
-            self.drawGalaxy(fileNameList=fileNameList, detectorList=detectorList, 
+            self.drawGalaxy(detectorList=detectorList, 
                                 bandPass=bandPass, **kwargs)
         else:
             print "Apologies: the GalSimInterpreter does not yet have a method to draw "
             print objectParams['galSimType']
             print " objects\n"
 
-    def drawGalaxy(self, fileNameList=None, detectorList=None, bandPass=None, sindex=None, minorAxis=None,
+    def drawGalaxy(self, detectorList=None, bandPass=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None, 
                    x_pupil=None, y_pupil=None, sed=None):
         """
@@ -273,9 +274,9 @@ class GalSimInterpreter(object):
         #turn the Sersic profile into an ellipse
         centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
         
-        for (detector, fileName) in zip(detectorList, fileNameList):
+        for detector in detectorList:
             
-            image = self.detectorImages[fileName]
+            image = self.detectorImages[detector.fileName]
             
             #by default, galsim draws objects at the center of the image;
             #this will shift the object into its correct position
