@@ -228,20 +228,22 @@ class GalSimInterpreter(object):
             self.bandPasses[bandPassName] = bandPass
         
         #draw all of the objects who illumine this detector
+        fileNameList = []
         for dd in detectorList:
             fileName = self._getImageName(fileNameRoot=fileNameRoot, detector=dd)
+            fileNameList.append(fileName)
             if fileName not in self.detectorImages:    
                 self.initializeImage(fileName=fileName, detector=dd)
         
-            if galSimType == 'galaxy':
-                self.drawGalaxy(image=self.detectorImages[fileName], detector=dd, 
+        if galSimType == 'galaxy':
+            self.drawGalaxy(fileNameList=fileNameList, detectorList=detectorList, 
                                 bandPass=bandPass, **kwargs)
-            else:
-                print "Apologies: the GalSimInterpreter does not yet have a method to draw "
-                print objectParams['galSimType']
-                print " objects\n"
+        else:
+            print "Apologies: the GalSimInterpreter does not yet have a method to draw "
+            print objectParams['galSimType']
+            print " objects\n"
 
-    def drawGalaxy(self, image=None, detector=None, bandPass=None, sindex=None, minorAxis=None,
+    def drawGalaxy(self, fileNameList=None, detectorList=None, bandPass=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None, 
                    x_pupil=None, y_pupil=None, sed=None):
         """
@@ -266,34 +268,38 @@ class GalSimInterpreter(object):
         yp = radiansToArcsec(y_pupil)
 
         #create a Sersic profile
-        obj = galsim.Sersic(n=float(sindex), half_light_radius=float(hlr))
+        centeredObj = galsim.Sersic(n=float(sindex), half_light_radius=float(hlr))
 
         #turn the Sersic profile into an ellipse
-        obj = obj.shear(q=minor/major, beta=positionAngle*galsim.radians)
+        centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
+        
+        for (detector, fileName) in zip(detectorList, fileNameList):
+            
+            image = self.detectorImages[fileName]
+            
+            #by default, galsim draws objects at the center of the image;
+            #this will shift the object into its correct position
+            dx=xp-detector.xCenter
+            dy=yp-detector.yCenter
+            obj = centeredObj.shift(dx, dy)
 
-        #by default, galsim draws objects at the center of the image;
-        #this will shift the object into its correct position
-        dx=xp-detector.xCenter
-        dy=yp-detector.yCenter
-        obj = obj.shift(dx, dy)
+            #declare a spectrum() function for galSim to use
+            #spectrum = galsim.SED(objectParams['galSimSedName'],
+            #                         flux_type='flambda')
 
-        #declare a spectrum() function for galSim to use
-        #spectrum = galsim.SED(objectParams['galSimSedName'],
-        #                         flux_type='flambda')
+            spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
+                                  flux_type='flambda')
 
-        spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
-                              flux_type='flambda')
+            #convolve the Sersic profile with the spectrum
+            obj = obj*spectrum
 
-        #convolve the Sersic profile with the spectrum
-        obj = obj*spectrum
-
-        #add this object to the image, integrating over the bandPass
-        #Note: by specifying method='real_space', we are asking GalSim
-        #to directly integrate over the pixels.  Other options are to use
-        #method='fft' and integrate using a Fourier transform (though this method can
-        #be finnicky for large images) or method='phot' in which case photons are drawn
-        #from the SED and shot at the chip (a la phoSim)
-        image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
+            #add this object to the image, integrating over the bandPass
+            #Note: by specifying method='real_space', we are asking GalSim
+            #to directly integrate over the pixels.  Other options are to use
+            #method='fft' and integrate using a Fourier transform (though this method can
+            #be finnicky for large images) or method='phot' in which case photons are drawn
+            #from the SED and shot at the chip (a la phoSim)
+            image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
 
     def writeImages(self):
