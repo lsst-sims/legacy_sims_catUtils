@@ -79,6 +79,9 @@ class GalSimInterpreter(object):
         #of the light from the object falls on that detector)
         self.chipsImpinged = None
 
+        self.detectorImages = {}
+        self.bandPasses = {}
+
 
     def _doesObjectImpingeOnChip(self, xPupil=None, yPupil=None, halfLightRadius=None,
                                  minorAxis=None, majorAxis=None, detector=None):
@@ -184,20 +187,7 @@ class GalSimInterpreter(object):
         for detector in self.detectors:
             self.drawImage(fileNameRoot=fileNameRoot, bandPass=bp, detector=detector)
 
-    def drawImage(self, fileNameRoot=None, bandPass=None, detector=None):
-        """
-        Draw the FITS file associated with a specific detector
-
-        param [in] fileNameRoot is a string containing the root of the names of the resulting fits
-        files.  The output files will be named fileNameRoot_detectorName.fits, i.e.
-        fileNameRoot_R_0_0_S_1_2.fits, etc.
-
-
-        param [in] bandPass is galsim.bandpass object denoting the bandpass over which to integrate flux
-
-        param [in] detector is a GalSimDetector object indicating the detector for which to draw the FITS file
-        """
-
+    def _getImageName(self, fileNameRoot='', detector=None):
         #format the name of the detector to add to the name of the FITS file
         detectorName = detector.name
         detectorName = detectorName.replace(',','_')
@@ -205,29 +195,55 @@ class GalSimInterpreter(object):
         detectorName = detectorName.replace(' ','_')
 
         fileName = fileNameRoot+detectorName+'.fits'
+        return fileName
+
+    def initializeImage(self, fileName='', detector=None):
+        """
+        Draw the FITS file associated with a specific detector
+
+        param [in] fileNameRoot is a string containing the root of the names of the resulting fits
+        files.  The output files will be named fileNameRoot_detectorName.fits, i.e.
+        fileNameRoot_R_0_0_S_1_2.fits, etc.
+
+        param [in] bandPass is galsim.bandpass object denoting the bandpass over which to integrate flux
+
+        param [in] detector is a GalSimDetector object indicating the detector for which to draw the FITS file
+        """
 
         #set the size of the image
         nx = int((detector.xMax - detector.xMin)/detector.plateScale)
         ny = int((detector.yMax - detector.yMin)/detector.plateScale)
         image = galsim.Image(nx,ny)
+        
+        self.detectorImages[fileName] = image
 
+    def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', bandPassName=None, **kwargs):
+        if bandPassName is None:
+            return
+        
+        if bandPassName in self.bandPasses:
+            bandPass = self.bandPasses[bandPassName]
+        else:
+            bandPass = galsim.Bandpass(bandPassName)
+            self.bandPasses[bandPassName] = bandPass
+        
         #draw all of the objects who illumine this detector
-        drawn = 0
-        if self.data is not None:
-            for (ii, entry) in enumerate(self.data):
-                if detector.name in self.chipsImpinged[ii]:
-                    drawn += 1
-                    if entry['galSimType'] == 'galaxy':
-                        self.drawGalaxy(entry=entry, image=image, detector=detector, bandPass=bandPass)
-                    else:
-                        print "Apologies: the GalSimInterpreter does not yet have a method to draw "
-                        print entry['galSimType']
-                        print "objects\n"
+        for dd in detectorList:
+            fileName = self._getImageName(fileNameRoot=fileNameRoot, detector=dd)
+            if fileName not in self.detectorImages:    
+                self.initializeImage(fileName=fileName, detector=dd)
+        
+            if galSimType == 'galaxy':
+                self.drawGalaxy(image=self.detectorImages[fileName], detector=dd, 
+                                bandPass=bandPass, **kwargs)
+            else:
+                print "Apologies: the GalSimInterpreter does not yet have a method to draw "
+                print objectParams['galSimType']
+                print " objects\n"
 
-        if drawn>0:
-            image.write(fileName)
-
-    def drawGalaxy(self, entry=None, image=None, detector=None, bandPass=None):
+    def drawGalaxy(self, image=None, detector=None, bandPass=None, sindex=None, minorAxis=None,
+                   majorAxis=None, positionAngle=None, halfLightRadius=None, 
+                   x_pupil=None, y_pupil=None, sed=None):
         """
         Draw the image of a galaxy.
 
@@ -239,23 +255,34 @@ class GalSimInterpreter(object):
 
         param [in] bandPass is a galsim.bandpass object denoting the bandpass over which to integrate flux
         """
+        
+        if sed is None:
+            return
+        
+        hlr = radiansToArcsec(halfLightRadius)
+        minor = radiansToArcsec(minorAxis)
+        major = radiansToArcsec(majorAxis)
+        xp = radiansToArcsec(x_pupil)
+        yp = radiansToArcsec(y_pupil)
 
         #create a Sersic profile
-        obj = galsim.Sersic(n=entry['sindex'], half_light_radius=entry['halfLightRadius'],
-                            gsparams=self.bigfft)
+        obj = galsim.Sersic(n=float(sindex), half_light_radius=float(hlr))
 
         #turn the Sersic profile into an ellipse
-        obj = obj.shear(q=entry['minorAxis']/entry['majorAxis'], beta=entry['positionAngle']*galsim.radians)
+        obj = obj.shear(q=minor/major, beta=positionAngle*galsim.radians)
 
         #by default, galsim draws objects at the center of the image;
         #this will shift the object into its correct position
-        dx=entry['x_pupil']-detector.xCenter
-        dy=entry['y_pupil']-detector.yCenter
+        dx=xp-detector.xCenter
+        dy=yp-detector.yCenter
         obj = obj.shift(dx, dy)
 
         #declare a spectrum() function for galSim to use
-        spectrum = galsim.SED(entry['galSimSedName'],
-                                 flux_type='flambda')
+        #spectrum = galsim.SED(objectParams['galSimSedName'],
+        #                         flux_type='flambda')
+
+        spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
+                              flux_type='flambda')
 
         #convolve the Sersic profile with the spectrum
         obj = obj*spectrum
@@ -268,6 +295,11 @@ class GalSimInterpreter(object):
         #from the SED and shot at the chip (a la phoSim)
         image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
                                   add_to_image=True, method='real_space')
+
+    def writeImages(self):
+        for imageName in self.detectorImages:
+            self.detectorImages[imageName].write(file_name=imageName)
+            
 
 
 def main():

@@ -65,6 +65,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
 
+    detectorImages = {}
     objectHasBeenDrawn = []
     uniqueSeds = {}
 
@@ -146,18 +147,29 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         halfLight = self.column_by_name('halfLightRadius')
         minorAxis = self.column_by_name('minorAxis')
         majorAxis = self.column_by_name('majorAxis')
+        positionAngle = self.column_by_name('positionAngle')
+        sindex = self.column_by_name('sindex')
         sedList = self._calculateGalSimSeds()
+
+        testBandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
+
         output = []
-        for (name, xp, yp, hl, minor, major) in \
-            zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis):
+        for (name, xp, yp, hlr, minor, major, pa, ss, sn) in \
+            zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis, positionAngle,
+            sedList, sindex):
             
             if name in self.objectHasBeenDrawn:
                 raise RuntimeError('Trying to draw %s more than once' % str(name))
             self.objectHasBeenDrawn.append(name)
             chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
                                                                          minorAxis=minor, majorAxis=major,
-                                                                         halfLightRadius=hl)
+                                                                         halfLightRadius=hlr)
             output.append(chipsString)
+            self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
+                                              bandPassName=testBandPass, sindex=sn, minorAxis=minor,
+                                              majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
+                                              x_pupil=xp, y_pupil=yp, sed=ss)
+        
         return numpy.array(output)
 
     def write_header(self, file_handle):
@@ -214,6 +226,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         self.galSimInterpreter = GalSimInterpreter(detectors=detectors)
         InstanceCatalog.write_header(self, file_handle)
 
+    def write_catalog(self, *args, **kwargs):
+        InstanceCatalog.write_catalog(self,*args,**kwargs)
+        self.galSimInterpreter.writeImages()
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """
@@ -224,7 +239,7 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """
 
     catalog_type = 'galsim_galaxy'
+    galsim_type = 'galaxy'
     default_columns = [('galacticAv', 0.1, float),
                        ('galSimType', 'galaxy', (str,6))]
-
 
