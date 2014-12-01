@@ -54,7 +54,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                       'positionAngle','fitsFiles']
 
     transformations = {'x_pupil':radiansToArcsec,
-                       'y_pupil':radiansToArcsec}
+                       'y_pupil':radiansToArcsec,
+                       'halfLightRadius':radiansToArcsec}
 
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
