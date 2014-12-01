@@ -10,14 +10,9 @@ it to create FITS images.
 import os
 import numpy
 import galsim
+from lsst.sims.catalogs.generation.db import radiansToArcsec
 
 __all__ = ["GalSimInterpreter", "GalSimDetector", "radiansToArcsec"]
-
-def radiansToArcsec(value):
-    """
-    Accepts value in radians; converts to arcseconds and returns
-    """
-    return 3600.0*numpy.degrees(value)
 
 class GalSimDetector(object):
     """
