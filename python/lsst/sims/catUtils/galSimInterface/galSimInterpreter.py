@@ -283,6 +283,11 @@ class GalSimInterpreter(object):
         
         return centeredObj
 
+    def compressObjectList(self):
+        for name in self.detectorObjects:
+            obj = galsim.ChromaticSum(self.detectorObjects[name])
+            self.detectorObjects[name] = [obj]
+
     def writeImages(self):
         for detector in self.detectors:
             for bandPassName in self.bandPasses:

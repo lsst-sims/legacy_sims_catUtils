@@ -194,6 +194,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                               majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                               x_pupil=xp, y_pupil=yp, sed=ss)
         
+        if hasattr(self,'galSimInterpreter'):
+            self.galSimInterpreter.compressObjectList()
         return numpy.array(output)
 
     def _getBandPasses(self):
