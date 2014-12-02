@@ -219,8 +219,10 @@ class GalSimInterpreter(object):
             return
         
         for dd in detectorList:
-            if dd.name not in self.detectorObjects:
-                self.detectorObjects[dd.name] = []
+            for bandPassName in self.bandPasses:
+                name = self._getFileName(detector=dd, bandPassName=bandPassName)
+                if name not in self.detectorObjects:
+                    self.detectorObjects[name] = []
         
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
@@ -250,7 +252,9 @@ class GalSimInterpreter(object):
 
             #convolve the Sersic profile with the spectrum
             obj = obj*spectrum
-            self.detectorObjects[detector.name].append(obj)
+            for bandPassName in self.bandPasses:
+                name = self._getFileName(detector=detector, bandPassName=bandPassName)
+                self.detectorObjects[name].append(obj)
 
 
     def drawGalaxy(self, sindex=None, minorAxis=None,
@@ -281,10 +285,10 @@ class GalSimInterpreter(object):
 
     def writeImages(self):
         for detector in self.detectors:
-            if detector.name in self.detectorObjects:
-                obj = galsim.ChromaticSum(self.detectorObjects[detector.name])
-                for bandPassName in self.bandPasses:
-                    name = self._getFileName(detector=detector, bandPassName=bandPassName)
+            for bandPassName in self.bandPasses:
+                name = self._getFileName(detector=detector, bandPassName=bandPassName)
+                if name in self.detectorObjects:
+                    obj = galsim.ChromaticSum(self.detectorObjects[name])
                     image = self.blankImage(detector=detector)
                     image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
                                           image=image, add_to_image=True, method='phot', gain=self.gain,
