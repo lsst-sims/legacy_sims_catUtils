@@ -93,7 +93,7 @@ class GalSimInterpreter(object):
         #of the light from the object falls on that detector)
         self.chipsImpinged = None
 
-        self.detectorImages = {}
+        self.detectorObjects = {}
         self.bandPasses = {}
         
         self.setBandPasses(bandPassNames=bandPassNames, bandPassFiles=bandPassFiles)
@@ -192,7 +192,7 @@ class GalSimInterpreter(object):
                 outputList.append(dd)
         return outputString, outputList
 
-    def initializeImage(self, detector=None):
+    def blankImage(self, detector=None):
         """
         Draw the FITS file associated with a specific detector
 
@@ -219,10 +219,8 @@ class GalSimInterpreter(object):
             return
         
         for dd in detectorList:
-            for bandPassName in self.bandPasses:
-                name = self._getFileName(detector=dd, bandPassName=bandPassName)
-                if name not in self.detectorImages:    
-                    self.detectorImages[name] = self.initializeImage(detector=dd)
+            if dd.name not in self.detectorObjects:
+                self.detectorObjects[dd.name] = []
         
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
@@ -252,19 +250,8 @@ class GalSimInterpreter(object):
 
             #convolve the Sersic profile with the spectrum
             obj = obj*spectrum
-            
-            for bandPassName in self.bandPasses:
-                image = self.detectorImages[self._getFileName(detector=detector, bandPassName=bandPassName)]
-                bandPass = self.bandPasses[bandPassName]
+            self.detectorObjects[detector.name].append(obj)
 
-                #add this object to the image, integrating over the bandPass
-                #Note: by specifying method='real_space', we are asking GalSim
-                #to directly integrate over the pixels.  Other options are to use
-                #method='fft' and integrate using a Fourier transform (though this method can
-                #be finnicky for large images) or method='phot' in which case photons are drawn
-                #from the SED and shot at the chip (a la phoSim)
-                image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
-                                      add_to_image=True, method='real_space', gain=self.gain)
 
     def drawGalaxy(self, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None):
@@ -292,7 +279,15 @@ class GalSimInterpreter(object):
         
         return centeredObj
 
-
     def writeImages(self):
-        for imageName in self.detectorImages:
-            self.detectorImages[imageName].write(file_name=imageName)
+        for detector in self.detectors:
+            if detector.name in self.detectorObjects:
+                obj = galsim.ChromaticSum(self.detectorObjects[detector.name])
+                for bandPassName in self.bandPasses:
+                    name = self._getFileName(detector=detector, bandPassName=bandPassName)
+                    image = self.blankImage(detector=detector)
+                    image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
+                                          image=image, add_to_image=True, method='phot', gain=self.gain,
+                                          n_photons=10000)
+  
+                    image.write(file_name=name)
