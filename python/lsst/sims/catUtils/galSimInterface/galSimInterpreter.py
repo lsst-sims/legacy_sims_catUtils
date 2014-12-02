@@ -210,51 +210,29 @@ class GalSimInterpreter(object):
         
         return image
 
-    def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', **kwargs):
-        #draw all of the objects who illumine this detector
+    def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', sed=None, x_pupil=None,
+                   y_pupil=None, **kwargs):
+        
+        if sed is None:
+            return
+        
         for dd in detectorList:
             for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=dd, bandPassName=bandPassName)
                 if name not in self.detectorImages:    
                     self.detectorImages[name] = self.initializeImage(detector=dd)
         
+        xp = radiansToArcsec(x_pupil)
+        yp = radiansToArcsec(y_pupil)
+        
         if galSimType == 'galaxy':
-            self.drawGalaxy(detectorList=detectorList, **kwargs)
+            centeredObj = self.drawGalaxy(**kwargs)
         else:
             print "Apologies: the GalSimInterpreter does not yet have a method to draw "
             print objectParams['galSimType']
             print " objects\n"
-
-    def drawGalaxy(self, detectorList=None, sindex=None, minorAxis=None,
-                   majorAxis=None, positionAngle=None, halfLightRadius=None, 
-                   x_pupil=None, y_pupil=None, sed=None):
-        """
-        Draw the image of a galaxy.
-
-        param [in] entry is an element from self.data containing the information on an astronomical object
-
-        param [in] image is a galsim Image object into which we will draw this object
-
-        param [in] detector is a GalSimDetector object denoting the detectror with which the image is associated
-
-        param [in] bandPass is a galsim.bandpass object denoting the bandpass over which to integrate flux
-        """
-        
-        if sed is None:
             return
-        
-        hlr = radiansToArcsec(halfLightRadius)
-        minor = radiansToArcsec(minorAxis)
-        major = radiansToArcsec(majorAxis)
-        xp = radiansToArcsec(x_pupil)
-        yp = radiansToArcsec(y_pupil)
-
-        #create a Sersic profile
-        centeredObj = galsim.Sersic(n=float(sindex), half_light_radius=float(hlr))
-
-        #turn the Sersic profile into an ellipse
-        centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
-        
+            
         for detector in detectorList:
             
             #by default, galsim draws objects at the center of the image;
@@ -285,6 +263,33 @@ class GalSimInterpreter(object):
                 #from the SED and shot at the chip (a la phoSim)
                 image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
                                       add_to_image=True, method='real_space')
+
+    def drawGalaxy(self, sindex=None, minorAxis=None,
+                   majorAxis=None, positionAngle=None, halfLightRadius=None):
+        """
+        Draw the image of a galaxy.
+
+        param [in] entry is an element from self.data containing the information on an astronomical object
+
+        param [in] image is a galsim Image object into which we will draw this object
+
+        param [in] detector is a GalSimDetector object denoting the detectror with which the image is associated
+
+        param [in] bandPass is a galsim.bandpass object denoting the bandpass over which to integrate flux
+        """
+        
+        hlr = radiansToArcsec(halfLightRadius)
+        minor = radiansToArcsec(minorAxis)
+        major = radiansToArcsec(majorAxis)
+
+        #create a Sersic profile
+        centeredObj = galsim.Sersic(n=float(sindex), half_light_radius=float(hlr))
+
+        #turn the Sersic profile into an ellipse
+        centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
+        
+        return centeredObj
+
 
     def writeImages(self):
         for imageName in self.detectorImages:
