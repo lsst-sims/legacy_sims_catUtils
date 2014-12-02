@@ -18,6 +18,7 @@ classes to see how this is implemented.
 
 import numpy
 import os
+import eups
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector, radiansToArcsec
@@ -60,6 +61,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
     delimiter = ';'
+
+    band_pass_names = ['u','g','r','i','z','y']
+    band_pass_directory = eups.productDir('throughputs')
+    band_pass_root = 'baseline/total'
 
     #This is just a place holder.  If you want to assign a different camera,
     #you can do so immediately after instantiating this class
@@ -170,6 +175,14 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         
         return numpy.array(output)
 
+    def _getBandPasses(self):
+        bandPassFiles = []
+        for bpn in self.band_pass_names:
+            name = self.band_pass_directory+'/'+self.band_pass_root+'_'+bpn+'.dat'
+            bandPassFiles.append(name)
+
+        return bandPassFiles, self.band_pass_names
+
     def write_header(self, file_handle):
         """
         Overwrite the write_header method from InstanceCatalog because, in order to run GalSim,
@@ -220,13 +233,11 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                       plateScale=plateScale)
         
             detectors.append(detector)
+
+        bandPassFiles, bandPassNames = self._getBandPasses()
         
-        testBandPass = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline','total_g.dat')
-        
-        bandPassNames = ['g']
-        bandPassFiles = [testBandPass]
-        
-        self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames, bandPassFiles=bandPassFiles)
+        self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
+                                                   bandPassFiles=bandPassFiles)
         InstanceCatalog.write_header(self, file_handle)
 
     def write_catalog(self, *args, **kwargs):
@@ -245,4 +256,5 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     galsim_type = 'galaxy'
     default_columns = [('galacticAv', 0.1, float),
                        ('galSimType', 'galaxy', (str,6))]
+
 
