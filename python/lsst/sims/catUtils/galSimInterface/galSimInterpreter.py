@@ -74,11 +74,13 @@ class GalSimInterpreter(object):
     detector in the catalog.
     """
 
-    def __init__(self, detectors=None, bandPassNames=None, bandPassFiles=None):
+    def __init__(self, detectors=None, bandPassNames=None, bandPassFiles=None,
+                 gain=2.3):
 
         #in case we want to draw images using the Fourier transform
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
 
+        self.gain = gain
         self.data = None
         
         if detectors is None:
@@ -262,7 +264,7 @@ class GalSimInterpreter(object):
                 #be finnicky for large images) or method='phot' in which case photons are drawn
                 #from the SED and shot at the chip (a la phoSim)
                 image = obj.drawImage(bandpass=bandPass, scale=detector.plateScale, image=image,
-                                      add_to_image=True, method='real_space')
+                                      add_to_image=True, method='real_space', gain=self.gain)
 
     def drawGalaxy(self, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None):

@@ -66,6 +66,27 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     band_pass_directory = eups.productDir('throughputs')
     band_pass_root = 'baseline/total'
 
+    #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
+    #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
+    #be converted to photons/nm (see the function __call__() and the assignment of
+    #self._rest_photons in the __init__() of galsim's sed.py file).  Thus, we need
+    #to read in our SEDs, normalize them, and then multiply by the exposure time
+    #and the effective area to get from ergs/s/cm^2/nm to ergs/nm.  
+    #
+    #The gain parameter should convert between photons and ADU (so: it is the
+    #traditional definition of "gain" -- electrons per ADU -- multiplied by the
+    #quantum efficiency of the detector).  Because we fold the quantum efficiency
+    #of the detector into our total_[u,g,r,i,z,y].dat bandpass files
+    #(see the readme in the THROUGHPUTS_DIR/baseline/), we only need to multiply
+    #by the electrons per ADU gain.
+    #
+    #These parameters can be set to different values by redefining them in daughter 
+    #classes of this class.
+    #
+    effective_area = numpy.pi*(6.5*100.0/2.0)**2 #copied from Sed.py in sims_photUtils
+    exposure_time = 15.0 #copied from Sed.py in sims_photUtils
+    gain = 2.3 #copied from Sed.py in sims_photUtils
+
     #This is just a place holder.  If you want to assign a different camera,
     #you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
@@ -124,7 +145,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 #normalize the SED
                 fNorm = sed.calcFluxNorm(norm, imsimband)
-                sed.multiplyFluxNorm(fNorm)
+                sed.multiplyFluxNorm(fNorm*self.exposure_time*self.effective_area)
 
                 #apply dust extinction (internal)
                 if iAv != 0.0 and iRv != 0.0:
@@ -237,7 +258,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         bandPassFiles, bandPassNames = self._getBandPasses()
         
         self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
-                                                   bandPassFiles=bandPassFiles)
+                                                   bandPassFiles=bandPassFiles, gain=self.gain)
         InstanceCatalog.write_header(self, file_handle)
 
     def write_catalog(self, *args, **kwargs):
