@@ -44,4 +44,4 @@ galaxy_galSim = testGalSimGalaxies(gals, obs_metadata=obs_metadata)
 #galaxy_galSim.camera = LsstSimMapper().camera
 
 
-galaxy_galSim.write_catalog('galSim_example.txt', chunk_size=10)
+galaxy_galSim.write_catalog('galSim_example.txt', chunk_size=100)
