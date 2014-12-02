@@ -3,7 +3,7 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaDat
 from sqlalchemy.sql import select, func, column
 
 __all__ = ["StarBase", "StarObj", "MsStarObj", "WdStarObj", "RRLyStarObj",
-           "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj", 
+           "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj",
            "DwarfGalStarObj"]
 
 class StarBase(CatalogDBObject):
