@@ -288,15 +288,19 @@ class GalSimInterpreter(object):
             obj = galsim.ChromaticSum(self.detectorObjects[name])
             self.detectorObjects[name] = [obj]
 
-    def writeImages(self):
+    def writeImages(self, isTest=False):
         for detector in self.detectors:
             for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
                 if name in self.detectorObjects:
                     obj = galsim.ChromaticSum(self.detectorObjects[name])
                     image = self.blankImage(detector=detector)
-                    image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                          image=image, add_to_image=True, method='phot', gain=self.gain,
-                                          n_photons=10000)
+                    if isTest:
+                        image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
+                                              image=image, add_to_image=True, method='real_space', gain=self.gain)
+                    else:
+                        image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
+                                              image=image, add_to_image=True, method='phot', gain=self.gain,
+                                              n_photons=10000)
   
                     image.write(file_name=name)
