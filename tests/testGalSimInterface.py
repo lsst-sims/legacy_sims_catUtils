@@ -10,7 +10,7 @@ from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, ExampleGalSimPSF
-from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge
+from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge, testGalaxyDisk
 import lsst.afw.image as afwImage
 
 class testGalaxies(GalSimGalaxies):
@@ -57,11 +57,11 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.starCatName = 'testStarCatalog.sav'
 
     def tearDown(self):
-        #if os.path.exists(self.bulgeCatName):
-        #    os.unlink(self.bulgeCatName)
+        if os.path.exists(self.bulgeCatName):
+            os.unlink(self.bulgeCatName)
 
-        #if os.path.exists(self.diskCatName):
-        #    os.unlink(self.diskCatName)
+        if os.path.exists(self.diskCatName):
+            os.unlink(self.diskCatName)
 
         #if os.path.exists(self.agnCatName):
         #    os.unlink(self.agnCatName)
@@ -92,6 +92,8 @@ class GalSimInterfaceTest(unittest.TestCase):
             galacticRv = float(gg[16])
         
             for name in catalog.galSimInterpreter.detectorObjects:
+                if nameRoot is not None:
+                    name = nameRoot+'_'+name
                 im = afwImage.ImageF(name)
                 imArr = im.getArray()
                 galsimCounts = imArr.sum()
@@ -103,17 +105,24 @@ class GalSimInterfaceTest(unittest.TestCase):
                 controlCounts = calcADUwrapper(sedName=sedName, bandpass=bandpass, redshift=redshift, magNorm=magNorm,
                                                internalAv=internalAv, internalRv=internalRv, galacticAv=galacticAv,
                                                galacticRv=galacticRv)
-                
+                                               
                 self.assertTrue(numpy.abs(controlCounts-galsimCounts) < 0.05*galsimCounts)
                 drawnFilters += 1
             
             self.assertEqual(drawnFilters,6)
 
-    def testGalaxyBulge(self):
+    def testGalaxyBulges(self):
         catName = self.bulgeCatName
         gals = testGalaxyBulge(address=self.connectionString)
         cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat)
+       
+    def testGalaxyDisks(self):
+        catName = self.diskCatName
+        gals = testGalaxyDisk(address=self.connectionString)
+        cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
+        self.catalogTester(catName=catName, catalog=cat)
+   
     
     def testPSFimages(self):
         catName = self.bulgeCatName
