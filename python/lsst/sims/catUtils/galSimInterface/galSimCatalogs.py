@@ -271,12 +271,12 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         InstanceCatalog.write_catalog(self, *args, **kwargs)
         self.catalogHasBeenWritten = True
 
-    def write_images(self, isTest=False):
+    def write_images(self, isTest=False, nameRoot=None):
         if self.catalogHasBeenWritten is False:
             print "Cannot write GalSim images until you write the GalSim catalog"
             return
 
-        self.galSimInterpreter.writeImages(isTest=isTest)
+        self.galSimInterpreter.writeImages(isTest=isTest, nameRoot=nameRoot)
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """
