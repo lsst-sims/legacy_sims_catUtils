@@ -143,6 +143,23 @@ class GalSimInterpreter(object):
         returns True if the object does illuminate the detector; False if not
         """
 
+        if halfLightRadius==0.0 or minorAxis==0.0 or majorAxis==0.0:
+            #I am not sure in the case of point sources how to deal with this,
+            #since there is not general PSF formalism with a defined size.
+            #For the moment, I will do a very conservative test (letting in more objects
+            #than is probably necessary for each chip).  I will allow anything that is
+            #within 10 arcseconds of the detector's boundaries (on the assumption that no
+            #reasonably PSF would smear a source more than 10 arcseconds)
+            
+            if xPupil < detector.xMin - 10.0 or xPupil > detector.xMax + 10.0:
+                return False
+            
+            if yPupil < detector.yMin -10.0 or yPupil > detector.yMax + 10.0:
+                return False
+                
+            return True
+            
+        else:
         #12 November 2014
         #The method below is not terribly clever.  It triples the half light radius of the object,
         #maps it to an ellipse with the same major-to-minor axis ratio as the actual object,
@@ -151,25 +168,23 @@ class GalSimInterpreter(object):
         #This was meant to be a very safe estimate (choosing detectors that are farther from the object
         #than they probably need to be).  Something more clever and targeted is welcome
 
-        if xPupil >= detector.xMin and \
-           xPupil <= detector.xMax:
+            if xPupil >= detector.xMin and \
+               xPupil <= detector.xMax:
 
-            isBetweenX = True
-        else:
-            isBetweenX = False
+                isBetweenX = True
+            else:
+                isBetweenX = False
 
-        if yPupil >= detector.yMin and \
-           yPupil <= detector.yMax:
+            if yPupil >= detector.yMin and \
+               yPupil <= detector.yMax:
 
-            isBetweenY = True
-        else:
-            isBetweenY = False
+                isBetweenY = True
+            else:
+                isBetweenY = False
 
-        if isBetweenX and isBetweenY:
-            #the object falls on the detector directly
-            return True
-
-        if minorAxis!=0.0 and majorAxis!=0.0 and halfLightRadius!=0.0:
+            if isBetweenX and isBetweenY:
+                #the object falls on the detector directly
+                return True
 
             radius = 3.0*halfLightRadius
             ratio = minorAxis/majorAxis
