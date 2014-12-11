@@ -19,9 +19,10 @@ classes to see how this is implemented.
 import numpy
 import os
 import eups
+from lsst.sims.catalogs.generation.db import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies
-from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector, radiansToArcsec
+from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
 from lsst.sims.photUtils import EBVmixin, Sed, Bandpass
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom

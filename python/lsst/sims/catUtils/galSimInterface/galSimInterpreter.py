@@ -12,7 +12,7 @@ import numpy
 import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 
-__all__ = ["GalSimInterpreter", "GalSimDetector", "radiansToArcsec"]
+__all__ = ["GalSimInterpreter", "GalSimDetector"]
 
 class GalSimDetector(object):
     """
