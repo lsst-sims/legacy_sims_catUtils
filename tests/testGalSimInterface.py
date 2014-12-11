@@ -1,5 +1,6 @@
 from __future__ import with_statement
 import os
+import copy
 import numpy
 import unittest
 import eups
@@ -12,7 +13,7 @@ from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge
 import lsst.afw.image as afwImage
 
 class testGalaxies(GalSimGalaxies):
-    column_outputs = GalSimGalaxies.column_outputs
+    column_outputs = copy.deepcopy(GalSimGalaxies.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
     column_outputs.append('redshift')
