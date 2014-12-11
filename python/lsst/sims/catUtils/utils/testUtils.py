@@ -1,5 +1,6 @@
 import os
 import eups
+import copy
 from lsst.sims.photUtils import Bandpass, Sed
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj, \
@@ -71,7 +72,7 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
     #in radians in the database.  This is a side effect of the tiling
     #scheme used to cover the whole sky.
 
-    columns = GalaxyBulgeObj.columns
+    columns = copy.deepcopy(GalaxyBulgeObj.columns)
     _to_remove = []
     for entry in columns:
         if entry[0] == 'raJ2000' or entry[0] == 'decJ2000':
@@ -93,7 +94,7 @@ class testGalaxyDisk(SearchReversion, GalaxyDiskObj):
     #in radians in the database.  This is a side effect of the tiling
     #scheme used to cover the whole sky.
 
-    columns = GalaxyDiskObj.columns
+    columns = copy.deepcopy(GalaxyDiskObj.columns)
     _to_remove = []
     for entry in columns:
         if entry[0] == 'raJ2000' or entry[0] == 'decJ2000':
@@ -115,7 +116,7 @@ class testGalaxyAgn(SearchReversion, GalaxyAgnObj):
     #in radians in the database.  This is a side effect of the tiling
     #scheme used to cover the whole sky.
 
-    columns = GalaxyAgnObj.columns
+    columns = copy.deepcopy(GalaxyAgnObj.columns)
     _to_remove = []
     for entry in columns:
         if entry[0] == 'raJ2000' or entry[0] == 'decJ2000':
@@ -135,7 +136,7 @@ class testStars(SearchReversion, StarObj):
     #are implemented in StarObj rely on mathematical functions which
     #are not defined in sqlite.
 
-    columns = StarObj.columns
+    columns = copy.deepcopy(StarObj.columns)
     _to_remove = []
     for entry in columns:
         if entry[0] == 'galacticAv':
