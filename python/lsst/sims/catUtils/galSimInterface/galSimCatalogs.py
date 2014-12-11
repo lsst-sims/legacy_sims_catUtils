@@ -196,17 +196,22 @@ class GalSimBase(InstanceCatalog, CameraCoords):
             zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis, positionAngle,
             sedList, sindex):
             
-            if name in self.objectHasBeenDrawn:
-                raise RuntimeError('Trying to draw %s more than once' % str(name))
-            self.objectHasBeenDrawn.append(name)
-            chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
-                                                                         minorAxis=minor, majorAxis=major,
-                                                                         halfLightRadius=hlr)
-            output.append(chipsString)
-            self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
-                                              sindex=sn, minorAxis=minor,
-                                              majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
-                                              x_pupil=xp, y_pupil=yp, sed=ss)
+            if ss is not None:
+            
+                if name in self.objectHasBeenDrawn:
+                    raise RuntimeError('Trying to draw %s more than once' % str(name))
+                self.objectHasBeenDrawn.append(name)
+                chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
+                                                                             minorAxis=minor, majorAxis=major,
+                                                                             halfLightRadius=hlr)
+                output.append(chipsString)
+                self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
+                                                  sindex=sn, minorAxis=minor,
+                                                  majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
+                                                  x_pupil=xp, y_pupil=yp, sed=ss)
+        
+        if output == []:
+            output = [None]
         
         if hasattr(self,'galSimInterpreter'):
             self.galSimInterpreter.compressObjectList()
