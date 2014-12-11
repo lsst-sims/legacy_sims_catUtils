@@ -251,7 +251,7 @@ class GalSimInterpreter(object):
         yp = radiansToArcsec(y_pupil)
         
         if galSimType == 'galaxy':
-            centeredObj = self.drawGalaxy(**kwargs)
+            centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp, **kwargs)
         else:
             print "Apologies: the GalSimInterpreter does not yet have a method to draw "
             print objectParams['galSimType']
@@ -266,9 +266,6 @@ class GalSimInterpreter(object):
             dy=yp-detector.yCenter
             obj = centeredObj.shift(dx, dy)
             
-            if self.PSF is not None:
-                obj = self.PSF.applyPSF(x_pupil=xp, y_pupil=yp, obj=obj)
-
             #declare a spectrum() function for galSim to use
             #spectrum = galsim.SED(objectParams['galSimSedName'],
             #                         flux_type='flambda')
@@ -283,7 +280,7 @@ class GalSimInterpreter(object):
                 self.detectorObjects[name].append(obj)
 
 
-    def drawGalaxy(self, sindex=None, minorAxis=None,
+    def drawGalaxy(self, x_pupil=None, y_pupil=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None):
         """
         Draw the image of a galaxy.
@@ -306,6 +303,9 @@ class GalSimInterpreter(object):
 
         #turn the Sersic profile into an ellipse
         centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
+        if self.PSF is not None:
+            centeredObj = self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, obj=centeredObj)
+            
         return centeredObj
 
     def compressObjectList(self):
