@@ -90,11 +90,11 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(self.diskCatName):
             os.unlink(self.diskCatName)
 
-        #if os.path.exists(self.agnCatName):
-        #    os.unlink(self.agnCatName)
+        if os.path.exists(self.agnCatName):
+            os.unlink(self.agnCatName)
 
-        #if os.path.exists(self.starCatName):
-        #    os.unlink(self.starCatName)
+        if os.path.exists(self.starCatName):
+            os.unlink(self.starCatName)
 
         del self.bulgeCatName
         del self.diskCatName
@@ -135,6 +135,8 @@ class GalSimInterfaceTest(unittest.TestCase):
                                                
                 self.assertTrue(numpy.abs(controlCounts-galsimCounts) < 0.05*galsimCounts)
                 drawnFilters += 1
+                
+                os.unlink(name)
             
             self.assertEqual(drawnFilters,6)
 
