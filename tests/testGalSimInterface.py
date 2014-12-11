@@ -115,13 +115,13 @@ class GalSimInterfaceTest(unittest.TestCase):
         catName = self.bulgeCatName
         gals = testGalaxyBulge(address=self.connectionString)
         cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
-        self.catalogTester(catName=catName, catalog=cat)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
        
     def testGalaxyDisks(self):
         catName = self.diskCatName
         gals = testGalaxyDisk(address=self.connectionString)
         cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
-        self.catalogTester(catName=catName, catalog=cat)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
    
     
     def testPSFimages(self):
