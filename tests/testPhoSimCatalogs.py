@@ -14,7 +14,8 @@ import json
 import eups
 from collections import OrderedDict
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.catUtils.utils import testStars, testGalaxyDisk, testGalaxyBulge, testGalaxyAgn
+from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
+                                     testGalaxyBulgeDBObj, testGalaxyAgnDBObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
                                                          PhoSimCatalogZPoint
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
@@ -23,10 +24,10 @@ class PhoSimCatalogTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = makePhoSimTestDB(size=10)
-        self.bulgeDB = testGalaxyBulge(address='sqlite:///PhoSimTestDatabase.db')
-        self.diskDB = testGalaxyDisk(address='sqlite:///PhoSimTestDatabase.db')
-        self.agnDB = testGalaxyAgn(address='sqlite:///PhoSimTestDatabase.db')
-        self.starDB = testStars(address='sqlite:///PhoSimTestDatabase.db')
+        self.bulgeDB = testGalaxyBulgeDBObj(address='sqlite:///PhoSimTestDatabase.db')
+        self.diskDB = testGalaxyDiskDBObj(address='sqlite:///PhoSimTestDatabase.db')
+        self.agnDB = testGalaxyAgnDBObj(address='sqlite:///PhoSimTestDatabase.db')
+        self.starDB = testStarsDBObj(address='sqlite:///PhoSimTestDatabase.db')
         baseLineFileName = eups.productDir('sims_catUtils')+'/tests/testData/phoSimControlCatalog.txt'
         self.baseLineFile = open(baseLineFileName,'r')
 

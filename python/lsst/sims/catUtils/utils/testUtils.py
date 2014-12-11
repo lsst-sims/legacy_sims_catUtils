@@ -6,8 +6,8 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj, \
                                                  GalaxyDiskObj, GalaxyBulgeObj
 
-__all__ = ["calcADUwrapper", "SearchReversion", "testGalaxyBulge",
-           "testGalaxyDisk", "testGalaxyAgn", "testStars"]
+__all__ = ["calcADUwrapper", "SearchReversion", "testGalaxyBulgeDBObj",
+           "testGalaxyDiskDBObj", "testGalaxyAgnDBObj", "testStarsDBObj"]
 
 
 def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, internalRv=None,
@@ -58,7 +58,7 @@ class SearchReversion(CatalogDBObject):
     def query_columns(self, *args, **kwargs):
         return CatalogDBObject.query_columns(self, *args, **kwargs)
 
-class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
+class testGalaxyBulgeDBObj(SearchReversion, GalaxyBulgeObj):
     """
     A class for storing galaxy bulges
     """
@@ -83,7 +83,7 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
     columns.append(('raJ2000','ra*PI()/180.'))
     columns.append(('decJ2000','dec*PI()/180.'))
 
-class testGalaxyDisk(SearchReversion, GalaxyDiskObj):
+class testGalaxyDiskDBObj(SearchReversion, GalaxyDiskObj):
     objid = 'testDiskDBObj'
     objectTypeId = 89
 
@@ -105,7 +105,7 @@ class testGalaxyDisk(SearchReversion, GalaxyDiskObj):
     columns.append(('raJ2000','ra*PI()/180.'))
     columns.append(('decJ2000','dec*PI()/180.'))
 
-class testGalaxyAgn(SearchReversion, GalaxyAgnObj):
+class testGalaxyAgnDBObj(SearchReversion, GalaxyAgnObj):
     objid = 'testAgnDBObj'
     objectTypeId = 90
 
@@ -127,7 +127,7 @@ class testGalaxyAgn(SearchReversion, GalaxyAgnObj):
     columns.append(('raJ2000','ra*PI()/180.'))
     columns.append(('decJ2000','dec*PI()/180.'))
 
-class testStars(SearchReversion, StarObj):
+class testStarsDBObj(SearchReversion, StarObj):
     objid = 'testStarDBObj'
     objectTypeId = 91
 

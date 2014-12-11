@@ -10,7 +10,8 @@ from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, ExampleGalSimPSF
-from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge, testGalaxyDisk, testGalaxyAgn, testStars
+from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testGalaxyDiskDBObj, \
+                                     testGalaxyAgnDBObj, testStarsDBObj
 import lsst.afw.image as afwImage
 
 class testGalaxyCatalog(GalSimGalaxies):
@@ -139,32 +140,32 @@ class GalSimInterfaceTest(unittest.TestCase):
 
     def testGalaxyBulges(self):
         catName = self.bulgeCatName
-        gals = testGalaxyBulge(address=self.connectionString)
+        gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
        
     def testGalaxyDisks(self):
         catName = self.diskCatName
-        gals = testGalaxyDisk(address=self.connectionString)
+        gals = testGalaxyDiskDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
     
     def testStars(self):
         catName = self.starCatName
-        stars = testStars(address=self.connectionString)
+        stars = testStarsDBObj(address=self.connectionString)
         cat = testStarCatalog(stars, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
 
     def testAgns(self):
         catName = self.agnCatName
-        stars = testGalaxyAgn(address=self.connectionString)
-        cat = testAgnCatalog(stars, obs_metadata = self.obs_metadata)
+        agn = testGalaxyAgnDBObj(address=self.connectionString)
+        cat = testAgnCatalog(agn, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
   
     
     def testPSFimages(self):
         catName = self.bulgeCatName
-        gals = testGalaxyBulge(address=self.connectionString)
+        gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = psfCatalog(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='psf')
     
