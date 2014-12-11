@@ -252,6 +252,8 @@ class GalSimInterpreter(object):
         
         if galSimType == 'galaxy':
             centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp, **kwargs)
+        elif galSimType == 'pointSource':
+            centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp)
         else:
             print "Apologies: the GalSimInterpreter does not yet have a method to draw "
             print objectParams['galSimType']
@@ -279,6 +281,13 @@ class GalSimInterpreter(object):
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
                 self.detectorObjects[name].append(obj)
 
+
+    def drawPointSource(self, x_pupil=None, y_pupil=None):
+    
+        if self.PSF is None:
+            raise RuntimeError("Cannot draw a point source in GalSim without a PSF")
+        
+        return self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil)
 
     def drawGalaxy(self, x_pupil=None, y_pupil=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None):

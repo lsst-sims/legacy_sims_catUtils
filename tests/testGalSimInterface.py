@@ -9,11 +9,11 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
-from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, ExampleGalSimPSF
-from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge, testGalaxyDisk
+from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, ExampleGalSimPSF
+from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge, testGalaxyDisk, testGalaxyAgn, testStars
 import lsst.afw.image as afwImage
 
-class testGalaxies(GalSimGalaxies):
+class testGalaxyCatalog(GalSimGalaxies):
     column_outputs = copy.deepcopy(GalSimGalaxies.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
@@ -24,7 +24,33 @@ class testGalaxies(GalSimGalaxies):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
-class psfCatalog(testGalaxies):
+class testStarCatalog(GalSimStars):
+    column_outputs = copy.deepcopy(GalSimStars.column_outputs)
+    column_outputs.remove('fitsFiles')
+    column_outputs.append('magNorm')
+    column_outputs.append('redshift')
+    column_outputs.append('internalAv')
+    column_outputs.append('internalRv')
+    column_outputs.append('galacticAv')
+    column_outputs.append('galacticRv')
+    column_outputs.append('fitsFiles')
+    
+    PSF = ExampleGalSimPSF()
+
+class testAgnCatalog(GalSimAgn):
+    column_outputs = copy.deepcopy(GalSimAgn.column_outputs)
+    column_outputs.remove('fitsFiles')
+    column_outputs.append('magNorm')
+    column_outputs.append('redshift')
+    column_outputs.append('internalAv')
+    column_outputs.append('internalRv')
+    column_outputs.append('galacticAv')
+    column_outputs.append('galacticRv')
+    column_outputs.append('fitsFiles')
+    
+    PSF = ExampleGalSimPSF()
+
+class psfCatalog(testGalaxyCatalog):
     PSF = ExampleGalSimPSF()
     
 class GalSimInterfaceTest(unittest.TestCase):
@@ -114,15 +140,27 @@ class GalSimInterfaceTest(unittest.TestCase):
     def testGalaxyBulges(self):
         catName = self.bulgeCatName
         gals = testGalaxyBulge(address=self.connectionString)
-        cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
+        cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
        
     def testGalaxyDisks(self):
         catName = self.diskCatName
         gals = testGalaxyDisk(address=self.connectionString)
-        cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
+        cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
-   
+    
+    def testStars(self):
+        catName = self.starCatName
+        stars = testStars(address=self.connectionString)
+        cat = testStarCatalog(stars, obs_metadata = self.obs_metadata)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
+
+    def testAgns(self):
+        catName = self.agnCatName
+        stars = testGalaxyAgn(address=self.connectionString)
+        cat = testAgnCatalog(stars, obs_metadata = self.obs_metadata)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
+  
     
     def testPSFimages(self):
         catName = self.bulgeCatName
