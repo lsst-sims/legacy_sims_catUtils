@@ -12,7 +12,7 @@ import numpy
 import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 
-__all__ = ["GalSimInterpreter", "GalSimDetector"]
+__all__ = ["GalSimInterpreter", "GalSimDetector", "GalSimPSF"]
 
 class GalSimDetector(object):
     """
@@ -57,6 +57,31 @@ class GalSimDetector(object):
         name = fileNameRoot+detectorName
         return name
 
+class GalSimPSF(object):
+
+    def _getPSFparams(self, x_pupil=None, y_pupil=None):
+        """
+        This is the basis of a method that will return a dict of parameters to be passed
+        To a GalSimPSF object
+        
+        param [in] x_pupil/y_pupil are the x and y pupil coordinates in arc seconds
+        """
+        raise NotImplementedError()
+
+    def applyPSF(self, x_pupil=None, y_pupil=None, baseObject=None):
+        """
+        Apply the PSF to a GalSim GSObject
+        
+        In theory, this method will accept the x and y pupil coordinates in arc seconds as well
+        as a GalSim GSObject.  The method will call _getPSFparams with x_pupil and y_pupil,
+        which will create a dict of parameters that need to be passed to the PSF.
+        
+        This method will then convolve the baseObject with the PSF and return the result.
+        
+        Because this is just an example, this method does nothing to the baseObject
+        """
+        return baseObject
+
 class GalSimInterpreter(object):
     """
     This class will read in a GalSimCatalog from a file and write
@@ -79,7 +104,7 @@ class GalSimInterpreter(object):
 
         #in case we want to draw images using the Fourier transform
         self.bigfft = galsim.GSParams(maximum_fft_size=10000)
-
+        self.PSF = None
         self.gain = gain
         self.data = None
         
@@ -102,6 +127,9 @@ class GalSimInterpreter(object):
         for bpn, bpf in zip(bandPassNames, bandPassFiles):
             bp = galsim.Bandpass(bpf)
             self.bandPasses[bpn] = bp
+
+    def setPSF(self, PSF=None):
+        self.PSF=PSF
 
     def _getFileName(self, detector=None, bandPassName=None):
         return detector.fileName+'_'+bandPassName+'.fits'
@@ -242,6 +270,9 @@ class GalSimInterpreter(object):
             dx=xp-detector.xCenter
             dy=yp-detector.yCenter
             obj = centeredObj.shift(dx, dy)
+            
+            if self.PSF is not None:
+                obj = self.PSF.applyPSF(x_pupil=xp, y_pupil=yp, baseObject=obj)
 
             #declare a spectrum() function for galSim to use
             #spectrum = galsim.SED(objectParams['galSimSedName'],
