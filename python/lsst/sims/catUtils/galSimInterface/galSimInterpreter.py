@@ -169,33 +169,35 @@ class GalSimInterpreter(object):
             #the object falls on the detector directly
             return True
 
-        radius = 3.0*halfLightRadius
-        ratio = minorAxis/majorAxis
-        distance = radius/numpy.sqrt(ratio)
+        if minorAxis!=0.0 and majorAxis!=0.0 and halfLightRadius!=0.0:
 
-        #check if light from the object bleed across any of the detector's boundaries
-        if isBetweenY:
-            if xPupil <= detector.xMin and detector.xMin - xPupil < distance:
-                return True
+            radius = 3.0*halfLightRadius
+            ratio = minorAxis/majorAxis
+            distance = radius/numpy.sqrt(ratio)
 
-            if xPupil >= detector.xMax and xPupil - detector.xMax < distance:
-                return True
-
-        if isBetweenX:
-            if yPupil <= detector.yMin and detector.yMin - yPupil < distance:
-                return True
-
-            if yPupil >= detector.yMax and yPupil - detector.yMax < distance:
-                return True
-
-        #see if light from the object bleeds through any of the detector's corners
-        for xx in [detector.xMin, detector.xMax]:
-            for yy in [detector.yMin, detector.yMax]:
-                testDistance = numpy.sqrt(numpy.power(xx - xPupil,2) + \
-                           numpy.power(yy - yPupil,2))
-
-                if testDistance < distance:
+            #check if light from the object bleed across any of the detector's boundaries
+            if isBetweenY:
+                if xPupil <= detector.xMin and detector.xMin - xPupil < distance:
                     return True
+
+                if xPupil >= detector.xMax and xPupil - detector.xMax < distance:
+                    return True
+
+            if isBetweenX:
+                if yPupil <= detector.yMin and detector.yMin - yPupil < distance:
+                    return True
+
+                if yPupil >= detector.yMax and yPupil - detector.yMax < distance:
+                    return True
+
+            #see if light from the object bleeds through any of the detector's corners
+            for xx in [detector.xMin, detector.xMax]:
+                for yy in [detector.yMin, detector.yMax]:
+                    testDistance = numpy.sqrt(numpy.power(xx - xPupil,2) + \
+                               numpy.power(yy - yPupil,2))
+
+                    if testDistance < distance:
+                        return True
 
         return False
 
