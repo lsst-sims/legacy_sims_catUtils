@@ -59,7 +59,7 @@ class GalSimDetector(object):
 
 class ExampleGalSimPSF(object):
 
-    def applyPSF(self, x_pupil=None, y_pupil=None, baseObject=None):
+    def applyPSF(self, x_pupil=None, y_pupil=None, obj=None):
         """
         Apply the PSF to a GalSim GSObject
         
@@ -68,12 +68,17 @@ class ExampleGalSimPSF(object):
         and y_pupil, construct a Galsim GSObject corresponding to the PSF function, and convolve
         the PSF with the baseObject, returning the rsult of the convolution.
         
+        Must have the option to return the raw psf in the case of point sources.
+        
         This example uses a Gaussian PSF.
         """
         psf = galsim.Gaussian(sigma=0.14)
         psf = psf.shear(q=0.05, beta=numpy.pi*0.25*galsim.radians)
-        obj = galsim.Convolve(baseObject, psf)
-        return obj
+        if obj is not None:
+            obj = galsim.Convolve(obj, psf)
+            return obj
+        else:
+            return psf
 
 class GalSimInterpreter(object):
     """
@@ -262,7 +267,7 @@ class GalSimInterpreter(object):
             obj = centeredObj.shift(dx, dy)
             
             if self.PSF is not None:
-                obj = self.PSF.applyPSF(x_pupil=xp, y_pupil=yp, baseObject=obj)
+                obj = self.PSF.applyPSF(x_pupil=xp, y_pupil=yp, obj=obj)
 
             #declare a spectrum() function for galSim to use
             #spectrum = galsim.SED(objectParams['galSimSedName'],
