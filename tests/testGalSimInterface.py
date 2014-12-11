@@ -4,11 +4,12 @@ import copy
 import numpy
 import unittest
 import eups
+import galsim
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
-from lsst.sims.catUtils.galSimInterface import GalSimGalaxies
+from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, ExampleGalSimPSF
 from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulge
 import lsst.afw.image as afwImage
 
@@ -23,6 +24,9 @@ class testGalaxies(GalSimGalaxies):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
+class psfCatalog(testGalaxies):
+    PSF = ExampleGalSimPSF()
+    
 class GalSimInterfaceTest(unittest.TestCase):
 
     @classmethod
@@ -70,10 +74,10 @@ class GalSimInterfaceTest(unittest.TestCase):
         del self.agnCatName
         del self.starCatName
 
-    def catalogTester(self, catName=None, catalog=None):
+    def catalogTester(self, catName=None, catalog=None, nameRoot=None):
 
         catalog.write_catalog(catName)
-        catalog.write_images()
+        catalog.write_images(nameRoot=nameRoot)
         
         drawnFilters = 0
         with open(catName, 'r') as testFile:
@@ -108,8 +112,15 @@ class GalSimInterfaceTest(unittest.TestCase):
     def testGalaxyBulge(self):
         catName = self.bulgeCatName
         gals = testGalaxyBulge(address=self.connectionString)
-        cat = GalSimGalaxies(gals, obs_metadata = self.obs_metadata)
+        cat = testGalaxies(gals, obs_metadata = self.obs_metadata)
         self.catalogTester(catName=catName, catalog=cat)
+    
+    def testPSFimages(self):
+        catName = self.bulgeCatName
+        gals = testGalaxyBulge(address=self.connectionString)
+        cat = psfCatalog(gals, obs_metadata = self.obs_metadata)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='psf')
+    
 
 def suite():
     utilsTests.init()

@@ -66,6 +66,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     band_pass_names = ['u','g','r','i','z','y']
     band_pass_directory = eups.productDir('throughputs')
     band_pass_root = 'baseline/total'
+    PSF = None
 
     #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
     #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
@@ -273,6 +274,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         
         self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
                                                    bandPassFiles=bandPassFiles, gain=self.gain)
+        
+        self.galSimInterpreter.setPSF(PSF=self.PSF)
+        
         InstanceCatalog.write_header(self, file_handle)
 
     def write_catalog(self, *args, **kwargs):

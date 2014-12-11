@@ -12,7 +12,7 @@ import numpy
 import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 
-__all__ = ["GalSimInterpreter", "GalSimDetector", "GalSimPSF"]
+__all__ = ["GalSimInterpreter", "GalSimDetector", "ExampleGalSimPSF"]
 
 class GalSimDetector(object):
     """
@@ -57,30 +57,23 @@ class GalSimDetector(object):
         name = fileNameRoot+detectorName
         return name
 
-class GalSimPSF(object):
-
-    def _getPSFparams(self, x_pupil=None, y_pupil=None):
-        """
-        This is the basis of a method that will return a dict of parameters to be passed
-        To a GalSimPSF object
-        
-        param [in] x_pupil/y_pupil are the x and y pupil coordinates in arc seconds
-        """
-        raise NotImplementedError()
+class ExampleGalSimPSF(object):
 
     def applyPSF(self, x_pupil=None, y_pupil=None, baseObject=None):
         """
         Apply the PSF to a GalSim GSObject
         
         In theory, this method will accept the x and y pupil coordinates in arc seconds as well
-        as a GalSim GSObject.  The method will call _getPSFparams with x_pupil and y_pupil,
-        which will create a dict of parameters that need to be passed to the PSF.
+        as a GalSim GSObject.  The method will calculate the PSF parameters based on x_pupil
+        and y_pupil, construct a Galsim GSObject corresponding to the PSF function, and convolve
+        the PSF with the baseObject, returning the rsult of the convolution.
         
-        This method will then convolve the baseObject with the PSF and return the result.
-        
-        Because this is just an example, this method does nothing to the baseObject
+        This example uses a Gaussian PSF.
         """
-        return baseObject
+        psf = galsim.Gaussian(sigma=0.14)
+        psf = psf.shear(q=0.05, beta=numpy.pi*0.25*galsim.radians)
+        obj = galsim.Convolve(baseObject, psf)
+        return obj
 
 class GalSimInterpreter(object):
     """
@@ -308,7 +301,6 @@ class GalSimInterpreter(object):
 
         #turn the Sersic profile into an ellipse
         centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
-        
         return centeredObj
 
     def compressObjectList(self):
