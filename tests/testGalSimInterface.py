@@ -71,13 +71,36 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.connectionString
         del cls.obs_metadata
 
-    def testGalaxyBulge(self):
-        catName = 'galaxyBulgeCatalog.sav'
-        gals = testGalaxyBulge(address=self.connectionString)
-        cat = GalSimGalaxies(gals, obs_metadata = self.obs_metadata)
-        cat.write_catalog(catName)
-        cat.write_images()
+    def setUp(self):
+        self.bulgeCatName = 'testGalaxyBulgeCatalog.sav'
+        self.diskCatName = 'testGalaxyDiskCatalog.sav'
+        self.agnCatName = 'testGalaxyAgnCatalog.sav'
+        self.starCatName = 'testStarCatalog.sav'
+
+    def tearDown(self):
+        #if os.path.exists(self.bulgeCatName):
+        #    os.unlink(self.bulgeCatName)
+
+        #if os.path.exists(self.diskCatName):
+        #    os.unlink(self.diskCatName)
+
+        #if os.path.exists(self.agnCatName):
+        #    os.unlink(self.agnCatName)
+
+        #if os.path.exists(self.starCatName):
+        #    os.unlink(self.starCatName)
+
+        del self.bulgeCatName
+        del self.diskCatName
+        del self.agnCatName
+        del self.starCatName
+
+    def catalogTester(self, catName=None, catalog=None):
+
+        catalog.write_catalog(catName)
+        catalog.write_images()
         
+        drawnFilters = 0
         with open(catName, 'r') as testFile:
             lines = testFile.readlines()
             gg = lines[len(lines)-1].split(';')
@@ -89,8 +112,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             galacticAv = float(gg[15])
             galacticRv = float(gg[16])
         
-            for name in cat.galSimInterpreter.detectorObjects:
-                print name
+            for name in catalog.galSimInterpreter.detectorObjects:
                 im = afwImage.ImageF(name)
                 imArr = im.getArray()
                 galsimCounts = imArr.sum()
@@ -104,6 +126,15 @@ class GalSimInterfaceTest(unittest.TestCase):
                                                galacticRv=galacticRv)
                 
                 self.assertTrue(numpy.abs(controlCounts-galsimCounts) < 0.05*galsimCounts)
+                drawnFilters += 1
+            
+            self.assertEqual(drawnFilters,6)
+
+    def testGalaxyBulge(self):
+        catName = self.bulgeCatName
+        gals = testGalaxyBulge(address=self.connectionString)
+        cat = GalSimGalaxies(gals, obs_metadata = self.obs_metadata)
+        self.catalogTester(catName=catName, catalog=cat)
 
 def suite():
     utilsTests.init()
