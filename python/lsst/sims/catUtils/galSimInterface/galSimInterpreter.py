@@ -300,7 +300,6 @@ class GalSimInterpreter(object):
                                               image=image, add_to_image=True, method='real_space', gain=self.gain)
                     else:
                         image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                              image=image, add_to_image=True, method='phot', gain=self.gain,
-                                              n_photons=10000)
+                                              image=image, add_to_image=True, method='phot', gain=self.gain)
   
                     image.write(file_name=name)
