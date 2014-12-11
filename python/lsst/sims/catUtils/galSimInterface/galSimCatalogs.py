@@ -92,10 +92,15 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
 
-    detectorImages = {}
-    objectHasBeenDrawn = []
+
     uniqueSeds = {}
     catalogHasBeenWritten = False
+    hasBeenInitialized = False
+
+    def _initializeGalSimCatalog(self):
+        self.detectorImages = {}
+        self.objectHasBeenDrawn = []
+        self.hasBeenInitialized = True
 
     def get_sedFilepath(self):
         #copied from the phoSim catalogs
@@ -180,6 +185,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         positionAngle = self.column_by_name('positionAngle')
         sindex = self.column_by_name('sindex')
         sedList = self._calculateGalSimSeds()
+
+        if self.hasBeenInitialized is False:
+            self._initializeGalSimCatalog()
 
         output = []
         for (name, xp, yp, hlr, minor, major, pa, ss, sn) in \
