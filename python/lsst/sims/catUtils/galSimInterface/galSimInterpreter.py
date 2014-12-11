@@ -102,12 +102,9 @@ class GalSimInterpreter(object):
     def __init__(self, detectors=None, bandPassNames=None, bandPassFiles=None,
                  gain=2.3):
 
-        #in case we want to draw images using the Fourier transform
-        self.bigfft = galsim.GSParams(maximum_fft_size=10000)
         self.PSF = None
         self.gain = gain
-        self.data = None
-        
+
         if detectors is None:
             raise RuntimeError("Will not create images; you passed no detectors to the GalSimInterpreter")
         
