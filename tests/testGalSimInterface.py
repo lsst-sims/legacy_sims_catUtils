@@ -1,4 +1,5 @@
 import os
+import numpy
 import unittest
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -16,7 +17,11 @@ class GalSimInterfaceTest(unittest.TestCase):
         cls.dbName = 'galSimTestDB.db'
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
-        cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=1)
+        
+        displacedRA = numpy.array([72.0/3600.0])
+        displacedDec = numpy.array([0.0])
+        cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=1,
+                                            displacedRA=displacedRA, displacedDec=displacedDec)
         cls.connectionString = 'sqlite:///'+cls.dbName
 
     @classmethod
