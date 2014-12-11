@@ -94,6 +94,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     detectorImages = {}
     objectHasBeenDrawn = []
     uniqueSeds = {}
+    catalogHasBeenWritten = False
 
     def get_sedFilepath(self):
         #copied from the phoSim catalogs
@@ -263,7 +264,15 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                    bandPassFiles=bandPassFiles, gain=self.gain)
         InstanceCatalog.write_header(self, file_handle)
 
+    def write_catalog(self, *args, **kwargs):
+        InstanceCatalog.write_catalog(self, *args, **kwargs)
+        self.catalogHasBeenWritten = True
+
     def write_images(self, isTest=False):
+        if self.catalogHasBeenWritten is False:
+            print "Cannot write GalSim images until you write the GalSim catalog"
+            return
+
         self.galSimInterpreter.writeImages(isTest=isTest)
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
