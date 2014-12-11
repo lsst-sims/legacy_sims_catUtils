@@ -132,8 +132,12 @@ class GalSimInterfaceTest(unittest.TestCase):
                 controlCounts = calcADUwrapper(sedName=sedName, bandpass=bandpass, redshift=redshift, magNorm=magNorm,
                                                internalAv=internalAv, internalRv=internalRv, galacticAv=galacticAv,
                                                galacticRv=galacticRv)
-                                               
-                self.assertTrue(numpy.abs(controlCounts-galsimCounts) < 0.05*galsimCounts)
+                
+                if controlCounts>1000.0:            
+                    self.assertTrue(numpy.abs(controlCounts-galsimCounts) < 0.05*galsimCounts)
+                else:
+                    self.assertTrue(numpy.abs(controlCounts-galsimCounts) < 20.0)
+                    
                 drawnFilters += 1
                 
                 os.unlink(name)
