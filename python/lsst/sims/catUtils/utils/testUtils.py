@@ -1,9 +1,40 @@
+import os
+import eups
+from lsst.sims.photUtils import Bandpass, Sed
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj, \
                                                  GalaxyDiskObj, GalaxyBulgeObj
 
-__all__ = ["SearchReversion", "testGalaxyBulge", "testGalaxyDisk",
-           "testGalaxyAgn", "testStars"]
+__all__ = ["calcADUwrapper", "SearchReversion", "testGalaxyBulge",
+           "testGalaxyDisk", "testGalaxyAgn", "testStars"]
+
+
+def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, internalRv=None,
+                   galacticAv=None, galacticRv=None, bandpass=None):
+
+    imsimband = Bandpass()
+    imsimband.imsimBandpass()
+    sedDir = eups.productDir('sims_sed_library')
+    sedFile = os.path.join(sedDir, sedName)
+    sed = Sed()
+    sed.readSED_flambda(sedFile)
+    fNorm = sed.calcFluxNorm(magNorm, imsimband)
+    sed.multiplyFluxNorm(fNorm)
+    if internalAv is not None and internalRv is not None:
+        if internalAv != 0.0 and internalRv != 0.0:
+            a_int, b_int = sed.setupCCMab()
+            sed.addCCMDust(a_int, b_int, A_v=internalAv, R_v=internalRv)
+    
+    if redshift is not None and redshift!=0.0:
+        sed.redshiftSED(redshift, dimming=False)
+    
+    a_int, b_int = sed.setupCCMab()
+    sed.addCCMDust(a_int, b_int, A_v=galacticAv, R_v=galacticRv)
+    
+    adu = sed.calcADU(bandpass)
+    
+    return adu
+
 
 class SearchReversion(CatalogDBObject):
     """
