@@ -323,9 +323,7 @@ class GalSimInterpreter(object):
         if sed is None or len(detectorList) == 0:
             return
         
-        print '\n'
         for detector in detectorList:
-            print detector.name
             for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
                 if name not in self.detectorImages:
@@ -400,7 +398,6 @@ class GalSimInterpreter(object):
         return centeredObj
 
     def writeImages(self, isTest=False, nameRoot=None):
-        print 'in writeImages'
         for name in self.detectorImages:
             if nameRoot is not None:
                 fileName = nameRoot+'_'+name
