@@ -166,13 +166,13 @@ class GalSimInterpreter(object):
             #since there is not general PSF formalism with a defined size.
             #For the moment, I will do a very conservative test (letting in more objects
             #than is probably necessary for each chip).  I will allow anything that is
-            #within 10 arcseconds of the detector's boundaries (on the assumption that no
-            #reasonably PSF would smear a source more than 10 arcseconds)
+            #within 2 arcseconds of the detector's boundaries (on the assumption that no
+            #reasonably PSF would smear a source more than 2 arcseconds)
             
-            if xPupil < detector.xMin - 10.0 or xPupil > detector.xMax + 10.0:
+            if xPupil < detector.xMin - 2.0 or xPupil > detector.xMax + 2.0:
                 return False
             
-            if yPupil < detector.yMin -10.0 or yPupil > detector.yMax + 10.0:
+            if yPupil < detector.yMin -2.0 or yPupil > detector.yMax + 2.0:
                 return False
                 
             return True
