@@ -82,7 +82,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.diskCatName = 'testGalaxyDiskCatalog.sav'
         self.agnCatName = 'testGalaxyAgnCatalog.sav'
         self.starCatName = 'testStarCatalog.sav'
-
+    
     def tearDown(self):
         if os.path.exists(self.bulgeCatName):
             os.unlink(self.bulgeCatName)
@@ -100,7 +100,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         del self.diskCatName
         del self.agnCatName
         del self.starCatName
-
+    
     def catalogTester(self, catName=None, catalog=None, nameRoot=None):
 
         catalog.write_catalog(catName)

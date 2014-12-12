@@ -134,6 +134,7 @@ class GalSimInterpreter(object):
         self.chipsImpinged = None
 
         self.detectorObjects = {}
+        self.detectorImages = {}
         self.bandPasses = {}
         
         self.setBandPasses(bandPassNames=bandPassNames, bandPassFiles=bandPassFiles)
@@ -272,9 +273,50 @@ class GalSimInterpreter(object):
         #set the size of the image
         nx = int((detector.xMax - detector.xMin)/detector.plateScale)
         ny = int((detector.yMax - detector.yMin)/detector.plateScale)
-        image = galsim.Image(nx,ny)
+        image = galsim.Image(nx, ny, scale=detector.plateScale)
         
         return image
+
+    def _addToMasterImage(self, localImage = None, masterImage = None, x_pupil=None, y_pupil=None,
+                          detector=None):
+
+        xCorner = x_pupil - 0.5*(localImage.xmax - localImage.xmin)*localImage.scale
+        dx = int((xCorner - detector.xMin)/detector.plateScale)
+        
+        yCorner = y_pupil - 0.5*(localImage.ymax - localImage.ymin)*localImage.scale
+        dy = int((yCorner - detector.yMin)/detector.plateScale)
+
+        if masterImage.xmax > localImage.xmax + dx:
+            xMax = localImage.xmax + dx
+        else:
+            xMax = masterImage.xmax
+        
+        if masterImage.xmin < localImage.xmin + dx:
+            xMin = localImage.xmin + dx
+        else:
+            xMin = masterImage.xmin
+        
+        if masterImage.ymax > localImage.ymax + dy:
+            yMax = localImage.ymax + dy
+        else:
+            yMax = masterImage.ymax
+        
+        if masterImage.ymin < localImage.ymin + dy:
+            yMin = localImage.ymin + dy
+        else:
+            yMin = masterImage.ymin
+        
+        xx = xMin
+        while xx <= xMax:
+            yy = yMin
+            while yy <= yMax:
+                
+                newValue = masterImage.at(xx ,yy) + localImage.at(xx-dx, yy-dy)
+                masterImage.setValue(xx, yy, newValue)
+                
+                yy += 1
+            xx += 1
+        
 
     def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', sed=None, x_pupil=None,
                    y_pupil=None, **kwargs):
@@ -283,12 +325,14 @@ class GalSimInterpreter(object):
             return
         
         print '\n'
-        for dd in detectorList:
-            print dd.name
+        for detector in detectorList:
+            print detector.name
             for bandPassName in self.bandPasses:
-                name = self._getFileName(detector=dd, bandPassName=bandPassName)
+                name = self._getFileName(detector=detector, bandPassName=bandPassName)
                 if name not in self.detectorObjects:
                     self.detectorObjects[name] = []
+                if name not in self.detectorImages:
+                    self.detectorImages[name] = self.blankImage(detector=detector)
         
         centeredObj = None
         xp = radiansToArcsec(x_pupil)
@@ -314,18 +358,14 @@ class GalSimInterpreter(object):
             
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
             
-                #by default, galsim draws objects at the center of the image;
-                #this will shift the object into its correct position
-                dx=xp-detector.xCenter
-                dy=yp-detector.yCenter
-                
-                #12 December 2014
-                #tests indicate that this will not overwrite centeredObj but will, in fact,
-                #create a new object (which is what we want)
-                obj = centeredObj.shift(dx, dy)
-            
                 #convolve the Sersic profile with the spectrum
-                obj = obj*spectrum
+                obj = centeredObj*spectrum
+                localImage = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
+                                           method='phot', gain=self.gain)
+                
+                self._addToMasterImage(localImage=localImage, masterImage=self.detectorImages[name],
+                                       x_pupil=xp, y_pupil=yp, detector=detector)
+                
                 self.detectorObjects[name].append(obj)
 
 
@@ -372,20 +412,9 @@ class GalSimInterpreter(object):
 
     def writeImages(self, isTest=False, nameRoot=None):
         print 'in writeImages'
-        for detector in self.detectors:
-            for bandPassName in self.bandPasses:
-                name = self._getFileName(detector=detector, bandPassName=bandPassName)
-                if name in self.detectorObjects:
-                    obj = galsim.ChromaticSum(self.detectorObjects[name])
-                    image = self.blankImage(detector=detector)
-                    if isTest:
-                        image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                              image=image, method='real_space', gain=self.gain, add_to_image=False)
-                    else:
-                        image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                              image=image, method='phot', gain=self.gain, add_to_image=False)
-                    
-                    if nameRoot is not None:
-                        name = nameRoot + '_' + name
-                        
-                    image.write(file_name=name)
+        for name in self.detectorImages:
+            if nameRoot is not None:
+                fileName = nameRoot+'_'+name
+            else:
+                fileName = name
+            self.detectorImages[name].write(file_name=fileName)
