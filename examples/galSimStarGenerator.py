@@ -12,12 +12,8 @@ class ExampleOpticalPSF(PSFbase):
     
     def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
         eff = kwargs['bandpass'].effective_wavelength
-        print 'effective wavelength ',eff
-        psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(7.5e-8),
-                                defocus=800.0/eff, astig1=800.0/eff,
-                                astig2=800.0/eff, coma1=800.0/eff, coma2=800.0/eff,
-                                trefoil1=800.0/eff, trefoil2=800.0/eff,
-                                spher=800.0/eff, pad_factor=3.0)
+        psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(eff*1.0e-9/8.0), astig1=0.1,
+                                astig2=0.2)
         return psf
 
 class testGalSimStars(GalSimStars):
