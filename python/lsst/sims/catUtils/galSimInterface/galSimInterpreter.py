@@ -248,6 +248,10 @@ class GalSimInterpreter(object):
                     outputString += '//'
                 outputString += dd.name
                 outputList.append(dd)
+        
+        if outputString == '':
+            outputString = None
+        
         return outputString, outputList
 
     def blankImage(self, detector=None):
