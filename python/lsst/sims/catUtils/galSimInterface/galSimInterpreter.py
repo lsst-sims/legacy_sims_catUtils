@@ -59,7 +59,7 @@ class GalSimDetector(object):
 
 class PSFbase(object):
     
-        def applyPSF(self, x_pupil=None, y_pupil=None, obj=None):
+        def applyPSF(self, x_pupil=None, y_pupil=None, obj=None, **kwargs):
             """
             Apply the PSF to a GalSim GSObject
         
@@ -72,7 +72,7 @@ class PSFbase(object):
         
             This example uses a Gaussian PSF.
             """
-            psf = self._getPSF(x_pupil=x_pupil, y_pupil=y_pupil)
+            psf = self._getPSF(x_pupil=x_pupil, y_pupil=y_pupil, **kwargs)
             if obj is not None:
                 obj = galsim.Convolve(obj, psf)
                 return obj
@@ -81,7 +81,7 @@ class PSFbase(object):
 
 class ExampleGalSimPSF(PSFbase):
 
-    def _getPSF(self, x_pupil=None, y_pupil=None):
+    def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
         """
         Apply the PSF to a GalSim GSObject
         
@@ -288,48 +288,52 @@ class GalSimInterpreter(object):
         
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
+        spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
+                              flux_type='flambda')
         
-        if galSimType == 'sersic':
-            centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp, **kwargs)
-        elif galSimType == 'pointSource':
-            centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp)
-        else:
-            print "Apologies: the GalSimInterpreter does not yet have a method to draw "
-            print objectParams['galSimType']
-            print " objects\n"
-            return
+        for bandPassName in self.bandPasses:
+            if galSimType == 'sersic':
+                centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp,
+                                              bandpass=self.bandPasses[bandPassName], **kwargs)
+            elif galSimType == 'pointSource':
+                centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
+                                                   bandpass=self.bandPasses[bandPassName])
+            else:
+                print "Apologies: the GalSimInterpreter does not yet have a method to draw "
+                print objectParams['galSimType']
+                print " objects\n"
+                return
             
-        for detector in detectorList:
+            for detector in detectorList:
             
-            #by default, galsim draws objects at the center of the image;
-            #this will shift the object into its correct position
-            dx=xp-detector.xCenter
-            dy=yp-detector.yCenter
-            obj = centeredObj.shift(dx, dy)
-            
-            #declare a spectrum() function for galSim to use
-            #spectrum = galsim.SED(objectParams['galSimSedName'],
-            #                         flux_type='flambda')
-
-            spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
-                                  flux_type='flambda')
-
-            #convolve the Sersic profile with the spectrum
-            obj = obj*spectrum
-            for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
+            
+                #by default, galsim draws objects at the center of the image;
+                #this will shift the object into its correct position
+                dx=xp-detector.xCenter
+                dy=yp-detector.yCenter
+                obj = centeredObj.shift(dx, dy)
+            
+                #declare a spectrum() function for galSim to use
+                #spectrum = galsim.SED(objectParams['galSimSedName'],
+                #                         flux_type='flambda')
+
+
+
+                #convolve the Sersic profile with the spectrum
+                obj = obj*spectrum
                 self.detectorObjects[name].append(obj)
 
 
-    def drawPointSource(self, x_pupil=None, y_pupil=None):
+    def drawPointSource(self, x_pupil=None, y_pupil=None, bandpass=None):
     
         if self.PSF is None:
             raise RuntimeError("Cannot draw a point source in GalSim without a PSF")
         
-        return self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil)
+        return self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, bandpass=bandpass)
 
     def drawGalaxy(self, x_pupil=None, y_pupil=None, sindex=None, minorAxis=None,
-                   majorAxis=None, positionAngle=None, halfLightRadius=None):
+                   majorAxis=None, positionAngle=None, halfLightRadius=None, bandpass=None):
         """
         Draw the image of a galaxy.
 
@@ -352,7 +356,8 @@ class GalSimInterpreter(object):
         #turn the Sersic profile into an ellipse
         centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
         if self.PSF is not None:
-            centeredObj = self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, obj=centeredObj)
+            centeredObj = self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, obj=centeredObj,
+                                            bandpass=bandpass)
             
         return centeredObj
 
