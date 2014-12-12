@@ -97,6 +97,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     uniqueSeds = {}
     catalogHasBeenWritten = False
     hasBeenInitialized = False
+    galSimInterpreter = None
 
     def _initializeGalSimCatalog(self):
         self.detectorImages = {}
@@ -213,7 +214,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         if output == []:
             output = [None]
         
-        if hasattr(self,'galSimInterpreter'):
+        if self.galSimInterpreter is not None:
             self.galSimInterpreter.compressObjectList()
         return numpy.array(output)
 
@@ -277,7 +278,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
             detectors.append(detector)
 
         bandPassFiles, bandPassNames = self._getBandPasses()
-        
+
         self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
                                                    bandPassFiles=bandPassFiles, gain=self.gain)
         
