@@ -282,7 +282,9 @@ class GalSimInterpreter(object):
         if sed is None or len(detectorList) == 0:
             return
         
+        print '\n'
         for dd in detectorList:
+            print dd.name
             for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=dd, bandPassName=bandPassName)
                 if name not in self.detectorObjects:
@@ -369,6 +371,7 @@ class GalSimInterpreter(object):
             self.detectorObjects[name] = [obj]
 
     def writeImages(self, isTest=False, nameRoot=None):
+        print 'in writeImages'
         for detector in self.detectors:
             for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
