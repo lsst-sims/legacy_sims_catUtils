@@ -58,6 +58,8 @@ class GalSimDetector(object):
         return name
 
 class PSFbase(object):
+        
+        wavelength_dependent = False
     
         def applyPSF(self, x_pupil=None, y_pupil=None, obj=None, **kwargs):
             """
@@ -286,23 +288,25 @@ class GalSimInterpreter(object):
                 if name not in self.detectorObjects:
                     self.detectorObjects[name] = []
         
+        centeredObj = None
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
         spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
                               flux_type='flambda')
         
         for bandPassName in self.bandPasses:
-            if galSimType == 'sersic':
-                centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp,
-                                              bandpass=self.bandPasses[bandPassName], **kwargs)
-            elif galSimType == 'pointSource':
-                centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
-                                                   bandpass=self.bandPasses[bandPassName])
-            else:
-                print "Apologies: the GalSimInterpreter does not yet have a method to draw "
-                print objectParams['galSimType']
-                print " objects\n"
-                return
+            if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
+                if galSimType == 'sersic':
+                    centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp,
+                                                  bandpass=self.bandPasses[bandPassName], **kwargs)
+                elif galSimType == 'pointSource':
+                    centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
+                                                       bandpass=self.bandPasses[bandPassName])
+                else:
+                    print "Apologies: the GalSimInterpreter does not yet have a method to draw "
+                    print objectParams['galSimType']
+                    print " objects\n"
+                    return
             
             for detector in detectorList:
             
@@ -312,14 +316,12 @@ class GalSimInterpreter(object):
                 #this will shift the object into its correct position
                 dx=xp-detector.xCenter
                 dy=yp-detector.yCenter
+                
+                #12 December 2014
+                #tests indicate that this will not overwrite centeredObj but will, in fact,
+                #create a new object (which is what we want)
                 obj = centeredObj.shift(dx, dy)
             
-                #declare a spectrum() function for galSim to use
-                #spectrum = galsim.SED(objectParams['galSimSedName'],
-                #                         flux_type='flambda')
-
-
-
                 #convolve the Sersic profile with the spectrum
                 obj = obj*spectrum
                 self.detectorObjects[name].append(obj)
