@@ -279,7 +279,7 @@ class GalSimInterpreter(object):
     def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', sed=None, x_pupil=None,
                    y_pupil=None, **kwargs):
         
-        if sed is None:
+        if sed is None or len(detectorList) == 0:
             return
         
         for dd in detectorList:
