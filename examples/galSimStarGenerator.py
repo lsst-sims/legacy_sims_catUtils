@@ -10,7 +10,7 @@ class ExampleOpticalPSF(PSFbase):
 
     def _getPSF(self, x_pupil=None, y_pupil=None):
         #psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(7.5e-8))
-        psf = galsim.Gaussian(sigma=0.01)
+        psf = galsim.Gaussian(sigma=0.1)
         return psf
 
 class testGalSimStars(GalSimStars):
