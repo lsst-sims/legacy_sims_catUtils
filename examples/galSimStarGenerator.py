@@ -6,16 +6,12 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaDat
 from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catUtils.galSimInterface import *
 
-class ExampleOpticalPSF(object):
+class ExampleOpticalPSF(PSFbase):
 
-    def applyPSF(self, x_pupil=None, y_pupil=None, obj=None):
+    def _getPSF(self, x_pupil=None, y_pupil=None):
         #psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(7.5e-8))
         psf = galsim.Gaussian(sigma=0.01)
-        if obj is not None:
-            obj = galsim.Convolve(obj, psf)
-            return obj
-        else:
-            return psf
+        return psf
 
 class testGalSimStars(GalSimStars):
     band_pass_names = ['u','g']
