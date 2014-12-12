@@ -6,16 +6,6 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaDat
 from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catUtils.galSimInterface import *
 
-class ExampleOpticalPSF(PSFbase):
-    
-    wavelength_dependent = True
-    
-    def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
-        eff = kwargs['bandpass'].effective_wavelength
-        psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(eff*1.0e-9/8.0), astig1=1.0,
-                                astig2=2.0)
-        return psf
-
 class testGalSimStars(GalSimStars):
     band_pass_names = ['u','g']
     

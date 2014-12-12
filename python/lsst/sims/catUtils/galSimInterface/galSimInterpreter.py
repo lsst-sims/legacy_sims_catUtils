@@ -12,7 +12,8 @@ import numpy
 import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 
-__all__ = ["GalSimInterpreter", "GalSimDetector", "PSFbase", "ExampleGalSimPSF"]
+__all__ = ["GalSimInterpreter", "GalSimDetector", "PSFbase",
+           "ExampleGaussianPSF", "ExampleOpticalPSF"]
 
 class GalSimDetector(object):
     """
@@ -81,7 +82,7 @@ class PSFbase(object):
             else:
                 return psf
 
-class ExampleGalSimPSF(PSFbase):
+class ExampleGaussianPSF(PSFbase):
 
     def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
         """
@@ -99,6 +100,17 @@ class ExampleGalSimPSF(PSFbase):
         psf = galsim.Gaussian(sigma=0.14)
         psf = psf.shear(q=0.05, beta=numpy.pi*0.25*galsim.radians)
         return psf
+
+class ExampleOpticalPSF(PSFbase):
+    
+    wavelength_dependent = True
+    
+    def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
+        eff = kwargs['bandpass'].effective_wavelength
+        psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(eff*1.0e-9/8.0), astig1=1.0,
+                                astig2=2.0)
+        return psf
+
 
 class GalSimInterpreter(object):
     """
