@@ -12,7 +12,7 @@ import numpy
 import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 
-__all__ = ["GalSimInterpreter", "GalSimDetector", "ExampleGalSimPSF"]
+__all__ = ["GalSimInterpreter", "GalSimDetector", "PSFbase", "ExampleGalSimPSF"]
 
 class GalSimDetector(object):
     """
@@ -57,9 +57,31 @@ class GalSimDetector(object):
         name = fileNameRoot+detectorName
         return name
 
-class ExampleGalSimPSF(object):
+class PSFbase(object):
+    
+        def applyPSF(self, x_pupil=None, y_pupil=None, obj=None):
+            """
+            Apply the PSF to a GalSim GSObject
+        
+            In theory, this method will accept the x and y pupil coordinates in arc seconds as well
+            as a GalSim GSObject.  The method will calculate the PSF parameters based on x_pupil
+            and y_pupil, construct a Galsim GSObject corresponding to the PSF function, and convolve
+            the PSF with the baseObject, returning the rsult of the convolution.
+        
+            Must have the option to return the raw psf in the case of point sources.
+        
+            This example uses a Gaussian PSF.
+            """
+            psf = self._getPSF(x_pupil=x_pupil, y_pupil=y_pupil)
+            if obj is not None:
+                obj = galsim.Convolve(obj, psf)
+                return obj
+            else:
+                return psf
 
-    def applyPSF(self, x_pupil=None, y_pupil=None, obj=None):
+class ExampleGalSimPSF(PSFbase):
+
+    def _getPSF(self, x_pupil=None, y_pupil=None):
         """
         Apply the PSF to a GalSim GSObject
         
@@ -74,11 +96,7 @@ class ExampleGalSimPSF(object):
         """
         psf = galsim.Gaussian(sigma=0.14)
         psf = psf.shear(q=0.05, beta=numpy.pi*0.25*galsim.radians)
-        if obj is not None:
-            obj = galsim.Convolve(obj, psf)
-            return obj
-        else:
-            return psf
+        return psf
 
 class GalSimInterpreter(object):
     """
