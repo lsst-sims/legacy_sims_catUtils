@@ -118,7 +118,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             galacticAv = float(gg[15])
             galacticRv = float(gg[16])
         
-            for name in catalog.galSimInterpreter.detectorObjects:
+            for name in catalog.galSimInterpreter.detectorImages:
                 if nameRoot is not None:
                     name = nameRoot+'_'+name
                 im = afwImage.ImageF(name)

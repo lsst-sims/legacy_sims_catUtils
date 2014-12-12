@@ -216,9 +216,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                       x_pupil=xp, y_pupil=yp, sed=ss)
         if output == []:
             output = [None]
-        
-        if self.galSimInterpreter is not None:
-            self.galSimInterpreter.compressObjectList()
+
         return numpy.array(output)
 
     def _getBandPasses(self):

@@ -133,7 +133,6 @@ class GalSimInterpreter(object):
         #of the light from the object falls on that detector)
         self.chipsImpinged = None
 
-        self.detectorObjects = {}
         self.detectorImages = {}
         self.bandPasses = {}
         
@@ -329,8 +328,6 @@ class GalSimInterpreter(object):
             print detector.name
             for bandPassName in self.bandPasses:
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
-                if name not in self.detectorObjects:
-                    self.detectorObjects[name] = []
                 if name not in self.detectorImages:
                     self.detectorImages[name] = self.blankImage(detector=detector)
         
@@ -365,9 +362,6 @@ class GalSimInterpreter(object):
                 
                 self._addToMasterImage(localImage=localImage, masterImage=self.detectorImages[name],
                                        x_pupil=xp, y_pupil=yp, detector=detector)
-                
-                self.detectorObjects[name].append(obj)
-
 
     def drawPointSource(self, x_pupil=None, y_pupil=None, bandpass=None):
     
@@ -404,11 +398,6 @@ class GalSimInterpreter(object):
                                             bandpass=bandpass)
             
         return centeredObj
-
-    def compressObjectList(self):
-        for name in self.detectorObjects:
-            obj = galsim.ChromaticSum(self.detectorObjects[name])
-            self.detectorObjects[name] = [obj]
 
     def writeImages(self, isTest=False, nameRoot=None):
         print 'in writeImages'
