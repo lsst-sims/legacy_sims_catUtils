@@ -380,10 +380,10 @@ class GalSimInterpreter(object):
                     image = self.blankImage(detector=detector)
                     if isTest:
                         image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                              image=image, add_to_image=True, method='real_space', gain=self.gain)
+                                              image=image, method='real_space', gain=self.gain, add_to_image=False)
                     else:
                         image = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                              image=image, add_to_image=True, method='phot', gain=self.gain)
+                                              image=image, method='phot', gain=self.gain, add_to_image=False)
                     
                     if nameRoot is not None:
                         name = nameRoot + '_' + name
