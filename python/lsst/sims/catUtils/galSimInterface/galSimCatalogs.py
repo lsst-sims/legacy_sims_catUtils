@@ -306,9 +306,9 @@ class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """
 
     catalog_type = 'galsim_galaxy'
-    galsim_type = 'galaxy'
+    galsim_type = 'sersic'
     default_columns = [('galacticAv', 0.1, float),
-                       ('galSimType', 'galaxy', (str,6))]
+                       ('galSimType', 'sersic', (str,6))]
 
 class GalSimAgn(GalSimBase, AstrometryGalaxies, EBVmixin):
     catalog_type = 'galsim_agn'

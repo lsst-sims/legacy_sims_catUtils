@@ -267,7 +267,7 @@ class GalSimInterpreter(object):
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
         
-        if galSimType == 'galaxy':
+        if galSimType == 'sersic':
             centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp, **kwargs)
         elif galSimType == 'pointSource':
             centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp)
