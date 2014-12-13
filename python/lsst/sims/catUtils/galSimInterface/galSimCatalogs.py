@@ -49,6 +49,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     the GalSimCatalog class (see examples/galSimCatalogGenerator.py for a demonstration).
     """
 
+    allow_multiple_chips = True
+
     cannot_be_null = ['sedFilepath', 'fitsFiles']
 
     column_outputs = ['galSimType', 'uniqueId', 'chipName', 'x_pupil', 'y_pupil', 'sedFilepath',

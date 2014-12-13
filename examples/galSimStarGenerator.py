@@ -29,6 +29,5 @@ stars_galSim = testGalSimStars(stars, obs_metadata=obs_metadata)
 #as you do it immediately after instantiating GalSimGalaxies
 #stars_galSim.camera = LsstSimMapper().camera
 
-print obs_metadata.unrefractedRA, obs_metadata.unrefractedDec
 stars_galSim.write_catalog('galSim_star_example.txt', chunk_size=100)
 stars_galSim.write_images(nameRoot='star')
