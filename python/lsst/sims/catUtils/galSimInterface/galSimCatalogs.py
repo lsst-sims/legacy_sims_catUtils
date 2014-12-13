@@ -178,7 +178,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         return sedList
 
-    @cached
+
     def get_fitsFiles(self):
         objectNames = self.column_by_name('uniqueId')
         xPupil = self.column_by_name('x_pupil')
@@ -212,12 +212,17 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                                                  minorAxis=minor, majorAxis=major,
                                                                                  halfLightRadius=hlr)
                     output.append(chipsString)
+                    if radiansToArcsec(xp)>100.0:
+                        print name,chipsString
                     self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
                                                       sindex=sn, minorAxis=minor,
                                                       majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                                       x_pupil=xp, y_pupil=yp, sed=ss)
-        if output == []:
-            output = [None]
+
+        for nn, xp, oo in zip(objectNames, xPupil, output):
+           if radiansToArcsec(xp)>100.0 and oo is not None:
+               print "WARNING ",nn," xp ",radiansToArcsec(xp)," output ",oo
+               exit()
 
         return numpy.array(output)
 

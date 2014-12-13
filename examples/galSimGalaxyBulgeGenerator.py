@@ -12,7 +12,7 @@ class testGalSimGalaxies(GalSimGalaxies):
 
 #select an OpSim pointing
 obsMD = OpSim3_61DBObject()
-obs_metadata = obsMD.getObservationMetaData(88625744, 0.1, makeCircBounds = True)
+obs_metadata = obsMD.getObservationMetaData(88625744, 0.05, makeCircBounds = True)
 
 #grab a database of galaxies (in this case, galaxy bulges)
 gals = CatalogDBObject.from_objid('galaxyBulge')
@@ -26,5 +26,5 @@ galaxy_galSim = testGalSimGalaxies(gals, obs_metadata=obs_metadata)
 #galaxy_galSim.camera = LsstSimMapper().camera
 
 
-galaxy_galSim.write_catalog('galSim_bulge_example.txt', chunk_size=100)
+galaxy_galSim.write_catalog('galSim_bulge_example.txt', chunk_size=10000)
 galaxy_galSim.write_images(nameRoot='bulge')
