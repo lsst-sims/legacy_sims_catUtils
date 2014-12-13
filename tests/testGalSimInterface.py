@@ -106,7 +106,6 @@ class GalSimInterfaceTest(unittest.TestCase):
     
     def catalogTester(self, catName=None, catalog=None, nameRoot=None):
 
-        catalog.write_catalog(catName)
         catalog.write_images(nameRoot=nameRoot)
         
         galsimCounts = {}
@@ -156,24 +155,28 @@ class GalSimInterfaceTest(unittest.TestCase):
         catName = self.bulgeCatName
         gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
        
     def testGalaxyDisks(self):
         catName = self.diskCatName
         gals = testGalaxyDiskDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
     
     def testStars(self):
         catName = self.starCatName
         stars = testStarsDBObj(address=self.connectionString)
         cat = testStarCatalog(stars, obs_metadata = self.obs_metadata)
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
 
     def testAgns(self):
         catName = self.agnCatName
         agn = testGalaxyAgnDBObj(address=self.connectionString)
         cat = testAgnCatalog(agn, obs_metadata = self.obs_metadata)
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
   
     
@@ -181,6 +184,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         catName = self.bulgeCatName
         gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = psfCatalog(gals, obs_metadata = self.obs_metadata)
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='psf')
 
     def testMultipleImages(self):
@@ -196,12 +200,48 @@ class GalSimInterfaceTest(unittest.TestCase):
         gals = testGalaxyBulgeDBObj(address=connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata=obs_metadata)
         catName = 'multipleCatalog.sav'
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='multiple')
         
         stars = testStarsDBObj(address=connectionString)
         cat = testStarCatalog(stars, obs_metadata=obs_metadata)
         catName = 'multipleStarCatalog.sav'
+        cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='multipleStars')
+
+    def testCompoundFitsFiles(self):
+        dbName1 = 'galSimTestCompound1DB.db'
+        if os.path.exists(dbName1):
+            os.unlink(dbName1)
+        
+        displacedRA = numpy.array([72.0/3600.0, 50.0/3600.0, 75.0/3600.0])
+        displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
+        obs_metadata1 = makePhoSimTestDB(filename=dbName1, size=1,
+                                            displacedRA=displacedRA, displacedDec=displacedDec)
+        connectionString1 = 'sqlite:///'+dbName1
+        
+        dbName2 = 'galSimTestCompound2DB.db'
+        if os.path.exists(dbName2):
+            os.unlink(dbName2)
+        
+        displacedRA = numpy.array([50.0/3600.0, 60.0/3600.0, 65.0/3600.0])
+        displacedDec = numpy.array([-5.0/3600.0, 10.0/3600.0, 10.0/3600.0])
+        obs_metadata2 = makePhoSimTestDB(filename=dbName2, size=1,
+                                            displacedRA=displacedRA, displacedDec=displacedDec)
+        connectionString2 = 'sqlite:///'+dbName2
+        
+        
+        gals = testGalaxyBulgeDBObj(address=connectionString1)
+        cat1 = testGalaxyCatalog(gals, obs_metadata=obs_metadata1)
+        catName = 'compoundCatalog.sav'
+        cat1.write_catalog(catName)
+
+        stars = testStarsDBObj(address=connectionString2)
+        cat2 = testStarCatalog(stars, obs_metadata=obs_metadata2)
+        cat2.copyGalSimInterpreter(cat1)
+        cat2.write_catalog(catName, write_header=False, write_mode='a')
+        self.catalogTester(catName=catName, catalog=cat2, nameRoot='compound')
+    
 
 def suite():
     utilsTests.init()

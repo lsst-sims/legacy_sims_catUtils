@@ -227,63 +227,70 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         return bandPassFiles, self.band_pass_names
 
+    def copyGalSimInterpreter(self, otherCatalog):
+        self.camera = otherCatalog.camera
+        self.galSimInterpreter = otherCatalog.galSimInterpreter
+        self.galSimInterpreter.setPSF(self.PSF)
+
     def write_header(self, file_handle):
         """
         Overwrite the write_header method from InstanceCatalog because, in order to run GalSim,
         we need to print information about the detectors into the header of the catalog file
         """
 
-        detectors = []
-        for dd in self.camera:
-            cs = dd.makeCameraSys(PUPIL)
-            centerPupil = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
-            centerPixel = dd.getCenter(PIXELS).getPoint()
+        if self.galSimInterpreter is None:
+            detectors = []
+            for dd in self.camera:
+                cs = dd.makeCameraSys(PUPIL)
+                centerPupil = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
+                centerPixel = dd.getCenter(PIXELS).getPoint()
 
-            translationPixel = afwGeom.Point2D(centerPixel.getX()+1, centerPixel.getY()+1)
-            translationPupil = self.camera.transform(
-                                    dd.makeCameraPoint(translationPixel, PIXELS), cs).getPoint()
+                translationPixel = afwGeom.Point2D(centerPixel.getX()+1, centerPixel.getY()+1)
+                translationPupil = self.camera.transform(
+                                        dd.makeCameraPoint(translationPixel, PIXELS), cs).getPoint()
 
-            plateScale = numpy.sqrt(numpy.power(translationPupil.getX()-centerPupil.getX(),2)+
-                                    numpy.power(translationPupil.getY()-centerPupil.getY(),2))/numpy.sqrt(2.0)
-            xmax = None
-            xmin = None
-            ymax = None
-            ymin = None
-            for corner in dd.getCorners(FOCAL_PLANE):
-                pt = self.camera.makeCameraPoint(corner, FOCAL_PLANE)
-                pp = self.camera.transform(pt, cs).getPoint()
-                if xmax is None or pp.getX() > xmax:
-                    xmax = pp.getX()
-                if xmin is None or pp.getX() < xmin:
-                    xmin = pp.getX()
-                if ymax is None or pp.getY() > ymax:
-                    ymax = pp.getY()
-                if ymin is None or pp.getY() < ymin:
-                    ymin = pp.getY()
+                plateScale = numpy.sqrt(numpy.power(translationPupil.getX()-centerPupil.getX(),2)+
+                                        numpy.power(translationPupil.getY()-centerPupil.getY(),2))/numpy.sqrt(2.0)
+                xmax = None
+                xmin = None
+                ymax = None
+                ymin = None
+                for corner in dd.getCorners(FOCAL_PLANE):
+                    pt = self.camera.makeCameraPoint(corner, FOCAL_PLANE)
+                    pp = self.camera.transform(pt, cs).getPoint()
+                    if xmax is None or pp.getX() > xmax:
+                        xmax = pp.getX()
+                    if xmin is None or pp.getX() < xmin:
+                        xmin = pp.getX()
+                    if ymax is None or pp.getY() > ymax:
+                        ymax = pp.getY()
+                    if ymin is None or pp.getY() < ymin:
+                        ymin = pp.getY()
 
-            xCenter = 3600.0*numpy.degrees(centerPupil.getX())
-            yCenter = 3600.0*numpy.degrees(centerPupil.getY())
-            xMin = 3600.0*numpy.degrees(xmin)
-            xMax = 3600.0*numpy.degrees(xmax)
-            yMin = 3600.0*numpy.degrees(ymin)
-            yMax = 3600.0*numpy.degrees(ymax)
-            plateScale = 3600.0*numpy.degrees(plateScale)
+                xCenter = 3600.0*numpy.degrees(centerPupil.getX())
+                yCenter = 3600.0*numpy.degrees(centerPupil.getY())
+                xMin = 3600.0*numpy.degrees(xmin)
+                xMax = 3600.0*numpy.degrees(xmax)
+                yMin = 3600.0*numpy.degrees(ymin)
+                yMax = 3600.0*numpy.degrees(ymax)
+                plateScale = 3600.0*numpy.degrees(plateScale)
 
-            file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
-                             (dd.getName(), xCenter, yCenter, xMin, xMax, yMin, yMax, plateScale))
+                file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
+                                 (dd.getName(), xCenter, yCenter, xMin, xMax, yMin, yMax, plateScale))
 
-            detector = GalSimDetector(name=dd.getName(), xCenter=xCenter, yCenter=yCenter,
-                                      xMin=xMin, yMin=yMin, xMax=xMax, yMax=yMax,
-                                      plateScale=plateScale)
+                detector = GalSimDetector(name=dd.getName(), xCenter=xCenter, yCenter=yCenter,
+                                          xMin=xMin, yMin=yMin, xMax=xMax, yMax=yMax,
+                                          plateScale=plateScale)
         
-            detectors.append(detector)
+                detectors.append(detector)
 
-        bandPassFiles, bandPassNames = self._getBandPasses()
+            bandPassFiles, bandPassNames = self._getBandPasses()
 
-        self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
-                                                   bandPassFiles=bandPassFiles, gain=self.gain)
+            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
+                                                       bandPassFiles=bandPassFiles, gain=self.gain)
         
-        self.galSimInterpreter.setPSF(PSF=self.PSF)
+            self.galSimInterpreter.setPSF(PSF=self.PSF)
+        
         
         InstanceCatalog.write_header(self, file_handle)
 
