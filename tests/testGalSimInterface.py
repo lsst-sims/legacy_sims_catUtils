@@ -77,32 +77,6 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.dbName
         del cls.connectionString
         del cls.obs_metadata
-
-    def setUp(self):
-        self.bulgeCatName = 'testGalaxyBulgeCatalog.sav'
-        self.diskCatName = 'testGalaxyDiskCatalog.sav'
-        self.agnCatName = 'testGalaxyAgnCatalog.sav'
-        self.starCatName = 'testStarCatalog.sav'
-    
-    
-    def tearDown(self):
-        if os.path.exists(self.bulgeCatName):
-            os.unlink(self.bulgeCatName)
-
-        if os.path.exists(self.diskCatName):
-            os.unlink(self.diskCatName)
-
-        if os.path.exists(self.agnCatName):
-            os.unlink(self.agnCatName)
-
-        if os.path.exists(self.starCatName):
-            os.unlink(self.starCatName)
-
-        del self.bulgeCatName
-        del self.diskCatName
-        del self.agnCatName
-        del self.starCatName
-    
     
     def catalogTester(self, catName=None, catalog=None, nameRoot=None):
 
@@ -118,7 +92,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             imArr = im.getArray()
             galsimCounts[name[-6]] = imArr.sum()
             controlCounts[name[-6]] = 0.0
-            #os.unlink(name)
+            os.unlink(name)
             
         with open(catName, 'r') as testFile:
             lines = testFile.readlines()
@@ -152,40 +126,50 @@ class GalSimInterfaceTest(unittest.TestCase):
             self.assertTrue(drawnFilters>4)
 
     def testGalaxyBulges(self):
-        catName = self.bulgeCatName
+        catName = 'testBulgeCat.sav'
         gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
+        if os.path.exists(catName):
+            os.unlink(catName)
        
     def testGalaxyDisks(self):
-        catName = self.diskCatName
+        catName = 'testDiskCat.sav'
         gals = testGalaxyDiskDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
+        if os.path.exists(catName):
+            os.unlink(catName)
     
     def testStars(self):
-        catName = self.starCatName
+        catName = 'testStarCat.sav'
         stars = testStarsDBObj(address=self.connectionString)
         cat = testStarCatalog(stars, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testAgns(self):
-        catName = self.agnCatName
+        catName = 'testAgnCat.sav'
         agn = testGalaxyAgnDBObj(address=self.connectionString)
         cat = testAgnCatalog(agn, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
+        if os.path.exists(catName):
+            os.unlink(catName)
   
     
     def testPSFimages(self):
-        catName = self.bulgeCatName
+        catName = 'testPSFcat.sav'
         gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = psfCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='psf')
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testMultipleImages(self):
         dbName = 'galSimTestMultipleDB.db'
@@ -202,12 +186,19 @@ class GalSimInterfaceTest(unittest.TestCase):
         catName = 'multipleCatalog.sav'
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='multiple')
+        if os.path.exists(catName):
+            os.unlink(catName)
         
         stars = testStarsDBObj(address=connectionString)
         cat = testStarCatalog(stars, obs_metadata=obs_metadata)
         catName = 'multipleStarCatalog.sav'
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='multipleStars')
+        if os.path.exists(catName):
+            os.unlink(catName)
+        
+        if os.path.exists(dbName):
+            os.unlink(dbName)
 
     def testCompoundFitsFiles(self):
         dbName1 = 'galSimTestCompound1DB.db'
@@ -241,6 +232,13 @@ class GalSimInterfaceTest(unittest.TestCase):
         cat2.copyGalSimInterpreter(cat1)
         cat2.write_catalog(catName, write_header=False, write_mode='a')
         self.catalogTester(catName=catName, catalog=cat2, nameRoot='compound')
+        
+        if os.path.exists(dbName1):
+            os.unlink(dbName1)
+        if os.path.exists(dbName2):
+            os.unlink(dbName2)
+        if os.path.exists(catName):
+            os.unlink(catName)
     
 
 def suite():
