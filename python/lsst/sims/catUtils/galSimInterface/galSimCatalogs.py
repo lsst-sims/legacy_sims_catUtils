@@ -199,30 +199,24 @@ class GalSimBase(InstanceCatalog, CameraCoords):
             zip(objectNames, xPupil, yPupil, halfLight, minorAxis, majorAxis, positionAngle,
             sedList, sindex):
             
-            if ss is not None:
+            if ss is None or name in self.objectHasBeenDrawn:
+                output.append(None)
+                if name in self.objectHasBeenDrawn:
+                    print 'Trying to draw %s more than once ' % str(name)
+            
+            else:
                 
                 isRepeat = False
-                
-                if name in self.objectHasBeenDrawn:
-                    print 'Trying to draw %s more than once' % str(name)
-                    output.append(None)
-                else:
-                    self.objectHasBeenDrawn.append(name)
-                    chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
-                                                                                 minorAxis=minor, majorAxis=major,
-                                                                                 halfLightRadius=hlr)
-                    output.append(chipsString)
-                    if radiansToArcsec(xp)>100.0:
-                        print name,chipsString
-                    self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
-                                                      sindex=sn, minorAxis=minor,
-                                                      majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
-                                                      x_pupil=xp, y_pupil=yp, sed=ss)
 
-        for nn, xp, oo in zip(objectNames, xPupil, output):
-           if radiansToArcsec(xp)>100.0 and oo is not None:
-               print "WARNING ",nn," xp ",radiansToArcsec(xp)," output ",oo
-               exit()
+                self.objectHasBeenDrawn.append(name)
+                chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
+                                                                             minorAxis=minor, majorAxis=major,
+                                                                             halfLightRadius=hlr)
+                output.append(chipsString)
+                self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
+                                                  sindex=sn, minorAxis=minor,
+                                                  majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
+                                                  x_pupil=xp, y_pupil=yp, sed=ss)
 
         return numpy.array(output)
 
