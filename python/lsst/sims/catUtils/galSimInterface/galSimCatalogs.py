@@ -102,7 +102,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     galSimInterpreter = None
 
     def _initializeGalSimCatalog(self):
-        self.detectorImages = {}
         self.objectHasBeenDrawn = []
         self.hasBeenInitialized = True
 
