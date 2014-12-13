@@ -205,8 +205,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                     print 'Trying to draw %s more than once ' % str(name)
             
             else:
-                
-                isRepeat = False
 
                 self.objectHasBeenDrawn.append(name)
                 chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
