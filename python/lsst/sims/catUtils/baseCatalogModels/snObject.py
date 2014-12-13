@@ -226,6 +226,7 @@ if __name__ == "__main__":
 
     import numpy as np
     import matplotlib.pyplot as plt
+    from lsst.sims.photUtils.Photometry import PhotometryBase
 
     ra = 204.
     dec = -30.
@@ -234,8 +235,14 @@ if __name__ == "__main__":
     print SN
     SNCosmoSN = SNObject(ra, dec)
     SNCosmoSN.set(x0=1.847e-6, x1=0.1, z=0.2, mwebv=SN._mwebv)
-    lsstbands = getlsstbandpassobjs()
+    #lsstbands = getlsstbandpassobjs()
+    thisshouldbeNone = getlsstbandpassobjs(loadcatsim=False)
+    bandPassList = ['u', 'g', 'r', 'i', 'z', 'y']
     sncosmobands = ['LSSTu', 'LSSTg', 'LSSTr', 'LSSTi', 'LSSTz', 'LSSTy']
+    photometry = PhotometryBase()
+    photometry.loadBandPassesFromFiles(bandPassList)
+    lsstbands = photometry.bandPassList
+    print type(lsstbands)
     w = sncosmo.get_bandpass(sncosmobands[0]).wave
     l = []
     for time in np.arange(-20., 50., 1.0):
