@@ -19,6 +19,7 @@ classes to see how this is implemented.
 import numpy
 import os
 import eups
+import copy
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
@@ -149,6 +150,11 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                     sed = Sed()
                     sedFile = os.path.join(sedDir, sedName)
                     sed.readSED_flambda(sedFile)
+                    
+                    flambdaCopy = copy.deepcopy(sed.flambda)
+                    sed.flambda = numpy.array([ff if ff>1.0e-30 else 1.0e-30 for ff in flambdaCopy])
+                    sed.fnu = None
+                    
                     sedCopy = Sed(wavelen=sed.wavelen, flambda=sed.flambda,
                                   fnu=sed.fnu, name=sed.name)
                     self.uniqueSeds[sedName] = sedCopy
