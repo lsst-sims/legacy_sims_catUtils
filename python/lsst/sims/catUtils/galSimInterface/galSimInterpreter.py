@@ -384,7 +384,7 @@ class GalSimInterpreter(object):
             
         return centeredObj
 
-    def writeImages(self, isTest=False, nameRoot=None):
+    def writeImages(self, nameRoot=None):
         for name in self.detectorImages:
             if nameRoot is not None:
                 fileName = nameRoot+'_'+name
