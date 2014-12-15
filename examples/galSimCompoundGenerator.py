@@ -1,3 +1,8 @@
+"""
+This script shows how to use our GalSim interface to create FITS images
+that contain stars and galaxies
+"""
+
 import os
 import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
@@ -7,7 +12,10 @@ from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catUtils.galSimInterface import *
 
 class testGalSimStars(GalSimStars):
+    #only draw images in the u and g band for speed
     band_pass_names = ['u','g']
+
+    #convolve with a PSF; note that galaxies are not convolved with a PSF
     PSF = ExampleOpticalPSF()
 
 class testGalSimGalaxies(GalSimGalaxies):
@@ -32,7 +40,7 @@ stars_galSim = testGalSimStars(stars, obs_metadata=obs_metadata)
 
 #If you want to use the LSST camera, uncomment the line below.
 #You can similarly assign any camera object you want here, as long
-#as you do it immediately after instantiating GalSimGalaxies
+#as you do it before calling write_catalog()
 #stars_galSim.camera = LsstSimMapper().camera
 
 catName = 'galSim_compound_examle.txt'
@@ -42,7 +50,13 @@ print 'done with stars'
 
 bulges = CatalogDBObject.from_objid('galaxyBulge')
 bulge_galSim = testGalSimGalaxies(bulges, obs_metadata=obs_metadata)
+
+#This will make sure that the galaxies are drawn to the same images
+#as the stars were.  It copies the GalSimInterpreter from the star
+#catalog.  It also copies the camera.  The PSF in the GalSimInterpreter
+#is updated to reflect the PSF in bluge_galSim
 bulge_galSim.copyGalSimInterpreter(stars_galSim)
+
 bulge_galSim.write_catalog(catName, write_header=False,
                             write_mode='a')
 
