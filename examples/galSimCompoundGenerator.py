@@ -56,7 +56,7 @@ disk_galSim.write_catalog(catName, write_header=False, write_mode='a')
 print 'done with disks'
 
 agn = CatalogDBObject.from_objid('galaxyAgn')
-agn_galSim = testGalSimAgn(ans, obs_metadata=obs_metadata)
+agn_galSim = testGalSimAgn(agn, obs_metadata=obs_metadata)
 agn_galSim.copyGalSimInterpreter(disk_galSim)
 agn_galSim.write_catalog(catName, write_header=False, write_mode='a')
 
