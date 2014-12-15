@@ -1,19 +1,24 @@
 """
-The catalog examples in this file will write catalog files that can be read
-by galSimInterpreter.py (to be written), which will use galSim to turn them
-into an image.
+The catalog classes in this file use the InstanceCatalog infrastructure to construct 
+FITS images for each chip on a simulated camera.  This is done by instantiating the class
+galSimInterpreter.  This GalSimInterpreter is the class which actually generates the
+FITS images.  As the GalSim Instance Catalogs are iterated over, each object in the
+catalog is passed to tothe GalSimInterpeter, which adds the object to the appropriate
+FITS images.  The user can then write the images to disk by calling the write_images
+method in the GalSim Instance Catalog.
 
-Because of the bug documented here
+Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
+adds a column to the InstanceCatalog indicating which chips' FITS files contain each image.
 
-stackoverflow.com/questions/23771608/trouble-installing-galsim-on-osx-with-anaconda
-
-this code must do all of the processing of the object SEDs.  We cannot assume
-that the python which will convert the SEDs into images will have access to the
-stack.  Therefore, the catalogs will write the processed (redshifted, dust extincted, etc.)
-SEDs to a scratch directory which the image-creating script will read from.
-
-See get_galSimSedName() in the class GalSimBase and calculateGalSimSed in its daughter
-classes to see how this is implemented.
+Note: because each GalSim Instance Catalog has its own GalSimInterpreter, it means
+that each GalSimInterpreter will only draw FITS images containing one type of object
+(whatever type of object is contained in the GalSim Instance Catalog).  If the user
+wishes to generate FITS images containing multiple types of object, the method
+copyGalSimInterpreter allows the user to pass the GalSimInterpreter from one
+GalSim Instance Catalog to another (so, the user could create a GalSim Instance
+Catalog of stars, generate that InstanceCatalog, then create a GalSim Instance Catalog
+of galaxies, pass the GalSimInterpreter from the star catalog to this new catalog,
+and thus create FITS images that contain both stars and galaxies).
 """
 
 import numpy
@@ -33,21 +38,39 @@ __all__ = ["GalSimGalaxies", "GalSimAgn", "GalSimStars"]
 
 class GalSimBase(InstanceCatalog, CameraCoords):
     """
-    This is the base class from which all GalSim catalog classes will inherit.
-    It sets the column outputs and getters.
+    The catalog classes in this file use the InstanceCatalog infrastructure to construct 
+    FITS images for each chip on a simulated camera.  This is done by instantiating the class
+    galSimInterpreter.  This GalSimInterpreter is the class which actually generates the
+    FITS images.  As the GalSim Instance Catalogs are iterated over, each object in the
+    catalog is passed to tothe GalSimInterpeter, which adds the object to the appropriate
+    FITS images.  The user can then write the images to disk by calling the write_images
+    method in the GalSim Instance Catalog.
 
-    Daughter classes of this class must set self.calculateGalSimSed() which accepts
-    the name of a directory.  This method will loop through the objects in the catalog,
-    calculate their SEDs (corrected for redshift, dust extinction, magNorm, etc.)
-    and write them to the specified directory.  calculateGalSimSed() will then return
-    a numpy array containing the full names (absolute path) of the SEDs written for
-    each object in the catalog.  The catalog will contain these filenames so that
-    GalSimInterpreter (defined in examples/galSimInterpreter.py) can find the SEDs when
-    it is writing FITS images from the catalog.
+    Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
+    adds a column to the InstanceCatalog indicating which chips' FITS files contain each image.
 
-    This class also assigns a placeholder camera to the catalog.  If the user wishes
-    to use a different camera, they can assign it directly at run time after instantiating
-    the GalSimCatalog class (see examples/galSimCatalogGenerator.py for a demonstration).
+    Note: because each GalSim Instance Catalog has its own GalSimInterpreter, it means
+    that each GalSimInterpreter will only draw FITS images containing one type of object
+    (whatever type of object is contained in the GalSim Instance Catalog).  If the user
+    wishes to generate FITS images containing multiple types of object, the method
+    copyGalSimInterpreter allows the user to pass the GalSimInterpreter from one
+    GalSim Instance Catalog to another (so, the user could create a GalSim Instance
+    Catalog of stars, generate that InstanceCatalog, then create a GalSim Instance Catalog
+    of galaxies, pass the GalSimInterpreter from the star catalog to this new catalog,
+    and thus create FITS images that contain both stars and galaxies).
+    
+    This class (GalSimBase) is the base class for all GalSim InstanceCatalogs.  Daughter
+    classes of this calss need to behave like ordinary InstanceCatalog daughter classes
+    with the following exceptions:
+    
+    1) If they re-define column_outputs, they must be certain to include the column
+    'fitsFiles', as the getter for this column (defined in this class) calls all of the
+    GalSim image generation infrastructure
+    
+    2) Daughter classes of this class must define a member variable galsim_type that is either
+    'sersic' or 'pointSource'.  This variable tells the GalSimInterpreter how to draw the
+    object (to allow a different kind of image profile, define a new method in the GalSimInterpreter
+    class similar to drawPoinSource and drawSersic)
     """
 
     allow_multiple_chips = True

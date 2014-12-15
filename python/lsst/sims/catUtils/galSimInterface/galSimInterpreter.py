@@ -321,7 +321,7 @@ class GalSimInterpreter(object):
         for bandPassName in self.bandPasses:
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
                 if galSimType == 'sersic':
-                    centeredObj = self.drawGalaxy(x_pupil=xp, y_pupil=yp,
+                    centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
                                                   bandpass=self.bandPasses[bandPassName], **kwargs)
                 elif galSimType == 'pointSource':
                     centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
@@ -355,7 +355,7 @@ class GalSimInterpreter(object):
         
         return self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, bandpass=bandpass)
 
-    def drawGalaxy(self, x_pupil=None, y_pupil=None, sindex=None, minorAxis=None,
+    def drawSersic(self, x_pupil=None, y_pupil=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None, bandpass=None):
         """
         Draw the image of a galaxy.
