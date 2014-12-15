@@ -322,8 +322,33 @@ class GalSimInterpreter(object):
         
         return image
 
-    def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', sed=None, x_pupil=None,
-                   y_pupil=None, **kwargs):
+    def drawObject(self, galSimType=None, detectorList=None, sed=None, x_pupil=None,
+                   y_pupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
+                   positionAngle=None, sindex=None):
+        """
+        Draw an object on all of the relevant FITS files.
+        
+        @param [in] galSimType is a string, either 'pointSource' or 'sersic' denoting the shape of the object
+        
+        @param [in] detectorList is a list of GalSimDetectors on which to draw the object
+        
+        @param [in] sed is the SED of the object (an instantiation of the Sed class defined in
+        sims_photUtils/../../Sed.py
+        
+        @param [in] x_pupil is the x pupil coordinate of the object in radians
+        
+        @param [in] y_pupil is the y pupil coordinate of the object in radians
+        
+        @param [in] halfLightRadius is the halfLightRadius of the object in radians
+        
+        @param [in] minorAxis is the semi-minor axis of the object in radians
+        
+        @param [in] majorAxis is the semi-major axis of the object in radians
+        
+        @param [in] positionAngle is the position angle of the object in radians
+        
+        @param [in] sindex is the sersic index of the object
+        """
         
         if sed is None or len(detectorList) == 0:
             return
@@ -337,6 +362,7 @@ class GalSimInterpreter(object):
         centeredObj = None
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
+        hlr = radiansToArcsec(halfLightRadius)
         spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
                               flux_type='flambda')
         
@@ -344,7 +370,10 @@ class GalSimInterpreter(object):
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
                 if galSimType == 'sersic':
                     centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
-                                                  bandpass=self.bandPasses[bandPassName], **kwargs)
+                                                  bandpass=self.bandPasses[bandPassName],
+                                                  sindex=sindex, halfLightRadius=hlr,
+                                                  positionAngle=positionAngle,
+                                                  minorAxis=minorAxis, majorAxis=majorAxis)
                 elif galSimType == 'pointSource':
                     centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
                                                        bandpass=self.bandPasses[bandPassName])
@@ -391,15 +420,27 @@ class GalSimInterpreter(object):
         param [in] bandPass is a galsim.bandpass object denoting the bandpass over which to integrate flux
         """
         
-        hlr = radiansToArcsec(halfLightRadius)
-        minor = radiansToArcsec(minorAxis)
-        major = radiansToArcsec(majorAxis)
+        @param [in] y_pupil is the y pupil coordinate of the object in arc seconds
+        
+        @param [in] sindex is the Sersic index of the object
+        
+        @param [in] minorAxis is the semi-minor axis of the object in any units (we only care
+        about the ratio of the semi-minor to semi-major axes)
+        
+        @param [in] majorAxis is the semi-major axis of the object in the same units
+        as minorAxis
+        
+        @param [in] halfLightRadius is the half light radius of the object in arc seconds
+        
+        @param [in] bandpass is an instantiation of the galsim.Bandpass class characterizing
+        the bandpass over which we are integrating (in case the PSF is wavelength dependent)
+        """
 
         #create a Sersic profile
-        centeredObj = galsim.Sersic(n=float(sindex), half_light_radius=float(hlr))
+        centeredObj = galsim.Sersic(n=float(sindex), half_light_radius=float(halfLightRadius))
 
         #turn the Sersic profile into an ellipse
-        centeredObj = centeredObj.shear(q=minor/major, beta=positionAngle*galsim.radians)
+        centeredObj = centeredObj.shear(q=minorAxis/majorAxis, beta=positionAngle*galsim.radians)
         if self.PSF is not None:
             centeredObj = self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, obj=centeredObj,
                                             bandpass=bandpass)
