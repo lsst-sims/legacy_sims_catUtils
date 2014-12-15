@@ -179,12 +179,17 @@ class GalSimInterfaceTest(unittest.TestCase):
                                                                         internalAv=internalAv, internalRv=internalRv,
                                                                         galacticAv=galacticAv, galacticRv=galacticRv)
 
-            drawnFilters = 0
+            unDrawnDetectors = 0
             for ff in controlCounts:
-                drawnFilters += 1
-                self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
+                if controlCounts[ff] > 1000.0:
+                    #because, for really dim images, there could be enough statistical imprecision in the GalSim drawing routine
+                    #to violate the condition below
+                    self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
+                else:
+                    unDrawnDetectors += 1
 
-            self.assertTrue(drawnFilters==6)
+            #to make sure we did not neglect more than one detector
+            self.assertTrue(unDrawnDetectors<2)
 
     def testGalaxyBulges(self):
         """
