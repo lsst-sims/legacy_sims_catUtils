@@ -79,21 +79,53 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.obs_metadata
     
     def catalogTester(self, catName=None, catalog=None, nameRoot=None):
-
+        """
+        Reads in a GalSim Instance Catalog.  Writes the images from that catalog.
+        Then reads those images back in.  Uses AFW to calculate the number of counts
+        in each FITS image.  Reads in the InstanceCatalog associated with those images.
+        Uses sims_photUtils code to calculate the ADU for each object on the FITS images.
+        Verifies that the two independent calculations of counts agree (to within a tolerance,
+        since the GalSim images are generated in a pseudo-random way).
+        
+        @param [in] catName is the name of the InstanceCatalog that has been written to disk
+        
+        @paranm [in] catalog is the actual InstanceCatalog instantiation
+        
+        @param [in] nameRoot is a string appended to the names of the FITS files being written
+        """
+        
+        #write the fits files
         catalog.write_images(nameRoot=nameRoot)
         
+        #a dictionary of ADU for each FITS file as calculated by GalSim
+        #(indexed on the name of the FITS file)
         galsimCounts = {}
+        
+        #a dictionary of ADU for each FITS file as calculated by sims_photUtils
+        #(indexed on the name of the FITS file)
         controlCounts = {}
         
+        #a list of bandpasses over which we are integraging
+        listOfFilters = []
+        
+        #read in the names of all of the written fits files directly from the
+        #InstanceCatalog's GalSimInterpreter
+        #Use AFW to read in the FITS files and calculate the ADU
         for name in catalog.galSimInterpreter.detectorImages:
             if nameRoot is not None:
                 name = nameRoot+'_'+name
             im = afwImage.ImageF(name)
             imArr = im.getArray()
-            galsimCounts[name[-6]] = imArr.sum()
-            controlCounts[name[-6]] = 0.0
-            os.unlink(name)
+            galsimCounts[name] = imArr.sum()
+            controlCounts[name] = 0.0
             
+            if name[-6] not in listOfFilters:
+                listOfFilters.append(name[-6])
+            
+            os.unlink(name)
+        
+        #Read in the InstanceCatalog.  For each object in the catalog, use sims_photUtils
+        #to calculate the ADU.  Keep track of how many ADU should be in each FITS file.    
         with open(catName, 'r') as testFile:
             lines = testFile.readlines()
             for line in lines:
@@ -106,24 +138,35 @@ class GalSimInterfaceTest(unittest.TestCase):
                     internalRv = float(gg[14])
                     galacticAv = float(gg[15])
                     galacticRv = float(gg[16])
+                    listOfFileNames = gg[17].split('//')
         
-
-                    for filterName in controlCounts:
-                        bandPassName=os.path.join(eups.productDir('throughputs'),'baseline',('total_'+filterName+'.dat'))
-                        bandpass = Bandpass()
-                        bandpass.readThroughput(bandPassName)
-                        controlCounts[filterName] += calcADUwrapper(sedName=sedName, bandpass=bandpass,
-                                                                    redshift=redshift, magNorm=magNorm,
-                                                                    internalAv=internalAv, internalRv=internalRv, 
-                                                                    galacticAv=galacticAv, galacticRv=galacticRv)
+                    for name in listOfFileNames:
+                        #loop over all of the detectors on which an object fell
+                        #(this is not a terribly great idea, since our conservative implementation
+                        #of GalSimInterpreter._doesObjectImpingeOnDetector means that some detectors 
+                        #will be listed here even though the object does not illumine them)
+                        for filterName in listOfFilters:
+                            chipName = name.replace(':','_')
+                            chipName = chipName.replace(' ','_')
+                            chipName = chipName.replace(',','_')
+                            chipName = chipName.strip()
+                            
+                            fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
+                            
+                            bandPassName=os.path.join(eups.productDir('throughputs'),'baseline',('total_'+filterName+'.dat'))
+                            bandpass = Bandpass()
+                            bandpass.readThroughput(bandPassName)
+                            controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpass,
+                                                                        redshift=redshift, magNorm=magNorm,
+                                                                        internalAv=internalAv, internalRv=internalRv, 
+                                                                        galacticAv=galacticAv, galacticRv=galacticRv)
                
             drawnFilters = 0
             for ff in controlCounts:
-                if controlCounts[ff] > 1000.0:
-                    drawnFilters += 1
-                    self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
+                drawnFilters += 1
+                self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
                     
-            self.assertTrue(drawnFilters>4)
+            self.assertTrue(drawnFilters==6)
 
     def testGalaxyBulges(self):
         catName = 'testBulgeCat.sav'
@@ -176,7 +219,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(dbName):
             os.unlink(dbName)
         
-        displacedRA = numpy.array([72.0/3600.0, 50.0/3600.0, 75.0/3600.0])
+        displacedRA = numpy.array([72.0/3600.0, 55.0/3600.0, 75.0/3600.0])
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
         obs_metadata = makePhoSimTestDB(filename=dbName, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
@@ -205,7 +248,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(dbName1):
             os.unlink(dbName1)
         
-        displacedRA = numpy.array([72.0/3600.0, 50.0/3600.0, 75.0/3600.0])
+        displacedRA = numpy.array([72.0/3600.0, 55.0/3600.0, 75.0/3600.0])
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
         obs_metadata1 = makePhoSimTestDB(filename=dbName1, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
@@ -215,8 +258,8 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(dbName2):
             os.unlink(dbName2)
         
-        displacedRA = numpy.array([50.0/3600.0, 60.0/3600.0, 65.0/3600.0])
-        displacedDec = numpy.array([-5.0/3600.0, 10.0/3600.0, 10.0/3600.0])
+        displacedRA = numpy.array([55.0/3600.0, 60.0/3600.0, 62.0/3600.0])
+        displacedDec = numpy.array([-3.0/3600.0, 10.0/3600.0, 10.0/3600.0])
         obs_metadata2 = makePhoSimTestDB(filename=dbName2, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
         connectionString2 = 'sqlite:///'+dbName2
