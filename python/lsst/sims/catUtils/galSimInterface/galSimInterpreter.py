@@ -179,11 +179,6 @@ class GalSimInterpreter(object):
         
         self.detectors = detectors
 
-        #this is a list of which detectors which objects fall on
-        #(in case an object is near the edge of a detector and some
-        #of the light from the object falls on that detector)
-        self.chipsImpinged = None
-
         self.detectorImages = {}
         self.bandPasses = {}
         
