@@ -259,24 +259,16 @@ class GalSimInterpreter(object):
             #check if light from the object bleed across any of the detector's boundaries
             if isBetweenY:
                 if xPupil <= detector.xMin and detector.xMin - xPupil < distance:
-                    if xPupil>100.0:
-                        print 'returning because of xMin'
                     return True
 
                 if xPupil >= detector.xMax and xPupil - detector.xMax < distance:
-                    if xPupil>100.0:
-                        print 'returning because of xMax'
                     return True
 
             if isBetweenX:
                 if yPupil <= detector.yMin and detector.yMin - yPupil < distance:
-                    if xPupil>100.0:
-                        print 'returning because of yMin'
                     return True
 
                 if yPupil >= detector.yMax and yPupil - detector.yMax < distance:
-                    if xPupil>100.0:
-                        print 'returning because of yMax'
                     return True
 
             #see if light from the object bleeds through any of the detector's corners
@@ -286,10 +278,6 @@ class GalSimInterpreter(object):
                                numpy.power(yy - yPupil,2))
 
                     if testDistance < distance:
-                        if xPupil>100.0:
-                            print 'returning because corner ',testDistance,distance
-                            print xx,yy
-                            print xPupil, yPupil
                         return True
 
         return False
