@@ -1,6 +1,6 @@
 """
 The catalog classes in this file use the InstanceCatalog infrastructure to construct
-FITS images for each chip-filter combination on a simulated camera.  This is done by
+FITS images for each detector-filter combination on a simulated camera.  This is done by
 instantiating the class GalSimInterpreter.  This GalSimInterpreter is the class which
 actually generates the FITS images.  As the GalSim Instance Catalogs are iterated over,
 each object in the catalog is passed to tothe GalSimInterpeter, which adds the object
@@ -8,7 +8,7 @@ to the appropriate FITS images.  The user can then write the images to disk by c
 the write_images method in the GalSim Instance Catalog.
 
 Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
-adds a column to the InstanceCatalog indicating which chips' FITS files contain each image.
+adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
 
 Note: because each GalSim Instance Catalog has its own GalSimInterpreter, it means
 that each GalSimInterpreter will only draw FITS images containing one type of object
@@ -39,7 +39,7 @@ __all__ = ["GalSimGalaxies", "GalSimAgn", "GalSimStars"]
 class GalSimBase(InstanceCatalog, CameraCoords):
     """
     The catalog classes in this file use the InstanceCatalog infrastructure to construct
-    FITS images for each chip-filter combination on a simulated camera.  This is done by
+    FITS images for each detector-filter combination on a simulated camera.  This is done by
     instantiating the class GalSimInterpreter.  GalSimInterpreter is the class which
     actually generates the FITS images.  As the GalSim Instance Catalogs are iterated over,
     each object in the catalog is passed to tothe GalSimInterpeter, which adds the object
@@ -47,7 +47,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     the write_images method in the GalSim Instance Catalog.
 
     Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
-    adds a column to the InstanceCatalog indicating which chips' FITS files contain each image.
+    adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
 
     Note: because each GalSim Instance Catalog has its own GalSimInterpreter, it means
     that each GalSimInterpreter will only draw FITS images containing one type of object
@@ -85,13 +85,13 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     GalSim InstanceCatalog member variables exposure_time (in s), effective_area (in cm^2),
     and gain (in photons per ADU)
 
-    Daughter classes of GalSimBase will generate both FITS images for all of the chips/filters
+    Daughter classes of GalSimBase will generate both FITS images for all of the detectors/filters
     in their corresponding cameras and Instance Catalogs listing all of the objects
     contained in those images.  The catalog is written using the normal write_catalog()
     method provided for all InstanceClasses.  The FITS files are drawn using the write_images()
     method that is unique to GalSim Instance Catalogs.  The FITS file will be named something like:
 
-    ChipName_FilterName.fits
+    DetectorName_FilterName.fits
 
     (a typical LSST fits file might be R_0_0_S_1_0_y.fits)
 
@@ -105,7 +105,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     allow_multiple_chips = True
 
     #There is no point in writing things to the InstanceCatalog that do not have SEDs and/or
-    #do not land on any chips
+    #do not land on any detectors
     cannot_be_null = ['sedFilepath', 'fitsFiles']
 
     column_outputs = ['galSimType', 'uniqueId', 'chipName', 'x_pupil', 'y_pupil', 'sedFilepath',
@@ -118,7 +118,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
-    #This is used as the delimiter because the names of the chips printed in the fitsFiles
+    #This is used as the delimiter because the names of the detectors printed in the fitsFiles
     #column contain both ':' and ','
     delimiter = ';'
 
@@ -267,8 +267,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     def get_fitsFiles(self):
         """
-        This getter returns a column listing the names of the chips whose corresponding
-        FITS files contain the object in question.  The chip names will be separated by a '//'
+        This getter returns a column listing the names of the detectors whose corresponding
+        FITS files contain the object in question.  The detector names will be separated by a '//'
 
         This getter also passes objects to the GalSimInterpreter to actually draw the FITS
         images.
@@ -312,14 +312,14 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 self.objectHasBeenDrawn.append(name)
 
-                #finds all of the chips on which the object is likely to shed light
-                chipsString, chipsList = self.galSimInterpreter.findAllChips(xPupil=xp, yPupil=yp,
+                #finds all of the detectors on which the object is likely to shed light
+                detectorsString, detectorsList = self.galSimInterpreter.findAllDetectors(xPupil=xp, yPupil=yp,
                                                                              minorAxis=minor, majorAxis=major,
                                                                              halfLightRadius=hlr)
-                output.append(chipsString)
+                output.append(detectorsString)
 
                 #actually draw the object
-                self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=chipsList,
+                self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=detectorsList,
                                                   sindex=sn, minorAxis=minor,
                                                   majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                                   x_pupil=xp, y_pupil=yp, sed=ss)
@@ -458,7 +458,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         @param [in] nameRoot is an optional string prepended to the names
         of the FITS images.  The FITS images will be named
 
-        nameRoot_ChipName_FilterName.fits
+        nameRoot_DetectorName_FilterName.fits
 
         (e.g. myImages_R_0_0_S_1_1_y.fits for an LSST-like camera with
         nameRoot = 'myImages')

@@ -265,7 +265,7 @@ class GalSimInterpreter(object):
         """
         return detector.fileName+'_'+bandPassName+'.fits'
 
-    def _doesObjectImpingeOnChip(self, xPupil=None, yPupil=None, halfLightRadius=None,
+    def _doesObjectImpingeOnDetector(self, xPupil=None, yPupil=None, halfLightRadius=None,
                                  minorAxis=None, majorAxis=None, detector=None):
         """
         Compare an object to a detector and determine whether or not that object will cast any
@@ -300,7 +300,7 @@ class GalSimInterpreter(object):
             #I am not sure in the case of point sources how to deal with this,
             #since there is not general PSF formalism with a defined size.
             #For the moment, I will do a very conservative test (letting in more objects
-            #than is probably necessary for each chip).  I will allow anything that is
+            #than is probably necessary for each detector).  I will allow anything that is
             #within 2 arcseconds of the detector's boundaries (on the assumption that no
             #reasonably PSF would smear a source more than 2 arcseconds)
 
@@ -370,7 +370,7 @@ class GalSimInterpreter(object):
         return False
 
 
-    def findAllChips(self, xPupil=None, yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None):
+    def findAllDetectors(self, xPupil=None, yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None):
         """
         For a given object, find all of the detectors on which it casts light.
 
@@ -384,13 +384,13 @@ class GalSimInterpreter(object):
 
         @params [in] majorAxis the semi-major axis of the object in radians
 
-        returns a string listing the names of all the detectors on which the chip casts light. The names
+        returns a string listing the names of all the detectors on which the object casts light. The names
         are separated by a '//'
         """
         outputString = ''
         outputList = []
         for dd in self.detectors:
-            if self._doesObjectImpingeOnChip(xPupil=radiansToArcsec(xPupil), yPupil=radiansToArcsec(yPupil),
+            if self._doesObjectImpingeOnDetector(xPupil=radiansToArcsec(xPupil), yPupil=radiansToArcsec(yPupil),
                                              halfLightRadius=radiansToArcsec(halfLightRadius),
                                              minorAxis=radiansToArcsec(minorAxis), majorAxis=radiansToArcsec(majorAxis),
                                              detector=dd):
