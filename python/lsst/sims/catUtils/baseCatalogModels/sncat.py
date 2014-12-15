@@ -19,7 +19,7 @@ from astropy.units import Unit
 import astropy.cosmology as cosmology 
 #from astropy.cosmology import Planck13 as cosmo
 from snObject import SNObject
-from lsst.sims.photUtils import CosmologyWrapper 
+from lsst.sims.photUtils.CosmologyObject import CosmologyWrapper 
 import sqliteutils as sq
 import sqlite3
 wavelenstep = 0.1
@@ -118,6 +118,7 @@ class SNIaCatalog (InstanceCatalog):
         hundredyear = 100*365.0
         vals = np.zeros(shape=(self.numobjs, 10))
         _z, _id = self.column_by_name('redshift'), self.column_by_name('snid')
+        #distmods = cosmo.get_cosmologicalDistanceModulus()
         bad = np.nan
         for i, v in enumerate(vals):
             np.random.seed(_id[i])
@@ -142,7 +143,8 @@ class SNIaCatalog (InstanceCatalog):
             # rather than use the SNCosmo function below which uses astropy to calculate
             # distanceModulus, we will use photUtils CosmologyWrapper for consistency
             # SNmodel.set_source_peakabsmag(mabs, 'bessellb', 'ab', cosmo=cosmo)
-            mag = mabs + defcosmo.distanceModulus(_z[i])
+            mag = mabs + cosmo.cosmology.distanceModulus(_z[i])
+            #cosmo.get_cosmologicalDistanceModulus(_z[i])
             SNmodel.source.set_peakmag(mag, band='bessellb', magsys='ab')
             v[2] = SNmodel.get('x0')
             v[3] = v[-1]
@@ -161,6 +163,13 @@ if __name__ == "__main__":
     # import timeit
     print bcm.__file__
     from lsst.sims.catalogs.generation.db import ObservationMetaData
+
+
+    # Define the cosmology for the catalog
+    cosmo = CosmologyWrapper() 
+    # You can set the cosmology w0waCDM FLRW cosmologies
+    cosmo.setCosmology(Om0=0.25, Ok0=None, H0=73.0)
+
     galDB = CatalogDBObject.from_objid('galaxyTiled')
     def file2lst(fname, i, mjd):
         d = np.loadtxt(fname, delimiter=',')
@@ -189,9 +198,6 @@ if __name__ == "__main__":
                                           bandpassName=['u', 'g', 'r', 'i',
                                                         'z', 'y'],
                                           mjd=myMJD)
-            defcosmo = CosmologyWrapper() 
-            cosmo = cosmology.Planck13 
-            defcosmo.setCurrent(cosmo)
             catalog = SNIaCatalog(db_obj=galDB,
                                   obs_metadata=myObsMD)
             print "====================================="
