@@ -300,47 +300,6 @@ class GalSimInterpreter(object):
         
         return image
 
-    def _addToMasterImage(self, localImage = None, masterImage = None, x_pupil=None, y_pupil=None,
-                          detector=None):
-
-        xCorner = x_pupil - 0.5*(localImage.xmax - localImage.xmin)*localImage.scale
-        dx = int((xCorner - detector.xMin)/detector.plateScale)
-        
-        yCorner = y_pupil - 0.5*(localImage.ymax - localImage.ymin)*localImage.scale
-        dy = int((yCorner - detector.yMin)/detector.plateScale)
-
-        if masterImage.xmax > localImage.xmax + dx:
-            xMax = localImage.xmax + dx
-        else:
-            xMax = masterImage.xmax
-        
-        if masterImage.xmin < localImage.xmin + dx:
-            xMin = localImage.xmin + dx
-        else:
-            xMin = masterImage.xmin
-        
-        if masterImage.ymax > localImage.ymax + dy:
-            yMax = localImage.ymax + dy
-        else:
-            yMax = masterImage.ymax
-        
-        if masterImage.ymin < localImage.ymin + dy:
-            yMin = localImage.ymin + dy
-        else:
-            yMin = masterImage.ymin
-        
-        xx = xMin
-        while xx <= xMax:
-            yy = yMin
-            while yy <= yMax:
-                
-                newValue = masterImage.at(xx ,yy) + localImage.at(xx-dx, yy-dy)
-                masterImage.setValue(xx, yy, newValue)
-                
-                yy += 1
-            xx += 1
-        
-
     def drawObject(self, galSimType=None, detectorList=None, fileNameRoot='', sed=None, x_pupil=None,
                    y_pupil=None, **kwargs):
         
@@ -376,14 +335,18 @@ class GalSimInterpreter(object):
             for detector in detectorList:
             
                 name = self._getFileName(detector=detector, bandPassName=bandPassName)
-            
-                #convolve the Sersic profile with the spectrum
-                obj = centeredObj*spectrum
-                localImage = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
-                                           method='phot', gain=self.gain)
                 
-                self._addToMasterImage(localImage=localImage, masterImage=self.detectorImages[name],
-                                       x_pupil=xp, y_pupil=yp, detector=detector)
+                dx = xp - detector.xCenter
+                dy = yp - detector.yCenter
+                obj = centeredObj.shift(dx, dy)
+                
+                #convolve the Sersic profile with the spectrum
+                obj = obj*spectrum
+                localImage = self.blankImage(detector=detector)
+                localImage = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
+                                           method='phot', gain=self.gain, image=localImage)
+                
+                self.detectorImages[name] += localImage
 
     def drawPointSource(self, x_pupil=None, y_pupil=None, bandpass=None):
     
