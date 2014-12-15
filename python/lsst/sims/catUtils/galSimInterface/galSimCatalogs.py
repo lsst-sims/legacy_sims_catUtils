@@ -342,7 +342,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     def copyGalSimInterpreter(self, otherCatalog):
         """
-        Copy the camera, GalSimInterpreter, and PSF from another GalSim Instance Catalog
+        Copy the camera, GalSimInterpreter, from another GalSim Instance Catalog
         so that multiple types of object (stars, AGN, galaxy bulges, galaxy disks, etc.)
         can be drawn on the same FITS files.
 
@@ -354,6 +354,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         """
         self.camera = otherCatalog.camera
         self.galSimInterpreter = otherCatalog.galSimInterpreter
+
+        #set the PSF to the current PSF; in this way, compound FITS files do not
+        #have to have the same PSF for all types of objects (though I'm not sure
+        #that is actually physical)
         self.galSimInterpreter.setPSF(self.PSF)
 
     def write_header(self, file_handle):
@@ -375,7 +379,12 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         """
 
         if self.galSimInterpreter is None:
+
+            #This list will contain instantiations of the GalSimDetector class
+            #(see galSimInterpreter.py), which stores detector information in a way
+            #that the GalSimInterpreter will understand
             detectors = []
+
             for dd in self.camera:
                 cs = dd.makeCameraSys(PUPIL)
                 centerPupil = self.camera.transform(dd.getCenter(FOCAL_PLANE),cs).getPoint()
