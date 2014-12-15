@@ -1,10 +1,14 @@
 """
-This script contains all of the methods needed to turn a GalSimCatalog
-(see exampleCatalogExamples/galSimCatalogExamples.py) into FITS images
+This file defines the following classes:
 
-There is the class GalSimInterpreter, which can be imported into other scripts
-(assuming you are running a stack-enabled Python) and a main function which uses
-it to create FITS images.
+GalSimInterpreter -- a class which takes objects passed by a GalSim Instance Catalog
+(see galSimCatalogs.py) and uses GalSim to write them to FITS images.
+
+GalSimDetector -- a class which stored information about a detector in a way that
+GalSimInterpreter expects.
+
+PSFbase and various examples of PSFs -- classes which wrap the PSF implementations
+from GalSim in a way that GalSimInterpreter expects.
 """
 
 import os
@@ -22,10 +26,10 @@ class GalSimDetector(object):
 
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
-                 plateScale=None, fileNameRoot=''):
+                 plateScale=None):
         """
         param [in] name is a string denoting the name of the detector (this should be the
-        same name that will be returned by the astrometry method findChipName()
+        same name that will be returned by the astrometry method findChipName())
 
         param [in] xCenter is the x pupil coordinate of the center of the detector in arcseconds
 
@@ -45,17 +49,17 @@ class GalSimDetector(object):
         self.yMin = yMin
         self.yMax = yMax
         self.plateScale = plateScale
-        self.fileName = self._getFileName(fileNameRoot=fileNameRoot)
+        self.fileName = self._getFileName()
 
 
-    def _getFileName(self, fileNameRoot=''):
+    def _getFileName(self):
         #format the name of the detector to add to the name of the FITS file
         detectorName = self.name
         detectorName = detectorName.replace(',','_')
         detectorName = detectorName.replace(':','_')
         detectorName = detectorName.replace(' ','_')
 
-        name = fileNameRoot+detectorName
+        name = detectorName
         return name
 
 class PSFbase(object):
