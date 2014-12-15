@@ -63,9 +63,44 @@ class GalSimDetector(object):
         return name
 
 class PSFbase(object):
+        """
+        This is the base class for wrappers of GalSim's PSF classes.  To apply a PSF to GalSim images
+        using the GalSim Instance Catalog and GalSim Interpreter, the user must define a daughter
+        class of this class and instantiate it as the member variable self.PSF in the GalSim Instance Catalog.
+        
+        Any Daughter class of this class must have:
+        
+        1) a boolean member variable wavelength_dependent which tells the GalSimInterpreter whether or not
+        it needs to worry about the PSF changing with wavelength
+        
+        2) a member method _getPSF which accepts the coordinates x_pupil and y_pupil in arcseconds as kwargs
+        and (optionally) the kwarg bandpass, which is a galsim bandpass object.  This method will instantiate
+        a psf object at those coordinates (and, if relevant, the effective wavelength) of the bandpass, and return
+        it.
+        
+        The method applyPSF is defined in this class and should not be overwritten.  It handles the task of actually
+        convolving the PSF returned by _getPSF.
+        """
         
         wavelength_dependent = False
-    
+        
+        def _getPSF(self, x_pupil=None, y_pupil=None, bandpass=None):
+            """
+            If it had been implemented, this would return a GalSim PSF instantiation at the
+            coordinates and wavelength specified and returned it to applyPSF.  As it is, this
+            class has not been implemented and is left to the user to implement in Daughter
+            classes of PSFbase.
+            
+            @param [in] x_pupil the x coordinate on the pupil in arc seconds
+            
+            @param [in] y_pupil the y coordinate on the pupil in arc seconds
+            
+            @param [in] bandpass is an instantiation of the GalSim bandpass class which contains
+            data defining the bandpass in question (in case the PSF is wavelength dependent)
+            """
+            
+            raise NotImplementedError("There is not _getPSF for PSFbase; define a daughter class and define your own")
+        
         def applyPSF(self, x_pupil=None, y_pupil=None, obj=None, **kwargs):
             """
             Apply the PSF to a GalSim GSObject
