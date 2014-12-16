@@ -129,9 +129,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     #This member variable will define a PSF to convolve with the sources.
     #See the classes PSFbase, ExampleGaussianPSF, and ExampleOpticalPSF in
-    #galSimInterpreter.py for more information
+    #galSimUtilities.py for more information
     PSF = None
-    
+
     #This member variable can store a GalSim noise model instantiation
     #which will be applied to the FITS images by calling add_noise()
     noise = None
@@ -458,7 +458,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         Adds the noise model stored in self.noise to the images stored
         in the GalSimInterpreter
         """
-        
+
         if self.noise is not None:
             self.galSimInterpreter.addNoise(noiseWrapper = self.noise, obs_metadata=self.obs_metadata)
 
