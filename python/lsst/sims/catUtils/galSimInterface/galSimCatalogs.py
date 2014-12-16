@@ -131,6 +131,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #See the classes PSFbase, ExampleGaussianPSF, and ExampleOpticalPSF in
     #galSimInterpreter.py for more information
     PSF = None
+    
+    #This member variable can store a GalSim noise model instantiation
+    #which will be applied to the FITS images by calling add_noise()
+    noise = None
 
     #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
     #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
@@ -448,6 +452,15 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         """
         InstanceCatalog.write_catalog(self, *args, **kwargs)
         self.catalogHasBeenWritten = True
+
+    def add_noise(self):
+        """
+        Adds the noise model stored in self.noise to the images stored
+        in the GalSimInterpreter
+        """
+        
+        if self.noise is not None:
+            self.galSimInterpreter.addNoise(noiseWrapper = self.noise, obs_metadata=self.obs_metadata)
 
     def write_images(self, nameRoot=None):
         """
