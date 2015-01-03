@@ -20,7 +20,8 @@ class GalaxyObj(CatalogDBObject):
 
     #: This is the default address.  Simply change this in the class definition for other
     #: endpoints.
-    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+    #dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@localhost:1433/LSST"
 
     #: This is the base table for the galaxies
     #tableid = 'final_clone_db'
@@ -105,7 +106,8 @@ class GalaxyTileObj(CatalogDBObject):
 
     #: This is the default address.  Simply change this in the class definition for other
     #: endpoints.
-    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+    # dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@localhost:1435/LSST"
 
     tableid = 'galaxy'
     raColName = 'ra'
