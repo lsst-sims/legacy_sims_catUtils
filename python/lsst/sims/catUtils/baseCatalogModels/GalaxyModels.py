@@ -431,8 +431,8 @@ class LensGalaxyObj(CatalogDBObject):
     #: is assumed to be float.
     columns = [('galid', 'id', int),
             ('raJ2000', 'ra_bulge*PI()/180.'),
-            ('decJ2000', 'dec_bulge'),
-            ('magNorm', 'magnorm_bulge*PI()/180.'),
+            ('decJ2000', 'dec_bulge*PI()/180.'),
+            ('magNorm', 'magnorm_bulge'),
             ('sedFilename', 'sedname_bulge', unicode, 40),
             ('lsst_u', 'u_ab'),
             ('lsst_g', 'g_ab'),
