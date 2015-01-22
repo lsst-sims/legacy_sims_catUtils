@@ -100,8 +100,7 @@ class StarBase(CatalogDBObject):
 
             #aliased subquery for htmid ranges covering the search region
             htmid_range_alias = select([column('htmidstart'), column('htmidend')]).\
-            select_from(func.fHtmCoverBinaryAdvanced(
-                    func.sph.fSimplifyString(regionStr))).alias()
+            select_from(func.fHtmCoverRegion(regionStr)).alias()
 
             #Range join on htmid ranges
             query = query.join(htmid_range_alias,
