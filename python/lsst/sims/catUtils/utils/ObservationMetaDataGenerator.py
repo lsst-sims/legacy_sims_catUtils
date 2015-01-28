@@ -45,7 +45,9 @@ class ObservationMetaDataGenerator(object):
                              ('altitude','Opsim_altitude',float, 'altitude'),
                              ('azimuth','Opsim_azimuth',float, 'azimuth'),
                              ('visitExpTime','exptime',float, 'visitExpTime'),
-                             ('airmass','airmass',float,'airmass')]
+                             ('airmass','airmass',float,'airmass'),
+                             ('fiveSigmaDepth','m5',float,'m5'),
+                             ('filtSkyBrightness','skyBrightness',float,'skyBrightness')]
 
         self.columnUnitTransformations = {'fieldRA':numpy.radians, 'fieldDec':numpy.radians,
                                           'moonRA':numpy.radians, 'moonDec':numpy.radians,
@@ -68,7 +70,8 @@ class ObservationMetaDataGenerator(object):
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
                                rawSeeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
-                               visitExpTime=None, airmass=None):
+                               visitExpTime=None, airmass=None, skyBrightness=None,
+                               m5=None):
 
         """
         This method will query the OpSim database according to user-specified constraints
@@ -106,6 +109,8 @@ class ObservationMetaDataGenerator(object):
         obsHistID the integer used by OpSim to label pointings
         expDate is the date of the exposure (units????)
         expMJD is the MJD of the exposure
+        m5 is the five sigma depth of the observation
+        skyBrightness
 
         """
 
@@ -140,4 +145,6 @@ class ObservationMetaDataGenerator(object):
                 nWhereClauses += 1
 
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
+        
         return results
+        
