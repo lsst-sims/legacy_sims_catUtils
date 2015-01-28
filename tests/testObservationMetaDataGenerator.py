@@ -11,9 +11,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = myGen.getObservationMetaData(fieldRA=(0.0, numpy.degrees(0.1)))
 
         print results
-        print results['fieldRA']
         for el in results:
-            print el['expDate'], el['fiveSigmaDepth']
+            print el.unrefractedRA, el.m5('i')
 
 def suite():
     utilsTests.init()

@@ -1,7 +1,8 @@
 import os
 import eups
 import numpy
-from lsst.sims.catalogs.generation.db import DBObject
+from collections import OrderedDict
+from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 
 __all__ = ["ObservationMetaDataGenerator"]
 
@@ -71,7 +72,7 @@ class ObservationMetaDataGenerator(object):
                                rawSeeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
                                visitExpTime=None, airmass=None, skyBrightness=None,
-                               m5=None):
+                               m5=None, boundType='circle', boundLength=0.1):
 
         """
         This method will query the OpSim database according to user-specified constraints
@@ -112,6 +113,11 @@ class ObservationMetaDataGenerator(object):
         m5 is the five sigma depth of the observation
         skyBrightness
 
+        You must also specify the size of the fields of view returned in the
+        ObservationMetaData instantiations by specifying boundType (default 'circle')
+        and boundLength (in degrees; default a radius of 0.1).   See documentation in
+        sims_catalogs_generation/../db/spatialBounds.py for more details.
+
         """
 
         query = self.baseQuery+ ' FROM SUMMARY WHERE'
@@ -146,5 +152,18 @@ class ObservationMetaDataGenerator(object):
 
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
         
-        return results
+        obs_output = []
+        
+        for pointing in results:
+            phoSimMetadata=OrderedDict()
+            for column in self.columnMapping:
+                phoSimMetadata[column[1]] = (pointing[column[0]], column[2])
+        
+            obs_metadata = ObservationMetaData(m5=pointing['fiveSigmaDepth'],
+                                               boundType=boundType, boundLength=boundLength,
+                                               phoSimMetadata=phoSimMetadata)
+            
+            obs_output.append(obs_metadata)
+        
+        return obs_output
         
