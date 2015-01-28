@@ -1,5 +1,6 @@
 import os
 import unittest
+import numpy
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 
@@ -7,8 +8,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
     def testQuery(self):
         myGen = ObservationMetaDataGenerator()
-        results = myGen.getObservationMetaData(fieldRA=(0.0, 0.1),
-                                               fieldDec=(-0.1, 0.1))
+        results = myGen.getObservationMetaData(fieldRA=(0.0, numpy.degrees(0.1)))
 
         print results
 

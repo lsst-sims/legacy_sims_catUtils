@@ -47,6 +47,12 @@ class ObservationMetaDataGenerator(object):
                              ('visitExpTime','exptime',float, 'visitExpTime'),
                              ('airmass','airmass',float,'airmass')]
 
+        self.columnUnitTransformations = {'fieldRA':numpy.radians, 'fieldDec':numpy.radians,
+                                          'moonRA':numpy.radians, 'moonDec':numpy.radians,
+                                          'rotSkyPos':numpy.radians, 'sunAlt':numpy.radians,
+                                          'moonAlt':numpy.radians, 'dist2Moon':numpy.radians,
+                                          'altitude':numpy.radians, 'azimuth':numpy.radians}
+
         dtypeList = []
         self.baseQuery = 'SELECT'
         for element in self.columnMapping:
@@ -116,9 +122,20 @@ class ObservationMetaDataGenerator(object):
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements to getObservationMetaData: %s is len %d' \
                                            % (element[3], len(value)))
 
-                    query += ' %s > %s and %s < %s' % (element[0], value[0], element[0], value[1])
+                    if element[0] in self.columnUnitTransformations:
+                        vmin = self.columnUnitTransformations[element[0]](value[0])
+                        vmax = self.columnUnitTransformations[element[0]](value[1])
+                    else:
+                        vmin = value[0]
+                        vmax = value[1]
+
+                    query += ' %s > %s and %s < %s' % (element[0], vmin, element[0], vmax)
                 else:
-                    query += ' %s == %s' % (element[0], value)
+                    if element[0] in self.columnUnitTransformations:
+                        vv = self.columnUnitTransformations[element[0]](value)
+                    else:
+                        vv = value
+                    query += ' %s == %s' % (element[0], vv)
                 
                 nWhereClauses += 1
 
