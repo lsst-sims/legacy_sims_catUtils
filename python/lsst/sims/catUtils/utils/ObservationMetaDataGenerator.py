@@ -2,6 +2,8 @@ import os
 import eups
 from lsst.sims.catalogs.generation.db import DBObject
 
+__all__ = ["ObservationMetaDataGenerator"]
+
 class ObservationMetaDataGenerator(object):
 
     def __init__(self, address=None):
