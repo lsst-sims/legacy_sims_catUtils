@@ -1,1 +1,1 @@
-from .ObservationMetaDataGenerator.py import *
+from .ObservationMetaDataGenerator import *

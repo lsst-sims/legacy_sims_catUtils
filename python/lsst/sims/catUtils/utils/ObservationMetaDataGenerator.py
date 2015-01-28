@@ -1,5 +1,6 @@
 import os
 import eups
+import numpy
 from lsst.sims.catalogs.generation.db import DBObject
 
 __all__ = ["ObservationMetaDataGenerator"]
@@ -8,8 +9,8 @@ class ObservationMetaDataGenerator(object):
 
     def __init__(self, address=None):
         if address is None:
-            dbPath = os.path.join(eups.productDir('sims_data'),'OpSimData')
-            self.address=os.path.join('sqlite://',dbPath,'opsimblitz1_1133_sqlite.db')
+            dbPath = os.path.join(eups.productDir('sims_data'),'OpSimData/')
+            self.address='sqlite:///' + dbPath + 'opsimblitz1_1133_sqlite.db'
         else:
             self.address=address
 
@@ -61,7 +62,7 @@ class ObservationMetaDataGenerator(object):
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
                                rawSeeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
-                               visitExpTime=None, airmass=None)
+                               visitExpTime=None, airmass=None):
 
         """
         This method will query the OpSim database according to user-specified constraints
@@ -103,17 +104,23 @@ class ObservationMetaDataGenerator(object):
         """
 
         query = self.baseQuery+ ' FROM SUMMARY WHERE'
+        nWhereClauses = 0
 
         for element in self.columnMapping:
             value = eval(element[3])
             if value is not None:
+                if nWhereClauses > 0:
+                    query += ' and'
                 if isinstance(value,tuple):
                     if len(value)>2:
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements to getObservationMetaData: %s is len %d' \
                                            % (element[3], len(value)))
 
-                    query += ' %s between %s and %s' % (element[0], value[0], value[1])
+                    query += ' %s > %s and %s < %s' % (element[0], value[0], element[0], value[1])
                 else:
-                    query += ' %s = %s' % (element[0], value)
+                    query += ' %s == %s' % (element[0], value)
+                
+                nWhereClauses += 1
 
-        self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
+        results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
+        return results
