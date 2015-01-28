@@ -7,6 +7,12 @@ from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 __all__ = ["ObservationMetaDataGenerator"]
 
 class ObservationMetaDataGenerator(object):
+    
+    def _put_quotations(self, val):
+        if val[0]=='\'':
+            return val
+        else:
+            return "'%s'" % val
 
     def __init__(self, address=None):
         if address is None:
@@ -54,7 +60,8 @@ class ObservationMetaDataGenerator(object):
                                           'moonRA':numpy.radians, 'moonDec':numpy.radians,
                                           'rotSkyPos':numpy.radians, 'sunAlt':numpy.radians,
                                           'moonAlt':numpy.radians, 'dist2Moon':numpy.radians,
-                                          'altitude':numpy.radians, 'azimuth':numpy.radians}
+                                          'altitude':numpy.radians, 'azimuth':numpy.radians,
+                                          'filter':self._put_quotations}
 
         dtypeList = []
         self.baseQuery = 'SELECT'
