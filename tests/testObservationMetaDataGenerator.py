@@ -122,9 +122,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     self.assertTrue(obs_metadata.m5('i')<xmax)
                     self.assertTrue(obs_metadata.m5('i')>xmin)
             
-            if ct==0:
-                print "WARNING ct ",0,tag
+            self.assertTrue(ct>0)
         
+        ct = 0
         for ii in range(len(bounds)):
             tag1 = bounds.keys()[ii]
             name1 = gen.columnMapping[tag1][1]
@@ -147,13 +147,14 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 args[tag1] = bounds[tag1]
                 args[tag2] = bounds[tag2]
                 results = gen.getObservationMetaData(**args)
-                ct = 0
                 for obs_metadata in results:
                     ct += 1
                     self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
                     self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
                     self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
                     self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
+
+        self.assertTrue(ct>0)
 
     def testQueryExactValues(self):
         gen = ObservationMetaDataGenerator()
@@ -194,8 +195,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
                 ct += 1
                 
-            if ct == 0:
-                print "WARNING ct ",ct,name
+            self.assertTrue(ct>0)
         
         
     def testQueryOnFilter(self):
@@ -207,8 +207,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertEqual(obs_metadata.phoSimMetadata['Opsim_filter'][0],'i')
             ct += 1
             
-        if ct == 0:
-            print "WARNING in filter ct",ct
+        self.assertTrue(ct>0)
 
     def testObsMetaDataBounds(self):
         gen = ObservationMetaDataGenerator()
@@ -218,6 +217,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertTrue(isinstance(obs_metadata.bounds,CircleBounds))
             ct += 1
         self.assertTrue(ct>0)
+        
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i', boundType='box')
         ct = 0
         for obs_metadata in results:
