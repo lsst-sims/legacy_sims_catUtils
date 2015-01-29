@@ -1,6 +1,7 @@
 import os
 import unittest
 import numpy
+from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
@@ -81,7 +82,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         gen = ObservationMetaDataGenerator()
         
         
-        bounds = {}
+        bounds = OrderedDict()
         bounds['obsHistID'] = (5973, 11080)
         bounds['expDate'] = (1220779, 1831593)
         bounds['fieldRA'] = (numpy.degrees(1.370916), numpy.degrees(1.5348635))
