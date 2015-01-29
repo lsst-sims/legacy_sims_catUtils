@@ -4,7 +4,7 @@ import numpy
 from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.generation.db import CatalogDBObject, CircleBounds, BoxBounds
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
                                                          PhoSimCatalogZPoint
@@ -209,6 +209,22 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             
         if ct == 0:
             print "WARNING in filter ct",ct
+
+    def testObsMetaDataBounds(self):
+        gen = ObservationMetaDataGenerator()
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
+        ct = 0
+        for obs_metadata in results:
+            self.assertTrue(isinstance(obs_metadata.bounds,CircleBounds))
+            ct += 1
+        self.assertTrue(ct>0)
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i', boundType='box')
+        ct = 0
+        for obs_metadata in results:
+            self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
+            ct += 1
+        self.assertTrue(ct>0)
+            
         
 def suite():
     utilsTests.init()
