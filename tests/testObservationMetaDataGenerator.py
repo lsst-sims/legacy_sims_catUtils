@@ -63,6 +63,11 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
+    def testExceptions(self):
+        gen = ObservationMetaDataGenerator()
+        self.assertRaises(RuntimeError,gen.getObservationMetaData)
+        self.assertRaises(RuntimeError,gen.getObservationMetaData,fieldRA=(1.0,2.0,3.0))
+
     def testQueryOnRanges(self):
         gen = ObservationMetaDataGenerator()
         
