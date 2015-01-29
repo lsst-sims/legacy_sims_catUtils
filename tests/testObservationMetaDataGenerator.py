@@ -211,10 +211,13 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
     def testObsMetaDataBounds(self):
         gen = ObservationMetaDataGenerator()
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i', boundLength=0.9)
         ct = 0
         for obs_metadata in results:
             self.assertTrue(isinstance(obs_metadata.bounds,CircleBounds))
+            self.assertAlmostEqual(obs_metadata.bounds.radiusdeg,0.9,10)
+            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
             ct += 1
         self.assertTrue(ct>0)
         
