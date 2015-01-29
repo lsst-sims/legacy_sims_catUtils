@@ -262,6 +262,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
         
+        if os.path.exists(catName):
+            os.unlink(catName)
+        
         if os.path.exists(dbName):
             os.unlink(dbName)
 
