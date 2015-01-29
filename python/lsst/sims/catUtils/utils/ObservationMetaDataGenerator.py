@@ -120,16 +120,21 @@ class ObservationMetaDataGenerator(object):
         and boundLength (in degrees; default a radius of 0.1).   See documentation in
         sims_catalogs_generation/../db/spatialBounds.py for more details.
 
+        limit limts the number of rows returned
+
         """
 
-        query = self.baseQuery+ ' FROM SUMMARY WHERE'
+        query = self.baseQuery+ ' FROM SUMMARY'
         nWhereClauses = 0
 
         for column in self.columnMapping:
             value = eval(column)
             if value is not None:
                 if nWhereClauses > 0:
-                    query += ' and'
+                    query += ' AND'
+                else:
+                    query += ' WHERE '
+                    
                 if isinstance(value,tuple):
                     if len(value)>2:
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements to getObservationMetaData: %s is len %d' \
@@ -142,7 +147,7 @@ class ObservationMetaDataGenerator(object):
                         vmin = value[0]
                         vmax = value[1]
 
-                    query += ' %s > %s and %s < %s' % (self.columnMapping[column][0], vmin, self.columnMapping[column][0], vmax)
+                    query += ' %s > %s AND %s < %s' % (self.columnMapping[column][0], vmin, self.columnMapping[column][0], vmax)
                 else:
                     if self.columnMapping[column][3] is not None:
                         vv = self.columnMapping[column][3](value)
