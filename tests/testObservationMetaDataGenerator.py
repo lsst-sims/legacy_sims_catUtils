@@ -108,18 +108,15 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             results = gen.getObservationMetaData(**args)
             
             name = gen.columnMapping[tag][1]
-            
+            if gen.columnMapping[tag][3] is not None:
+                xmin = gen.columnMapping[tag][3](bounds[tag][0])
+                xmax = gen.columnMapping[tag][3](bounds[tag][1])
+            else:
+                xmin = bounds[tag][0]
+                xmax = bounds[tag][1]
             ct = 0
             for obs_metadata in results:
                 ct += 1
-                
-                if gen.columnMapping[tag][3] is not None:
-                    xmin = gen.columnMapping[tag][3](bounds[tag][0])
-                    xmax = gen.columnMapping[tag][3](bounds[tag][1])
-                else:
-                    xmin = bounds[tag][0]
-                    xmax = bounds[tag][1]
-                
                 self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
                 self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
             
@@ -129,9 +126,21 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         for ii in range(len(bounds)):
             tag1 = bounds.keys()[ii]
             name1 = gen.columnMapping[tag1][1]
+            if gen.columnMapping[tag1][3] is not None:
+                xmin = gen.columnMapping[tag1][3](bounds[tag1][0])
+                xmax = gen.columnMapping[tag1][3](bounds[tag1][1])
+            else:
+                xmin = bounds[tag1][0]
+                xmax = bounds[tag1][1]
             for jj in range(ii+1, len(bounds)):
                 tag2 = bounds.keys()[jj]
                 name2 = gen.columnMapping[tag2][1]
+                if gen.columnMapping[tag2][3] is not None:
+                    ymin = gen.columnMapping[tag2][3](bounds[tag2][0])
+                    ymax = gen.columnMapping[tag2][3](bounds[tag2][1])
+                else:
+                    ymin = bounds[tag2][0]
+                    ymax = bounds[tag2][1]
                 args = {}
                 args[tag1] = bounds[tag1]
                 args[tag2] = bounds[tag2]
@@ -139,20 +148,6 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 ct = 0
                 for obs_metadata in results:
                     ct += 1
-                    if gen.columnMapping[tag1][3] is not None:
-                        xmin = gen.columnMapping[tag1][3](bounds[tag1][0])
-                        xmax = gen.columnMapping[tag1][3](bounds[tag1][1])
-                    else:
-                        xmin = bounds[tag1][0]
-                        xmax = bounds[tag1][1]
-                
-                    if gen.columnMapping[tag2][3] is not None:
-                        ymin = gen.columnMapping[tag2][3](bounds[tag2][0])
-                        ymax = gen.columnMapping[tag2][3](bounds[tag2][1])
-                    else:
-                        ymin = bounds[tag2][0]
-                        ymax = bounds[tag2][1]
-                
                     self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
                     self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
                     self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
