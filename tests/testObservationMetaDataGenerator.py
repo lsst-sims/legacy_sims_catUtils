@@ -195,6 +195,18 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 print "WARNING ct ",ct,name
         
         
+    def testQueryOnFilter(self):
+        gen = ObservationMetaDataGenerator()
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
+        ct = 0
+        for obs_metadata in results:
+            self.assertAlmostEqual(obs_metadata.phoSimMetadata['Unrefracted_RA'][0],1.370916)
+            self.assertEqual(obs_metadata.phoSimMetadata['Opsim_filter'][0],'i')
+            ct += 1
+            
+        if ct == 0:
+            print "WARNING in filter ct",ct
+        
 def suite():
     utilsTests.init()
     suites = []
