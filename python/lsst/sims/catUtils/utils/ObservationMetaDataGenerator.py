@@ -24,52 +24,47 @@ class ObservationMetaDataGenerator(object):
         self.opsimdb = DBObject(address=self.address)
 
         #27 January 2015
-        #columnMapping is a list of tuples.  The first entry in each tuple is what the column
-        #are called by OpSim.  The second value in each tuple is what OpSim3_61DBObject.py
-        #calls the same quantity.  The third value is its datatype.  The fourth value is
-        #how the column will be referred to in the args of getObservationMetaData (this is there
-        #because 'filter' means something special to python, so we have to use 'telescopeFilter
-        #in the args of getObservationMetaData.
+        #self.columnMapping is a dict of tuples.  The keys of the dict are how users will
+        #refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
+        #The 0th element of the tuple ishow the column is named in the OpSim db.
+        #The 1st element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
+        #The 2nd element of the tuple is the datatype of the column
+        #The 3d element of the tuple is any coordinate transformation required between user interface
+        #and the OpSim database (i.e. OpSim stores all angles in radians; we would like users to be
+        #able to specify angles in degrees)
         #
         #Note that this conforms to an older
         #PhoSim API.  At some time in the future, both this and OpSim3_61DBObject.py
         #(and possibly phoSimCatalogExamples.py) will need to be updated to
         #reflect what PhoSim actually expects now.
-        self.columnMapping = [('obsHistID','Opsim_obshistid',numpy.int64, 'obsHistID'),
-                             ('expDate','SIM_SEED',int, 'expDate'),
-                             ('fieldRA','Unrefracted_RA',float, 'fieldRA'),
-                             ('fieldDec','Unrefracted_Dec',float, 'fieldDec'),
-                             ('moonRA','Opsim_moonra',float, 'moonRA'),
-                             ('moonDec','Opsim_moondec',float, 'moonDec'),
-                             ('rotSkyPos','Opsim_rotskypos',float, 'rotSkyPos'),
-                             ('filter','Opsim_filter',(str,1), 'telescopeFilter'),
-                             ('rawSeeing','Opsim_rawseeing',float, 'rawSeeing'),
-                             ('sunAlt','Opsim_sunalt',float, 'sunAlt'),
-                             ('moonAlt','Opsim_moonalt',float, 'moonAlt'),
-                             ('dist2Moon','Opsim_dist2moon',float, 'dist2Moon'),
-                             ('moonPhase','Opsim_moonphase',float, 'moonPhase'),
-                             ('expMJD','Opsim_expmjd',float, 'expMJD'),
-                             ('altitude','Opsim_altitude',float, 'altitude'),
-                             ('azimuth','Opsim_azimuth',float, 'azimuth'),
-                             ('visitExpTime','exptime',float, 'visitExpTime'),
-                             ('airmass','airmass',float,'airmass'),
-                             ('fiveSigmaDepth','m5',float,'m5'),
-                             ('filtSkyBrightness','skyBrightness',float,'skyBrightness')]
-
-        self.columnUnitTransformations = {'fieldRA':numpy.radians, 'fieldDec':numpy.radians,
-                                          'moonRA':numpy.radians, 'moonDec':numpy.radians,
-                                          'rotSkyPos':numpy.radians, 'sunAlt':numpy.radians,
-                                          'moonAlt':numpy.radians, 'dist2Moon':numpy.radians,
-                                          'altitude':numpy.radians, 'azimuth':numpy.radians,
-                                          'filter':self._put_quotations}
+        self.columnMapping = {'obsHistID':('obsHistID','Opsim_obshistid',numpy.int64,None),
+                              'expDate':('expDate','SIM_SEED',int, None),
+                              'fieldRA':('fieldRA','Unrefracted_RA',float,numpy.radians),
+                              'fieldDec':('fieldDec','Unrefracted_Dec',float,numpy.radians),
+                              'moonRA':('moonRA','Opsim_moonra',float, numpy.radians),
+                              'moonDec':('moonDec','Opsim_moondec',float,numpy.radians),
+                              'rotSkyPos':('rotSkyPos','Opsim_rotskypos',float,numpy.radians),
+                              'telescopeFilter':('filter','Opsim_filter',(str,1),self._put_quotations),
+                              'rawSeeing':('rawSeeing','Opsim_rawseeing',float,None),
+                              'sunAlt':('sunAlt','Opsim_sunalt',float, numpy.radians),
+                              'moonAlt':('moonAlt','Opsim_moonalt',float,numpy.radians),
+                              'dist2Moon':('dist2Moon','Opsim_dist2moon',float, numpy.radians),
+                              'moonPhase':('moonPhase','Opsim_moonphase',float,None),
+                              'expMJD':('expMJD','Opsim_expmjd',float,None),
+                              'altitude':('altitude','Opsim_altitude',float,numpy.radians),
+                              'azimuth':('azimuth','Opsim_azimuth',float,numpy.radians),
+                              'visitExpTime':('visitExpTime','exptime',float,None),
+                              'airmass':('airmass','airmass',float,None),
+                              'm5':('fiveSigmaDepth','m5',float,None),
+                              'skyBrightness':('filtSkyBrightness','skyBrightness',float,None)}
 
         dtypeList = []
         self.baseQuery = 'SELECT'
-        for element in self.columnMapping:
-            dtypeList.append((element[0],element[2]))
+        for column in self.columnMapping:
+            dtypeList.append((self.columnMapping[column][0],self.columnMapping[column][2]))
             if self.baseQuery != 'SELECT':
                 self.baseQuery += ','
-            self.baseQuery += ' ' + element[0]
+            self.baseQuery += ' ' + self.columnMapping[column][0]
 
         self.dtype = numpy.dtype(dtypeList)
 
@@ -130,30 +125,30 @@ class ObservationMetaDataGenerator(object):
         query = self.baseQuery+ ' FROM SUMMARY WHERE'
         nWhereClauses = 0
 
-        for element in self.columnMapping:
-            value = eval(element[3])
+        for column in self.columnMapping:
+            value = eval(column)
             if value is not None:
                 if nWhereClauses > 0:
                     query += ' and'
                 if isinstance(value,tuple):
                     if len(value)>2:
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements to getObservationMetaData: %s is len %d' \
-                                           % (element[3], len(value)))
+                                           % (column, len(value)))
 
-                    if element[0] in self.columnUnitTransformations:
-                        vmin = self.columnUnitTransformations[element[0]](value[0])
-                        vmax = self.columnUnitTransformations[element[0]](value[1])
+                    if self.columnMapping[column][3] is not None:
+                        vmin = self.columnMapping[column][3](value[0])
+                        vmax = self.columnMapping[column][3](value[1])
                     else:
                         vmin = value[0]
                         vmax = value[1]
 
-                    query += ' %s > %s and %s < %s' % (element[0], vmin, element[0], vmax)
+                    query += ' %s > %s and %s < %s' % (self.columnMapping[column][0], vmin, self.columnMapping[column][0], vmax)
                 else:
-                    if element[0] in self.columnUnitTransformations:
-                        vv = self.columnUnitTransformations[element[0]](value)
+                    if self.columnMapping[column][3] is not None:
+                        vv = self.columnMapping[column][3](value)
                     else:
                         vv = value
-                    query += ' %s == %s' % (element[0], vv)
+                    query += ' %s == %s' % (self.columnMapping[column][0], vv)
                 
                 nWhereClauses += 1
 
@@ -164,8 +159,8 @@ class ObservationMetaDataGenerator(object):
         for pointing in results:
             phoSimMetadata=OrderedDict()
             for column in self.columnMapping:
-                phoSimMetadata[column[1]] = (pointing[column[0]], column[2])
-        
+                phoSimMetadata[self.columnMapping[column][1]] = (pointing[self.columnMapping[column][0]], self.columnMapping[column][2])
+            
             obs_metadata = ObservationMetaData(m5=pointing['fiveSigmaDepth'],
                                                boundType=boundType, boundLength=boundLength,
                                                phoSimMetadata=phoSimMetadata)
