@@ -118,6 +118,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 ct += 1
                 self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
                 self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
+                if tag == 'm5':
+                    self.assertTrue(obs_metadata.m5('i')<xmax)
+                    self.assertTrue(obs_metadata.m5('i')>xmin)
             
             if ct==0:
                 print "WARNING ct ",0,tag
