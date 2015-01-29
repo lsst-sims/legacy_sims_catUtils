@@ -186,7 +186,12 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     ct += 1
                 
                 self.assertTrue(ct>0)
-        
+
+    def testQueryLimit(self):
+        gen = ObservationMetaDataGenerator()
+        results = gen.getObservationMetaData(fieldRA=(numpy.degrees(1.370916), numpy.degrees(1.5348635)),
+                                             limit=20)
+        self.assertEqual(len(results),20)        
         
     def testQueryOnFilter(self):
         gen = ObservationMetaDataGenerator()
