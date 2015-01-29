@@ -74,7 +74,7 @@ class ObservationMetaDataGenerator(object):
                                rawSeeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
                                visitExpTime=None, airmass=None, skyBrightness=None,
-                               m5=None, boundType='circle', boundLength=0.1):
+                               m5=None, boundType='circle', boundLength=0.1, limit=None):
 
         """
         This method will query the OpSim database according to user-specified constraints
@@ -156,6 +156,13 @@ class ObservationMetaDataGenerator(object):
                     query += ' %s == %s' % (self.columnMapping[column][0], vv)
                 
                 nWhereClauses += 1
+        
+        if limit is not None:
+            query += ' LIMIT %d' % limit
+
+        if nWhereClauses==0 and limit is None:
+            raise RuntimeError('You did not specify any contraints on your query;' +
+                               ' you will just return ObservationMetaData for all poitnings')
 
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
         
