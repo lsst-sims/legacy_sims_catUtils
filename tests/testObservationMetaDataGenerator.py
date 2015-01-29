@@ -78,7 +78,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         del self.bulgeDB
         del self.dbName
 
-    def testQuery(self):
+    def testQueryOnRanges(self):
         gen = ObservationMetaDataGenerator()
         
         
@@ -158,7 +158,47 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
                     self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
 
+    def testQueryExactValues(self):
+        gen = ObservationMetaDataGenerator()
+    
+        bounds = OrderedDict()
+        bounds['obsHistID'] = 5973
+        bounds['expDate'] = 1220779
+        bounds['fieldRA'] = numpy.degrees(1.370916)
+        bounds['fieldDec'] = numpy.degrees(-0.456238)
+        bounds['moonRA'] = numpy.degrees(2.914132)
+        bounds['moonDec'] = numpy.degrees(0.06305)
+        bounds['rotSkyPos'] = numpy.degrees(3.116656)
+        bounds['rawSeeing'] = 0.728562
+        bounds['sunAlt'] = numpy.degrees(-0.522905)
+        bounds['moonAlt'] = numpy.degrees(0.099096)
+        bounds['dist2Moon'] = numpy.degrees(1.570307)
+        bounds['moonPhase'] = 52.2325
+        bounds['expMJD'] = 49367.129396
+        bounds['altitude'] = numpy.degrees(0.781015)
+        bounds['azimuth'] = numpy.degrees(3.470077)
+        bounds['airmass'] = 1.420459
+        bounds['skyBrightness'] = 19.017605
+        bounds['m5'] = 22.815249
+        
+        for tag in bounds:
+            name = gen.columnMapping[tag][1]
+            args = {}
+            args[tag] = bounds[tag]
+            results = gen.getObservationMetaData(**args)
+            
+            if gen.columnMapping[tag][3] is not None:
+                value = gen.columnMapping[tag][3](bounds[tag])
+            else:
+                value = bounds[tag]
+            
+            ct = 0
+            for obs_metadata in results:
+                self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
+                ct += 1
                 
+            if ct == 0:
+                print "WARNING ct ",ct,name
         
         
 def suite():
