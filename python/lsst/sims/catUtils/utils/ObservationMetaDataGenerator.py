@@ -24,7 +24,7 @@ class ObservationMetaDataGenerator(object):
         self.opsimdb = DBObject(address=self.address)
 
         #27 January 2015
-        #self.columnMapping is a dict of tuples.  The keys of the dict are how users will
+        #self.columnMapping is an OrderedDict of tuples.  The keys of the dict are how users will
         #refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
         #The 0th element of the tuple ishow the column is named in the OpSim db.
         #The 1st element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
@@ -37,26 +37,26 @@ class ObservationMetaDataGenerator(object):
         #PhoSim API.  At some time in the future, both this and OpSim3_61DBObject.py
         #(and possibly phoSimCatalogExamples.py) will need to be updated to
         #reflect what PhoSim actually expects now.
-        self.columnMapping = {'obsHistID':('obsHistID','Opsim_obshistid',numpy.int64,None),
-                              'expDate':('expDate','SIM_SEED',int, None),
-                              'fieldRA':('fieldRA','Unrefracted_RA',float,numpy.radians),
-                              'fieldDec':('fieldDec','Unrefracted_Dec',float,numpy.radians),
-                              'moonRA':('moonRA','Opsim_moonra',float, numpy.radians),
-                              'moonDec':('moonDec','Opsim_moondec',float,numpy.radians),
-                              'rotSkyPos':('rotSkyPos','Opsim_rotskypos',float,numpy.radians),
-                              'telescopeFilter':('filter','Opsim_filter',(str,1),self._put_quotations),
-                              'rawSeeing':('rawSeeing','Opsim_rawseeing',float,None),
-                              'sunAlt':('sunAlt','Opsim_sunalt',float, numpy.radians),
-                              'moonAlt':('moonAlt','Opsim_moonalt',float,numpy.radians),
-                              'dist2Moon':('dist2Moon','Opsim_dist2moon',float, numpy.radians),
-                              'moonPhase':('moonPhase','Opsim_moonphase',float,None),
-                              'expMJD':('expMJD','Opsim_expmjd',float,None),
-                              'altitude':('altitude','Opsim_altitude',float,numpy.radians),
-                              'azimuth':('azimuth','Opsim_azimuth',float,numpy.radians),
-                              'visitExpTime':('visitExpTime','exptime',float,None),
-                              'airmass':('airmass','airmass',float,None),
-                              'm5':('fiveSigmaDepth','m5',float,None),
-                              'skyBrightness':('filtSkyBrightness','skyBrightness',float,None)}
+        self.columnMapping = OrderedDict([('obsHistID',('obsHistID','Opsim_obshistid',numpy.int64,None)),
+                                         ('expDate',('expDate','SIM_SEED',int, None)),
+                                         ('fieldRA',('fieldRA','Unrefracted_RA',float,numpy.radians)),
+                                         ('fieldDec',('fieldDec','Unrefracted_Dec',float,numpy.radians)),
+                                         ('moonRA',('moonRA','Opsim_moonra',float, numpy.radians)),
+                                         ('moonDec',('moonDec','Opsim_moondec',float,numpy.radians)),
+                                         ('rotSkyPos',('rotSkyPos','Opsim_rotskypos',float,numpy.radians)),
+                                         ('telescopeFilter',('filter','Opsim_filter',(str,1),self._put_quotations)),
+                                         ('rawSeeing',('rawSeeing','Opsim_rawseeing',float,None)),
+                                         ('sunAlt',('sunAlt','Opsim_sunalt',float, numpy.radians)),
+                                         ('moonAlt',('moonAlt','Opsim_moonalt',float,numpy.radians)),
+                                         ('dist2Moon',('dist2Moon','Opsim_dist2moon',float, numpy.radians)),
+                                         ('moonPhase',('moonPhase','Opsim_moonphase',float,None)),
+                                         ('expMJD',('expMJD','Opsim_expmjd',float,None)),
+                                         ('altitude',('altitude','Opsim_altitude',float,numpy.radians)),
+                                         ('azimuth',('azimuth','Opsim_azimuth',float,numpy.radians)),
+                                         ('visitExpTime',('visitExpTime','exptime',float,None)),
+                                         ('airmass',('airmass','airmass',float,None)),
+                                         ('m5',('fiveSigmaDepth','m5',float,None)),
+                                         ('skyBrightness',('filtSkyBrightness','skyBrightness',float,None))])
 
         dtypeList = []
         self.baseQuery = 'SELECT'
