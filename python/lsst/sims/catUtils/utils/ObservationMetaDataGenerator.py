@@ -26,7 +26,7 @@ class ObservationMetaDataGenerator(object):
         #27 January 2015
         #self.columnMapping is an OrderedDict of tuples.  The keys of the dict are how users will
         #refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
-        #The 0th element of the tuple ishow the column is named in the OpSim db.
+        #The 0th element of the tuple is how the column is named in the OpSim db.
         #The 1st element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
         #The 2nd element of the tuple is the datatype of the column
         #The 3d element of the tuple is any coordinate transformation required between user interface
@@ -97,7 +97,7 @@ class ObservationMetaDataGenerator(object):
         moonRA in degrees
         moonDec in degrees
         moonAlt in degrees
-        moonPhase (a value from 0 to 1 indicating how much of the moon is illuminated)
+        moonPhase (a value from 1 to 100 indicating how much of the moon is illuminated)
         dist2Moon the distance between the telescope pointing and the moon in degrees
 
         sunAlt in degrees

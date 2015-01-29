@@ -81,7 +81,6 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
     def testQueryOnRanges(self):
         gen = ObservationMetaDataGenerator()
         
-        
         bounds = OrderedDict()
         bounds['obsHistID'] = (5973, 11080)
         bounds['expDate'] = (1220779, 1831593)
