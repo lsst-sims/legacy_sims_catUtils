@@ -55,8 +55,8 @@ class ObservationMetaDataGenerator(object):
                                          ('azimuth',('azimuth','Opsim_azimuth',float,numpy.radians)),
                                          ('visitExpTime',('visitExpTime','exptime',float,None)),
                                          ('airmass',('airmass','airmass',float,None)),
-                                         ('m5',('fiveSigmaDepth','m5',float,None)),
-                                         ('skyBrightness',('filtSkyBrightness','skyBrightness',float,None))])
+                                         ('m5',('fiveSigmaDepth',None,float,None)),
+                                         ('skyBrightness',('filtSkyBrightness',None,float,None))])
 
         dtypeList = []
         self.baseQuery = 'SELECT'
@@ -159,7 +159,9 @@ class ObservationMetaDataGenerator(object):
         for pointing in results:
             phoSimMetadata=OrderedDict()
             for column in self.columnMapping:
-                phoSimMetadata[self.columnMapping[column][1]] = (pointing[self.columnMapping[column][0]], self.columnMapping[column][2])
+                if self.columnMapping[column][1] is not None:
+                    phoSimMetadata[self.columnMapping[column][1]] = (pointing[self.columnMapping[column][0]],
+                                                                     pointing[self.columnMapping[column][0]].dtype)
             
             obs_metadata = ObservationMetaData(m5=pointing['fiveSigmaDepth'],
                                                boundType=boundType, boundLength=boundLength,

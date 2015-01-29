@@ -6,8 +6,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject, CircleBounds, BoxBounds
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
-from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
-                                                         PhoSimCatalogZPoint
+from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 
 #28 January 2015
@@ -64,20 +63,6 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
-    def setUp(self):
-        self.dbName = 'obsMetaDataGeneratorTest.db'
-        if os.path.exists(self.dbName):
-            os.unlink(self.dbName)
-        obs_metadata = makePhoSimTestDB(filename=self.dbName)
-        self.bulgeDB = testGalaxyBulge(address='sqlite:///'+self.dbName)
-
-    def tearDown(self):
-        if os.path.exists(self.dbName):
-            os.unlink(self.dbName)
-        
-        del self.bulgeDB
-        del self.dbName
-
     def testQueryOnRanges(self):
         gen = ObservationMetaDataGenerator()
         
@@ -107,22 +92,23 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             results = gen.getObservationMetaData(**args)
             
             name = gen.columnMapping[tag][1]
-            if gen.columnMapping[tag][3] is not None:
-                xmin = gen.columnMapping[tag][3](bounds[tag][0])
-                xmax = gen.columnMapping[tag][3](bounds[tag][1])
-            else:
-                xmin = bounds[tag][0]
-                xmax = bounds[tag][1]
-            ct = 0
-            for obs_metadata in results:
-                ct += 1
-                self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
-                self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
-                if tag == 'm5':
-                    self.assertTrue(obs_metadata.m5('i')<xmax)
-                    self.assertTrue(obs_metadata.m5('i')>xmin)
+            if name is not None:
+                if gen.columnMapping[tag][3] is not None:
+                    xmin = gen.columnMapping[tag][3](bounds[tag][0])
+                    xmax = gen.columnMapping[tag][3](bounds[tag][1])
+                else:
+                    xmin = bounds[tag][0]
+                    xmax = bounds[tag][1]
+                ct = 0
+                for obs_metadata in results:
+                    ct += 1
+                    self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
+                    self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
+                    if tag == 'm5':
+                        self.assertTrue(obs_metadata.m5('i')<xmax)
+                        self.assertTrue(obs_metadata.m5('i')>xmin)
             
-            self.assertTrue(ct>0)
+                self.assertTrue(ct>0)
         
         ct = 0
         for ii in range(len(bounds)):
@@ -147,12 +133,15 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 args[tag1] = bounds[tag1]
                 args[tag2] = bounds[tag2]
                 results = gen.getObservationMetaData(**args)
-                for obs_metadata in results:
-                    ct += 1
-                    self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
-                    self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
-                    self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
-                    self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
+                if name1 is not None or name2 is not None:
+                    for obs_metadata in results:
+                        ct += 1
+                        if name1 is not None:
+                            self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
+                            self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
+                        if name2 is not None:
+                            self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
+                            self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
 
         self.assertTrue(ct>0)
 
@@ -190,12 +179,13 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             else:
                 value = bounds[tag]
             
-            ct = 0
-            for obs_metadata in results:
-                self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
-                ct += 1
+            if name is not None:
+                ct = 0
+                for obs_metadata in results:
+                    self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
+                    ct += 1
                 
-            self.assertTrue(ct>0)
+                self.assertTrue(ct>0)
         
         
     def testQueryOnFilter(self):
@@ -258,6 +248,24 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             
             ct += 1
         self.assertTrue(ct>0)    
+
+    def testCreationOfPhoSimCatalog(self):
+        dbName = 'obsMetaDataGeneratorTest.db'
+        catName = 'testPhoSimFromObsMetaDataGenerator.txt'
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+        junk_obs_metadata = makePhoSimTestDB(filename=dbName)
+        bulgeDB = testGalaxyBulge(address='sqlite:///'+dbName)
+        
+        gen = ObservationMetaDataGenerator()
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),telescopeFilter='i')
+        testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
+        testCat.write_catalog(catName)
+        
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+
+
         
 def suite():
     utilsTests.init()
