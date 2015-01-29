@@ -221,13 +221,43 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             ct += 1
         self.assertTrue(ct>0)
         
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i', boundType='box')
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
+                                             boundType='box', boundLength=1.2)
         ct = 0
         for obs_metadata in results:
+            RAdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_RA'][0])
+            DECdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_Dec'][0])
             self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
+            
+            self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
+            self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg,RAdeg+1.2,10)
+            self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-1.2,10)
+            self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+1.2,10)
+            
+            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
+            
             ct += 1
         self.assertTrue(ct>0)
+        
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
+                                             boundType='box', boundLength=(1.2,0.6))
+        ct = 0
+        for obs_metadata in results:
+            RAdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_RA'][0])
+            DECdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_Dec'][0])
+            self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
             
+            self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
+            self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg,RAdeg+1.2,10)
+            self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-0.6,10)
+            self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+0.6,10)
+            
+            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
+            
+            ct += 1
+        self.assertTrue(ct>0)    
         
 def suite():
     utilsTests.init()
