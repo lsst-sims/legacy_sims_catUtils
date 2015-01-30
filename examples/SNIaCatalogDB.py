@@ -27,7 +27,7 @@ from lsst.sims.catUtils.exampleCatalogDefinitions.sncat import SNIaCatalog
 
 from lsst.sims.photUtils.CosmologyObject import CosmologyWrapper 
 #import sqliteutils as sq
-import testUtilsSNe as sq
+import lsst.sims.catUtils.utils.testUtilsSNE as sq
 import sqlite3
 import pandas as pd
 wavelenstep = 0.1
