@@ -81,90 +81,98 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         """
         gen = ObservationMetaDataGenerator()
 
-        #An ordered dict containign the bounds of our queries
+        #An list containing the bounds of our queries.
+        #The order of the tuples must correspond to the order of
+        #self.columnMapping in ObservationMetaDataGenerator.
         #This was generated with a separate script which printed
         #the median and maximum values of all of the quantities
         #in our test opsim database
-        bounds = OrderedDict()
-        bounds['obsHistID'] = (5973, 11080)
-        bounds['expDate'] = (1220779, 1831593)
-        bounds['fieldRA'] = (numpy.degrees(1.370916), numpy.degrees(1.5348635))
-        bounds['fieldDec'] = (numpy.degrees(-0.456238), numpy.degrees(0.0597905))
-        bounds['moonRA'] = (numpy.degrees(2.914132), numpy.degrees(4.5716525))
-        bounds['moonDec'] = (numpy.degrees(0.06305), numpy.degrees(0.2216745))
-        bounds['rotSkyPos'] = (numpy.degrees(3.116656), numpy.degrees(4.6974265))
-        bounds['rawSeeing'] = (0.728562, 1.040495)
-        bounds['sunAlt'] = (numpy.degrees(-0.522905), numpy.degrees(-0.366073))
-        bounds['moonAlt'] = (numpy.degrees(0.099096), numpy.degrees(0.5495415))
-        bounds['dist2Moon'] = (numpy.degrees(1.570307), numpy.degrees(2.347868))
-        bounds['moonPhase'] = (52.2325, 76.0149785)
-        bounds['expMJD'] = (49367.129396, 49374.1990025)
-        bounds['altitude'] = (numpy.degrees(0.781015), numpy.degrees(1.1433785))
-        bounds['azimuth'] = (numpy.degrees(3.470077), numpy.degrees(4.8765995))
-        bounds['airmass'] = (1.420459, 2.0048075)
-        bounds['skyBrightness'] = (19.017605, 20.512553)
-        bounds['m5'] = (22.815249, 24.0047695)
+        bounds = [
+        ('obsHistID',(5973, 11080)),
+        ('expDate',(1220779, 1831593)),
+        ('fieldRA',(numpy.degrees(1.370916), numpy.degrees(1.5348635))),
+        ('fieldDec',(numpy.degrees(-0.456238), numpy.degrees(0.0597905))),
+        ('moonRA',(numpy.degrees(2.914132), numpy.degrees(4.5716525))),
+        ('moonDec',(numpy.degrees(0.06305), numpy.degrees(0.2216745))),
+        ('rotSkyPos',(numpy.degrees(3.116656), numpy.degrees(4.6974265))),
+        ('telescopeFilter',('i','i')),
+        ('rawSeeing',(0.728562, 1.040495)),
+        ('sunAlt',(numpy.degrees(-0.522905), numpy.degrees(-0.366073))),
+        ('moonAlt',(numpy.degrees(0.099096), numpy.degrees(0.5495415))),
+        ('dist2Moon',(numpy.degrees(1.570307), numpy.degrees(2.347868))),
+        ('moonPhase',(52.2325, 76.0149785)),
+        ('expMJD',(49367.129396, 49374.1990025)),
+        ('altitude',(numpy.degrees(0.781015), numpy.degrees(1.1433785))),
+        ('azimuth',(numpy.degrees(3.470077), numpy.degrees(4.8765995))),
+        ('visitExpTime',(30.0,30.0)),
+        ('airmass',(1.420459, 2.0048075)),
+        ('skyBrightness',(19.017605, 20.512553)),
+        ('m5',(22.815249, 24.0047695))]
 
         #test querying on a single column
-        for tag in bounds:
-            args = {}
-            args[tag] = bounds[tag]
-            results = gen.getObservationMetaData(**args)
+        for (ii,line) in enumerate(bounds):
+            tag = line[0]
+            if tag != 'telescopeFilter' and tag != 'visitExpTime':
+                args = {}
+                args[tag] = line[1]
+                results = gen.getObservationMetaData(**args)
 
-            name = gen.columnMapping[tag][1]
-            if name is not None:
-                if gen.columnMapping[tag][3] is not None:
-                    xmin = gen.columnMapping[tag][3](bounds[tag][0])
-                    xmax = gen.columnMapping[tag][3](bounds[tag][1])
-                else:
-                    xmin = bounds[tag][0]
-                    xmax = bounds[tag][1]
-                ct = 0
-                for obs_metadata in results:
-                    ct += 1
-                    self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
-                    self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
-                    if tag == 'm5':
-                        self.assertTrue(obs_metadata.m5('i')<xmax)
-                        self.assertTrue(obs_metadata.m5('i')>xmin)
+                name = gen.columnMapping[ii][2]
+                if name is not None:
+                    if gen.columnMapping[ii][4] is not None:
+                        xmin = gen.columnMapping[ii][4](line[1][0])
+                        xmax = gen.columnMapping[ii][4](line[1][1])
+                    else:
+                        xmin = line[1][0]
+                        xmax = line[1][1]
+                    ct = 0
+                    for obs_metadata in results:
+                        ct += 1
+                        self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
+                        self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
+                        if tag == 'm5':
+                            self.assertTrue(obs_metadata.m5('i')<xmax)
+                            self.assertTrue(obs_metadata.m5('i')>xmin)
 
-                #make sure that we did not accidentally choose values such that
-                #no ObservationMetaData were ever returned
-                self.assertTrue(ct>0)
+                    #make sure that we did not accidentally choose values such that
+                    #no ObservationMetaData were ever returned
+                    self.assertTrue(ct>0)
 
         #test querying on two columns at once
         ct = 0
         for ii in range(len(bounds)):
-            tag1 = bounds.keys()[ii]
-            name1 = gen.columnMapping[tag1][1]
-            if gen.columnMapping[tag1][3] is not None:
-                xmin = gen.columnMapping[tag1][3](bounds[tag1][0])
-                xmax = gen.columnMapping[tag1][3](bounds[tag1][1])
-            else:
-                xmin = bounds[tag1][0]
-                xmax = bounds[tag1][1]
-            for jj in range(ii+1, len(bounds)):
-                tag2 = bounds.keys()[jj]
-                name2 = gen.columnMapping[tag2][1]
-                if gen.columnMapping[tag2][3] is not None:
-                    ymin = gen.columnMapping[tag2][3](bounds[tag2][0])
-                    ymax = gen.columnMapping[tag2][3](bounds[tag2][1])
+            tag1 = bounds[ii][0]
+            if tag1 != 'telescopeFilter' and tag1 != 'visitExpTime':
+                name1 = gen.columnMapping[ii][2]
+                if gen.columnMapping[ii][4] is not None:
+                    xmin = gen.columnMapping[ii][4](bounds[ii][1][0])
+                    xmax = gen.columnMapping[ii][4](bounds[ii][1][1])
                 else:
-                    ymin = bounds[tag2][0]
-                    ymax = bounds[tag2][1]
-                args = {}
-                args[tag1] = bounds[tag1]
-                args[tag2] = bounds[tag2]
-                results = gen.getObservationMetaData(**args)
-                if name1 is not None or name2 is not None:
-                    for obs_metadata in results:
-                        ct += 1
-                        if name1 is not None:
-                            self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
-                            self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
-                        if name2 is not None:
-                            self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
-                            self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
+                    xmin = bounds[ii][1][0]
+                    xmax = bounds[ii][1][1]
+                for jj in range(ii+1, len(bounds)):
+                    tag2 = bounds[jj][0]
+                    if tag2 != 'telescopeFilter' and tag2 != 'visitExpTime':
+                        name2 = gen.columnMapping[jj][2]
+                        if gen.columnMapping[jj][4] is not None:
+                            ymin = gen.columnMapping[jj][4](bounds[jj][1][0])
+                            ymax = gen.columnMapping[jj][4](bounds[jj][1][1])
+                        else:
+                            ymin = bounds[jj][1][0]
+                            ymax = bounds[jj][1][1]
+                        args = {}
+                        args[tag1] = bounds[ii][1]
+                        args[tag2] = bounds[jj][1]
+                        results = gen.getObservationMetaData(**args)
+                        if name1 is not None or name2 is not None:
+                            for obs_metadata in results:
+                                ct += 1
+                                if name1 is not None:
+                                    self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
+                                    self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
+                                if name2 is not None:
+                                    self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
+                                    self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
 
         #Make sure that we didn't choose values such that no ObservationMetaData were
         #ever returned
@@ -177,45 +185,49 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         """
         gen = ObservationMetaDataGenerator()
 
-        bounds = OrderedDict()
-        bounds['obsHistID'] = 5973
-        bounds['expDate'] = 1220779
-        bounds['fieldRA'] = numpy.degrees(1.370916)
-        bounds['fieldDec'] = numpy.degrees(-0.456238)
-        bounds['moonRA'] = numpy.degrees(2.914132)
-        bounds['moonDec'] = numpy.degrees(0.06305)
-        bounds['rotSkyPos'] = numpy.degrees(3.116656)
-        bounds['rawSeeing'] = 0.728562
-        bounds['sunAlt'] = numpy.degrees(-0.522905)
-        bounds['moonAlt'] = numpy.degrees(0.099096)
-        bounds['dist2Moon'] = numpy.degrees(1.570307)
-        bounds['moonPhase'] = 52.2325
-        bounds['expMJD'] = 49367.129396
-        bounds['altitude'] = numpy.degrees(0.781015)
-        bounds['azimuth'] = numpy.degrees(3.470077)
-        bounds['airmass'] = 1.420459
-        bounds['skyBrightness'] = 19.017605
-        bounds['m5'] = 22.815249
+        bounds = [
+        ('obsHistID',5973),
+        ('expDate',1220779),
+        ('fieldRA',numpy.degrees(1.370916)),
+        ('fieldDec',numpy.degrees(-0.456238)),
+        ('moonRA',numpy.degrees(2.914132)),
+        ('moonDec',numpy.degrees(0.06305)),
+        ('rotSkyPos',numpy.degrees(3.116656)),
+        ('telescopeFilter','i'),
+        ('rawSeeing',0.728562),
+        ('sunAlt',numpy.degrees(-0.522905)),
+        ('moonAlt',numpy.degrees(0.099096)),
+        ('dist2Moon',numpy.degrees(1.570307)),
+        ('moonPhase',52.2325),
+        ('expMJD',49367.129396),
+        ('altitude',numpy.degrees(0.781015)),
+        ('azimuth',numpy.degrees(3.470077)),
+        ('visitExpTime',30.0),
+        ('airmass',1.420459),
+        ('skyBrightness',19.017605),
+        ('m5',22.815249)]
 
-        for tag in bounds:
-            name = gen.columnMapping[tag][1]
-            args = {}
-            args[tag] = bounds[tag]
-            results = gen.getObservationMetaData(**args)
+        for ii in range(len(bounds)):
+            tag = bounds[ii][0]
+            if tag != 'telescopeFilter' and tag != 'visitExpTime':
+                name = gen.columnMapping[ii][2]
+                args = {}
+                args[tag] = bounds[ii][1]
+                results = gen.getObservationMetaData(**args)
 
-            if gen.columnMapping[tag][3] is not None:
-                value = gen.columnMapping[tag][3](bounds[tag])
-            else:
-                value = bounds[tag]
+                if gen.columnMapping[ii][4] is not None:
+                    value = gen.columnMapping[ii][4](bounds[ii][1])
+                else:
+                    value = bounds[ii][1]
 
-            if name is not None:
-                ct = 0
-                for obs_metadata in results:
-                    self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
-                    ct += 1
+                if name is not None:
+                    ct = 0
+                    for obs_metadata in results:
+                        self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
+                        ct += 1
 
-                #Make sure that we did not choose a value which returns zero ObservationMetaData
-                self.assertTrue(ct>0)
+                    #Make sure that we did not choose a value which returns zero ObservationMetaData
+                    self.assertTrue(ct>0)
 
     def testQueryLimit(self):
         """
