@@ -76,11 +76,11 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Test that ObservationMetaData objects returned by queries of the form
         min < value < max
         are, in fact, within that range.
-        
+
         Test when querying on both a single and two columns.
         """
         gen = ObservationMetaDataGenerator()
-        
+
         #An ordered dict containign the bounds of our queries
         #This was generated with a separate script which printed
         #the median and maximum values of all of the quantities
@@ -104,13 +104,13 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         bounds['airmass'] = (1.420459, 2.0048075)
         bounds['skyBrightness'] = (19.017605, 20.512553)
         bounds['m5'] = (22.815249, 24.0047695)
-        
+
         #test querying on a single column
         for tag in bounds:
             args = {}
             args[tag] = bounds[tag]
             results = gen.getObservationMetaData(**args)
-            
+
             name = gen.columnMapping[tag][1]
             if name is not None:
                 if gen.columnMapping[tag][3] is not None:
@@ -127,11 +127,11 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     if tag == 'm5':
                         self.assertTrue(obs_metadata.m5('i')<xmax)
                         self.assertTrue(obs_metadata.m5('i')>xmin)
-                
+
                 #make sure that we did not accidentally choose values such that
                 #no ObservationMetaData were ever returned
                 self.assertTrue(ct>0)
-        
+
         #test querying on two columns at once
         ct = 0
         for ii in range(len(bounds)):
@@ -176,7 +176,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         in fact, adhere to that requirement.
         """
         gen = ObservationMetaDataGenerator()
-    
+
         bounds = OrderedDict()
         bounds['obsHistID'] = 5973
         bounds['expDate'] = 1220779
@@ -196,24 +196,24 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         bounds['airmass'] = 1.420459
         bounds['skyBrightness'] = 19.017605
         bounds['m5'] = 22.815249
-        
+
         for tag in bounds:
             name = gen.columnMapping[tag][1]
             args = {}
             args[tag] = bounds[tag]
             results = gen.getObservationMetaData(**args)
-            
+
             if gen.columnMapping[tag][3] is not None:
                 value = gen.columnMapping[tag][3](bounds[tag])
             else:
                 value = bounds[tag]
-            
+
             if name is not None:
                 ct = 0
                 for obs_metadata in results:
                     self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
                     ct += 1
-                
+
                 #Make sure that we did not choose a value which returns zero ObservationMetaData
                 self.assertTrue(ct>0)
 
@@ -225,8 +225,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         gen = ObservationMetaDataGenerator()
         results = gen.getObservationMetaData(fieldRA=(numpy.degrees(1.370916), numpy.degrees(1.5348635)),
                                              limit=20)
-        self.assertEqual(len(results),20)        
-        
+        self.assertEqual(len(results),20)
+
     def testQueryOnFilter(self):
         """
         Test that queries on the filter work.
@@ -238,8 +238,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertAlmostEqual(obs_metadata.phoSimMetadata['Unrefracted_RA'][0],1.370916)
             self.assertEqual(obs_metadata.phoSimMetadata['Opsim_filter'][0],'i')
             ct += 1
-        
-        #Make sure that more than zero ObservationMetaData were returned    
+
+        #Make sure that more than zero ObservationMetaData were returned
         self.assertTrue(ct>0)
 
     def testObsMetaDataBounds(self):
@@ -247,9 +247,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Make sure that the bound specifications (i.e. a circle or a box on the sky) are correctly
         passed through to the resulting ObservationMetaData
         """
-        
+
         gen = ObservationMetaDataGenerator()
-        
+
         #Test a cirlce with a specified radius
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i', boundLength=0.9)
         ct = 0
@@ -262,7 +262,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         #Make sure that some ObservationMetaData were tested
         self.assertTrue(ct>0)
-        
+
         #test a square
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
                                              boundType='box', boundLength=1.2)
@@ -271,20 +271,20 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             RAdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_RA'][0])
             DECdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_Dec'][0])
             self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
-            
+
             self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
             self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg,RAdeg+1.2,10)
             self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-1.2,10)
             self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+1.2,10)
-            
+
             self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
             self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
-            
+
             ct += 1
-            
+
         #Make sure that some ObservationMetaData were tested
         self.assertTrue(ct>0)
-        
+
         #test a rectangle
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
                                              boundType='box', boundLength=(1.2,0.6))
@@ -293,19 +293,19 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             RAdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_RA'][0])
             DECdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_Dec'][0])
             self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
-            
+
             self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
             self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg,RAdeg+1.2,10)
             self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-0.6,10)
             self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+0.6,10)
-            
+
             self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
             self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
-            
+
             ct += 1
-            
+
         #Make sure that some ObservationMetaData were tested
-        self.assertTrue(ct>0)    
+        self.assertTrue(ct>0)
 
     def testCreationOfPhoSimCatalog(self):
         """
@@ -313,27 +313,27 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         This test will just make sure that the process runs.  It will not validate the output
         in any way.
         """
-    
+
         dbName = 'obsMetaDataGeneratorTest.db'
         catName = 'testPhoSimFromObsMetaDataGenerator.txt'
         if os.path.exists(dbName):
             os.unlink(dbName)
         junk_obs_metadata = makePhoSimTestDB(filename=dbName)
         bulgeDB = testGalaxyBulge(address='sqlite:///'+dbName)
-        
+
         gen = ObservationMetaDataGenerator()
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
-        
+
         if os.path.exists(catName):
             os.unlink(catName)
-        
+
         if os.path.exists(dbName):
             os.unlink(dbName)
 
 
-        
+
 def suite():
     utilsTests.init()
     suites = []
