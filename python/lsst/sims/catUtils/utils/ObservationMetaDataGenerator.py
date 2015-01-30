@@ -7,14 +7,40 @@ from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 __all__ = ["ObservationMetaDataGenerator"]
 
 class ObservationMetaDataGenerator(object):
+    """
+    This is a class that allows the user to query an opsim output database
+    for ObservationMetaData instantiations that fit certain criteria.
+    
+    The major method is ObservationMetaDataGenerator.getObservationMetaData()
+    which accepts bounds on columns of the opsim summary table and returns
+    a list of ObservationMetaData instantiations that fall within those
+    bounds.
+    """
     
     def _put_quotations(self, val):
+        """
+        This formats the user's input of telescopeFilter; in must be enclosed
+        in single quotation marks.  This method adds them if necessary.
+        
+        @param [in] val is a string (denoting a Telescope Filter)
+        
+        @param [out] a string containing 'val' (i.e. the input value
+        enclosed in single quotation marks, if they are not already there)
+        """
         if val[0]=='\'':
             return val
         else:
             return "'%s'" % val
 
     def __init__(self, address=None):
+        """
+        @param [in] address is the sql connection string for the opsim
+        db to be queried.  If None, the address will default to
+        
+        opsimblitz1_1133_sqlite.db
+        
+        stored in sims_data/OpSimData/
+        """
         if address is None:
             dbPath = os.path.join(eups.productDir('sims_data'),'OpSimData/')
             self.address='sqlite:///' + dbPath + 'opsimblitz1_1133_sqlite.db'
@@ -26,17 +52,23 @@ class ObservationMetaDataGenerator(object):
         #27 January 2015
         #self.columnMapping is an OrderedDict of tuples.  The keys of the dict are how users will
         #refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
+        #
         #The 0th element of the tuple is how the column is named in the OpSim db.
+        #
         #The 1st element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
+        #(this is None if PhoSim does not expect the quantity)
+        #
         #The 2nd element of the tuple is the datatype of the column
-        #The 3d element of the tuple is any coordinate transformation required between user interface
-        #and the OpSim database (i.e. OpSim stores all angles in radians; we would like users to be
+        #
+        #The 3rd element of the tuple is any coordinate transformation required to go from the user interface
+        #to the OpSim database (i.e. OpSim stores all angles in radians; we would like users to be
         #able to specify angles in degrees)
         #
         #Note that this conforms to an older
         #PhoSim API.  At some time in the future, both this and OpSim3_61DBObject.py
         #(and possibly phoSimCatalogExamples.py) will need to be updated to
         #reflect what PhoSim actually expects now.
+        #
         self.columnMapping = OrderedDict([('obsHistID',('obsHistID','Opsim_obshistid',numpy.int64,None)),
                                          ('expDate',('expDate','SIM_SEED',int, None)),
                                          ('fieldRA',('fieldRA','Unrefracted_RA',float,numpy.radians)),
@@ -58,6 +90,8 @@ class ObservationMetaDataGenerator(object):
                                          ('m5',('fiveSigmaDepth',None,float,None)),
                                          ('skyBrightness',('filtSkyBrightness',None,float,None))])
 
+        #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
+        #Also setup baseQuery which is just the SELECT clause of the SQL query
         dtypeList = []
         self.baseQuery = 'SELECT'
         for column in self.columnMapping:
@@ -77,51 +111,52 @@ class ObservationMetaDataGenerator(object):
                                m5=None, boundType='circle', boundLength=0.1, limit=None):
 
         """
-        This method will query the OpSim database according to user-specified constraints
-        and return a list of of ObservationMetaData instantiations consistent with those
-        constraints.
+        This method will query the OpSim database summary table according to user-specified
+        constraints and return a list of of ObservationMetaData instantiations consistent
+        with those constraints.
+        
+        @param [in] limit is an integer denoting the maximum number of ObservationMetaData to
+        be returned
+        
+        @param [in] boundType is the boundType of the ObservationMetaData to be returned
+        (see documentation in sims_catalogs_generation/../db/spatialBounds.py for more
+        details)
+        
+        @param [in] boundLength is the boundLength of the ObservationMetaData to be
+        returned (in degrees; see documentation in
+        sims_catalogs_generation/../db/spatialBounds.py for more details)
+        
+        All other input parameters are constraints to be placed on the SQL query of the
+        opsim output db.  These contraints can either be tuples of the form (min, max)
+        or an exact value the user wants returned.
+        
+        Parameters that can be constrained are:
 
-        The parameters that can be passed in are all either tuples of the form (min,max) or
-        straight values corresponding to the quantities in the OpSim database that can be
-        contrained.  If tuples are passed, the query will ask for pointings such that
-        min < x < max for the quantity being contrained.  If a number is passed, then
-        the query will ask that x == value.
+        @param [in] fieldRA in degrees
+        @param [in] fieldDec in degrees
+        @param [in] altitude in degrees
+        @param [in] azimuth in degrees
 
-        The quantities that can be constrained are:
+        @param [in] moonRA in degrees
+        @param [in] moonDec in degrees
+        @param [in] moonAlt in degrees
+        @param [in] moonPhase (a value from 1 to 100 indicating how much of the moon is illuminated)
+        @param [in] dist2Moon the distance between the telescope pointing and the moon in degrees
 
-        fieldRA in degrees
-        fieldDec in degrees
-        altitude in degrees
-        azimuth in degrees
+        @param [in] sunAlt in degrees
 
-        moonRA in degrees
-        moonDec in degrees
-        moonAlt in degrees
-        moonPhase (a value from 1 to 100 indicating how much of the moon is illuminated)
-        dist2Moon the distance between the telescope pointing and the moon in degrees
+        @param [in[ rotSkyPos (the angle of the sky with respect to the camera coordinate system) in degrees
+        @param [in] telescopeFilter a string that is one of u,g,r,i,z,y
 
-        sunAlt in degrees
+        @param [in] airmass
+        @param [in] rawSeeing
 
-        rotSkyPos (the angle of the sky with respect to the camera coordinate system) in degrees
-        telescopeFilter (u,g,r,i,z,y)
-
-        airmass
-        rawSeeing
-
-        visitExpTime the exposure time in seconds
-        obsHistID the integer used by OpSim to label pointings
-        expDate is the date of the exposure (units????)
-        expMJD is the MJD of the exposure
-        m5 is the five sigma depth of the observation
-        skyBrightness
-
-        You must also specify the size of the fields of view returned in the
-        ObservationMetaData instantiations by specifying boundType (default 'circle')
-        and boundLength (in degrees; default a radius of 0.1).   See documentation in
-        sims_catalogs_generation/../db/spatialBounds.py for more details.
-
-        limit limts the number of rows returned
-
+        @param [in] visitExpTime the exposure time in seconds
+        @param [in] obsHistID the integer used by OpSim to label pointings
+        @param [in] expDate is the date of the exposure (units????)
+        @param [in] expMJD is the MJD of the exposure
+        @param [in] m5 is the five sigma depth of the observation
+        @param [in] skyBrightness
         """
 
         query = self.baseQuery+ ' FROM SUMMARY'
@@ -142,6 +177,7 @@ class ObservationMetaDataGenerator(object):
                                            'to getObservationMetaData: %s is len %d'
                                            % (column, len(value)))
 
+                    #perform any necessary coordinate transformations
                     if self.columnMapping[column][3] is not None:
                         vmin = self.columnMapping[column][3](value[0])
                         vmax = self.columnMapping[column][3](value[1])
@@ -152,6 +188,7 @@ class ObservationMetaDataGenerator(object):
                     query += ' %s > %s AND %s < %s' % \
                              (self.columnMapping[column][0], vmin, self.columnMapping[column][0], vmax)
                 else:
+                    #perform any necessary coordinate transformations
                     if self.columnMapping[column][3] is not None:
                         vv = self.columnMapping[column][3](value)
                     else:
@@ -171,9 +208,12 @@ class ObservationMetaDataGenerator(object):
         
         obs_output = []
         
+        #convert the results into ObservationMetaData instantiations
         for pointing in results:
             phoSimMetadata=OrderedDict()
             for column in self.columnMapping:
+                
+                #make sure that PhoSim expects the column
                 if self.columnMapping[column][1] is not None:
                     phoSimMetadata[self.columnMapping[column][1]] = (pointing[self.columnMapping[column][0]],
                                                                      pointing[self.columnMapping[column][0]].dtype)
