@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import os
 import unittest
 import numpy
@@ -321,8 +322,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
     def testCreationOfPhoSimCatalog(self):
         """
         Make sure that we can create PhoSim input catalogs using the returned ObservationMetaData.
-        This test will just make sure that the process runs.  It will not validate the output
-        in any way.
+        This test will just make sure that all of the expected header entries are there.
         """
 
         dbName = 'obsMetaDataGeneratorTest.db'
@@ -336,6 +336,23 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
+
+        with open(catName) as inputFile:
+            lines = inputFile.readlines()
+            ix = 0
+            for control in gen.columnMapping:
+                if control[0] != 'm5' and control[0]!='skyBrightness':
+                    words = lines[ix].split()
+                    self.assertEqual(control[2], words[0])
+
+                    if control[0] != 'telescopeFilter':
+                        if control[4] is not None:
+                            value = control[4](float(words[1]))
+                        else:
+                            value = float(words[1])
+
+                        self.assertAlmostEqual(value, results[0].phoSimMetadata[control[2]][0], 5)
+                    ix += 1
 
         if os.path.exists(catName):
             os.unlink(catName)
