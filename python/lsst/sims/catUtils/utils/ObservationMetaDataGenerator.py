@@ -125,19 +125,21 @@ class ObservationMetaDataGenerator(object):
         """
 
         query = self.baseQuery+ ' FROM SUMMARY'
-        nWhereClauses = 0
+        
+        nConstraints = 0 #the number of constraints in this query
 
         for column in self.columnMapping:
             value = eval(column)
             if value is not None:
-                if nWhereClauses > 0:
+                if nConstraints > 0:
                     query += ' AND'
                 else:
                     query += ' WHERE '
                     
                 if isinstance(value,tuple):
                     if len(value)>2:
-                        raise RuntimeError('Cannot pass a tuple longer than 2 elements to getObservationMetaData: %s is len %d' \
+                        raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
+                                           'to getObservationMetaData: %s is len %d'
                                            % (column, len(value)))
 
                     if self.columnMapping[column][3] is not None:
@@ -147,7 +149,8 @@ class ObservationMetaDataGenerator(object):
                         vmin = value[0]
                         vmax = value[1]
 
-                    query += ' %s > %s AND %s < %s' % (self.columnMapping[column][0], vmin, self.columnMapping[column][0], vmax)
+                    query += ' %s > %s AND %s < %s' % \
+                             (self.columnMapping[column][0], vmin, self.columnMapping[column][0], vmax)
                 else:
                     if self.columnMapping[column][3] is not None:
                         vv = self.columnMapping[column][3](value)
@@ -155,12 +158,12 @@ class ObservationMetaDataGenerator(object):
                         vv = value
                     query += ' %s == %s' % (self.columnMapping[column][0], vv)
                 
-                nWhereClauses += 1
+                nConstraints += 1
         
         if limit is not None:
             query += ' LIMIT %d' % limit
 
-        if nWhereClauses==0 and limit is None:
+        if nConstraints==0 and limit is None:
             raise RuntimeError('You did not specify any contraints on your query;' +
                                ' you will just return ObservationMetaData for all poitnings')
 
