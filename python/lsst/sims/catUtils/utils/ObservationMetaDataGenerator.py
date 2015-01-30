@@ -210,13 +210,8 @@ class ObservationMetaDataGenerator(object):
 
         #convert the results into ObservationMetaData instantiations
         for pointing in results:
-            phoSimMetadata=OrderedDict()
-            for column in self.columnMapping:
-
-                #make sure that PhoSim expects the column
-                if self.columnMapping[column][1] is not None:
-                    phoSimMetadata[self.columnMapping[column][1]] = (pointing[self.columnMapping[column][0]],
-                                                                     pointing[self.columnMapping[column][0]].dtype)
+            phoSimMetadata=OrderedDict([(self.columnMapping[column][1], (pointing[self.columnMapping[column][0]], pointing[self.columnMapping[column][0]].dtype))
+                                       for column in self.columnMapping if self.columnMapping[column][1] is not None])
 
             obs_metadata = ObservationMetaData(m5=pointing['fiveSigmaDepth'],
                                                boundType=boundType, boundLength=boundLength,
