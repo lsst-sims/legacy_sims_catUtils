@@ -11,8 +11,8 @@ from lsst.sims.photUtils.Photometry import PhotometryStars, Sed, Bandpass
 from lsst.sims.photUtils.Photometry import PhotometryBase
 import lsst.utils.tests as utilsTests
 
-from snObject import SNObject
-from sncat import SNIaCatalog
+from lsst.sims.catUtils.exampleCatalogDefinitions.snObject import SNObject
+from lsst.sims.catUtils.exampleCatalogDefinitions.sncat import SNIaCatalog
 import utils_for_test as tu
 
 from astropy.units import Unit

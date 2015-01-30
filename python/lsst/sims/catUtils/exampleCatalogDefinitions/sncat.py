@@ -24,7 +24,7 @@ from astropy.utils import lazyproperty
 import astropy.cosmology as cosmology 
 
 import sncosmo
-from snObject import SNObject
+from lsst.sims.catUtils.exampleCatalogDefinitions.snObject import SNObject
 # import sqliteutils as sq
 
 import sqlite3
