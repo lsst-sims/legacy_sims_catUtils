@@ -1,7 +1,6 @@
 import os
 import unittest
 import numpy
-from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject, CircleBounds, BoxBounds
