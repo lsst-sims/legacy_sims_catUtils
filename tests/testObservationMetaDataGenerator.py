@@ -345,6 +345,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     words = lines[ix].split()
                     self.assertEqual(control[2], words[0])
 
+                    #skip telescope filter since it doesn't have a mapping in ObservationMetaDataGenerator
                     if control[0] != 'telescopeFilter':
                         if control[4] is not None:
                             value = control[4](float(words[1]))
