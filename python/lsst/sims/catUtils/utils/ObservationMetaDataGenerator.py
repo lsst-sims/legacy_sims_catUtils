@@ -206,18 +206,14 @@ class ObservationMetaDataGenerator(object):
 
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
 
-        obs_output = []
 
         #convert the results into ObservationMetaData instantiations
-        for pointing in results:
-            phoSimMetadata=OrderedDict([(self.columnMapping[column][1], (pointing[self.columnMapping[column][0]], pointing[self.columnMapping[column][0]].dtype))
-                                       for column in self.columnMapping if self.columnMapping[column][1] is not None])
+        obs_output = [ObservationMetaData(m5=pointing['fiveSigmaDepth'], boundType=boundType, boundLength=boundLength,
+                                          phoSimMetadata=OrderedDict([(self.columnMapping[column][1],
+                                                                    (pointing[self.columnMapping[column][0]], pointing[self.columnMapping[column][0]].dtype))
+                                                                    for column in self.columnMapping if self.columnMapping[column][1] is not None]))
+                                          for pointing in results]
 
-            obs_metadata = ObservationMetaData(m5=pointing['fiveSigmaDepth'],
-                                               boundType=boundType, boundLength=boundLength,
-                                               phoSimMetadata=phoSimMetadata)
-
-            obs_output.append(obs_metadata)
 
         return obs_output
 
