@@ -337,6 +337,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
 
+        filterTranslation=['u','g','r','i','z','y']
+
         with open(catName) as inputFile:
             lines = inputFile.readlines()
             ix = 0
@@ -353,6 +355,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                             value = float(words[1])
 
                         self.assertAlmostEqual(value, results[0].phoSimMetadata[control[2]][0], 5)
+                    else:
+                        self.assertEqual(filterTranslation[int(words[1])],results[0].phoSimMetadata[control[2]][0])
+                        
                     ix += 1
 
         if os.path.exists(catName):
