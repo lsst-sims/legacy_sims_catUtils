@@ -25,7 +25,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 
-import testUtilsSNe as sq
+import lsst.sims.catUtils.utils.testUtilsSNe as sq
 import sqlite3
 # Global Variables for calculating MWEBV through astropy/SNcosmo
 dustmaproot = os.getenv('SIMS_DUSTMAPS_DIR')
