@@ -52,7 +52,7 @@ class ObservationMetaDataGenerator(object):
         #27 January 2015
         #self.columnMapping is an list of tuples.  Each tuple corresponds to a column in the opsim
         #database's summary table.
-        
+
         #The 0th element of the tuple is how users will
         #refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
         #
@@ -72,26 +72,26 @@ class ObservationMetaDataGenerator(object):
         #(and possibly phoSimCatalogExamples.py) will need to be updated to
         #reflect what PhoSim actually expects now.
         #
-        self.columnMapping = [('obsHistID','obsHistID','Opsim_obshistid',numpy.int64,None),
-                              ('expDate','expDate','SIM_SEED',int, None),
-                              ('fieldRA','fieldRA','Unrefracted_RA',float,numpy.radians),
-                              ('fieldDec','fieldDec','Unrefracted_Dec',float,numpy.radians),
-                              ('moonRA','moonRA','Opsim_moonra',float, numpy.radians),
-                              ('moonDec','moonDec','Opsim_moondec',float,numpy.radians),
-                              ('rotSkyPos','rotSkyPos','Opsim_rotskypos',float,numpy.radians),
-                              ('telescopeFilter','filter','Opsim_filter',(str,1),self._put_quotations),
-                              ('rawSeeing','rawSeeing','Opsim_rawseeing',float,None),
-                              ('sunAlt','sunAlt','Opsim_sunalt',float, numpy.radians),
-                              ('moonAlt','moonAlt','Opsim_moonalt',float,numpy.radians),
-                              ('dist2Moon','dist2Moon','Opsim_dist2moon',float, numpy.radians),
-                              ('moonPhase','moonPhase','Opsim_moonphase',float,None),
-                              ('expMJD','expMJD','Opsim_expmjd',float,None),
-                              ('altitude','altitude','Opsim_altitude',float,numpy.radians),
-                              ('azimuth','azimuth','Opsim_azimuth',float,numpy.radians),
-                              ('visitExpTime','visitExpTime','exptime',float,None),
-                              ('airmass','airmass','airmass',float,None),
-                              ('m5','fiveSigmaDepth',None,float,None),
-                              ('skyBrightness','filtSkyBrightness',None,float,None)]
+        self.columnMapping = [('obsHistID', 'obsHistID', 'Opsim_obshistid' ,numpy.int64, None),
+                              ('expDate', 'expDate', 'SIM_SEED', int, None),
+                              ('fieldRA', 'fieldRA', 'Unrefracted_RA', float, numpy.radians),
+                              ('fieldDec', 'fieldDec', 'Unrefracted_Dec', float, numpy.radians),
+                              ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
+                              ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
+                              ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
+                              ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
+                              ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
+                              ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
+                              ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
+                              ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
+                              ('moonPhase', 'moonPhase', 'Opsim_moonphase', float, None),
+                              ('expMJD', 'expMJD', 'Opsim_expmjd', float, None),
+                              ('altitude', 'altitude', 'Opsim_altitude', float, numpy.radians),
+                              ('azimuth', 'azimuth', 'Opsim_azimuth', float, numpy.radians),
+                              ('visitExpTime', 'visitExpTime', 'exptime', float, None),
+                              ('airmass', 'airmass', 'airmass', float, None),
+                              ('m5', 'fiveSigmaDepth', None, float, None),
+                              ('skyBrightness', 'filtSkyBrightness', None, float, None)]
 
         #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
         #Also setup baseQuery which is just the SELECT clause of the SQL query
