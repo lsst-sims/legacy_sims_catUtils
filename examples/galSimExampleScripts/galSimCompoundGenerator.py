@@ -43,7 +43,7 @@ stars_galSim = testGalSimStars(stars, obs_metadata=obs_metadata)
 #as you do it before calling write_catalog()
 #stars_galSim.camera = LsstSimMapper().camera
 
-catName = 'galSim_compound_examle.txt'
+catName = 'galSim_compound_example.txt'
 stars_galSim.write_catalog(catName, chunk_size=100)
 
 print 'done with stars'
