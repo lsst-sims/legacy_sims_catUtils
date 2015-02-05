@@ -31,7 +31,7 @@ import sqlite3
 
 wavelenstep = 0.1
 
-
+__all__ = ['SNIaCatalog']
 cosmo = CosmologyWrapper()
 # class SNIaCatalog (object):
 class SNIaCatalog (InstanceCatalog, CosmologyWrapper):

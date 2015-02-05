@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import sncosmo
 from astropy.units import Unit
 
+__all__ = ['getlsstbandpassobjs', 'insertfromdata', 'array2dbrecords']
 def getlsstbandpassobjs(loadsncosmo=True, loadcatsim=True, plot=True):
     """
     General utility to return a list of the baseline LSST bandpasses loaded

@@ -26,6 +26,7 @@ map_dir = os.path.join(dustmaproot, 'DustMaps')
 wavelenstep = 0.1
 
 
+__all__ = ['SNObject']
 class SNObject (Model):
     """
     Extension of the SNCosmo `TimeSeriesModel` to include more parameters and
