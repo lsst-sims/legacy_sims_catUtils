@@ -13,7 +13,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catUtils.exampleCatalogDefinitions.snObject import SNObject
 from lsst.sims.catUtils.exampleCatalogDefinitions.sncat import SNIaCatalog
-import utils_for_test as tu
+# import utils_for_test as tu
 
 from astropy.units import Unit
 from astropy.coordinates import SkyCoord
@@ -224,7 +224,7 @@ class testSNObject(unittest.TestCase):
         self.times = numpy.arange(-20., 50., 1.0)
 
         # Load SNCosmo bandpass objects for comparison test
-        thisshouldbeNone = tu.getlsstbandpassobjs(self.bandPassList,
+        thisshouldbeNone = sq.getlsstbandpassobjs(self.bandPassList,
                                                   loadcatsim=False, plot=False)
         self.sncosmobands = ['LSST' + band for band in self.bandPassList]
 
