@@ -1,5 +1,5 @@
 """
-This script shows how touse our GalSim interface to create FITS images of
+This script shows how to use our GalSim interface to create FITS images of
 galaxy bulges (or any sersic profile)
 """
 
