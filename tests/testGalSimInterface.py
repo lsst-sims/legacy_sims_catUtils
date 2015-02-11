@@ -181,11 +181,11 @@ class GalSimInterfaceTest(unittest.TestCase):
 
             unDrawnDetectors = 0
             for ff in controlCounts:
-                if controlCounts[ff] > 1000.0:
+                if controlCounts[ff] > 1000.0 and galsimCounts[ff] > 0.001:
                     #because, for really dim images, there could be enough statistical imprecision in the GalSim drawing routine
                     #to violate the condition below
                     self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
-                else:
+                elif galsimCounts[ff] > 0.001:
                     unDrawnDetectors += 1
 
             #to make sure we did not neglect more than one detector

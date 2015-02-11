@@ -167,22 +167,22 @@ class GalSimInterpreter(object):
         center is within 3 x halfLightRadius x sqrt(majorAxis/minorAxis) of the detector's bounds.
 
         In the case of a point source (halfLightRadius, minorAxis, majorAxis == 0.0),
-        this method will return True if the object is within 2 arc seconds of the detector's
+        this method will return True if the object is within 120 arc seconds of the detector's
         bounds (on the assumption that no PSF will smear the object outmore than 2 arc seconds)
         """
 
         if halfLightRadius==0.0 or minorAxis==0.0 or majorAxis==0.0:
             #I am not sure in the case of point sources how to deal with this,
-            #since there is not general PSF formalism with a defined size.
+            #since there is no general PSF formalism with a defined size.
             #For the moment, I will do a very conservative test (letting in more objects
             #than is probably necessary for each detector).  I will allow anything that is
-            #within 2 arcseconds of the detector's boundaries (on the assumption that no
-            #reasonably PSF would smear a source more than 2 arcseconds)
+            #within 120 arcseconds of the detector's boundaries (on the assumption that no
+            #reasonable PSF would smear a source more than 120 arcseconds)
 
-            if xPupil < detector.xMin - 2.0 or xPupil > detector.xMax + 2.0:
+            if xPupil < detector.xMin - 120.0 or xPupil > detector.xMax + 120.0:
                 return False
 
-            if yPupil < detector.yMin -2.0 or yPupil > detector.yMax + 2.0:
+            if yPupil < detector.yMin -120.0 or yPupil > detector.yMax + 120.0:
                 return False
 
             return True
