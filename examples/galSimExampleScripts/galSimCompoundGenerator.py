@@ -18,6 +18,7 @@ class testGalSimStars(GalSimStars):
     band_pass_names = ['u','g']
 
     #convolve with a PSF; note that galaxies are not convolved with a PSF
+    #PSF defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
 
 class testGalSimGalaxies(GalSimGalaxies):
@@ -25,6 +26,8 @@ class testGalSimGalaxies(GalSimGalaxies):
 
 class testGalSimAgn(GalSimAgn):
     band_pass_names = ['u', 'g']
+
+    #defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
 
 #if you want to use the actual LSST camera

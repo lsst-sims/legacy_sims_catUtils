@@ -20,6 +20,7 @@ class testGalSimGalaxiesNoiseless(GalSimGalaxies):
 
 class testGalSimGalaxiesNoisy(testGalSimGalaxiesNoiseless):
 
+    #defined in galSimInterface/galSimUtilities.py
     noise = ExampleCCDNoise(99)
 
 #select an OpSim pointing
