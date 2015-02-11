@@ -5,8 +5,8 @@ This script shows how incorporate noise in images of galaxies
 import os
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
-from lsst.sims.catUtils.baseCatalogModels import *
-from lsst.sims.catUtils.galSimInterface import *
+from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, OpSim3_61DBObject
+from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, ExampleCCDNoise
 
 #if you want to use the actual LSST camera
 #from lsst.obs.lsstSim import LsstSimMapper

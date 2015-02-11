@@ -8,8 +8,10 @@ import galsim
 from lsst.sims.catalogs.generation.db import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
-from lsst.sims.catUtils.baseCatalogModels import *
-from lsst.sims.catUtils.galSimInterface import *
+from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, \
+                                                 OpSim3_61DBObject
+from lsst.sims.catUtils.galSimInterface import ExampleOpticalPSF, GalSimStars, GalSimGalaxies, \
+                                               GalSimAgn
 
 class testGalSimStars(GalSimStars):
     #only draw images in the u and g band for speed
