@@ -35,10 +35,10 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList so that the bandPasses are available to the
+        into self.bandpassDict so that the bandPasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandPassList is None or self.phiArray is None:
+        if self.bandpassDict is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames,
                      bandPassRoot = bandPassRoot,
                      bandPassDir = bandPassDir)
@@ -67,10 +67,10 @@ class sdssStars(InstanceCatalog,PhotometryStars):
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList so that the bandPasses are available to the
+        into self.bandpassDict so that the bandPasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandPassList is None or self.phiArray is None:
+        if self.bandpassDict is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames,
                      bandPassRoot = bandPassRoot,
                      bandPassDir = bandPassDir)
