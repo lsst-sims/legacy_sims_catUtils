@@ -117,6 +117,14 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 args[tag] = line[1]
                 results = gen.getObservationMetaData(**args)
 
+                if tag=='skyBrightness':
+                    ct = 0
+                    for obs_metadata in results:
+                        self.assertTrue(obs_metadata.skyBrightness<line[1][1])
+                        self.assertTrue(obs_metadata.skyBrightness>line[1][0])
+                        ct += 1
+                    self.assertTrue(ct>0)
+
                 name = gen.columnMapping[ii][2]
                 if name is not None:
                     if gen.columnMapping[ii][4] is not None:
