@@ -117,11 +117,18 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 args[tag] = line[1]
                 results = gen.getObservationMetaData(**args)
 
-                if tag=='skyBrightness':
+                if tag == 'skyBrightness':
                     ct = 0
                     for obs_metadata in results:
                         self.assertTrue(obs_metadata.skyBrightness<line[1][1])
                         self.assertTrue(obs_metadata.skyBrightness>line[1][0])
+                        ct += 1
+                    self.assertTrue(ct>0)
+                elif tag == 'm5':
+                    ct = 0
+                    for obs_metadata in results:
+                        self.assertTrue(obs_metadata.m5('i')<line[1][1])
+                        self.assertTrue(obs_metadata.m5('i')>line[1][0])
                         ct += 1
                     self.assertTrue(ct>0)
 
@@ -138,9 +145,6 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         ct += 1
                         self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
                         self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
-                        if tag == 'm5':
-                            self.assertTrue(obs_metadata.m5('i')<xmax)
-                            self.assertTrue(obs_metadata.m5('i')>xmin)
 
                     #make sure that we did not accidentally choose values such that
                     #no ObservationMetaData were ever returned
