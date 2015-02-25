@@ -39,6 +39,13 @@ class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'internalAvBulge', 'internalAvDisk', 'redshift']
 
 class testPhotometricUncertaintyGetters(unittest.TestCase):
+    """
+    This class will test that the getters for photometric uncertainties
+    are calculating the correct values.
+
+    This test is here rather than in sims_photUtils because the infrastructure
+    to generate fake databases is in sims_catUtils.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -91,6 +98,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         del cls.obs_metadata
 
     def testStellarPhotometricUncertainties(self):
+        """
+        Test in the case of a catalog of stars
+        """
         starDB = testStarsDBObj(address=self.connectionString)
         starCat = testStarCatalog(starDB, obs_metadata=self.obs_metadata)
 
@@ -117,6 +127,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         self.assertTrue(ct>0)
 
     def testGalaxyPhotometricUncertainties(self):
+        """
+        Test in the case of a catalog of galaxies
+        """
         phot = PhotometryGalaxies()
         phot.loadTotalBandpassesFromFiles()
         galDB = testGalaxyTileDBObj(address=self.connectionString)
