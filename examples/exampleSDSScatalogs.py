@@ -24,24 +24,24 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
         """
         example getter for sdss galaxy magnitudes
 
-        bandPassRoot is the root of the names of the files in which
+        bandpassRoot is the root of the names of the files in which
         the bandpasses are stored
 
         """
         idNames = self.column_by_name('galid')
-        bandPassNames = ['u','g','r','i','z']
-        bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
-        bandPassRoot = 'sdss_'
+        bandpassNames = ['u','g','r','i','z']
+        bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
+        bandpassRoot = 'sdss_'
 
         """
-        Here is where we need some code to load a list of bandPass objects
-        into self.bandpassDict so that the bandPasses are available to the
+        Here is where we need some code to load a list of bandpass objects
+        into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadBandPassesFromFiles(bandPassNames,
-                     bandPassRoot = bandPassRoot,
-                     bandPassDir = bandPassDir)
+            self.loadTotalBandpassesFromFiles(bandpassNames,
+                     bandpassRoot = bandpassRoot,
+                     bandpassDir = bandpassDir)
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -57,23 +57,23 @@ class sdssStars(InstanceCatalog,PhotometryStars):
         """
         example getter for sdss stellar magnitudes
 
-        bandPassRoot is the root of the names of the files in which
+        bandpassRoot is the root of the names of the files in which
         the bandpasses are stored
         """
         idNames = self.column_by_name('id')
-        bandPassNames = ['u','g','r','i','z']
-        bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
-        bandPassRoot = 'sdss_'
+        bandpassNames = ['u','g','r','i','z']
+        bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
+        bandpassRoot = 'sdss_'
 
         """
-        Here is where we need some code to load a list of bandPass objects
-        into self.bandpassDict so that the bandPasses are available to the
+        Here is where we need some code to load a list of bandpass objects
+        into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadBandPassesFromFiles(bandPassNames,
-                     bandPassRoot = bandPassRoot,
-                     bandPassDir = bandPassDir)
+            self.loadTotalBandpassesFromFiles(bandpassNames,
+                     bandpassRoot = bandpassRoot,
+                     bandpassDir = bandpassDir)
 
         return self.meta_magnitudes_getter(idNames)
 
