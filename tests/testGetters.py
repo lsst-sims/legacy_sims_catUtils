@@ -118,7 +118,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
     def testGalaxyPhotometricUncertainties(self):
         phot = PhotometryGalaxies()
-        phot.loadTotalBandPassesFromFiles()
+        phot.loadTotalBandpassesFromFiles()
         galDB = testGalaxyTileDBObj(address=self.connectionString)
         galCat = testGalaxyCatalog(galDB, obs_metadata=self.obs_metadata)
         imsimband = Bandpass()
