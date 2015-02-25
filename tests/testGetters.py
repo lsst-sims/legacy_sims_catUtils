@@ -53,7 +53,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
 
-        cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=100, radius = 5.0)
+        cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         m5 = {'u':23.0, 'g':24.0, 'r':21.0, 'i':22.3, 'z':23.7, 'y':24.5}
         cls.obs_metadata.m5value = m5
         cls.connectionString = 'sqlite:///'+cls.dbName
@@ -96,6 +96,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         del cls.dbName
         del cls.connectionString
         del cls.obs_metadata
+        del cls.totalBandpasses
+        del cls.hardwareBandpasses
+        del cls.skySeds
 
     def testStellarPhotometricUncertainties(self):
         """
