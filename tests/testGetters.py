@@ -6,9 +6,9 @@ import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, defaultSpecMap
-from lsst.sims.catUtils.utils import testStarsDBObj
+from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
 from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults
-from lsst.sims.photUtils import PhotometryStars
+from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
     sig2sys = 0.0003
@@ -17,6 +17,26 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
                       'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm']
+
+class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
+    sig2sys = 0.0003
+
+    column_outputs = ['raJ2000', 'decJ2000',
+                      'uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
+                      'sigma_uRecalc', 'sigma_gRecalc', 'sigma_rRecalc', 'sigma_iRecalc',
+                      'sigma_zRecalc', 'sigma_yRecalc',
+                      'sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge', 'sigma_iBulge',
+                      'sigma_zBulge', 'sigma_yBulge',
+                      'sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk', 'sigma_iDisk',
+                      'sigma_zDisk', 'sigma_yDisk',
+                      'sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn', 'sigma_iAgn',
+                      'sigma_zAgn', 'sigma_yAgn',
+                      'sedFilenameBulge', 'sedFilenameDisk', 'sedFilenameAgn',
+                      'magNormBulge', 'magNormDisk', 'magNormAgn',
+                      'internalAvBulge', 'internalAvDisk', 'redshift']
 
 class testPhotometricUncertaintyGetters(unittest.TestCase):
 
@@ -94,6 +114,81 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                 testSigma = line[8+i]
                 self.assertAlmostEqual(controlSigma, testSigma, 10)
                 ct += 1
+        self.assertTrue(ct>0)
+
+    def testGalaxyPhotometricUncertainties(self):
+        phot = PhotometryGalaxies()
+        phot.loadTotalBandPassesFromFiles()
+        galDB = testGalaxyTileDBObj(address=self.connectionString)
+        galCat = testGalaxyCatalog(galDB, obs_metadata=self.obs_metadata)
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
+        ct = 0
+        for line in galCat.iter_catalog():
+            bulgeSedName = line[50]
+            diskSedName = line[51]
+            agnSedName = line[52]
+            magNormBulge = line[53]
+            magNormDisk = line[54]
+            magNormAgn = line[55]
+            avBulge = line[56]
+            avDisk = line[57]
+            redshift = line[58]
+
+            bulgeSed = Sed()
+            bulgeSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+                                     defaultSpecMap[bulgeSedName]))
+            fNorm=bulgeSed.calcFluxNorm(magNormBulge, imsimband)
+            bulgeSed.multiplyFluxNorm(fNorm)
+
+            diskSed = Sed()
+            diskSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+                                    defaultSpecMap[diskSedName]))
+            fNorm = diskSed.calcFluxNorm(magNormDisk, imsimband)
+            diskSed.multiplyFluxNorm(fNorm)
+
+            agnSed = Sed()
+            agnSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+                                   defaultSpecMap[agnSedName]))
+            fNorm = agnSed.calcFluxNorm(magNormAgn, imsimband)
+            agnSed.multiplyFluxNorm(fNorm)
+
+
+            phot.applyAvAndRedshift([bulgeSed, diskSed], internalAv = [avBulge, avDisk], redshift=[redshift, redshift])
+            phot.applyAvAndRedshift([agnSed], redshift=[redshift])
+
+            numpy.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
+            numpy.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)
+
+            fl = bulgeSed.flambda + diskSed.flambda + agnSed.flambda
+
+            totalSed = Sed(wavelen=bulgeSed.wavelen, flambda=fl)
+
+            sedList = [totalSed, bulgeSed, diskSed, agnSed]
+
+            for i, spectrum in enumerate(sedList):
+                if i==0:
+                    msgroot = 'failed on total'
+                elif i==1:
+                    msgroot = 'failed on bulge'
+                elif i==2:
+                    msgroot = 'failed on disk'
+                elif i==3:
+                    msgroot = 'failed on agn'
+
+                for j, b in enumerate(self.bandpasses):
+                    controlSNR = spectrum.calcSNR_psf(self.totalBandpasses[j],
+                                                      self.skySeds[j],
+                                                      self.hardwareBandpasses[j],
+                                                      seeing=PhotometricDefaults.seeing[b])
+
+                    controlNoverS = 1./(controlSNR*controlSNR) + galCat.sig2sys
+                    controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
+                    testSigma = line[26+(i*6)+j]
+                    msg = '%e neq %e; ' % (testSigma, controlSigma) + msgroot
+                    self.assertAlmostEqual(testSigma, controlSigma, 10, msg=msg)
+                    ct += 1
+
         self.assertTrue(ct>0)
 
 def suite():
