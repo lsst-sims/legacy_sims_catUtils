@@ -1,7 +1,7 @@
 """Instance Catalog"""
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import radiansToArcsec
+from lsst.sims.utils import radiansToArcsec
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin

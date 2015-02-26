@@ -25,7 +25,7 @@ import numpy
 import os
 import eups
 import copy
-from lsst.sims.catalogs.generation.db import radiansToArcsec
+from lsst.sims.utils import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector

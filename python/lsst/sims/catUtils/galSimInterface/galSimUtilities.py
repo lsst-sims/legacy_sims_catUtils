@@ -5,7 +5,7 @@ galsim into the CatSim interface
 
 import numpy
 import galsim
-from lsst.sims.catalogs.generation.db import radiansToArcsec
+from lsst.sims.utils import radiansToArcsec
 
 __all__ = ["PSFbase", "ExampleGaussianPSF", "ExampleOpticalPSF",
            "ExampleCCDNoise"]
