@@ -171,6 +171,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                              #This class is either passed in from another catalog using
                              #copyGalSimInterpreter, or initialized in the write_header method
 
+    totalDrawings = 0
+    totalObjects = 0
+
     def _initializeGalSimCatalog(self):
         """
         Initializes an empy list of objects that have already been drawn to FITS images.
@@ -328,6 +331,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                   majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                                   x_pupil=xp, y_pupil=yp, sed=ss)
 
+                print 'drew ',name,len(detectorsList),' times'
+                self.totalDrawings += len(detectorsList)
+                self.totalObjects += 1
         return numpy.array(output)
 
     def _getBandPasses(self):
