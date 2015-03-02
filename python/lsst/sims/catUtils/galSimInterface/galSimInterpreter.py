@@ -141,8 +141,7 @@ class GalSimInterpreter(object):
         """
         return detector.fileName+'_'+bandPassName+'.fits'
 
-    def _doesObjectImpingeOnDetector(self, xPupil=None, yPupil=None, halfLightRadius=None,
-                                 minorAxis=None, majorAxis=None, detector=None):
+    def _doesObjectImpingeOnDetector(self, xPupil=None, yPupil=None, detector=None, imgScale=None, nonZeroPixels=None):
         """
         Compare an object to a detector and determine whether or not that object will cast any
         light on that detector (in case the object is near the edge of a detector and will cast some
@@ -171,110 +170,115 @@ class GalSimInterpreter(object):
         this method will return True if the object is within 120 arc seconds of the detector's
         bounds (on the assumption that no PSF will smear the object outmore than 2 arc seconds)
         """
-
-        if halfLightRadius==0.0 or minorAxis==0.0 or majorAxis==0.0:
-            #I am not sure in the case of point sources how to deal with this,
-            #since there is no general PSF formalism with a defined size.
-            #For the moment, I will do a very conservative test (letting in more objects
-            #than is probably necessary for each detector).  I will allow anything that is
-            #within 120 arcseconds of the detector's boundaries (on the assumption that no
-            #reasonable PSF would smear a source more than 120 arcseconds)
-
-            if xPupil < detector.xMin - 120.0 or xPupil > detector.xMax + 120.0:
-                return False
-
-            if yPupil < detector.yMin -120.0 or yPupil > detector.yMax + 120.0:
-                return False
-
-            return True
-
-        else:
-        #12 November 2014
-        #The method below is not terribly clever.  It triples the half light radius of the object,
-        #maps it to an ellipse with the same major-to-minor axis ratio as the actual object,
-        #then assumes that the object is a circle with this (enlarged) half light radius.  Any detector
-        #that is within this radius of the object is considered illuminated by the object.
-        #This was meant to be a very safe estimate (choosing detectors that are farther from the object
-        #than they probably need to be).  Something more clever and targeted is welcome
-
-            if xPupil >= detector.xMin and \
-               xPupil <= detector.xMax:
-
-                isBetweenX = True
-            else:
-                isBetweenX = False
-
-            if yPupil >= detector.yMin and \
-               yPupil <= detector.yMax:
-
-                isBetweenY = True
-            else:
-                isBetweenY = False
-
-            if isBetweenX and isBetweenY:
-                #the object falls on the detector directly
+        if detector is None:
+            return False
+       
+        for (ix, iy) in zip(nonZeroPixels[0], nonZeroPixels[1]):
+            xx = xPupil + ix*imgScale
+            yy = yPupil + iy*imgScale
+            if xx<detector.xMax and xx>detector.xMin and yy<detector.yMax and yy>detector.yMin:
                 return True
-
-            radius = 3.0*halfLightRadius
-            ratio = minorAxis/majorAxis
-            distance = radius/numpy.sqrt(ratio)
-
-            #check if light from the object bleed across any of the detector's boundaries
-            if isBetweenY:
-                if xPupil <= detector.xMin and detector.xMin - xPupil < distance:
-                    return True
-
-                if xPupil >= detector.xMax and xPupil - detector.xMax < distance:
-                    return True
-
-            if isBetweenX:
-                if yPupil <= detector.yMin and detector.yMin - yPupil < distance:
-                    return True
-
-                if yPupil >= detector.yMax and yPupil - detector.yMax < distance:
-                    return True
-
-            #see if light from the object bleeds through any of the detector's corners
-            for xx in [detector.xMin, detector.xMax]:
-                for yy in [detector.yMin, detector.yMax]:
-                    testDistance = numpy.sqrt(numpy.power(xx - xPupil,2) + \
-                               numpy.power(yy - yPupil,2))
-
-                    if testDistance < distance:
-                        return True
 
         return False
 
+    def findAllDetectors(self, galSimType=None, x_pupil=None,
+                   y_pupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
+                   positionAngle=None, sindex=None):
 
-    def findAllDetectors(self, xPupil=None, yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None):
-        """
-        For a given object, find all of the detectors on which it casts light.
-
-        @params [in] xPupil the x pupil coordinate of the object in radians
-
-        @params [in] yPupil the y pupil coordinate of the object in radiasn
-
-        @params [in] halfLightRadius the half light radius of the object in radians
-
-        @params [in] minorAxis the semi-minor axis of the object in radians
-
-        @params [in] majorAxis the semi-major axis of the object in radians
-
-        returns a string listing the names of all the detectors on which the object casts light. The names
-        are separated by a '//'
-        """
         outputString = ''
         outputList = []
-        for dd in self.detectors:
-            if self._doesObjectImpingeOnDetector(xPupil=radiansToArcsec(xPupil), yPupil=radiansToArcsec(yPupil),
-                                             halfLightRadius=radiansToArcsec(halfLightRadius),
-                                             minorAxis=radiansToArcsec(minorAxis), majorAxis=radiansToArcsec(majorAxis),
-                                             detector=dd):
+        centeredObj = None
+        testScale = 0.1
+        xp = radiansToArcsec(x_pupil)
+        yp = radiansToArcsec(y_pupil)
+        hlr = radiansToArcsec(halfLightRadius)
+        spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
+                              flux_type='flambda')
 
-                if outputString != '':
-                    outputString += '//'
-                outputString += dd.name
-                outputList.append(dd)
+        for bandPassName in self.bandPasses:
+
+            #create a new object if one has not already been created or if the PSF is wavelength
+            #dependent (in which case, each filter is going to need its own initialized object)
+            if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
+                if galSimType == 'sersic':
+                    centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
+                                                  bandpass=self.bandPasses[bandPassName],
+                                                  sindex=sindex, halfLightRadius=hlr,
+                                                  positionAngle=positionAngle,
+                                                  minorAxis=minorAxis, majorAxis=majorAxis)
+                elif galSimType == 'pointSource':
+                    centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
+                                                       bandpass=self.bandPasses[bandPassName])
+                else:
+                    print "Apologies: the GalSimInterpreter does not yet have a method to draw "
+                    print objectParams['galSimType']
+                    print " objects\n"
+                    return
+
+            centeredImage = centeredObj.drawImage(scale=testScale, method='phot', n_photons=1000)
+            xmax = testScale * (centeredImage.getXMax()/2) + xp
+            xmin = testScale * (-1*centeredImage.getXMax()/2) + xp
+            ymax = testScale * (centeredImage.getYMax()/2) + yp
+            ymin = testScale *(-1*centeredImage.getYMin()/2) + yp
+            
+            viableDetectors = []
+            for dd in self.detectors:
+                xOverLaps = False
+                if xmax > dd.xMin and xmax < dd.xMax:
+                    xOverLaps = True
+                elif xmin > dd.xMin and xmin < dd.xMax:
+                    xOverLaps = True
+                elif xmin < dd.xMin and xmax > dd.xMax:
+                    xOverLaps = True
+                
+                yOverLaps = False
+                if ymax > dd.yMin and ymax < dd.yMax:
+                    yOverLaps = True
+                elif ymin > dd.yMin and ymin < dd.yMax:
+                    yOverLaps = True
+                elif ymin < dd.yMin and ymax > dd.yMax:
+                    yOverLaps = True
+                
+                if xOverLaps and yOverLaps:
+                    viableDetectors.append(dd)
+
+            
+            if len(viableDetectors)>0:
+                maxPixel = centeredImage(centeredImage.getXMax()/2, centeredImage.getYMax()/2)
+                activePixels = numpy.where(centeredImage.array>maxPixel*0.001)
+            
+                xmin = testScale * (activePixels[0].min() - centeredImage.getXMax()/2) + xp
+                xmax = testScale * (activePixels[0].max() - centeredImage.getXMax()/2) + xp
+                ymin = testScale * (activePixels[1].min() - centeredImage.getYMax()/2) + yp
+                ymax = testScale * (activePixels[1].max() - centeredImage.getYMax()/2) + yp
+            
+                for dd in viableDetectors:
+                    xOverLaps = False
+                    if xmax > dd.xMin and xmax < dd.xMax:
+                        xOverLaps = True
+                    elif xmin > dd.xMin and xmin < dd.xMax:
+                        xOverLaps = True
+                    elif xmin < dd.xMin and xmax > dd.xMax:
+                        xOverLaps = True
+                
+                    yOverLaps = False
+                    if ymax > dd.yMin and ymax < dd.yMax:
+                        yOverLaps = True
+                    elif ymin > dd.yMin and ymin < dd.yMax:
+                        yOverLaps = True
+                    elif ymin < dd.yMin and ymax > dd.yMax:
+                        yOverLaps = True
+                
+                    if xOverLaps and yOverLaps:
+                        if self._doesObjectImpingeOnDetector(xPupil=xp - centeredImage.getXMax()*testScale/2.0,
+                                                     yPupil=yp - centeredImage.getYMax()*testScale/2.0,
+                                                     detector=dd, imgScale=centeredImage.scale,
+                                                     nonZeroPixels=activePixels):
+
+                            if outputString != '':
+                                outputString += '//'
+                            outputString += dd.name
+                            outputList.append(dd)
 
         if outputString == '':
             outputString = None
