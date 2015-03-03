@@ -182,6 +182,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         Objects are stored based on their uniqueId values.
         """
         self.objectHasBeenDrawn = []
+        self.initializeGalSimInterpreter()
         self.hasBeenInitialized = True
 
     def get_sedFilepath(self):
@@ -364,6 +365,19 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         self.galSimInterpreter.setPSF(self.PSF)
 
     def write_header(self, file_handle):
+
+        if not self.hasBeenInitialized:
+            self._initializeGalSimCatalog()
+
+        for detector in self.galSimInterpreter.detectors:
+            file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
+                                 (detector.name, detector.xCenter, detector.yCenter, detector.xMin,
+                                  detector.xMax, detector.yMin, detector.yMax, detector.plateScale))
+
+        InstanceCatalog.write_header(self, file_handle)
+    
+
+    def initializeGalSimInterpreter(self):
         """
         Overwrite the write_header method from InstanceCatalog.
 
@@ -423,9 +437,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                 yMax = 3600.0*numpy.degrees(ymax)
                 plateScale = 3600.0*numpy.degrees(plateScale)
 
-                file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
-                                 (dd.getName(), xCenter, yCenter, xMin, xMax, yMin, yMax, plateScale))
-
                 detector = GalSimDetector(name=dd.getName(), xCenter=xCenter, yCenter=yCenter,
                                           xMin=xMin, yMin=yMin, xMax=xMax, yMax=yMax,
                                           plateScale=plateScale)
@@ -438,9 +449,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                        bandpassFiles=bandpassFiles, gain=self.gain)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
-
-
-        InstanceCatalog.write_header(self, file_handle)
 
     def write_catalog(self, *args, **kwargs):
         """
