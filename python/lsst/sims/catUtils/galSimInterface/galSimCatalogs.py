@@ -319,23 +319,14 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 self.objectHasBeenDrawn.append(name)
 
-                #finds all of the detectors on which the object is likely to shed light
-                detectorsString, detectorsList = self.galSimInterpreter.findAllDetectors(galSimType=self.galsim_type,
-                                                                             sindex=sn, minorAxis=minor,
-                                                                             majorAxis=major, positionAngle=pa,
-                                                                             halfLightRadius=hlr,
-                                                                             x_pupil=xp, y_pupil=yp)
-                output.append(detectorsString)
-
                 #actually draw the object
-                self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=detectorsList,
+                detectorsString = self.galSimInterpreter.drawObject(galSimType=self.galsim_type,
                                                   sindex=sn, minorAxis=minor,
                                                   majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                                   x_pupil=xp, y_pupil=yp, sed=ss)
 
-                #print 'drew ',name,len(detectorsList),' times'
-                self.totalDrawings += len(detectorsList)
-                self.totalObjects += 1
+                output.append(detectorsString)
+
         return numpy.array(output)
 
     def _getBandPasses(self):

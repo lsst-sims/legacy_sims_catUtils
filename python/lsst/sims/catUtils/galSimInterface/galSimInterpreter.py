@@ -187,28 +187,35 @@ class GalSimInterpreter(object):
 
         outputString = ''
         outputList = []
+        centeredObjDict = {}
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
         centeredObj = None
         testScale = 0.1
-        spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
-                              flux_type='flambda')
 
         for bandPassName in self.bandPasses:
-            goOn = False
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
+                centeredObj = self.createCenteredObject(galSimType=galSimType,
+                                                        xPupil=x_pupil, yPupil=y_pupil,
+                                                        bandPassName=bandPassName,
+                                                        sindex=sindex, halfLightRadius=halfLightRadius,
+                                                        positionAngle=positionAngle,
+                                                        minorAxis=minorAxis, majorAxis=majorAxis)
+            centeredObjDict[bandPassName] = centeredObj
+
+        nTests = 0
+        for bandPassName in self.bandPasses:
+            goOn = False
+            if nTests==0 or (self.PSF is not None and self.PSF.wavelength_dependent):
                 for dd in self.detectors:
                     if dd not in outputList:
                         goOn = True
                         break
-
+            
+            nTests += 1
             if goOn:
-                centeredObj = self.createCenteredObject(galSimType=galSimType,
-                                                        xPupil=x_pupil, yPupil=y_pupil, bandPassName=bandPassName,
-                                                        sindex=sindex, halfLightRadius=halfLightRadius,
-                                                        positionAngle=positionAngle, minorAxis=minorAxis,
-                                                        majorAxis=majorAxis)
-                
+                centeredObj = centeredObjDict[bandPassName]
+
                 if centeredObj is None:
                     return
 
@@ -280,7 +287,7 @@ class GalSimInterpreter(object):
         if outputString == '':
             outputString = None
 
-        return outputString, outputList
+        return outputString, outputList, centeredObjDict
 
     def blankImage(self, detector=None):
         """
@@ -325,9 +332,15 @@ class GalSimInterpreter(object):
         @param [in] sindex is the sersic index of the object
         """
 
+        outputString, detectorList, centeredObjDict = self.findAllDetectors(galSimType=galSimType,
+                                                                          x_pupil=x_pupil, y_pupil=y_pupil,
+                                                                          halfLightRadius=halfLightRadius,
+                                                                          minorAxis=minorAxis, majorAxis=majorAxis,
+                                                                          positionAngle=positionAngle, sindex=sindex)
+
         if sed is None or len(detectorList) == 0:
             #there is nothing to draw
-            return
+            return outputString
 
         #go through the list of detector/bandpass combinations and initialize
         #all of the FITS files we will need (if they have not already been initialized)
@@ -337,7 +350,6 @@ class GalSimInterpreter(object):
                 if name not in self.detectorImages:
                     self.detectorImages[name] = self.blankImage(detector=detector)
 
-        centeredObj = None
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
         hlr = radiansToArcsec(halfLightRadius)
@@ -348,14 +360,9 @@ class GalSimInterpreter(object):
 
             #create a new object if one has not already been created or if the PSF is wavelength
             #dependent (in which case, each filter is going to need its own initialized object)
-            if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
-                centeredObj = self.createCenteredObject(galSimType=galSimType,
-                                                        xPupil=x_pupil, yPupil=y_pupil, bandPassName=bandPassName,
-                                                        sindex=sindex, halfLightRadius=halfLightRadius,
-                                                        positionAngle=positionAngle,
-                                                        minorAxis=minorAxis, majorAxis=majorAxis)
-                if centeredObj is None:
-                    return
+            centeredObj = centeredObjDict[bandPassName]
+            if centeredObj is None:
+                return outputString
 
             for detector in detectorList:
 
@@ -372,6 +379,8 @@ class GalSimInterpreter(object):
                                            method='phot', gain=self.gain, image=localImage)
 
                 self.detectorImages[name] += localImage
+
+        return outputString
 
     def drawPointSource(self, x_pupil=None, y_pupil=None, bandpass=None):
         """
