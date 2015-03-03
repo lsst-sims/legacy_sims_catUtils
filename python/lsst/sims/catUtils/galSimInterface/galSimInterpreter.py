@@ -465,3 +465,8 @@ class GalSimInterpreter(object):
             else:
                 fileName = name
             self.detectorImages[name].write(file_name=fileName)
+            total = 0.0
+            for ix in range(self.detectorImages[name].getXMax()):
+                for iy in range(self.detectorImages[name].getYMax()):
+                    total += self.detectorImages[name](ix+1,iy+1)
+            print name,': ',total

@@ -331,7 +331,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                                                   majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
                                                   x_pupil=xp, y_pupil=yp, sed=ss)
 
-                print 'drew ',name,len(detectorsList),' times'
+                #print 'drew ',name,len(detectorsList),' times'
                 self.totalDrawings += len(detectorsList)
                 self.totalObjects += 1
         return numpy.array(output)
