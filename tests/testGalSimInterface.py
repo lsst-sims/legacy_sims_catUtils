@@ -157,8 +157,16 @@ class GalSimInterfaceTest(unittest.TestCase):
                     galacticAv = float(gg[15])
                     galacticRv = float(gg[16])
                     listOfFileNames = gg[17].split('//')
+                    alreadyWritten = []
 
                     for name in listOfFileNames:
+
+                        #guard against objects being written on one
+                        #chip more than once
+                        msg = '%s was written on %s more than once' % (sedName, name)
+                        self.assertTrue(name not in alreadyWritten, msg=msg)
+                        alreadyWritten.append(name)
+
                         #loop over all of the detectors on which an object fell
                         #(this is not a terribly great idea, since our conservative implementation
                         #of GalSimInterpreter._doesObjectImpingeOnDetector means that some detectors
