@@ -76,17 +76,17 @@ class GalSimInterpreter(object):
     into FITS images.
     """
 
-    def __init__(self, detectors=None, bandPassNames=None, bandPassFiles=None,
+    def __init__(self, detectors=None, bandpassNames=None, bandpassFiles=None,
                  gain=2.3):
 
         """
         @param [in] detectors is a list of GalSimDetectors for which we are drawing FITS images
 
-        @param [in] bandPassNames is a list of the form ['u', 'g', 'r', 'i', 'z', 'y'] denoting
+        @param [in] bandpassNames is a list of the form ['u', 'g', 'r', 'i', 'z', 'y'] denoting
         the bandpasses for which we are drawing FITS images.
 
-        @param [in] bandPassFiles is a list of paths to the bandpass data files corresponding to
-        bandPassNames
+        @param [in] bandpassFiles is a list of paths to the bandpass data files corresponding to
+        bandpassNames
 
         @param gain is the number of photons per ADU for our detectors.  Note: this requires all
         detectors to have the same gain.  Maybe that is inappropriate...
@@ -101,24 +101,24 @@ class GalSimInterpreter(object):
         self.detectors = detectors
 
         self.detectorImages = {} #this dict will contain the FITS images (as GalSim images)
-        self.bandPasses = {} #this dict will contain the GalSim bandpass instantiations corresponding to the input bandpasses
+        self.bandpasses = {} #this dict will contain the GalSim bandpass instantiations corresponding to the input bandpasses
 
-        self.setBandPasses(bandPassNames=bandPassNames, bandPassFiles=bandPassFiles)
+        self.setBandpasses(bandpassNames=bandpassNames, bandpassFiles=bandpassFiles)
 
-    def setBandPasses(self, bandPassNames=None, bandPassFiles=None):
+    def setBandpasses(self, bandpassNames=None, bandpassFiles=None):
         """
         Read in files containing bandpass data and store them in a dict of GalSim bandpass instantiations.
 
-        @param [in] bandPassNames is a list of the names by which the bandpasses are to be referred
+        @param [in] bandpassNames is a list of the names by which the bandpasses are to be referred
         i.e. ['u', 'g', 'r', 'i', 'z', 'y']
 
-        @param [in] bandPassFiles is a list of paths to the files containing data for the bandpasses
+        @param [in] bandpassFiles is a list of paths to the files containing data for the bandpasses
 
-        The bandpasses will be stored in the member variable self.bandPasses, which is a dict
+        The bandpasses will be stored in the member variable self.bandpasses, which is a dict
         """
-        for bpn, bpf in zip(bandPassNames, bandPassFiles):
+        for bpn, bpf in zip(bandpassNames, bandpassFiles):
             bp = galsim.Bandpass(bpf)
-            self.bandPasses[bpn] = bp
+            self.bandpasses[bpn] = bp
 
     def setPSF(self, PSF=None):
         """
@@ -128,17 +128,17 @@ class GalSimInterpreter(object):
         """
         self.PSF=PSF
 
-    def _getFileName(self, detector=None, bandPassName=None):
+    def _getFileName(self, detector=None, bandpassName=None):
         """
         Given a detector and a bandpass name, return the name of the FITS file to be written
 
         @param [in] detector is an instantiation of GalSimDetector
 
-        @param [in] bandPassName is a string i.e. 'u' denoting the filter being drawn
+        @param [in] bandpassName is a string i.e. 'u' denoting the filter being drawn
 
-        The resulting filename will be detectorName_bandPassName.fits
+        The resulting filename will be detectorName_bandpassName.fits
         """
-        return detector.fileName+'_'+bandPassName+'.fits'
+        return detector.fileName+'_'+bandpassName+'.fits'
 
 
     def _doesObjectImpingeOnDetector(self, xPupil=None, yPupil=None, detector=None, imgScale=None, nonZeroPixels=None):
@@ -193,18 +193,18 @@ class GalSimInterpreter(object):
         centeredObj = None
         testScale = 0.1
 
-        for bandPassName in self.bandPasses:
+        for bandpassName in self.bandpasses:
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
                 centeredObj = self.createCenteredObject(galSimType=galSimType,
                                                         xPupil=x_pupil, yPupil=y_pupil,
-                                                        bandPassName=bandPassName,
+                                                        bandpassName=bandpassName,
                                                         sindex=sindex, halfLightRadius=halfLightRadius,
                                                         positionAngle=positionAngle,
                                                         minorAxis=minorAxis, majorAxis=majorAxis)
-            centeredObjDict[bandPassName] = centeredObj
+            centeredObjDict[bandpassName] = centeredObj
 
         nTests = 0
-        for bandPassName in self.bandPasses:
+        for bandpassName in self.bandpasses:
             goOn = False
             if nTests==0 or (self.PSF is not None and self.PSF.wavelength_dependent):
                 for dd in self.detectors:
@@ -214,7 +214,7 @@ class GalSimInterpreter(object):
             
             nTests += 1
             if goOn:
-                centeredObj = centeredObjDict[bandPassName]
+                centeredObj = centeredObjDict[bandpassName]
 
                 if centeredObj is None:
                     return
@@ -345,8 +345,8 @@ class GalSimInterpreter(object):
         #go through the list of detector/bandpass combinations and initialize
         #all of the FITS files we will need (if they have not already been initialized)
         for detector in detectorList:
-            for bandPassName in self.bandPasses:
-                name = self._getFileName(detector=detector, bandPassName=bandPassName)
+            for bandpassName in self.bandpasses:
+                name = self._getFileName(detector=detector, bandpassName=bandpassName)
                 if name not in self.detectorImages:
                     self.detectorImages[name] = self.blankImage(detector=detector)
 
@@ -356,17 +356,17 @@ class GalSimInterpreter(object):
         spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
                               flux_type='flambda')
 
-        for bandPassName in self.bandPasses:
+        for bandpassName in self.bandpasses:
 
             #create a new object if one has not already been created or if the PSF is wavelength
             #dependent (in which case, each filter is going to need its own initialized object)
-            centeredObj = centeredObjDict[bandPassName]
+            centeredObj = centeredObjDict[bandpassName]
             if centeredObj is None:
                 return outputString
 
             for detector in detectorList:
 
-                name = self._getFileName(detector=detector, bandPassName=bandPassName)
+                name = self._getFileName(detector=detector, bandpassName=bandpassName)
 
                 dx = xp - detector.xCenter
                 dy = yp - detector.yCenter
@@ -375,7 +375,7 @@ class GalSimInterpreter(object):
                 #convolve the object's shape profile with the spectrum
                 obj = obj*spectrum
                 localImage = self.blankImage(detector=detector)
-                localImage = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
+                localImage = obj.drawImage(bandpass=self.bandpasses[bandpassName], scale=detector.plateScale,
                                            method='phot', gain=self.gain, image=localImage)
 
                 self.detectorImages[name] += localImage
@@ -433,7 +433,7 @@ class GalSimInterpreter(object):
 
         return centeredObj
 
-    def createCenteredObject(self, galSimType=None, xPupil=None, yPupil=None, bandPassName=None, sindex=None,
+    def createCenteredObject(self, galSimType=None, xPupil=None, yPupil=None, bandpassName=None, sindex=None,
                              halfLightRadius=None, positionAngle=None, minorAxis=None, majorAxis=None):
 
         xp = radiansToArcsec(xPupil)
@@ -441,13 +441,13 @@ class GalSimInterpreter(object):
         hlr = radiansToArcsec(halfLightRadius)
         if galSimType == 'sersic':
             centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
-                                          bandpass=self.bandPasses[bandPassName],
+                                          bandpass=self.bandpasses[bandpassName],
                                           sindex=sindex, halfLightRadius=hlr,
                                           positionAngle=positionAngle,
                                           minorAxis=minorAxis, majorAxis=majorAxis)
         elif galSimType == 'pointSource':
             centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
-                                               bandpass=self.bandPasses[bandPassName])
+                                               bandpass=self.bandpasses[bandpassName])
         else:
             print "Apologies: the GalSimInterpreter does not yet have a method to draw "
             print objectParams['galSimType']
@@ -471,8 +471,8 @@ class GalSimInterpreter(object):
         """
 
         for detector in self.detectors:
-            for bandPassName in self.bandPasses:
-                name = self._getFileName(detector=detector, bandPassName=bandPassName)
+            for bandpassName in self.bandpasses:
+                name = self._getFileName(detector=detector, bandpassName=bandpassName)
                 if name in self.detectorImages:
                     noiseModel = noiseWrapper.getNoiseModel(obs_metadata=obs_metadata, detector=detector)
                     self.detectorImages[name].addNoise(noiseModel)

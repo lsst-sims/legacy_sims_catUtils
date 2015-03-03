@@ -18,7 +18,7 @@ from lsst.sims.catUtils.galSimInterface import ExampleOpticalPSF, GalSimStars, G
 
 class testGalSimStars(GalSimStars):
     #only draw images in the u and g band for speed
-    band_pass_names = ['u','g']
+    bandpass_names = ['u','g']
 
     #convolve with a PSF; note that galaxies are not convolved with a PSF
     #PSF defined in galSimInterface/galSimUtilities.py
@@ -31,7 +31,7 @@ class testGalSimStars(GalSimStars):
 
 
 class testGalSimGalaxies(GalSimGalaxies):
-    band_pass_names = ['u', 'g']
+    bandpass_names = ['u', 'g']
 
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here
@@ -41,7 +41,7 @@ class testGalSimGalaxies(GalSimGalaxies):
 
 
 class testGalSimAgn(GalSimAgn):
-    band_pass_names = ['u', 'g']
+    bandpass_names = ['u', 'g']
 
     #defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()

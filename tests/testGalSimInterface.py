@@ -179,9 +179,9 @@ class GalSimInterfaceTest(unittest.TestCase):
 
                             fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
 
-                            bandPassName=os.path.join(eups.productDir('throughputs'),'baseline',('total_'+filterName+'.dat'))
+                            bandpassName=os.path.join(eups.productDir('throughputs'),'baseline',('total_'+filterName+'.dat'))
                             bandpass = Bandpass()
-                            bandpass.readThroughput(bandPassName)
+                            bandpass.readThroughput(bandpassName)
                             controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpass,
                                                                         redshift=redshift, magNorm=magNorm,
                                                                         internalAv=internalAv, internalRv=internalRv,

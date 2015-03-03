@@ -73,13 +73,13 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     object (to allow a different kind of image profile, define a new method in the GalSimInterpreter
     class similar to drawPoinSource and drawSersic)
 
-    3) The variables band_pass_names (a list of the form ['u', 'g', 'r', 'i', 'z', 'y']),
-    band_pass_directory, and band_pass_root should be defined to tell the GalSim Instance Catalog
+    3) The variables bandpass_names (a list of the form ['u', 'g', 'r', 'i', 'z', 'y']),
+    bandpass_directory, and bandpass_root should be defined to tell the GalSim Instance Catalog
     where to find the files defining the bandpasses to be used for these FITS files.
     The GalSim Instance Catalog will look for bandpass files in files with the names
 
-    for bpn in band_pass_names:
-        name = self.band_pass_directory+'/'+self.band_pass_root+'_'+bpn+'.dat'
+    for bpn in bandpass_names:
+        name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
 
     4) Telescope parameters such as exposure time, area, and gain are controled by the
     GalSim InstanceCatalog member variables exposure_time (in s), effective_area (in cm^2),
@@ -123,9 +123,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     delimiter = ';'
 
     #default variables telling the InstanceCatalog where to find bandpass data
-    band_pass_names = ['u','g','r','i','z','y']
-    band_pass_directory = eups.productDir('throughputs')
-    band_pass_root = 'baseline/total'
+    bandpass_names = ['u','g','r','i','z','y']
+    bandpass_directory = eups.productDir('throughputs')
+    bandpass_root = 'baseline/total'
 
     #This member variable will define a PSF to convolve with the sources.
     #See the classes PSFbase, ExampleGaussianPSF, and ExampleOpticalPSF in
@@ -329,19 +329,19 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         return numpy.array(output)
 
-    def _getBandPasses(self):
+    def _getBandpasses(self):
         """
         Create a list of paths to the files containing bandpass data.
 
-        returns the list of paths and the list self.band_pass_names (which are just
+        returns the list of paths and the list self.bandpass_names (which are just
         tags identifying each bandpass a la ['u', 'g', 'r', 'i', 'z', 'y'])
         """
-        bandPassFiles = []
-        for bpn in self.band_pass_names:
-            name = self.band_pass_directory+'/'+self.band_pass_root+'_'+bpn+'.dat'
-            bandPassFiles.append(name)
+        bandpassFiles = []
+        for bpn in self.bandpass_names:
+            name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
+            bandpassFiles.append(name)
 
-        return bandPassFiles, self.band_pass_names
+        return bandpassFiles, self.bandpass_names
 
     def copyGalSimInterpreter(self, otherCatalog):
         """
@@ -376,7 +376,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         ymin and ymax in arc seconds
         plateScale (arc seconds per pixel)
 
-        This method will also call _getBandPasses to construct the paths to
+        This method will also call _getBandpasses to construct the paths to
         the files containing the bandpass data and construct the GalSimInterpreter
         if it is still None
         """
@@ -432,10 +432,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 detectors.append(detector)
 
-            bandPassFiles, bandPassNames = self._getBandPasses()
+            bandpassFiles, bandpassNames = self._getBandpasses()
 
-            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
-                                                       bandPassFiles=bandPassFiles, gain=self.gain)
+            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassNames=bandpassNames,
+                                                       bandpassFiles=bandpassFiles, gain=self.gain)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 
