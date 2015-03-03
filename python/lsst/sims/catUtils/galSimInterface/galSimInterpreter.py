@@ -140,6 +140,7 @@ class GalSimInterpreter(object):
         """
         return detector.fileName+'_'+bandPassName+'.fits'
 
+
     def _doesObjectImpingeOnDetector(self, xPupil=None, yPupil=None, detector=None, imgScale=None, nonZeroPixels=None):
         """
         Compare an object to a detector and determine whether or not that object will cast any
@@ -186,11 +187,10 @@ class GalSimInterpreter(object):
 
         outputString = ''
         outputList = []
-        centeredObj = None
-        testScale = 0.1
         xp = radiansToArcsec(x_pupil)
         yp = radiansToArcsec(y_pupil)
-        hlr = radiansToArcsec(halfLightRadius)
+        centeredObj = None
+        testScale = 0.1
         spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
                               flux_type='flambda')
 
@@ -199,19 +199,13 @@ class GalSimInterpreter(object):
             #create a new object if one has not already been created or if the PSF is wavelength
             #dependent (in which case, each filter is going to need its own initialized object)
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
-                if galSimType == 'sersic':
-                    centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
-                                                  bandpass=self.bandPasses[bandPassName],
-                                                  sindex=sindex, halfLightRadius=hlr,
-                                                  positionAngle=positionAngle,
-                                                  minorAxis=minorAxis, majorAxis=majorAxis)
-                elif galSimType == 'pointSource':
-                    centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
-                                                       bandpass=self.bandPasses[bandPassName])
-                else:
-                    print "Apologies: the GalSimInterpreter does not yet have a method to draw "
-                    print objectParams['galSimType']
-                    print " objects\n"
+                centeredObj = self.createCenteredObject(galSimType=galSimType,
+                                                     xPupil=x_pupil, yPupil=y_pupil, bandPassName=bandPassName,
+                                                     sindex=sindex, halfLightRadius=halfLightRadius,
+                                                     positionAngle=positionAngle, minorAxis=minorAxis,
+                                                     majorAxis=majorAxis)
+                
+                if centeredObj is None:
                     return
 
             centeredImage = centeredObj.drawImage(scale=testScale, method='phot', n_photons=1000)
@@ -351,19 +345,12 @@ class GalSimInterpreter(object):
             #create a new object if one has not already been created or if the PSF is wavelength
             #dependent (in which case, each filter is going to need its own initialized object)
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
-                if galSimType == 'sersic':
-                    centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
-                                                  bandpass=self.bandPasses[bandPassName],
-                                                  sindex=sindex, halfLightRadius=hlr,
-                                                  positionAngle=positionAngle,
-                                                  minorAxis=minorAxis, majorAxis=majorAxis)
-                elif galSimType == 'pointSource':
-                    centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
-                                                       bandpass=self.bandPasses[bandPassName])
-                else:
-                    print "Apologies: the GalSimInterpreter does not yet have a method to draw "
-                    print objectParams['galSimType']
-                    print " objects\n"
+                centeredObj = self.createCenteredObject(galSimType=galSimType,
+                                                        xPupil=x_pupil, yPupil=y_pupil, bandPassName=bandPassName,
+                                                        sindex=sindex, halfLightRadius=halfLightRadius,
+                                                        positionAngle=positionAngle,
+                                                        minorAxis=minorAxis, majorAxis=majorAxis)
+                if centeredObj is None:
                     return
 
             for detector in detectorList:
@@ -432,6 +419,32 @@ class GalSimInterpreter(object):
                                             bandpass=bandpass)
 
         return centeredObj
+
+    def createCenteredObject(self, galSimType=None, xPupil=None, yPupil=None, bandPassName=None, sindex=None,
+                             halfLightRadius=None, positionAngle=None, minorAxis=None, majorAxis=None):
+
+        xp = radiansToArcsec(xPupil)
+        yp = radiansToArcsec(yPupil)
+        hlr = radiansToArcsec(halfLightRadius)
+        if galSimType == 'sersic':
+            centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
+                                          bandpass=self.bandPasses[bandPassName],
+                                          sindex=sindex, halfLightRadius=hlr,
+                                          positionAngle=positionAngle,
+                                          minorAxis=minorAxis, majorAxis=majorAxis)
+        elif galSimType == 'pointSource':
+            centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
+                                               bandpass=self.bandPasses[bandPassName])
+        else:
+            print "Apologies: the GalSimInterpreter does not yet have a method to draw "
+            print objectParams['galSimType']
+            print " objects\n"
+            centeredObj = None
+
+        return centeredObj
+
+
+
 
     def addNoise(self, noiseWrapper=None, obs_metadata=None):
         """
