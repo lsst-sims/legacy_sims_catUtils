@@ -94,7 +94,6 @@ class GalSimInterpreter(object):
 
         self.PSF = None
         self.gain = gain
-        self.localFluxes = []
 
         if detectors is None:
             raise RuntimeError("Will not create images; you passed no detectors to the GalSimInterpreter")
@@ -380,9 +379,7 @@ class GalSimInterpreter(object):
                 localImage = self.blankImage(detector=detector)
                 localImage = obj.drawImage(bandpass=self.bandPasses[bandPassName], scale=detector.plateScale,
                                            method='phot', gain=self.gain, image=localImage)
-                
-                self.localFluxes.append(localImage.array.sum())
-                
+
                 self.detectorImages[name] += localImage
 
     def drawPointSource(self, x_pupil=None, y_pupil=None, bandpass=None):
@@ -477,7 +474,3 @@ class GalSimInterpreter(object):
                 for iy in range(self.detectorImages[name].getYMax()):
                     total += self.detectorImages[name](ix+1,iy+1)
             print name,': ',total
-
-        self.localFluxes.sort()
-        for f in self.localFluxes:
-            print f
