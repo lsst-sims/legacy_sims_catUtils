@@ -195,57 +195,31 @@ class GalSimInterpreter(object):
                               flux_type='flambda')
 
         for bandPassName in self.bandPasses:
-
-            #create a new object if one has not already been created or if the PSF is wavelength
-            #dependent (in which case, each filter is going to need its own initialized object)
+            goOn = False
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
+                for dd in self.detectors:
+                    if dd not in outputList:
+                        goOn = True
+                        break
+
+            if goOn:
                 centeredObj = self.createCenteredObject(galSimType=galSimType,
-                                                     xPupil=x_pupil, yPupil=y_pupil, bandPassName=bandPassName,
-                                                     sindex=sindex, halfLightRadius=halfLightRadius,
-                                                     positionAngle=positionAngle, minorAxis=minorAxis,
-                                                     majorAxis=majorAxis)
+                                                        xPupil=x_pupil, yPupil=y_pupil, bandPassName=bandPassName,
+                                                        sindex=sindex, halfLightRadius=halfLightRadius,
+                                                        positionAngle=positionAngle, minorAxis=minorAxis,
+                                                        majorAxis=majorAxis)
                 
                 if centeredObj is None:
                     return
 
-            centeredImage = centeredObj.drawImage(scale=testScale, method='phot', n_photons=1000)
-            xmax = testScale * (centeredImage.getXMax()/2) + xp
-            xmin = testScale * (-1*centeredImage.getXMax()/2) + xp
-            ymax = testScale * (centeredImage.getYMax()/2) + yp
-            ymin = testScale *(-1*centeredImage.getYMin()/2) + yp
+                centeredImage = centeredObj.drawImage(scale=testScale, method='phot', n_photons=1000)
+                xmax = testScale * (centeredImage.getXMax()/2) + xp
+                xmin = testScale * (-1*centeredImage.getXMax()/2) + xp
+                ymax = testScale * (centeredImage.getYMax()/2) + yp
+                ymin = testScale *(-1*centeredImage.getYMin()/2) + yp
             
-            viableDetectors = []
-            for dd in self.detectors:
-                xOverLaps = False
-                if xmax > dd.xMin and xmax < dd.xMax:
-                    xOverLaps = True
-                elif xmin > dd.xMin and xmin < dd.xMax:
-                    xOverLaps = True
-                elif xmin < dd.xMin and xmax > dd.xMax:
-                    xOverLaps = True
-                
-                yOverLaps = False
-                if ymax > dd.yMin and ymax < dd.yMax:
-                    yOverLaps = True
-                elif ymin > dd.yMin and ymin < dd.yMax:
-                    yOverLaps = True
-                elif ymin < dd.yMin and ymax > dd.yMax:
-                    yOverLaps = True
-                
-                if xOverLaps and yOverLaps and dd not in outputList:
-                    viableDetectors.append(dd)
-
-            
-            if len(viableDetectors)>0:
-                maxPixel = centeredImage(centeredImage.getXMax()/2, centeredImage.getYMax()/2)
-                activePixels = numpy.where(centeredImage.array>maxPixel*0.001)
-            
-                xmin = testScale * (activePixels[0].min() - centeredImage.getXMax()/2) + xp
-                xmax = testScale * (activePixels[0].max() - centeredImage.getXMax()/2) + xp
-                ymin = testScale * (activePixels[1].min() - centeredImage.getYMax()/2) + yp
-                ymax = testScale * (activePixels[1].max() - centeredImage.getYMax()/2) + yp
-            
-                for dd in viableDetectors:
+                viableDetectors = []
+                for dd in self.detectors:
                     xOverLaps = False
                     if xmax > dd.xMin and xmax < dd.xMax:
                         xOverLaps = True
@@ -262,16 +236,46 @@ class GalSimInterpreter(object):
                     elif ymin < dd.yMin and ymax > dd.yMax:
                         yOverLaps = True
                 
-                    if xOverLaps and yOverLaps:
-                        if self._doesObjectImpingeOnDetector(xPupil=xp - centeredImage.getXMax()*testScale/2.0,
-                                                 yPupil=yp - centeredImage.getYMax()*testScale/2.0,
-                                                 detector=dd, imgScale=centeredImage.scale,
-                                                 nonZeroPixels=activePixels):
+                    if xOverLaps and yOverLaps and dd not in outputList:
+                        viableDetectors.append(dd)
 
-                            if outputString != '':
-                                outputString += '//'
-                            outputString += dd.name
-                            outputList.append(dd)
+            
+                if len(viableDetectors)>0:
+                    maxPixel = centeredImage(centeredImage.getXMax()/2, centeredImage.getYMax()/2)
+                    activePixels = numpy.where(centeredImage.array>maxPixel*0.001)
+            
+                    xmin = testScale * (activePixels[0].min() - centeredImage.getXMax()/2) + xp
+                    xmax = testScale * (activePixels[0].max() - centeredImage.getXMax()/2) + xp
+                    ymin = testScale * (activePixels[1].min() - centeredImage.getYMax()/2) + yp
+                    ymax = testScale * (activePixels[1].max() - centeredImage.getYMax()/2) + yp
+            
+                    for dd in viableDetectors:
+                        xOverLaps = False
+                        if xmax > dd.xMin and xmax < dd.xMax:
+                            xOverLaps = True
+                        elif xmin > dd.xMin and xmin < dd.xMax:
+                            xOverLaps = True
+                        elif xmin < dd.xMin and xmax > dd.xMax:
+                            xOverLaps = True
+                
+                        yOverLaps = False
+                        if ymax > dd.yMin and ymax < dd.yMax:
+                            yOverLaps = True
+                        elif ymin > dd.yMin and ymin < dd.yMax:
+                            yOverLaps = True
+                        elif ymin < dd.yMin and ymax > dd.yMax:
+                            yOverLaps = True
+                
+                        if xOverLaps and yOverLaps:
+                            if self._doesObjectImpingeOnDetector(xPupil=xp - centeredImage.getXMax()*testScale/2.0,
+                                                                 yPupil=yp - centeredImage.getYMax()*testScale/2.0,
+                                                                 detector=dd, imgScale=centeredImage.scale,
+                                                                 nonZeroPixels=activePixels):
+
+                                if outputString != '':
+                                    outputString += '//'
+                                outputString += dd.name
+                                outputList.append(dd)
 
         if outputString == '':
             outputString = None
