@@ -15,8 +15,6 @@ from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testG
                                      testGalaxyAgnDBObj, testStarsDBObj
 import lsst.afw.image as afwImage
 
-from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyBulgeObj
-
 class testGalaxyCatalog(GalSimGalaxies):
     """
     Wraps the GalSimGalaxies class.  Adds columns to the output
@@ -201,8 +199,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of galaxy bulges
         """
         catName = 'testBulgeCat.sav'
-        #gals = testGalaxyBulgeDBObj(address=self.connectionString)
-        gals = GalaxyBulgeObj()
+        gals = testGalaxyBulgeDBObj(address=self.connectionString)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
@@ -226,8 +223,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of stars
         """
         catName = 'testStarCat.sav'
-        #stars = testStarsDBObj(address=self.connectionString)
-        stars = StarObj()
+        stars = testStarsDBObj(address=self.connectionString)
         cat = testStarCatalog(stars, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
