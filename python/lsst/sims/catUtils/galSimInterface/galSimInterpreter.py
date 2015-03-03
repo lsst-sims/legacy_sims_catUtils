@@ -239,7 +239,7 @@ class GalSimInterpreter(object):
                 elif ymin < dd.yMin and ymax > dd.yMax:
                     yOverLaps = True
                 
-                if xOverLaps and yOverLaps:
+                if xOverLaps and yOverLaps and dd not in outputList:
                     viableDetectors.append(dd)
 
             
@@ -271,9 +271,9 @@ class GalSimInterpreter(object):
                 
                     if xOverLaps and yOverLaps:
                         if self._doesObjectImpingeOnDetector(xPupil=xp - centeredImage.getXMax()*testScale/2.0,
-                                                     yPupil=yp - centeredImage.getYMax()*testScale/2.0,
-                                                     detector=dd, imgScale=centeredImage.scale,
-                                                     nonZeroPixels=activePixels):
+                                                 yPupil=yp - centeredImage.getYMax()*testScale/2.0,
+                                                 detector=dd, imgScale=centeredImage.scale,
+                                                 nonZeroPixels=activePixels):
 
                             if outputString != '':
                                 outputString += '//'
