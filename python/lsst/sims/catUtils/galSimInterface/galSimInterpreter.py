@@ -489,14 +489,14 @@ class GalSimInterpreter(object):
         myImages_R_0_0_S_1_1_y.fits is an example of an image for an LSST-like camera with
         nameRoot = 'myImages'
         """
+        namesWritten = []
         for name in self.detectorImages:
             if nameRoot is not None:
                 fileName = nameRoot+'_'+name
             else:
                 fileName = name
             self.detectorImages[name].write(file_name=fileName)
-            total = 0.0
-            for ix in range(self.detectorImages[name].getXMax()):
-                for iy in range(self.detectorImages[name].getYMax()):
-                    total += self.detectorImages[name](ix+1,iy+1)
-            print name,': ',total
+            namesWritten.append(fileName)
+
+        return namesWritten
+            

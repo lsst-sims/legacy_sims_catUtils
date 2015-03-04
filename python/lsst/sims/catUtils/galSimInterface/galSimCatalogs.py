@@ -472,7 +472,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         (e.g. myImages_R_0_0_S_1_1_y.fits for an LSST-like camera with
         nameRoot = 'myImages')
         """
-        self.galSimInterpreter.writeImages(nameRoot=nameRoot)
+        namesWritten = self.galSimInterpreter.writeImages(nameRoot=nameRoot)
+        return namesWritten
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """
