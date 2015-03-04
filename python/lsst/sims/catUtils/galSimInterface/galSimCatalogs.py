@@ -323,7 +323,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                 detectorsString = self.galSimInterpreter.drawObject(galSimType=self.galsim_type,
                                                   sindex=sn, minorAxis=minor,
                                                   majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
-                                                  x_pupil=xp, y_pupil=yp, sed=ss)
+                                                  xPupil=xp, yPupil=yp, sed=ss)
 
                 output.append(detectorsString)
 

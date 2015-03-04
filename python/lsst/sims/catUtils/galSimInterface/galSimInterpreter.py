@@ -181,22 +181,22 @@ class GalSimInterpreter(object):
 
         return False
 
-    def findAllDetectors(self, galSimType=None, x_pupil=None,
-                   y_pupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
+    def findAllDetectors(self, galSimType=None, xPupil=None,
+                   yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
                    positionAngle=None, sindex=None):
 
         outputString = ''
         outputList = []
         centeredObjDict = {}
-        xp = radiansToArcsec(x_pupil)
-        yp = radiansToArcsec(y_pupil)
+        xp = radiansToArcsec(xPupil)
+        yp = radiansToArcsec(yPupil)
         centeredObj = None
         testScale = 0.1
 
         for bandpassName in self.bandpasses:
             if centeredObj is None or (self.PSF is not None and self.PSF.wavelength_dependent):
                 centeredObj = self.createCenteredObject(galSimType=galSimType,
-                                                        xPupil=x_pupil, yPupil=y_pupil,
+                                                        xPupil=xPupil, yPupil=yPupil,
                                                         bandpassName=bandpassName,
                                                         sindex=sindex, halfLightRadius=halfLightRadius,
                                                         positionAngle=positionAngle,
@@ -304,8 +304,8 @@ class GalSimInterpreter(object):
 
         return image
 
-    def drawObject(self, galSimType=None, detectorList=None, sed=None, x_pupil=None,
-                   y_pupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
+    def drawObject(self, galSimType=None, detectorList=None, sed=None, xPupil=None,
+                   yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
                    positionAngle=None, sindex=None):
         """
         Draw an object on all of the relevant FITS files.
@@ -317,9 +317,9 @@ class GalSimInterpreter(object):
         @param [in] sed is the SED of the object (an instantiation of the Sed class defined in
         sims_photUtils/../../Sed.py
 
-        @param [in] x_pupil is the x pupil coordinate of the object in radians
+        @param [in] xPupil is the x pupil coordinate of the object in radians
 
-        @param [in] y_pupil is the y pupil coordinate of the object in radians
+        @param [in] yPupil is the y pupil coordinate of the object in radians
 
         @param [in] halfLightRadius is the halfLightRadius of the object in radians
 
@@ -333,7 +333,7 @@ class GalSimInterpreter(object):
         """
 
         outputString, detectorList, centeredObjDict = self.findAllDetectors(galSimType=galSimType,
-                                                                          x_pupil=x_pupil, y_pupil=y_pupil,
+                                                                          xPupil=xPupil, yPupil=yPupil,
                                                                           halfLightRadius=halfLightRadius,
                                                                           minorAxis=minorAxis, majorAxis=majorAxis,
                                                                           positionAngle=positionAngle, sindex=sindex)
@@ -350,8 +350,8 @@ class GalSimInterpreter(object):
                 if name not in self.detectorImages:
                     self.detectorImages[name] = self.blankImage(detector=detector)
 
-        xp = radiansToArcsec(x_pupil)
-        yp = radiansToArcsec(y_pupil)
+        xp = radiansToArcsec(xPupil)
+        yp = radiansToArcsec(yPupil)
         hlr = radiansToArcsec(halfLightRadius)
         spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
                               flux_type='flambda')
@@ -382,13 +382,13 @@ class GalSimInterpreter(object):
 
         return outputString
 
-    def drawPointSource(self, x_pupil=None, y_pupil=None, bandpass=None):
+    def drawPointSource(self, xPupil=None, yPupil=None, bandpass=None):
         """
         Draw an image of a point source.
 
-        @param [in] x_pupil is the x pupil coordinate of the object in arc seconds
+        @param [in] xPupil is the x pupil coordinate of the object in arc seconds
 
-        @param [in] y_pupil is the y pupil coordinate of the objec tin arc seconds
+        @param [in] yPupil is the y pupil coordinate of the objec tin arc seconds
 
         @param [in] bandpass is an instantiation of the galsim.Bandpass class characterizing
         the bandpass over which we are integrating (in case the PSF is wavelength dependent)
@@ -397,16 +397,16 @@ class GalSimInterpreter(object):
         if self.PSF is None:
             raise RuntimeError("Cannot draw a point source in GalSim without a PSF")
 
-        return self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, bandpass=bandpass)
+        return self.PSF.applyPSF(xPupil=xPupil, yPupil=yPupil, bandpass=bandpass)
 
-    def drawSersic(self, x_pupil=None, y_pupil=None, sindex=None, minorAxis=None,
+    def drawSersic(self, xPupil=None, yPupil=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None, bandpass=None):
         """
         Draw the image of a Sersci profile.
 
-        @param [in] x_pupil is the x pupil coordinate of the object in arc seconds
+        @param [in] xPupil is the x pupil coordinate of the object in arc seconds
 
-        @param [in] y_pupil is the y pupil coordinate of the object in arc seconds
+        @param [in] yPupil is the y pupil coordinate of the object in arc seconds
 
         @param [in] sindex is the Sersic index of the object
 
@@ -428,7 +428,7 @@ class GalSimInterpreter(object):
         #turn the Sersic profile into an ellipse
         centeredObj = centeredObj.shear(q=minorAxis/majorAxis, beta=positionAngle*galsim.radians)
         if self.PSF is not None:
-            centeredObj = self.PSF.applyPSF(x_pupil=x_pupil, y_pupil=y_pupil, obj=centeredObj,
+            centeredObj = self.PSF.applyPSF(xPupil=xPupil, yPupil=yPupil, obj=centeredObj,
                                             bandpass=bandpass)
 
         return centeredObj
@@ -440,13 +440,13 @@ class GalSimInterpreter(object):
         yp = radiansToArcsec(yPupil)
         hlr = radiansToArcsec(halfLightRadius)
         if galSimType == 'sersic':
-            centeredObj = self.drawSersic(x_pupil=xp, y_pupil=yp,
+            centeredObj = self.drawSersic(xPupil=xp, yPupil=yp,
                                           bandpass=self.bandpasses[bandpassName],
                                           sindex=sindex, halfLightRadius=hlr,
                                           positionAngle=positionAngle,
                                           minorAxis=minorAxis, majorAxis=majorAxis)
         elif galSimType == 'pointSource':
-            centeredObj = self.drawPointSource(x_pupil=xp, y_pupil=yp,
+            centeredObj = self.drawPointSource(xPupil=xp, yPupil=yp,
                                                bandpass=self.bandpasses[bandpassName])
         else:
             print "Apologies: the GalSimInterpreter does not yet have a method to draw "

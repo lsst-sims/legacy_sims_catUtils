@@ -21,7 +21,7 @@ class PSFbase(object):
     1) a boolean member variable wavelength_dependent which tells the GalSimInterpreter whether or not
     it needs to worry about the PSF changing with wavelength
 
-    2) a member method _getPSF which accepts the coordinates x_pupil and y_pupil in arcseconds as kwargs
+    2) a member method _getPSF which accepts the coordinates xPupil and yPupil in arcseconds as kwargs
     and (optionally) the kwarg bandpass, which is a galsim bandpass object.  This method will instantiate
     a psf object at those coordinates (and, if relevant, the effective wavelength) of the bandpass, and return
     it.
@@ -38,16 +38,16 @@ class PSFbase(object):
 
     wavelength_dependent = False
 
-    def _getPSF(self, x_pupil=None, y_pupil=None, bandpass=None):
+    def _getPSF(self, xPupil=None, yPupil=None, bandpass=None):
         """
         If it had been implemented, this would return a GalSim PSF instantiation at the
         coordinates and wavelength specified and returned it to applyPSF.  As it is, this
         class has not been implemented and is left to the user to implement in Daughter
         classes of PSFbase.
 
-        @param [in] x_pupil the x coordinate on the pupil in arc seconds
+        @param [in] xPupil the x coordinate on the pupil in arc seconds
 
-        @param [in] y_pupil the y coordinate on the pupil in arc seconds
+        @param [in] yPupil the y coordinate on the pupil in arc seconds
 
         @param [in] bandpass is an instantiation of the GalSim bandpass class which contains
         data defining the bandpass in question (in case the PSF is wavelength dependent)
@@ -55,21 +55,21 @@ class PSFbase(object):
 
         raise NotImplementedError("There is not _getPSF for PSFbase; define a daughter class and define your own")
 
-    def applyPSF(self, x_pupil=None, y_pupil=None, obj=None, **kwargs):
+    def applyPSF(self, xPupil=None, yPupil=None, obj=None, **kwargs):
         """
         Apply the PSF to a GalSim GSObject
 
         This method accepts the x and y pupil coordinates in arc seconds as well
-        as a GalSim GSObject.  The method calculates the PSF parameters based on x_pupil
-        and y_pupil, constructs a Galsim GSObject corresponding to the PSF function, and convolves
+        as a GalSim GSObject.  The method calculates the PSF parameters based on xPupil
+        and yPupil, constructs a Galsim GSObject corresponding to the PSF function, and convolves
         the PSF with the GSObject, returning the result of the convolution.
 
         In the case of point sources, this object returns the raw PSF, rather than attempting
         a convolution (since there is nothing to convolve with).
 
-        @param [in] x_pupil the x pupil coordinate in arc seconds
+        @param [in] xPupil the x pupil coordinate in arc seconds
 
-        @param [in] y_pupil the y pupil coordinate in arc seconds
+        @param [in] yPupil the y pupil coordinate in arc seconds
 
         @param [in] obj is a GalSim GSObject (an astronomical object) with which
         to convolve the PSF (optional)
@@ -79,7 +79,7 @@ class PSFbase(object):
 
         #use the user-defined _getPSF method to calculate the PSF at these specific
         #coordinates and (optionally) wavelength
-        psf = self._getPSF(x_pupil=x_pupil, y_pupil=y_pupil, **kwargs)
+        psf = self._getPSF(xPupil=xPupil, yPupil=yPupil, **kwargs)
 
         if obj is not None:
             #if we are dealing with an extended object, convolve it with the psf
@@ -97,13 +97,13 @@ class ExampleGaussianPSF(PSFbase):
 
     wavelength_dependent = False
 
-    def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
+    def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
         """
         Return a Gaussian PSF to be convolved with sources.
 
-        @param [in] x_pupil the x coordinate on the pupil in arc seconds
+        @param [in] xPupil the x coordinate on the pupil in arc seconds
 
-        @param [in] y_pupil the y coordinate on the pupil in arc seconds
+        @param [in] yPupil the y coordinate on the pupil in arc seconds
 
         @param [in] bandpass is an instantiation of the GalSim bandpass class which contains
         data defining the bandpass in question (in case the PSF is wavelength dependent)
@@ -120,13 +120,13 @@ class ExampleOpticalPSF(PSFbase):
 
     wavelength_dependent = True
 
-    def _getPSF(self, x_pupil=None, y_pupil=None, **kwargs):
+    def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
         """
         Return an OpticalPSF to be convolved with sources.
 
-        @param [in] x_pupil the x coordinate on the pupil in arc seconds
+        @param [in] xPupil the x coordinate on the pupil in arc seconds
 
-        @param [in] y_pupil the y coordinate on the pupil in arc seconds
+        @param [in] yPupil the y coordinate on the pupil in arc seconds
 
         @param [in] bandpass is an instantiation of the GalSim bandpass class which contains
         data defining the bandpass in question (in case the PSF is wavelength dependent)

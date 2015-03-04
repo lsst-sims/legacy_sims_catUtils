@@ -385,7 +385,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             for bp in cat.galSimInterpreter.bandpasses:
                 bandpass = cat.galSimInterpreter.bandpasses[bp]
                 for detector in cat.galSimInterpreter.detectors:
-                    centeredObj = cat.galSimInterpreter.PSF.applyPSF(x_pupil=xPupil, y_pupil=yPupil, bandpass=bandpass)
+                    centeredObj = cat.galSimInterpreter.PSF.applyPSF(xPupil=xPupil, yPupil=yPupil, bandpass=bandpass)
                     dx = xPupil - detector.xCenter
                     dy = yPupil - detector.yCenter
                     obj = centeredObj.shift(dx, dy)
