@@ -21,6 +21,8 @@ class testGalaxyCatalog(GalSimGalaxies):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
+    bandpass_names = ['u', 'g', 'r']
+
     column_outputs = copy.deepcopy(GalSimGalaxies.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
@@ -37,6 +39,8 @@ class testStarCatalog(GalSimStars):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
+    bandpass_names = ['u', 'g', 'r']
+
     column_outputs = copy.deepcopy(GalSimStars.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
@@ -55,6 +59,8 @@ class testAgnCatalog(GalSimAgn):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
+    bandpass_names = ['u', 'g', 'r']
+
     column_outputs = copy.deepcopy(GalSimAgn.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
