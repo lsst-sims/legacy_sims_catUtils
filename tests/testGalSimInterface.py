@@ -346,9 +346,22 @@ class GalSimInterfaceTest(unittest.TestCase):
 
     def testPlacement(self):
         """
-        Test that GalSimInterpreter puts objects on the right detectors
+        Test that GalSimInterpreter puts objects on the right detectors.
+
+        Do so by creating a catalog of 10 closely-packed stars.  Draw test FITS
+        images of them using the GalSim Catalog infrastructure.  Draw control FITS
+        images of the detectors in the camera, paranoidly including every star
+        in every control image (GalSim contains code such that it will not
+        actually add flux to an image in cases where we try to include a
+        star that does not actually fall on a detector).  Compare that
+
+        a) the fluxes of the test and control images agree within some tolerance
+
+        b) the fluxes of control images that have no corresponding test image
+        (i.e. detectors on which no star actually fell) are effectively zero
         """
 
+        #generate the database
         numpy.random.seed(32)
         catSize = 10
         dbName = 'galSimPlacementTestDB.db'
@@ -361,9 +374,14 @@ class GalSimInterfaceTest(unittest.TestCase):
         connectionString = 'sqlite:///'+dbName
         catName = 'testPlacementCat.sav'
         stars = testStarsDBObj(address=connectionString)
+
+        #create the catalog
         cat = testStarCatalog(stars, obs_metadata = obs_metadata)
         results = cat.iter_catalog()
         firstLine = True
+
+        #iterate over the catalog, giving every star a chance to
+        #illumine every detector
         controlImages = {}
         for i, line in enumerate(results):
             galSimType = line[0]
@@ -398,13 +416,17 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         for name in controlImages:
             controlImages[name].write(file_name=name)
+
+        #write the test images using the catalog infrastructure
         testNames = cat.write_images(nameRoot='placementTest')
 
+        #make sure that every test image has a corresponding control image
         for testName in testNames:
             controlName = testName.replace('Test', 'Control')
             msg = '%s has no counterpart ' % testName
             self.assertTrue(controlName in controlImages, msg=msg)
 
+        #make sure that the test and control images agree to some tolerance
         ignored = 0
         zeroFlux = 0
         for controlName in controlImages:
@@ -441,8 +463,6 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         if os.path.exists(dbName):
             os.unlink(dbName)
-
-
 
 def suite():
     utilsTests.init()
