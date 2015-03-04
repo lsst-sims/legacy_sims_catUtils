@@ -164,7 +164,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     uniqueSeds = {} #a cache for un-normalized SED files, so that we do not waste time on I/O
 
-    catalogHasBeenWritten = False #has write_catalog() been called
     hasBeenInitialized = False
 
     galSimInterpreter = None #the GalSimInterpreter instantiation for this catalog
@@ -450,16 +449,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 
-    def write_catalog(self, *args, **kwargs):
-        """
-        Overwrites the InstanceCatalog write_catalog class.
-
-        simple calls InstanceCatalog.write_catalog() then sets self.catalogHasBeenWritten to True
-        so that write_images() knows that it is okay to write the images
-        """
-        InstanceCatalog.write_catalog(self, *args, **kwargs)
-        self.catalogHasBeenWritten = True
-
     def add_noise(self):
         """
         Adds the noise model stored in self.noise to the images stored
@@ -483,10 +472,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         (e.g. myImages_R_0_0_S_1_1_y.fits for an LSST-like camera with
         nameRoot = 'myImages')
         """
-        if self.catalogHasBeenWritten is False:
-            print "Cannot write GalSim images until you write the GalSim catalog"
-            return
-
         self.galSimInterpreter.writeImages(nameRoot=nameRoot)
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
