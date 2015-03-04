@@ -406,6 +406,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             self.assertTrue(controlName in controlImages, msg=msg)
 
         ignored = 0
+        zeroFlux = 0
         for controlName in controlImages:
             controlImage = afwImage.ImageF(controlName)
             controlFlux = controlImage.getArray().sum()
@@ -416,14 +417,19 @@ class GalSimInterfaceTest(unittest.TestCase):
                 testFlux = testImage.getArray().sum()
                 msg = '%s: controlFlux = %e, testFlux = %e' % (controlName, controlFlux, testFlux)
                 if controlFlux>1000.0:
+                    #the randomness of photon shooting means that faint images won't agree
                     self.assertTrue(numpy.abs(controlFlux/testFlux - 1.0)<0.1, msg=msg)
                 else:
                     ignored += 1
             else:
+                #make sure that controlImages that have no corresponding test image really do
+                #have zero flux (because no star fell on them)
+                zeroFlux += 1
                 msg = '%s has flux %e but was not written by catalog' % (controlName, controlFlux)
                 self.assertTrue(controlFlux<1.0, msg=msg)
 
         self.assertTrue(ignored<len(testNames)/2)
+        self.assertTrue(zeroFlux>0)
 
         for testName in testNames:
             if os.path.exists(testName):
