@@ -256,7 +256,6 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def testPSFimages(self):
         """
         Test that GalSimInterpreter puts the right number of counts on images of Galaxy bulges convolved
@@ -344,6 +343,91 @@ class GalSimInterfaceTest(unittest.TestCase):
             os.unlink(dbName2)
         if os.path.exists(catName):
             os.unlink(catName)
+
+    def testPlacement(self):
+        """
+        Test that GalSimInterpreter puts objects on the right detectors
+        """
+
+        numpy.random.seed(32)
+        catSize = 10
+        dbName = 'galSimPlacementTestDB.db'
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+
+        displacedRA = (-40.0 + numpy.random.sample(catSize)*(120.0))/3600.0
+        displacedDec = (-20.0 + numpy.random.sample(catSize)*(80.0))/3600.0
+        obs_metadata = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec)
+        connectionString = 'sqlite:///'+dbName
+        catName = 'testPlacementCat.sav'
+        stars = testStarsDBObj(address=connectionString)
+        cat = testStarCatalog(stars, obs_metadata = obs_metadata)
+        results = cat.iter_catalog()
+        firstLine = True
+        controlImages = {}
+        for i, line in enumerate(results):
+            galSimType = line[0]
+            xPupil = line[3]
+            yPupil = line[4]
+            majorAxis = line[6]
+            minorAxis = line[7]
+            sindex = line[8]
+            halfLightRadius = line[9]
+            positionAngle = line[10]
+            if firstLine:
+                sedList = cat._calculateGalSimSeds()
+                for detector in cat.galSimInterpreter.detectors:
+                    for bandpass in cat.galSimInterpreter.bandpasses:
+                        controlImages['placementControl_'+cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bandpass)] = cat.galSimInterpreter.blankImage(detector=detector)
+                firstLine = False
+
+            spectrum = galsim.SED(spec=lambda ll: numpy.interp(ll, sedList[i].wavelen, sedList[i].flambda), flux_type='flambda')
+            for bp in cat.galSimInterpreter.bandpasses:
+                bandpass = cat.galSimInterpreter.bandpasses[bp]
+                for detector in cat.galSimInterpreter.detectors:
+                    centeredObj = cat.galSimInterpreter.PSF.applyPSF(x_pupil=xPupil, y_pupil=yPupil, bandpass=bandpass)
+                    dx = xPupil - detector.xCenter
+                    dy = yPupil - detector.yCenter
+                    obj = centeredObj.shift(dx, dy)
+                    obj = obj*spectrum
+                    localImage = cat.galSimInterpreter.blankImage(detector=detector)
+                    localImage = obj.drawImage(bandpass=bandpass, scale=detector.plateScale, method='phot',
+                                               gain=cat.galSimInterpreter.gain, image=localImage)
+
+                    controlImages['placementControl_'+cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bp)] += localImage
+
+        for name in controlImages:
+            controlImages[name].write(file_name=name)
+        testNames = cat.write_images(nameRoot='placementTest')
+
+        for controlName in controlImages:
+            controlImage = afwImage.ImageF(controlName)
+            controlFlux = controlImage.getArray().sum()
+
+            testName = controlName.replace('Control', 'Test')
+            if testName in testNames:
+                testImage = afwImage.ImageF(testName)
+                testFlux = testImage.getArray().sum()
+                msg = '%s: controlFlux = %e, testFlux = %e' % (controlName, controlFlux, testFlux)
+                if controlFlux>1000.0:
+                    self.assertTrue(numpy.abs(controlFlux/testFlux - 1.0)<0.1, msg=msg)
+                else:
+                    self.assertTrue(numpy.abs(controlFlux-testFlux)<20.0, msg=msg)
+            else:
+                msg = '%s has flux %e but was not written by catalog' % (controlName, controlFlux)
+                self.assertTrue(controlFlux<1.0, msg=msg)
+
+        for testName in testNames:
+            if os.path.exists(testName):
+                os.unlink(testName)
+
+        for controlName in controlImages:
+            if os.path.exists(controlName):
+                os.unlink(controlName)
+
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+
 
 
 def suite():
