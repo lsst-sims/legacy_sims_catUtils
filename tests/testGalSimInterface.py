@@ -400,6 +400,12 @@ class GalSimInterfaceTest(unittest.TestCase):
             controlImages[name].write(file_name=name)
         testNames = cat.write_images(nameRoot='placementTest')
 
+        for testName in testNames:
+            controlName = testName.replace('Test', 'Control')
+            msg = '%s has no counterpart ' % testName
+            self.assertTrue(controlName in controlImages, msg=msg)
+
+        ignored = 0
         for controlName in controlImages:
             controlImage = afwImage.ImageF(controlName)
             controlFlux = controlImage.getArray().sum()
@@ -412,10 +418,12 @@ class GalSimInterfaceTest(unittest.TestCase):
                 if controlFlux>1000.0:
                     self.assertTrue(numpy.abs(controlFlux/testFlux - 1.0)<0.1, msg=msg)
                 else:
-                    self.assertTrue(numpy.abs(controlFlux-testFlux)<20.0, msg=msg)
+                    ignored += 1
             else:
                 msg = '%s has flux %e but was not written by catalog' % (controlName, controlFlux)
                 self.assertTrue(controlFlux<1.0, msg=msg)
+
+        self.assertTrue(ignored<len(testNames)/2)
 
         for testName in testNames:
             if os.path.exists(testName):
