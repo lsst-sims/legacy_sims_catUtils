@@ -6,12 +6,8 @@ using an ObservationMetaData generated from the OpSim database
 import numpy
 import os
 from collections import OrderedDict
-from lsst.sims.catalogs.generation.db import ObservationMetaData, \
-                                             calcObsDefaults, getRotTelPos, \
-                                             altAzToRaDec, Site, radiansToArcsec
+from lsst.sims.utils import radiansToArcsec
 from lsst.sims.coordUtils import CameraCoords, AstrometryBase
-from lsst.afw.cameraGeom.cameraConfig import CameraConfig
-from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
 from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
 from lsst.obs.lsstSim import LsstSimMapper
 

@@ -1,10 +1,10 @@
 import math
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, SpatialBounds
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
 from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, PhoSimCatalogPoint,\
                                                          PhoSimCatalogZPoint, PhoSimCatalogSersic2D
-from lsst.sims.catalogs.generation.db import makeObsParamsAzAltTel, makeObsParamsRaDecTel, SpatialBounds
+from lsst.sims.utils import makeObsParamsAzAltTel, makeObsParamsRaDecTel
 
 def exampleReferenceCatalog():
     """

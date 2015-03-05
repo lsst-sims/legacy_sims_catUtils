@@ -67,7 +67,7 @@ require astrometric calculations to be done on the catalog).
 
 You can also specify a site which is an instantiation of the Site class defined in
 
-sims_catalogs_generation/python/lsst/sims/catalogs/generation/db/Site.py
+sims_utils/python/lsst/sims/utils/Site.py
 
 which characterizes the telescope's location.  This defaults to the LSST site.
 

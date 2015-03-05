@@ -11,7 +11,7 @@ GalSimInterpreter expects.
 import os
 import numpy
 import galsim
-from lsst.sims.catalogs.generation.db import radiansToArcsec
+from lsst.sims.utils import radiansToArcsec
 
 __all__ = ["GalSimInterpreter", "GalSimDetector"]
 
