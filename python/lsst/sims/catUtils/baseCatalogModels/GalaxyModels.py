@@ -108,6 +108,7 @@ class GalaxyTileObj(CatalogDBObject):
     dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
 
     tableid = 'galaxy'
+    componentSubset = 'ALL'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 25
@@ -250,8 +251,9 @@ class GalaxyTileObj(CatalogDBObject):
                           "if the database is large")
 
 
-        query = "EXECUTE [LSST].[dbo].[GalaxySearch2014] \
-               @ApertureStr = '%s', @ColumnNames = '%s'" % (regionStr, mappedcolnames)
+        query = """EXECUTE [LSST].[dbo].[GalaxySearch2015]
+                   @ApertureStr = '%s', @ColumnNames = '%s',
+                   @ComponentSubset = '%s' """ % (regionStr, mappedcolnames, self.componentSubset)
 
         if constraint is not None:
             query += ", @WhereClause = '%s'"%(constraint)
@@ -263,6 +265,7 @@ class GalaxyBulgeObj(GalaxyTileObj):
     #: This is the base table for the galaxies
     #: with a bulge component
     tableid = 'galaxy_bulge'
+    componentSubset = 'BULGE'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 26
@@ -304,6 +307,7 @@ class GalaxyDiskObj(GalaxyTileObj):
     #: This is the base table for the galaxies
     #: with a disk component
     tableid = 'galaxy'
+    componentSubset = 'DISK'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 27
@@ -345,6 +349,7 @@ class GalaxyAgnObj(GalaxyTileObj):
     #: This is the base table for the galaxies
     #: with an agn component
     tableid = 'galaxy_agn'
+    componentSubset = 'AGN'
     raColName = 'ra'
     decColName = 'dec'
     objectTypeId = 28
