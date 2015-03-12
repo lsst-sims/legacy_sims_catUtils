@@ -7,7 +7,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, defaultSpecMap
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults
+from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, setM5
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
@@ -84,9 +84,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         for i in range(len(cls.bandpasses)):
             sedDummy = Sed()
             sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSedDummy = cls.totalBandpasses[i].setM5(cls.obs_metadata.m5(cls.bandpasses[i]), sedDummy,
-                                                              cls.hardwareBandpasses[i],
-                                                              seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
+            normalizedSedDummy = setM5(cls.obs_metadata.m5(cls.bandpasses[i]), sedDummy,
+                                       cls.totalBandpasses[i], cls.hardwareBandpasses[i],
+                                       seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
             cls.skySeds.append(normalizedSedDummy)
 
     @classmethod
