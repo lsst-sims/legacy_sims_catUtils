@@ -84,10 +84,10 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         for i in range(len(cls.bandpasses)):
             sedDummy = Sed()
             sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-            cls.totalBandpasses[i].setM5(cls.obs_metadata.m5(cls.bandpasses[i]), sedDummy,
-                                         cls.hardwareBandpasses[i],
-                                         seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
-            cls.skySeds.append(sedDummy)
+            normalizedSedDummy = cls.totalBandpasses[i].setM5(cls.obs_metadata.m5(cls.bandpasses[i]), sedDummy,
+                                                              cls.hardwareBandpasses[i],
+                                                              seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
+            cls.skySeds.append(normalizedSedDummy)
 
     @classmethod
     def tearDownClass(cls):
