@@ -102,6 +102,9 @@ class GalSimInterpreter(object):
 
         self.detectorImages = {} #this dict will contain the FITS images (as GalSim images)
         self.bandpasses = {} #this dict will contain the GalSim bandpass instantiations corresponding to the input bandpasses
+        self.blankImageCache = {} #this dict will cache blank images associated with specific detectors.
+                                  #It turns out that calling the image's constructor is more time-consuming than
+                                  #returning a deep copy
 
         self.setBandpasses(bandpassNames=bandpassNames, bandpassFiles=bandpassFiles)
 
@@ -357,12 +360,21 @@ class GalSimInterpreter(object):
         param [in] detector is an instantiation of GalSimDetector
         """
 
-        #set the size of the image
-        nx = int((detector.xMax - detector.xMin)/detector.plateScale)
-        ny = int((detector.yMax - detector.yMin)/detector.plateScale)
-        image = galsim.Image(nx, ny, scale=detector.plateScale)
+        #in order to speed up the code (by a factor of ~2), this method
+        #only draws a new blank image the first time it is called on a
+        #given detector.  It then caches the blank images it has drawn and
+        #uses GalSim's copy() method to return copies of cached blank images
+        #whenever they are called for again.
 
-        return image
+        if detector.name in self.blankImageCache:
+            return self.blankImageCache[detector.name].copy()
+        else:
+            #set the size of the image
+            nx = int((detector.xMax - detector.xMin)/detector.plateScale)
+            ny = int((detector.yMax - detector.yMin)/detector.plateScale)
+            image = galsim.Image(nx, ny, scale=detector.plateScale)
+            self.blankImageCache[detector.name] = image
+            return image.copy()
 
     def drawObject(self, galSimType=None, sed=None, xPupil=None,
                    yPupil=None, halfLightRadius=None, minorAxis=None, majorAxis=None,
