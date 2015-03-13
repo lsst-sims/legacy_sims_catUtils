@@ -13,6 +13,9 @@ from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyBulgeObj, Galaxy
 from lsst.sims.catUtils.galSimInterface import ExampleOpticalPSF, GalSimStars, GalSimGalaxies, \
                                                GalSimAgn
 
+#if you want to use the actual LSST camera
+#from lsst.obs.lsstSim import LsstSimMapper
+
 class testGalSimStars(GalSimStars):
     #only draw images in the u and g band for speed
     band_pass_names = ['u','g']
@@ -21,8 +24,21 @@ class testGalSimStars(GalSimStars):
     #PSF defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
 
+    #If you want to use the LSST camera, uncomment the line below.
+    #You can similarly assign any camera object you want here
+    #camera = LsstSimMapper().camera
+
+
+
 class testGalSimGalaxies(GalSimGalaxies):
     band_pass_names = ['u', 'g']
+
+    #If you want to use the LSST camera, uncomment the line below.
+    #You can similarly assign any camera object you want here
+    #camera = LsstSimMapper().camera
+
+
+
 
 class testGalSimAgn(GalSimAgn):
     band_pass_names = ['u', 'g']
@@ -30,8 +46,11 @@ class testGalSimAgn(GalSimAgn):
     #defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
 
-#if you want to use the actual LSST camera
-#from lsst.obs.lsstSim import LsstSimMapper
+    #If you want to use the LSST camera, uncomment the line below.
+    #You can similarly assign any camera object you want here
+    #camera = LsstSimMapper().camera
+
+
 
 #select an OpSim pointing
 obsMD = OpSim3_61DBObject()
@@ -42,11 +61,6 @@ stars = CatalogDBObject.from_objid('allstars')
 
 #now append a bunch of objects with 2D sersic profiles to our output file
 stars_galSim = testGalSimStars(stars, obs_metadata=obs_metadata)
-
-#If you want to use the LSST camera, uncomment the line below.
-#You can similarly assign any camera object you want here, as long
-#as you do it before calling write_catalog()
-#stars_galSim.camera = LsstSimMapper().camera
 
 catName = 'galSim_compound_example.txt'
 stars_galSim.write_catalog(catName, chunk_size=100)
