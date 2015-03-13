@@ -16,6 +16,10 @@ class testGalSimGalaxies(GalSimGalaxies):
     #only draw images for u and g bands (for speed)
     band_pass_names = ['u','g']
 
+    #If you want to use the LSST camera, uncomment the line below.
+    #You can similarly assign any camera object you want here
+    #camera = LsstSimMapper().camera
+
     #Note, we are not convolving with any PSF
     #see galSimStarGenerator.py
 
@@ -29,12 +33,6 @@ gals = CatalogDBObject.from_objid('galaxyBulge')
 
 #now append a bunch of objects with 2D sersic profiles to our output file
 galaxy_galSim = testGalSimGalaxies(gals, obs_metadata=obs_metadata)
-
-#If you want to use the LSST camera, uncomment the line below.
-#You can similarly assign any camera object you want here, as long
-#as you do it before calling write_catalog()
-#galaxy_galSim.camera = LsstSimMapper().camera
-
 
 galaxy_galSim.write_catalog('galSim_bulge_example.txt', chunk_size=10000)
 galaxy_galSim.write_images(nameRoot='bulge')

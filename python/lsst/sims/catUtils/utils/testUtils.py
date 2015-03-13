@@ -3,11 +3,12 @@ import eups
 import copy
 from lsst.sims.photUtils import Bandpass, Sed
 from lsst.sims.catalogs.generation.db import CatalogDBObject
-from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj, \
+from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyTileObj, GalaxyAgnObj, \
                                                  GalaxyDiskObj, GalaxyBulgeObj
 
-__all__ = ["calcADUwrapper", "SearchReversion", "testGalaxyBulgeDBObj",
-           "testGalaxyDiskDBObj", "testGalaxyAgnDBObj", "testStarsDBObj"]
+__all__ = ["calcADUwrapper", "SearchReversion", "testGalaxyTileDBObj",
+           "testGalaxyBulgeDBObj", "testGalaxyDiskDBObj", "testGalaxyAgnDBObj",
+           "testStarsDBObj"]
 
 
 def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, internalRv=None,
@@ -57,6 +58,28 @@ class SearchReversion(CatalogDBObject):
 
     def query_columns(self, *args, **kwargs):
         return CatalogDBObject.query_columns(self, *args, **kwargs)
+
+class testGalaxyTileDBObj(SearchReversion, GalaxyTileObj):
+    objid = 'testGalaxyDBObj'
+    objectTypeId = 87
+
+    #The code below makes sure that we can store RA, Dec in degrees
+    #in the database but use radians in our calculations.
+    #We had to overwrite the original columns list because
+    #GalaxyTileObject class assumes that RA and Dec are stored
+    #in radians in the database.  This is a side effect of the tiling
+    #scheme used to cover the whole sky.
+
+    columns = copy.deepcopy(GalaxyTileObj.columns)
+    _to_remove = []
+    for entry in columns:
+        if entry[0] == 'raJ2000' or entry[0] == 'decJ2000':
+            _to_remove.append(entry)
+    for target in _to_remove:
+        columns.remove(target)
+
+    columns.append(('raJ2000','ra*PI()/180.'))
+    columns.append(('decJ2000','dec*PI()/180.'))
 
 class testGalaxyBulgeDBObj(SearchReversion, GalaxyBulgeObj):
     """

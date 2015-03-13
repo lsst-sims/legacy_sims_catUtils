@@ -20,6 +20,12 @@ class testGalSimStarsNoiseless(GalSimStars):
     #defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
 
+    #If you want to use the LSST camera, uncomment the line below.
+    #You can similarly assign any camera object you want here
+    #camera = LsstSimMapper().camera
+
+
+
 class testGalSimStarsWithNoise(testGalSimStarsNoiseless):
 
     #defined in galSimInterface/galSimUtilities.py
@@ -34,11 +40,6 @@ stars = CatalogDBObject.from_objid('allstars')
 
 #now append a bunch of objects with 2D sersic profiles to our output file
 stars_noiseless = testGalSimStarsNoiseless(stars, obs_metadata=obs_metadata)
-
-#If you want to use the LSST camera, uncomment the line below.
-#You can similarly assign any camera object you want here, as long
-#as you do it before calling write_catalog()
-#stars_noiseless.camera = LsstSimMapper().camera
 
 stars_noiseless.write_catalog('galSim_NoiselessStars_example.txt', chunk_size=10000)
 stars_noiseless.write_images(nameRoot='noiselessStars')

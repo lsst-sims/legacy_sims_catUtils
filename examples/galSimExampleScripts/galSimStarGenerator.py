@@ -20,6 +20,12 @@ class testGalSimStars(GalSimStars):
     #defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
 
+    #If you want to use the LSST camera, uncomment the line below.
+    #You can similarly assign any camera object you want here
+    #camera = LsstSimMapper().camera
+
+
+
 #select an OpSim pointing
 obsMD = OpSim3_61DBObject()
 obs_metadata = obsMD.getObservationMetaData(88625744, 0.1, makeCircBounds = True)
@@ -29,11 +35,6 @@ stars = CatalogDBObject.from_objid('allstars')
 
 #now append a bunch of objects with 2D sersic profiles to our output file
 stars_galSim = testGalSimStars(stars, obs_metadata=obs_metadata)
-
-#If you want to use the LSST camera, uncomment the line below.
-#You can similarly assign any camera object you want here, as long
-#as you do it before calling write_catalog()
-#stars_galSim.camera = LsstSimMapper().camera
 
 stars_galSim.write_catalog('galSim_star_example.txt', chunk_size=100)
 stars_galSim.write_images(nameRoot='star')
