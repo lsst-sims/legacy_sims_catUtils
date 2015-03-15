@@ -396,7 +396,9 @@ class GalSimInterfaceTest(unittest.TestCase):
                 sedList = cat._calculateGalSimSeds()
                 for detector in cat.galSimInterpreter.detectors:
                     for bandpass in cat.galSimInterpreter.bandpasses:
-                        controlImages['placementControl_'+cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bandpass)] = cat.galSimInterpreter.blankImage(detector=detector)
+                        controlImages['placementControl_' + \
+                                      cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bandpass)] = \
+                                      cat.galSimInterpreter.blankImage(detector=detector)
                 firstLine = False
 
             spectrum = galsim.SED(spec=lambda ll: numpy.interp(ll, sedList[i].wavelen, sedList[i].flambda), flux_type='flambda')
@@ -412,7 +414,9 @@ class GalSimInterfaceTest(unittest.TestCase):
                     localImage = obj.drawImage(bandpass=bandpass, scale=detector.plateScale, method='phot',
                                                gain=cat.galSimInterpreter.gain, image=localImage)
 
-                    controlImages['placementControl_'+cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bp)] += localImage
+                    controlImages['placementControl_' + \
+                                  cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bp)] += \
+                                  localImage
 
         for name in controlImages:
             controlImages[name].write(file_name=name)
