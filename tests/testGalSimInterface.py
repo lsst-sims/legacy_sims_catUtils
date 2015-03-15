@@ -198,7 +198,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             unDrawnDetectors = 0
             for ff in controlCounts:
                 if controlCounts[ff] > 1000.0 and galsimCounts[ff] > 0.001:
-                    #because, for really dim images, there could be enough 
+                    #because, for really dim images, there could be enough
                     #statistical imprecision in the GalSim drawing routine
                     #to violate the condition below
                     drawnDetectors += 1
