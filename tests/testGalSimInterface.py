@@ -185,7 +185,8 @@ class GalSimInterfaceTest(unittest.TestCase):
 
                             fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
 
-                            bandpassName=os.path.join(eups.productDir('throughputs'),'baseline',('total_'+filterName+'.dat'))
+                            bandpassName=os.path.join(eups.productDir('throughputs'), \
+                                                     'baseline',('total_'+filterName+'.dat'))
                             bandpass = Bandpass()
                             bandpass.readThroughput(bandpassName)
                             controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpass,
@@ -197,7 +198,8 @@ class GalSimInterfaceTest(unittest.TestCase):
             unDrawnDetectors = 0
             for ff in controlCounts:
                 if controlCounts[ff] > 1000.0 and galsimCounts[ff] > 0.001:
-                    #because, for really dim images, there could be enough statistical imprecision in the GalSim drawing routine
+                    #because, for really dim images, there could be enough 
+                    #statistical imprecision in the GalSim drawing routine
                     #to violate the condition below
                     drawnDetectors += 1
                     self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
