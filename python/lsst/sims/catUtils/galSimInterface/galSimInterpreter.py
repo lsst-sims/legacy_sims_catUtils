@@ -561,8 +561,6 @@ class GalSimInterpreter(object):
         return centeredObj
 
 
-
-
     def addNoise(self, noiseWrapper=None, obs_metadata=None):
         """
         Adds a GalSim noise model to the images being stored by this
