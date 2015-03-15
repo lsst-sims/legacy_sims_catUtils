@@ -3,7 +3,7 @@ The catalog classes in this file use the InstanceCatalog infrastructure to const
 FITS images for each detector-filter combination on a simulated camera.  This is done by
 instantiating the class GalSimInterpreter.  This GalSimInterpreter is the class which
 actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
-each object in the catalog is passed to tothe GalSimInterpeter, which adds the object
+each object in the catalog is passed to to the GalSimInterpeter, which adds the object
 to the appropriate FITS images.  The user can then write the images to disk by calling
 the write_images method in the GalSim InstanceCatalog.
 
@@ -42,7 +42,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     FITS images for each detector-filter combination on a simulated camera.  This is done by
     instantiating the class GalSimInterpreter.  GalSimInterpreter is the class which
     actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
-    each object in the catalog is passed to tothe GalSimInterpeter, which adds the object
+    each object in the catalog is passed to to the GalSimInterpeter, which adds the object
     to the appropriate FITS images.  The user can then write the images to disk by calling
     the write_images method in the GalSim InstanceCatalog.
 
@@ -61,7 +61,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     in the examples/ directory of sims_catUtils for an example).
 
     This class (GalSimBase) is the base class for all GalSim InstanceCatalogs.  Daughter
-    classes of this calss need to behave like ordinary InstanceCatalog daughter classes
+    classes of this class need to behave like ordinary InstanceCatalog daughter classes
     with the following exceptions:
 
     1) If they re-define column_outputs, they must be certain to include the column
@@ -176,7 +176,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     def _initializeGalSimCatalog(self):
         """
-        Initializes an empy list of objects that have already been drawn to FITS images.
+        Initializes an empty list of objects that have already been drawn to FITS images.
         We do not want to accidentally draw an object twice.
 
         Also initializes the GalSimInterpreter by calling self._initializeGalSimInterpreter()

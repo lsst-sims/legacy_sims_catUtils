@@ -208,7 +208,7 @@ class GalSimInterpreter(object):
 
         @param [in] majorAxis is the semi-major axis of the object in radians
 
-        @param [in] positionaAngle is the position angle of the object in radians
+        @param [in] positionAngle is the position angle of the object in radians
 
         @param [in] sindex is the Sersic index of the object's profile
 
@@ -477,7 +477,7 @@ class GalSimInterpreter(object):
     def drawSersic(self, xPupil=None, yPupil=None, sindex=None, minorAxis=None,
                    majorAxis=None, positionAngle=None, halfLightRadius=None, bandpass=None):
         """
-        Draw the image of a Sersci profile.
+        Draw the image of a Sersic profile.
 
         @param [in] xPupil is the x pupil coordinate of the object in arc seconds
 
