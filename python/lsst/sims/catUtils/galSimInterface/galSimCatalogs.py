@@ -2,21 +2,21 @@
 The catalog classes in this file use the InstanceCatalog infrastructure to construct
 FITS images for each detector-filter combination on a simulated camera.  This is done by
 instantiating the class GalSimInterpreter.  This GalSimInterpreter is the class which
-actually generates the FITS images.  As the GalSim Instance Catalogs are iterated over,
-each object in the catalog is passed to tothe GalSimInterpeter, which adds the object
+actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
+each object in the catalog is passed to to the GalSimInterpeter, which adds the object
 to the appropriate FITS images.  The user can then write the images to disk by calling
-the write_images method in the GalSim Instance Catalog.
+the write_images method in the GalSim InstanceCatalog.
 
 Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
 adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
 
-Note: because each GalSim Instance Catalog has its own GalSimInterpreter, it means
+Note: because each GalSim InstanceCatalog has its own GalSimInterpreter, it means
 that each GalSimInterpreter will only draw FITS images containing one type of object
-(whatever type of object is contained in the GalSim Instance Catalog).  If the user
+(whatever type of object is contained in the GalSim InstanceCatalog).  If the user
 wishes to generate FITS images containing multiple types of object, the method
 copyGalSimInterpreter allows the user to pass the GalSimInterpreter from one
-GalSim Instance Catalog to another (so, the user could create a GalSim Instance
-Catalog of stars, generate that InstanceCatalog, then create a GalSim Instance Catalog
+GalSim InstanceCatalog to another (so, the user could create a GalSim Instance
+Catalog of stars, generate that InstanceCatalog, then create a GalSim InstanceCatalog
 of galaxies, pass the GalSimInterpreter from the star catalog to this new catalog,
 and thus create FITS images that contain both stars and galaxies).
 """
@@ -41,27 +41,27 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     The catalog classes in this file use the InstanceCatalog infrastructure to construct
     FITS images for each detector-filter combination on a simulated camera.  This is done by
     instantiating the class GalSimInterpreter.  GalSimInterpreter is the class which
-    actually generates the FITS images.  As the GalSim Instance Catalogs are iterated over,
-    each object in the catalog is passed to tothe GalSimInterpeter, which adds the object
+    actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
+    each object in the catalog is passed to to the GalSimInterpeter, which adds the object
     to the appropriate FITS images.  The user can then write the images to disk by calling
-    the write_images method in the GalSim Instance Catalog.
+    the write_images method in the GalSim InstanceCatalog.
 
     Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
     adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
 
-    Note: because each GalSim Instance Catalog has its own GalSimInterpreter, it means
+    Note: because each GalSim InstanceCatalog has its own GalSimInterpreter, it means
     that each GalSimInterpreter will only draw FITS images containing one type of object
-    (whatever type of object is contained in the GalSim Instance Catalog).  If the user
+    (whatever type of object is contained in the GalSim InstanceCatalog).  If the user
     wishes to generate FITS images containing multiple types of object, the method
     copyGalSimInterpreter allows the user to pass the GalSimInterpreter from one
-    GalSim Instance Catalog to another (so, the user could create a GalSim Instance
-    Catalog of stars, generate that InstanceCatalog, then create a GalSim Instance Catalog
+    GalSim InstanceCatalog to another (so, the user could create a GalSim Instance
+    Catalog of stars, generate that InstanceCatalog, then create a GalSim InstanceCatalog
     of galaxies, pass the GalSimInterpreter from the star catalog to this new catalog,
     and thus create FITS images that contain both stars and galaxies; see galSimCompoundGenerator.py
     in the examples/ directory of sims_catUtils for an example).
 
     This class (GalSimBase) is the base class for all GalSim InstanceCatalogs.  Daughter
-    classes of this calss need to behave like ordinary InstanceCatalog daughter classes
+    classes of this class need to behave like ordinary InstanceCatalog daughter classes
     with the following exceptions:
 
     1) If they re-define column_outputs, they must be certain to include the column
@@ -73,31 +73,32 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     object (to allow a different kind of image profile, define a new method in the GalSimInterpreter
     class similar to drawPoinSource and drawSersic)
 
-    3) The variables band_pass_names (a list of the form ['u', 'g', 'r', 'i', 'z', 'y']),
-    band_pass_directory, and band_pass_root should be defined to tell the GalSim Instance Catalog
+    3) The variables bandpass_names (a list of the form ['u', 'g', 'r', 'i', 'z', 'y']),
+    bandpass_directory, and bandpass_root should be defined to tell the GalSim InstanceCatalog
     where to find the files defining the bandpasses to be used for these FITS files.
-    The GalSim Instance Catalog will look for bandpass files in files with the names
+    The GalSim InstanceCatalog will look for bandpass files in files with the names
 
-    for bpn in band_pass_names:
-        name = self.band_pass_directory+'/'+self.band_pass_root+'_'+bpn+'.dat'
+    for bpn in bandpass_names:
+        name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
 
     4) Telescope parameters such as exposure time, area, and gain are controled by the
     GalSim InstanceCatalog member variables exposure_time (in s), effective_area (in cm^2),
     and gain (in photons per ADU)
 
     Daughter classes of GalSimBase will generate both FITS images for all of the detectors/filters
-    in their corresponding cameras and Instance Catalogs listing all of the objects
+    in their corresponding cameras and InstanceCatalogs listing all of the objects
     contained in those images.  The catalog is written using the normal write_catalog()
     method provided for all InstanceClasses.  The FITS files are drawn using the write_images()
-    method that is unique to GalSim Instance Catalogs.  The FITS file will be named something like:
+    method that is unique to GalSim InstanceCatalogs.  The FITS file will be named something like:
 
     DetectorName_FilterName.fits
 
     (a typical LSST fits file might be R_0_0_S_1_0_y.fits)
 
-    Note: If you call write_images() before calling write_catalog(), nothing will happen.
-    Objects are only added to the GalSimInterpreter in the course of writing
-    the Instance Catalog.
+    Note: If you call write_images() before iterating over the catalog (either by calling
+    write_catalog() or using the iterator returned by InstanceCatalog.iter_catalog()),
+    you will get empty or incomplete FITS files.  Objects are only added to the GalSimInterpreter
+    in the course of iterating over the InstanceCatalog.
     """
 
     #This is sort of a hack; it prevents findChipName in coordUtils from dying
@@ -123,9 +124,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     delimiter = ';'
 
     #default variables telling the InstanceCatalog where to find bandpass data
-    band_pass_names = ['u','g','r','i','z','y']
-    band_pass_directory = eups.productDir('throughputs')
-    band_pass_root = 'baseline/total'
+    bandpass_names = ['u','g','r','i','z','y']
+    bandpass_directory = eups.productDir('throughputs')
+    bandpass_root = 'baseline/total'
 
     #This member variable will define a PSF to convolve with the sources.
     #See the classes PSFbase, ExampleGaussianPSF, and ExampleOpticalPSF in
@@ -157,28 +158,33 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     exposure_time = 15.0 #copied from Sed.py in sims_photUtils
     gain = 2.3 #copied from Sed.py in sims_photUtils
 
-    #This is just a place holder for the camera object associated with the Instance Catalog.
+    #This is just a place holder for the camera object associated with the InstanceCatalog.
     #If you want to assign a different camera, you can do so immediately after instantiating this class
     camera = camTestUtils.CameraWrapper().camera
 
 
     uniqueSeds = {} #a cache for un-normalized SED files, so that we do not waste time on I/O
 
-    catalogHasBeenWritten = False #has write_catalog() been called
     hasBeenInitialized = False
 
     galSimInterpreter = None #the GalSimInterpreter instantiation for this catalog
                              #This class is either passed in from another catalog using
                              #copyGalSimInterpreter, or initialized in the write_header method
 
+    totalDrawings = 0
+    totalObjects = 0
+
     def _initializeGalSimCatalog(self):
         """
-        Initializes an empy list of objects that have already been drawn to FITS images.
+        Initializes an empty list of objects that have already been drawn to FITS images.
         We do not want to accidentally draw an object twice.
+
+        Also initializes the GalSimInterpreter by calling self._initializeGalSimInterpreter()
 
         Objects are stored based on their uniqueId values.
         """
         self.objectHasBeenDrawn = []
+        self._initializeGalSimInterpreter()
         self.hasBeenInitialized = True
 
     def get_sedFilepath(self):
@@ -291,7 +297,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         sedList = self._calculateGalSimSeds()
 
         if self.hasBeenInitialized is False:
-            #start keeping track of the names of the objects that have already been drawn
+            #This needs to be here in case, instead of writing the whole catalog with write_catalog(),
+            #the user wishes to iterate through the catalog with InstanceCatalog.iter_catalog(),
+            #which will not call write_header()
             self._initializeGalSimCatalog()
 
         output = []
@@ -316,41 +324,37 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 self.objectHasBeenDrawn.append(name)
 
-                #finds all of the detectors on which the object is likely to shed light
-                detectorsString, detectorsList = self.galSimInterpreter.findAllDetectors(xPupil=xp, yPupil=yp,
-                                                                             minorAxis=minor, majorAxis=major,
-                                                                             halfLightRadius=hlr)
-                output.append(detectorsString)
-
                 #actually draw the object
-                self.galSimInterpreter.drawObject(galSimType=self.galsim_type, detectorList=detectorsList,
+                detectorsString = self.galSimInterpreter.drawObject(galSimType=self.galsim_type,
                                                   sindex=sn, minorAxis=minor,
                                                   majorAxis=major, positionAngle=pa, halfLightRadius=hlr,
-                                                  x_pupil=xp, y_pupil=yp, sed=ss)
+                                                  xPupil=xp, yPupil=yp, sed=ss)
+
+                output.append(detectorsString)
 
         return numpy.array(output)
 
-    def _getBandPasses(self):
+    def _getBandpasses(self):
         """
         Create a list of paths to the files containing bandpass data.
 
-        returns the list of paths and the list self.band_pass_names (which are just
+        returns the list of paths and the list self.bandpass_names (which are just
         tags identifying each bandpass a la ['u', 'g', 'r', 'i', 'z', 'y'])
         """
-        bandPassFiles = []
-        for bpn in self.band_pass_names:
-            name = self.band_pass_directory+'/'+self.band_pass_root+'_'+bpn+'.dat'
-            bandPassFiles.append(name)
+        bandpassFiles = []
+        for bpn in self.bandpass_names:
+            name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
+            bandpassFiles.append(name)
 
-        return bandPassFiles, self.band_pass_names
+        return bandpassFiles, self.bandpass_names
 
     def copyGalSimInterpreter(self, otherCatalog):
         """
-        Copy the camera, GalSimInterpreter, from another GalSim Instance Catalog
+        Copy the camera, GalSimInterpreter, from another GalSim InstanceCatalog
         so that multiple types of object (stars, AGN, galaxy bulges, galaxy disks, etc.)
         can be drawn on the same FITS files.
 
-        @param [in] otherCatalog is another GalSim Instance Catalog that already has
+        @param [in] otherCatalog is another GalSim InstanceCatalog that already has
         an initialized GalSimInterpreter
 
         See galSimCompoundGenerator.py in the examples/ directory of sims_catUtils for
@@ -366,9 +370,10 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
     def write_header(self, file_handle):
         """
-        Overwrite the write_header method from InstanceCatalog.
+        This method adds to the InstanceCatalog.write_header() method.
+        It writes information about all of the detectors in the camera to the header of the
+        catalog output file.
 
-        This adds information about the camera to the InstanceCatalog header.
         For each detector it writes:
 
         detector name
@@ -377,9 +382,30 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         ymin and ymax in arc seconds
         plateScale (arc seconds per pixel)
 
-        This method will also call _getBandPasses to construct the paths to
-        the files containing the bandpass data and construct the GalSimInterpreter
-        if it is still None
+
+
+        It will also call self._initializeGalSimCatalog() if need be.
+        """
+
+        if not self.hasBeenInitialized:
+            self._initializeGalSimCatalog()
+
+        for detector in self.galSimInterpreter.detectors:
+            file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
+                                 (detector.name, detector.xCenter, detector.yCenter, detector.xMin,
+                                  detector.xMax, detector.yMin, detector.yMax, detector.plateScale))
+
+        InstanceCatalog.write_header(self, file_handle)
+
+    def _initializeGalSimInterpreter(self):
+        """
+        This method creates the GalSimInterpreter (if it is None)
+
+        This method reads in all of the data about the camera and pass it into
+        the GalSimInterpreter.
+
+        This method calls _getBandpasses to construct the paths to
+        the files containing the bandpass data.
         """
 
         if self.galSimInterpreter is None:
@@ -424,34 +450,18 @@ class GalSimBase(InstanceCatalog, CameraCoords):
                 yMax = 3600.0*numpy.degrees(ymax)
                 plateScale = 3600.0*numpy.degrees(plateScale)
 
-                file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
-                                 (dd.getName(), xCenter, yCenter, xMin, xMax, yMin, yMax, plateScale))
-
                 detector = GalSimDetector(name=dd.getName(), xCenter=xCenter, yCenter=yCenter,
                                           xMin=xMin, yMin=yMin, xMax=xMax, yMax=yMax,
                                           plateScale=plateScale)
 
                 detectors.append(detector)
 
-            bandPassFiles, bandPassNames = self._getBandPasses()
+            bandpassFiles, bandpassNames = self._getBandpasses()
 
-            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandPassNames=bandPassNames,
-                                                       bandPassFiles=bandPassFiles, gain=self.gain)
+            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassNames=bandpassNames,
+                                                       bandpassFiles=bandpassFiles, gain=self.gain)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
-
-
-        InstanceCatalog.write_header(self, file_handle)
-
-    def write_catalog(self, *args, **kwargs):
-        """
-        Overwrites the InstanceCatalog write_catalog class.
-
-        simple calls InstanceCatalog.write_catalog() then sets self.catalogHasBeenWritten to True
-        so that write_images() knows that it is okay to write the images
-        """
-        InstanceCatalog.write_catalog(self, *args, **kwargs)
-        self.catalogHasBeenWritten = True
 
     def add_noise(self):
         """
@@ -471,16 +481,16 @@ class GalSimBase(InstanceCatalog, CameraCoords):
         @param [in] nameRoot is an optional string prepended to the names
         of the FITS images.  The FITS images will be named
 
+        @param [out] namesWritten is a list of the names of the FITS files generated
+
         nameRoot_DetectorName_FilterName.fits
 
         (e.g. myImages_R_0_0_S_1_1_y.fits for an LSST-like camera with
         nameRoot = 'myImages')
         """
-        if self.catalogHasBeenWritten is False:
-            print "Cannot write GalSim images until you write the GalSim catalog"
-            return
+        namesWritten = self.galSimInterpreter.writeImages(nameRoot=nameRoot)
 
-        self.galSimInterpreter.writeImages(nameRoot=nameRoot)
+        return namesWritten
 
 class GalSimGalaxies(GalSimBase, AstrometryGalaxies, EBVmixin):
     """

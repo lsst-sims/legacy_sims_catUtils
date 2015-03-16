@@ -14,7 +14,7 @@ from lsst.sims.catUtils.galSimInterface import GalSimGalaxies
 
 class testGalSimGalaxies(GalSimGalaxies):
     #only draw images for u and g bands (for speed)
-    band_pass_names = ['u','g']
+    bandpass_names = ['u','g']
 
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here

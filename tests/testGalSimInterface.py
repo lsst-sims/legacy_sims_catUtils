@@ -21,6 +21,8 @@ class testGalaxyCatalog(GalSimGalaxies):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
+    bandpass_names = ['u', 'g', 'r']
+
     column_outputs = copy.deepcopy(GalSimGalaxies.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
@@ -37,6 +39,8 @@ class testStarCatalog(GalSimStars):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
+    bandpass_names = ['u', 'g', 'r']
+
     column_outputs = copy.deepcopy(GalSimStars.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
@@ -55,6 +59,8 @@ class testAgnCatalog(GalSimAgn):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
+    bandpass_names = ['u', 'g', 'r']
+
     column_outputs = copy.deepcopy(GalSimAgn.column_outputs)
     column_outputs.remove('fitsFiles')
     column_outputs.append('magNorm')
@@ -157,8 +163,16 @@ class GalSimInterfaceTest(unittest.TestCase):
                     galacticAv = float(gg[15])
                     galacticRv = float(gg[16])
                     listOfFileNames = gg[17].split('//')
+                    alreadyWritten = []
 
                     for name in listOfFileNames:
+
+                        #guard against objects being written on one
+                        #chip more than once
+                        msg = '%s was written on %s more than once' % (sedName, name)
+                        self.assertTrue(name not in alreadyWritten, msg=msg)
+                        alreadyWritten.append(name)
+
                         #loop over all of the detectors on which an object fell
                         #(this is not a terribly great idea, since our conservative implementation
                         #of GalSimInterpreter._doesObjectImpingeOnDetector means that some detectors
@@ -171,25 +185,30 @@ class GalSimInterfaceTest(unittest.TestCase):
 
                             fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
 
-                            bandPassName=os.path.join(eups.productDir('throughputs'),'baseline',('total_'+filterName+'.dat'))
+                            bandpassName=os.path.join(eups.productDir('throughputs'), \
+                                                     'baseline',('total_'+filterName+'.dat'))
                             bandpass = Bandpass()
-                            bandpass.readThroughput(bandPassName)
+                            bandpass.readThroughput(bandpassName)
                             controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpass,
                                                                         redshift=redshift, magNorm=magNorm,
                                                                         internalAv=internalAv, internalRv=internalRv,
                                                                         galacticAv=galacticAv, galacticRv=galacticRv)
 
+            drawnDetectors = 0
             unDrawnDetectors = 0
             for ff in controlCounts:
                 if controlCounts[ff] > 1000.0 and galsimCounts[ff] > 0.001:
-                    #because, for really dim images, there could be enough statistical imprecision in the GalSim drawing routine
+                    #because, for really dim images, there could be enough
+                    #statistical imprecision in the GalSim drawing routine
                     #to violate the condition below
+                    drawnDetectors += 1
                     self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
                 elif galsimCounts[ff] > 0.001:
                     unDrawnDetectors += 1
 
             #to make sure we did not neglect more than one detector
             self.assertTrue(unDrawnDetectors<2)
+            self.assertTrue(drawnDetectors>0)
 
     def testGalaxyBulges(self):
         """
@@ -238,7 +257,6 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
         if os.path.exists(catName):
             os.unlink(catName)
-
 
     def testPSFimages(self):
         """
@@ -328,6 +346,129 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+    def testPlacement(self):
+        """
+        Test that GalSimInterpreter puts objects on the right detectors.
+
+        Do so by creating a catalog of 10 closely-packed stars.  Draw test FITS
+        images of them using the GalSim Catalog infrastructure.  Draw control FITS
+        images of the detectors in the camera, paranoidly including every star
+        in every control image (GalSim contains code such that it will not
+        actually add flux to an image in cases where we try to include a
+        star that does not actually fall on a detector).  Compare that
+
+        a) the fluxes of the test and control images agree within some tolerance
+
+        b) the fluxes of control images that have no corresponding test image
+        (i.e. detectors on which no star actually fell) are effectively zero
+        """
+
+        #generate the database
+        numpy.random.seed(32)
+        catSize = 10
+        dbName = 'galSimPlacementTestDB.db'
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+
+        displacedRA = (-40.0 + numpy.random.sample(catSize)*(120.0))/3600.0
+        displacedDec = (-20.0 + numpy.random.sample(catSize)*(80.0))/3600.0
+        obs_metadata = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec)
+        connectionString = 'sqlite:///'+dbName
+        catName = 'testPlacementCat.sav'
+        stars = testStarsDBObj(address=connectionString)
+
+        #create the catalog
+        cat = testStarCatalog(stars, obs_metadata = obs_metadata)
+        results = cat.iter_catalog()
+        firstLine = True
+
+        #iterate over the catalog, giving every star a chance to
+        #illumine every detector
+        controlImages = {}
+        for i, line in enumerate(results):
+            galSimType = line[0]
+            xPupil = line[3]
+            yPupil = line[4]
+            majorAxis = line[6]
+            minorAxis = line[7]
+            sindex = line[8]
+            halfLightRadius = line[9]
+            positionAngle = line[10]
+            if firstLine:
+                sedList = cat._calculateGalSimSeds()
+                for detector in cat.galSimInterpreter.detectors:
+                    for bandpass in cat.galSimInterpreter.bandpasses:
+                        controlImages['placementControl_' + \
+                                      cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bandpass)] = \
+                                      cat.galSimInterpreter.blankImage(detector=detector)
+                firstLine = False
+
+            spectrum = galsim.SED(spec=lambda ll: numpy.interp(ll, sedList[i].wavelen, sedList[i].flambda), flux_type='flambda')
+            for bp in cat.galSimInterpreter.bandpasses:
+                bandpass = cat.galSimInterpreter.bandpasses[bp]
+                for detector in cat.galSimInterpreter.detectors:
+                    centeredObj = cat.galSimInterpreter.PSF.applyPSF(xPupil=xPupil, yPupil=yPupil, bandpass=bandpass)
+                    dx = xPupil - detector.xCenter
+                    dy = yPupil - detector.yCenter
+                    obj = centeredObj.shift(dx, dy)
+                    obj = obj*spectrum
+                    localImage = cat.galSimInterpreter.blankImage(detector=detector)
+                    localImage = obj.drawImage(bandpass=bandpass, scale=detector.plateScale, method='phot',
+                                               gain=cat.galSimInterpreter.gain, image=localImage)
+
+                    controlImages['placementControl_' + \
+                                  cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bp)] += \
+                                  localImage
+
+        for name in controlImages:
+            controlImages[name].write(file_name=name)
+
+        #write the test images using the catalog infrastructure
+        testNames = cat.write_images(nameRoot='placementTest')
+
+        #make sure that every test image has a corresponding control image
+        for testName in testNames:
+            controlName = testName.replace('Test', 'Control')
+            msg = '%s has no counterpart ' % testName
+            self.assertTrue(controlName in controlImages, msg=msg)
+
+        #make sure that the test and control images agree to some tolerance
+        ignored = 0
+        zeroFlux = 0
+        for controlName in controlImages:
+            controlImage = afwImage.ImageF(controlName)
+            controlFlux = controlImage.getArray().sum()
+
+            testName = controlName.replace('Control', 'Test')
+            if testName in testNames:
+                testImage = afwImage.ImageF(testName)
+                testFlux = testImage.getArray().sum()
+                msg = '%s: controlFlux = %e, testFlux = %e' % (controlName, controlFlux, testFlux)
+                if controlFlux>1000.0:
+                    #the randomness of photon shooting means that faint images won't agree
+                    self.assertTrue(numpy.abs(controlFlux/testFlux - 1.0)<0.1, msg=msg)
+                else:
+                    ignored += 1
+            else:
+                #make sure that controlImages that have no corresponding test image really do
+                #have zero flux (because no star fell on them)
+                zeroFlux += 1
+                msg = '%s has flux %e but was not written by catalog' % (controlName, controlFlux)
+                self.assertTrue(controlFlux<1.0, msg=msg)
+
+        self.assertTrue(ignored<len(testNames)/2)
+        self.assertTrue(zeroFlux>0)
+
+        for testName in testNames:
+            if os.path.exists(testName):
+                os.unlink(testName)
+
+        for controlName in controlImages:
+            if os.path.exists(controlName):
+                os.unlink(controlName)
+
+        if os.path.exists(dbName):
+            os.unlink(dbName)
 
 def suite():
     utilsTests.init()

@@ -15,7 +15,7 @@ from lsst.sims.catUtils.galSimInterface import GalSimStars, ExampleOpticalPSF, E
 
 class testGalSimStarsNoiseless(GalSimStars):
     #only draw images for u and g bands (for speed)
-    band_pass_names = ['u','g']
+    bandpass_names = ['u','g']
 
     #defined in galSimInterface/galSimUtilities.py
     PSF = ExampleOpticalPSF()
