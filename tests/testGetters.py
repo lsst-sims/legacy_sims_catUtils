@@ -22,12 +22,12 @@ class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     sig2sys = 0.0003
 
     column_outputs = ['raJ2000', 'decJ2000',
-                      'uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
-                      'sigma_uRecalc', 'sigma_gRecalc', 'sigma_rRecalc', 'sigma_iRecalc',
-                      'sigma_zRecalc', 'sigma_yRecalc',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
+                      'sigma_lsst_z', 'sigma_lsst_y',
                       'sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge', 'sigma_iBulge',
                       'sigma_zBulge', 'sigma_yBulge',
                       'sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk', 'sigma_iDisk',
