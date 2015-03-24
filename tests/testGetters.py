@@ -55,7 +55,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         m5 = {'u':23.0, 'g':24.0, 'r':21.0, 'i':22.3, 'z':23.7, 'y':24.5}
-        cls.obs_metadata.m5value = m5
+        cls.obs_metadata.m5 = m5
         cls.connectionString = 'sqlite:///'+cls.dbName
 
         cls.skySeds = []
@@ -84,7 +84,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         for i in range(len(cls.bandpasses)):
             sedDummy = Sed()
             sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSedDummy = setM5(cls.obs_metadata.m5(cls.bandpasses[i]), sedDummy,
+            normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
                                        seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
             cls.skySeds.append(normalizedSedDummy)
