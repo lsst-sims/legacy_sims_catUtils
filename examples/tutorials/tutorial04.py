@@ -104,3 +104,20 @@ for chunk in result:
     for row in chunk:
         print row
 print '\n'
+
+print 'now we will write a cartoon catalog class to write out this cartoon database'
+
+from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
+
+class TestCatalog(InstanceCatalog):
+    column_outputs = ['col1', 'col2', 'col3', 'col4', 'threeMinusFour']
+    catalog_type = 'test_catalog'
+
+    @cached
+    def get_threeMinusFour(self):
+        three = self.column_by_name('col3')
+        four = self.column_by_name('col4')
+        return three-four
+
+myCat = TestCatalog(myDB)
+myCat.write_catalog('cartoon_catalog.txt')
