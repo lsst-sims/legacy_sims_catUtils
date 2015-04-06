@@ -39,7 +39,7 @@ class GalaxyPhotometry(RefCatalogGalaxyBase):
                       'majorAxisDisk', 'minorAxisDisk', 'positionAngleDisk',
                       'majorAxisBulge', 'minorAxisBulge', 'positionAngleBulge',
                       'internalAvBulge', 'internalAvDisk',
-                      'uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',

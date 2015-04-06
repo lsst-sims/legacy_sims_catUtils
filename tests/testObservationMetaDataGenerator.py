@@ -127,8 +127,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 elif tag == 'm5':
                     ct = 0
                     for obs_metadata in results:
-                        self.assertTrue(obs_metadata.m5('i')<line[1][1])
-                        self.assertTrue(obs_metadata.m5('i')>line[1][0])
+                        self.assertTrue(obs_metadata.m5[obs_metadata.bandpass]<line[1][1])
+                        self.assertTrue(obs_metadata.m5[obs_metadata.bandpass]>line[1][0])
                         ct += 1
                     self.assertTrue(ct>0)
 

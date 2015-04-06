@@ -22,12 +22,12 @@ class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     sig2sys = 0.0003
 
     column_outputs = ['raJ2000', 'decJ2000',
-                      'uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
-                      'sigma_uRecalc', 'sigma_gRecalc', 'sigma_rRecalc', 'sigma_iRecalc',
-                      'sigma_zRecalc', 'sigma_yRecalc',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
+                      'sigma_lsst_z', 'sigma_lsst_y',
                       'sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge', 'sigma_iBulge',
                       'sigma_zBulge', 'sigma_yBulge',
                       'sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk', 'sigma_iDisk',
@@ -55,7 +55,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         m5 = {'u':23.0, 'g':24.0, 'r':21.0, 'i':22.3, 'z':23.7, 'y':24.5}
-        cls.obs_metadata.m5value = m5
+        cls.obs_metadata.m5 = m5
         cls.connectionString = 'sqlite:///'+cls.dbName
 
         cls.skySeds = []
@@ -84,7 +84,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         for i in range(len(cls.bandpasses)):
             sedDummy = Sed()
             sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSedDummy = setM5(cls.obs_metadata.m5(cls.bandpasses[i]), sedDummy,
+            normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
                                        seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
             cls.skySeds.append(normalizedSedDummy)
