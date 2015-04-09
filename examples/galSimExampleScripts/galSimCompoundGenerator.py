@@ -33,6 +33,8 @@ class testGalSimStars(GalSimStars):
 class testGalSimGalaxies(GalSimGalaxies):
     bandpass_names = ['u', 'g']
 
+    PSF = DoubleGaussianPSF()
+
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here
     #camera = LsstSimMapper().camera
