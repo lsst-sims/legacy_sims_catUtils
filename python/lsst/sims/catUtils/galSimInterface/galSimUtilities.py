@@ -7,8 +7,7 @@ import numpy
 import galsim
 from lsst.sims.utils import radiansToArcsec
 
-__all__ = ["PSFbase", "DoubleGaussianPSF", "ExampleOpticalPSF",
-           "ExampleCCDNoise"]
+__all__ = ["PSFbase", "DoubleGaussianPSF", "ExampleCCDNoise"]
 
 class PSFbase(object):
     """
@@ -31,7 +30,7 @@ class PSFbase(object):
 
     Consult GalSim's documentation to see what kinds of PSFs are available.
 
-    See the classes DoubleGaussianPSF and ExampleOpticalPSF below for example implementations.
+    See the class DoubleGaussianPSF below for example implementations.
 
     See galSimCompoundGenerator.py and galSimStarGenerator.py for example usages.
     """
@@ -135,31 +134,6 @@ class DoubleGaussianPSF(PSFbase):
         it will just return the cached PSF function.
         """
         return self._cached_psf
-
-class ExampleOpticalPSF(PSFbase):
-    """
-    This is an example implementation of a position-independent version of GalSims OpticalPSF class.
-    See documentation for PSFbase to learn how it is used.
-    """
-
-    wavelength_dependent = True
-
-    def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
-        """
-        Return an OpticalPSF to be convolved with sources.
-
-        @param [in] xPupil the x coordinate on the pupil in arc seconds
-
-        @param [in] yPupil the y coordinate on the pupil in arc seconds
-
-        @param [in] bandpass is an instantiation of the GalSim bandpass class which contains
-        data defining the bandpass in question (in case the PSF is wavelength dependent)
-        """
-
-        eff = kwargs['bandpass'].effective_wavelength
-        psf = galsim.OpticalPSF(lam_over_diam=radiansToArcsec(eff*1.0e-9/8.0), astig1=1.0,
-                                astig2=2.0)
-        return psf
 
 class ExampleCCDNoise(object):
     """

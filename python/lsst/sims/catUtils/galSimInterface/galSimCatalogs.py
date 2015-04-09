@@ -129,7 +129,7 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     bandpass_root = 'baseline/total'
 
     #This member variable will define a PSF to convolve with the sources.
-    #See the classes PSFbase, DoubleGaussianPSF, and ExampleOpticalPSF in
+    #See the classes PSFbase and DoubleGaussianPSF in
     #galSimUtilities.py for more information
     PSF = None
 

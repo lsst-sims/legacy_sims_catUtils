@@ -10,7 +10,7 @@ from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, \
-                                               DoubleGaussianPSF, ExampleOpticalPSF
+                                               DoubleGaussianPSF
 from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyAgnDBObj, testStarsDBObj
 import lsst.afw.image as afwImage
@@ -51,7 +51,7 @@ class testStarCatalog(GalSimStars):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
-    PSF = ExampleOpticalPSF()
+    PSF = DoubleGaussianPSF()
 
 class testAgnCatalog(GalSimAgn):
     """
