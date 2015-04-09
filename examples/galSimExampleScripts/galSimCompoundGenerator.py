@@ -10,7 +10,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, \
                                                  OpSim3_61DBObject
-from lsst.sims.catUtils.galSimInterface import ExampleOpticalPSF, GalSimStars, GalSimGalaxies, \
+from lsst.sims.catUtils.galSimInterface import DoubleGaussianPSF, GalSimStars, GalSimGalaxies, \
                                                GalSimAgn
 
 #if you want to use the actual LSST camera
@@ -22,7 +22,7 @@ class testGalSimStars(GalSimStars):
 
     #convolve with a PSF; note that galaxies are not convolved with a PSF
     #PSF defined in galSimInterface/galSimUtilities.py
-    PSF = ExampleOpticalPSF()
+    PSF = DoubleGaussianPSF()
 
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here
@@ -44,7 +44,7 @@ class testGalSimAgn(GalSimAgn):
     bandpass_names = ['u', 'g']
 
     #defined in galSimInterface/galSimUtilities.py
-    PSF = ExampleOpticalPSF()
+    PSF = DoubleGaussianPSF()
 
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here

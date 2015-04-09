@@ -7,7 +7,7 @@ import numpy
 import galsim
 from lsst.sims.utils import radiansToArcsec
 
-__all__ = ["PSFbase", "ExampleGaussianPSF", "ExampleOpticalPSF",
+__all__ = ["PSFbase", "DoubleGaussianPSF", "ExampleOpticalPSF",
            "ExampleCCDNoise"]
 
 class PSFbase(object):
@@ -31,7 +31,7 @@ class PSFbase(object):
 
     Consult GalSim's documentation to see what kinds of PSFs are available.
 
-    See the classes ExampleGaussianPSF and ExampleOpticalPSF below for example implementations.
+    See the classes DoubleGaussianPSF and ExampleOpticalPSF below for example implementations.
 
     See galSimCompoundGenerator.py and galSimStarGenerator.py for example usages.
     """
@@ -89,13 +89,39 @@ class PSFbase(object):
             #if there is no object (i.e. if this is a point source), just return the PSF
             return psf
 
-class ExampleGaussianPSF(PSFbase):
+class DoubleGaussianPSF(PSFbase):
     """
     This is an example implementation of a wavelength- and position-independent
-    Gaussian PSF.  See the documentation in PSFbase to learn how it is used.
+    Double Gaussian PSF.  See the documentation in PSFbase to learn how it is used.
+
+    This specific PSF comes from equation(30) of the signal-to-noise document, which
+    can be found at
+
+    www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
     """
 
     wavelength_dependent = False
+
+    def __init__(self, fwhm=0.6):
+        """
+        @param [in] fwhm is the Full Width at Half Max of the total PSF.  This is given in
+        arcseconds.  The default value of 0.6 comes from a FWHM of 3 pixels with a pixel scale
+        of 0.2 arcseconds per pixel.
+
+        Because this PSF depends on neither position nor wavelength, this __init__ method
+        will instantiate a PSF and cache it.  It is this cached psf that will be returned
+        whenever _getPSF is called in this class.
+        """
+
+        #the expression below is derived by solving equation (30) of the signal-to-noise
+        #document (www.astro.washington.edu/uses/ivezic/Astr511/LSST_SNRdoc.pdf)
+        #for r at half the maximum of the PSF
+        alpha = fwhm/2.3835
+
+        gaussian1 = galsim.Gaussian(sigma=alpha)
+        gaussian2 = galsim.Gaussian(sigma=2.0*alpha)
+
+        self._cached_psf = 0.909*(gaussian1 + 0.1*gaussian2)
 
     def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
         """
@@ -105,12 +131,10 @@ class ExampleGaussianPSF(PSFbase):
 
         @param [in] yPupil the y coordinate on the pupil in arc seconds
 
-        @param [in] bandpass is an instantiation of the GalSim bandpass class which contains
-        data defining the bandpass in question (in case the PSF is wavelength dependent)
+        Because this specific PSF depends on neither wavelength nor position,
+        it will just return the cached PSF function.
         """
-        psf = galsim.Gaussian(sigma=0.14)
-        psf = psf.shear(q=0.05, beta=numpy.pi*0.25*galsim.radians)
-        return psf
+        return self._cached_psf
 
 class ExampleOpticalPSF(PSFbase):
     """
