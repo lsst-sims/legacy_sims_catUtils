@@ -29,7 +29,7 @@ from lsst.sims.utils import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
-from lsst.sims.photUtils import EBVmixin, Sed, Bandpass
+from lsst.sims.photUtils import EBVmixin, Sed, Bandpass, PhotometricDefaults
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
@@ -154,9 +154,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #These parameters can be set to different values by redefining them in daughter
     #classes of this class.
     #
-    effective_area = numpy.pi*(6.5*100.0/2.0)**2 #copied from Sed.py in sims_photUtils
-    exposure_time = 15.0 #copied from Sed.py in sims_photUtils
-    gain = 2.3 #copied from Sed.py in sims_photUtils
+    effective_area = PhotometricDefaults.effarea
+    exposure_time = PhotometricDefaults.exptime
+    gain = PhotometricDefaults.gain
 
     #This is just a place holder for the camera object associated with the InstanceCatalog.
     #If you want to assign a different camera, you can do so immediately after instantiating this class
