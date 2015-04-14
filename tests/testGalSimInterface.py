@@ -10,7 +10,7 @@ from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, \
-                                               ExampleGaussianPSF, ExampleOpticalPSF
+                                               SNRdocumentPSF
 from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyAgnDBObj, testStarsDBObj
 import lsst.afw.image as afwImage
@@ -51,7 +51,7 @@ class testStarCatalog(GalSimStars):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
-    PSF = ExampleOpticalPSF()
+    PSF = SNRdocumentPSF()
 
 class testAgnCatalog(GalSimAgn):
     """
@@ -71,13 +71,13 @@ class testAgnCatalog(GalSimAgn):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
-    PSF = ExampleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
 class psfCatalog(testGalaxyCatalog):
     """
     Adds a PSF to testGalaxyCatalog
     """
-    PSF = ExampleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
 class GalSimInterfaceTest(unittest.TestCase):
 
@@ -469,6 +469,58 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         if os.path.exists(dbName):
             os.unlink(dbName)
+
+
+    def testPSF(self):
+        """
+        This method will test that SNRdocumentPSF returns a PSF
+        with the correct Full Width at Half Max
+        """
+
+        fwhm = 0.4 #in arc-seconds; make sure that it divides evenly by scale, so that rounding
+                   #half integer numbers of pixels does not affect the unit test
+
+        scale = 0.1 #arc-seconds per pixel
+
+        psf = SNRdocumentPSF(fwhm=fwhm)
+        image = psf._cached_psf.drawImage(scale=scale)
+        xCenter = (image.getXMax() + image.getXMin())/2
+        yCenter = (image.getYMax() + image.getYMin())/2
+
+        maxValue = image(xCenter, yCenter) #because the default is to center GSObjects
+        halfDex = int(numpy.round(0.5*fwhm/scale)) #the distance from the center corresponding to FWHM
+
+        #Test that pixel combinations bracketing the expected FWHM value behave
+        #the way we expect them to
+        midP1 = image(xCenter+halfDex+1, yCenter)
+        midM1 = image(xCenter+halfDex-1, yCenter)
+        msg = '%e is not > %e ' % (midM1, 0.5*maxValue)
+        self.assertTrue(midM1 > 0.5*maxValue, msg=msg)
+        msg = '%e is not < %e ' % (midP1, 0.5*maxValue)
+        self.assertTrue(midP1 < 0.5*maxValue, msg=msg)
+
+        midValue = image(xCenter-halfDex, yCenter)
+        midP1 = image(xCenter-halfDex-1, yCenter)
+        midM1 = image(xCenter-halfDex+1, yCenter)
+        msg = '%e is not > %e ' % (midM1, 0.5*maxValue)
+        self.assertTrue(midM1 > 0.5*maxValue, msg=msg)
+        msg = '%e is not < %e ' % (midP1, 0.5*maxValue)
+        self.assertTrue(midP1 < 0.5*maxValue, msg=msg)
+
+        midP1 = image(xCenter, yCenter+halfDex+1)
+        midM1 = image(xCenter, yCenter+halfDex-1)
+        msg = '%e is not > %e ' % (midM1, 0.5*maxValue)
+        self.assertTrue(midM1 > 0.5*maxValue, msg=msg)
+        msg = '%e is not < %e ' % (midP1, 0.5*maxValue)
+        self.assertTrue(midP1 < 0.5*maxValue, msg=msg)
+
+        midP1 = image(xCenter, yCenter-halfDex-1)
+        midM1 = image(xCenter, yCenter-halfDex+1)
+        msg = '%e is not > %e ' % (midM1, 0.5*maxValue)
+        self.assertTrue(midM1 > 0.5*maxValue, msg=msg)
+        msg = '%e is not < %e ' % (midP1, 0.5*maxValue)
+        self.assertTrue(midP1 < 0.5*maxValue, msg=msg)
+
 
 def suite():
     utilsTests.init()
