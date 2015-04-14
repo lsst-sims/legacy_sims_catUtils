@@ -12,6 +12,7 @@ import os
 import numpy
 import galsim
 from lsst.sims.utils import radiansToArcsec
+from lsst.sims.photUtils import PhotometricDefaults
 
 __all__ = ["GalSimInterpreter", "GalSimDetector"]
 
@@ -22,7 +23,9 @@ class GalSimDetector(object):
 
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
-                 plateScale=None, electronsPerADU=1.71234e3, readNoise=52.1237):
+                 plateScale=PhotometricDefaults.platescale,
+                 electronsPerADU=PhotometricDefaults.gain,
+                 readNoise=PhotometricDefaults.rdnoise):
         """
         param [in] name is a string denoting the name of the detector (this should be the
         same name that will be returned by the astrometry method findChipName())
@@ -36,10 +39,9 @@ class GalSimDetector(object):
 
         param [in] plateScale in arcseconds per pixel on this detector
 
-        param [in] electronsPerADU default value is taken from afw/testUtils.py line 76
+        param [in] electronsPerADU
 
         param [in] readNoise per pixel in electrons
-        default value is taken from afw/testUtils.py line 77
 
         This class will generate its own internal variable self.fileName which is
         the name of the detector as it will appear in the output FITS files
