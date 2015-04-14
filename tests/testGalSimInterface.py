@@ -202,7 +202,9 @@ class GalSimInterfaceTest(unittest.TestCase):
                     #statistical imprecision in the GalSim drawing routine
                     #to violate the condition below
                     drawnDetectors += 1
-                    self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff])
+                    msg = 'controlCounts %e galsimCounts %e' % (controlCounts[ff], galsimCounts[ff])
+                    self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff],
+                                    msg=msg)
                 elif galsimCounts[ff] > 0.001:
                     unDrawnDetectors += 1
 

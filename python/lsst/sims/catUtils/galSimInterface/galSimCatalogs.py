@@ -29,14 +29,14 @@ from lsst.sims.utils import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
-from lsst.sims.photUtils import EBVmixin, Sed, Bandpass, PhotometricDefaults
+from lsst.sims.photUtils import EBVmixin, Sed, Bandpass, PhotometryHardware, PhotometricDefaults
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 
 __all__ = ["GalSimGalaxies", "GalSimAgn", "GalSimStars"]
 
-class GalSimBase(InstanceCatalog, CameraCoords):
+class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     """
     The catalog classes in this file use the InstanceCatalog infrastructure to construct
     FITS images for each detector-filter combination on a simulated camera.  This is done by
@@ -123,10 +123,13 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #column contain both ':' and ','
     delimiter = ';'
 
-    #default variables telling the InstanceCatalog where to find bandpass data
-    bandpass_names = ['u','g','r','i','z','y']
-    bandpass_directory = eups.productDir('throughputs')
-    bandpass_root = 'baseline/total'
+    bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
+    bandpassDir = os.path.join(eups.productDir('throughputs'), 'baseline')
+    bandpassRoot = 'filter_'
+    componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                     'lens1.dat', 'lens2.dat', 'lens3.dat']
+    skyBandpassName = 'atmos.dat'
+    skySEDname = 'darksky.dat'
 
     #This member variable will define a PSF to convolve with the sources.
     #See the classes PSFbase and DoubleGaussianPSF in
@@ -334,20 +337,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         return numpy.array(output)
 
-    def _getBandpasses(self):
-        """
-        Create a list of paths to the files containing bandpass data.
-
-        returns the list of paths and the list self.bandpass_names (which are just
-        tags identifying each bandpass a la ['u', 'g', 'r', 'i', 'z', 'y'])
-        """
-        bandpassFiles = []
-        for bpn in self.bandpass_names:
-            name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
-            bandpassFiles.append(name)
-
-        return bandpassFiles, self.bandpass_names
-
     def copyGalSimInterpreter(self, otherCatalog):
         """
         Copy the camera, GalSimInterpreter, from another GalSim InstanceCatalog
@@ -456,10 +445,16 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 detectors.append(detector)
 
-            bandpassFiles, bandpassNames = self._getBandpasses()
+            if self.bandpassDict is None:
+                self.loadBandpassesFromFiles(bandpassNames=self.bandpassNames,
+                                             filedir=self.bandpassDir,
+                                             bandpassRoot=self.bandpassRoot,
+                                             componentList=self.componentList,
+                                             skyBandpass=self.skyBandpassName,
+                                             skySED=self.skySEDname)
 
-            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassNames=bandpassNames,
-                                                       bandpassFiles=bandpassFiles, gain=self.gain)
+            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassDict=self.bandpassDict,
+                                                       gain=self.gain)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 

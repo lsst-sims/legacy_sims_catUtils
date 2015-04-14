@@ -78,8 +78,7 @@ class GalSimInterpreter(object):
     into FITS images.
     """
 
-    def __init__(self, detectors=None, bandpassNames=None, bandpassFiles=None,
-                 gain=2.3):
+    def __init__(self, detectors=None, bandpassDict=None, gain=2.3):
 
         """
         @param [in] detectors is a list of GalSimDetectors for which we are drawing FITS images
@@ -108,9 +107,9 @@ class GalSimInterpreter(object):
                                   #It turns out that calling the image's constructor is more time-consuming than
                                   #returning a deep copy
 
-        self.setBandpasses(bandpassNames=bandpassNames, bandpassFiles=bandpassFiles)
+        self.setBandpasses(bandpassDict=bandpassDict)
 
-    def setBandpasses(self, bandpassNames=None, bandpassFiles=None):
+    def setBandpasses(self, bandpassDict):
         """
         Read in files containing bandpass data and store them in a dict of GalSim bandpass instantiations.
 
@@ -121,9 +120,17 @@ class GalSimInterpreter(object):
 
         The bandpasses will be stored in the member variable self.bandpasses, which is a dict
         """
-        for bpn, bpf in zip(bandpassNames, bandpassFiles):
-            bp = galsim.Bandpass(bpf)
-            self.bandpasses[bpn] = bp
+
+        for bpname in bandpassDict:
+
+            # 14 April 2015
+            #For some reason, you need to pass in the bandpass as an instance of galsim.LookupTable.
+            #If you pass a lambda function, image generation will get much slower and unit tests
+            #will fail because too few counts are placed on images.
+            bptest = galsim.Bandpass(throughput = galsim.LookupTable(x=bandpassDict[bpname].wavelen, f=bandpassDict[bpname].sb),
+                                 wave_type='nm')
+
+            self.bandpasses[bpname] = bptest
 
     def setPSF(self, PSF=None):
         """
