@@ -7,7 +7,7 @@ import numpy
 import galsim
 from lsst.sims.utils import radiansToArcsec
 
-__all__ = ["PSFbase", "SNRdocumentPSF", "ExampleCCDNoise"]
+__all__ = ["PSFbase", "DoubleGaussianPSF", "SNRdocumentPSF", "ExampleCCDNoise"]
 
 class PSFbase(object):
     """
@@ -30,7 +30,7 @@ class PSFbase(object):
 
     Consult GalSim's documentation to see what kinds of PSFs are available.
 
-    See the class SNRdocumentPSF below for example implementations.
+    See the classes DoubleGaussianPSF and SNRdocumentPSF below for example implementations.
 
     See galSimCompoundGenerator.py and galSimStarGenerator.py for example usages.
     """
@@ -88,7 +88,62 @@ class PSFbase(object):
             #if there is no object (i.e. if this is a point source), just return the PSF
             return psf
 
-class SNRdocumentPSF(PSFbase):
+class DoubleGaussianPSF(PSFbase):
+    """
+    This is an example implementation of a wavelength- and position-independent
+    Double Gaussian PSF.  See the documentation in PSFbase to learn how it is used.
+    """
+
+    wavelength_dependent = False
+
+    def __init__(self, fwhm1=0.6, fwhm2=0.12, wgt1=1.0, wgt2=0.1):
+        """
+        @param [in] fwhm1 is the Full Width at Half Max of the first Gaussian in arcseconds
+
+        @param [in] fwhm2 is the Full Width at Half Max of the second Gaussian in arcseconds
+
+        @param [in] wgt1 is the dimensionless coefficient normalizing the first Gaussian
+
+        @param [in] wgt2 is the dimensionless coefficient normalizing the second Gaussian
+
+        The total PSF will be
+
+        (wgt1 * G(sig1) + wgt2 * G(sig2))/(wgt1 + wgt2)
+
+        where G(sigN) denotes a normalized Gaussian with a standard deviation that gives
+        a Full Width at Half Max of fwhmN.  (Integrating a two-dimensional Gaussian, we find
+        that sig = fwhm/2.355)
+
+        Because this PSF depends on neither position nor wavelength, this __init__ method
+        will instantiate a PSF and cache it.  It is this cached psf that will be returned
+        whenever _getPSF is called in this class.
+        """
+
+        r1 = fwhm1/2.355
+        r2 = fwhm2/2.355
+        norm = 1.0/(wgt1 + wgt2)
+
+        gaussian1 = galsim.Gaussian(sigma=r1)
+        gaussian2 = galsim.Gaussian(sigma=r2)
+
+        self._cached_psf = norm*(wgt1*gaussian1 + wgt2*gaussian2)
+
+    def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
+        """
+        Return a the PSF to be convolved with sources.
+
+        @param [in] xPupil the x coordinate on the pupil in arc seconds
+
+        @param [in] yPupil the y coordinate on the pupil in arc seconds
+
+        Because this specific PSF depends on neither wavelength nor position,
+        it will just return the cached PSF function.
+        """
+        return self._cached_psf
+
+
+
+class SNRdocumentPSF(DoubleGaussianPSF):
     """
     This is an example implementation of a wavelength- and position-independent
     Double Gaussian PSF.  See the documentation in PSFbase to learn how it is used.
@@ -122,18 +177,7 @@ class SNRdocumentPSF(PSFbase):
 
         self._cached_psf = 0.909*(gaussian1 + 0.1*gaussian2)
 
-    def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
-        """
-        Return a the PSF to be convolved with sources.
 
-        @param [in] xPupil the x coordinate on the pupil in arc seconds
-
-        @param [in] yPupil the y coordinate on the pupil in arc seconds
-
-        Because this specific PSF depends on neither wavelength nor position,
-        it will just return the cached PSF function.
-        """
-        return self._cached_psf
 
 class ExampleCCDNoise(object):
     """
