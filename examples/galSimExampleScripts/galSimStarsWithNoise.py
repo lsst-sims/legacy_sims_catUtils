@@ -8,7 +8,7 @@ from lsst.sims.utils import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import StarObj, OpSim3_61DBObject
-from lsst.sims.catUtils.galSimInterface import GalSimStars, DoubleGaussianPSF, ExampleCCDNoise
+from lsst.sims.catUtils.galSimInterface import GalSimStars, SNRdocumentPSF, ExampleCCDNoise
 
 #if you want to use the actual LSST camera
 #from lsst.obs.lsstSim import LsstSimMapper
@@ -18,7 +18,7 @@ class testGalSimStarsNoiseless(GalSimStars):
     bandpass_names = ['u','g']
 
     #defined in galSimInterface/galSimUtilities.py
-    PSF = DoubleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here

@@ -7,7 +7,7 @@ import numpy
 import galsim
 from lsst.sims.utils import radiansToArcsec
 
-__all__ = ["PSFbase", "DoubleGaussianPSF", "ExampleCCDNoise"]
+__all__ = ["PSFbase", "SNRdocumentPSF", "ExampleCCDNoise"]
 
 class PSFbase(object):
     """
@@ -30,7 +30,7 @@ class PSFbase(object):
 
     Consult GalSim's documentation to see what kinds of PSFs are available.
 
-    See the class DoubleGaussianPSF below for example implementations.
+    See the class SNRdocumentPSF below for example implementations.
 
     See galSimCompoundGenerator.py and galSimStarGenerator.py for example usages.
     """
@@ -88,7 +88,7 @@ class PSFbase(object):
             #if there is no object (i.e. if this is a point source), just return the PSF
             return psf
 
-class DoubleGaussianPSF(PSFbase):
+class SNRdocumentPSF(PSFbase):
     """
     This is an example implementation of a wavelength- and position-independent
     Double Gaussian PSF.  See the documentation in PSFbase to learn how it is used.
@@ -124,7 +124,7 @@ class DoubleGaussianPSF(PSFbase):
 
     def _getPSF(self, xPupil=None, yPupil=None, **kwargs):
         """
-        Return a Gaussian PSF to be convolved with sources.
+        Return a the PSF to be convolved with sources.
 
         @param [in] xPupil the x coordinate on the pupil in arc seconds
 

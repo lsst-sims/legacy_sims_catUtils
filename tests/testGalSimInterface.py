@@ -10,7 +10,7 @@ from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, \
-                                               DoubleGaussianPSF
+                                               SNRdocumentPSF
 from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyAgnDBObj, testStarsDBObj
 import lsst.afw.image as afwImage
@@ -51,7 +51,7 @@ class testStarCatalog(GalSimStars):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
-    PSF = DoubleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
 class testAgnCatalog(GalSimAgn):
     """
@@ -71,13 +71,13 @@ class testAgnCatalog(GalSimAgn):
     column_outputs.append('galacticRv')
     column_outputs.append('fitsFiles')
 
-    PSF = DoubleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
 class psfCatalog(testGalaxyCatalog):
     """
     Adds a PSF to testGalaxyCatalog
     """
-    PSF = DoubleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
 class GalSimInterfaceTest(unittest.TestCase):
 
@@ -473,7 +473,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
     def testPSF(self):
         """
-        This method will test that DoubleGaussianPSF returns a PSF
+        This method will test that SNRdocumentPSF returns a PSF
         with the correct Full Width at Half Max
         """
 
@@ -482,7 +482,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         scale = 0.1 #arc-seconds per pixel
 
-        psf = DoubleGaussianPSF(fwhm=fwhm)
+        psf = SNRdocumentPSF(fwhm=fwhm)
         image = psf._cached_psf.drawImage(scale=scale)
         xCenter = (image.getXMax() + image.getXMin())/2
         yCenter = (image.getYMax() + image.getYMin())/2

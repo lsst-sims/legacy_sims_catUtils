@@ -7,7 +7,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, OpSim3_61DBObject
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, ExampleCCDNoise, \
-                                               DoubleGaussianPSF
+                                               SNRdocumentPSF
 
 #if you want to use the actual LSST camera
 #from lsst.obs.lsstSim import LsstSimMapper
@@ -20,7 +20,7 @@ class testGalSimGalaxiesNoiseless(GalSimGalaxies):
     #You can similarly assign any camera object you want here
     #camera = LsstSimMapper().camera
 
-    PSF = DoubleGaussianPSF()
+    PSF = SNRdocumentPSF()
 
 class testGalSimGalaxiesNoisy(testGalSimGalaxiesNoiseless):
 
