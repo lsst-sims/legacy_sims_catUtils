@@ -1,6 +1,6 @@
 Unrefracted_Azimuth 0
 Opsim_moondec 29.666667
-Opsim_rottelpos 0
+Opsim_rottelpos 180
 Opsim_moonalt -90
 Opsim_rotskypos 0
 Opsim_moonra 298.825632
