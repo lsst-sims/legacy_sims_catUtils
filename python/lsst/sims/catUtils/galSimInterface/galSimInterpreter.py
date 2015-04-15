@@ -24,7 +24,7 @@ class GalSimDetector(object):
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
                  plateScale=PhotometricDefaults.platescale,
-                 electronsPerADU=PhotometricDefaults.gain,
+                 gain=PhotometricDefaults.gain,
                  readNoise=PhotometricDefaults.rdnoise):
         """
         param [in] name is a string denoting the name of the detector (this should be the
@@ -39,7 +39,7 @@ class GalSimDetector(object):
 
         param [in] plateScale in arcseconds per pixel on this detector
 
-        param [in] electronsPerADU
+        param [in] gain is the number of electrons per ADU
 
         param [in] readNoise per pixel in electrons
 
@@ -55,7 +55,7 @@ class GalSimDetector(object):
         self.yMin = yMin
         self.yMax = yMax
         self.plateScale = plateScale
-        self.electronsPerADU = electronsPerADU
+        self.gain = gain
         self.readNoise = readNoise
         self.fileName = self._getFileName()
 
@@ -103,6 +103,7 @@ class GalSimInterpreter(object):
 
         self.detectorImages = {} #this dict will contain the FITS images (as GalSim images)
         self.bandpasses = {} #this dict will contain the GalSim bandpass instantiations corresponding to the input bandpasses
+        self.catSimBandpasses = None
         self.blankImageCache = {} #this dict will cache blank images associated with specific detectors.
                                   #It turns out that calling the image's constructor is more time-consuming than
                                   #returning a deep copy
@@ -120,7 +121,8 @@ class GalSimInterpreter(object):
 
         The bandpasses will be stored in the member variable self.bandpasses, which is a dict
         """
-
+        
+        self.catSimBandpasses = bandpassDict
         for bpname in bandpassDict:
 
             # 14 April 2015
@@ -570,7 +572,7 @@ class GalSimInterpreter(object):
         return centeredObj
 
 
-    def addNoise(self, noiseWrapper=None, obs_metadata=None):
+    def addNoiseAndBackground(self, addBackground=True, addNoise=True, wrapper=None, m5Dict=None):
         """
         Adds a GalSim noise model to the images being stored by this
         GalSimInterpreter
@@ -585,8 +587,21 @@ class GalSimInterpreter(object):
             for bandpassName in self.bandpasses:
                 name = self._getFileName(detector=detector, bandpassName=bandpassName)
                 if name in self.detectorImages:
-                    noiseModel = noiseWrapper.getNoiseModel(obs_metadata=obs_metadata, detector=detector)
-                    self.detectorImages[name].addNoise(noiseModel)
+                    self.detectorImages[name] = wrapper.addNoiseAndBackground(self.detectorImages[name],
+                                                                              bandpass=self.catSimBandpasses[bandpassName],
+                                                                              m5=m5Dict[bandpassName],
+                                                                              addBackground=addBackground,
+                                                                              addNoise=addNoise,
+                                                                              expTime=PhotometricDefaults.exptime,
+                                                                              nexp=PhotometricDefaults.nexp,
+                                                                              readnoise=detector.readNoise,
+                                                                              darkcurrent=PhotometricDefaults.darkcurrent,
+                                                                              othernoise=PhotometricDefaults.othernoise,
+                                                                              seeing=PhotometricDefaults.seeing[bandpassName],
+                                                                              platescale=detector.plateScale,
+                                                                              gain=detector.gain,
+                                                                              effarea=PhotometricDefaults.effarea)
+
 
     def writeImages(self, nameRoot=None):
         """

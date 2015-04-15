@@ -138,7 +138,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
 
     #This member variable can store a GalSim noise model instantiation
     #which will be applied to the FITS images by calling add_noise()
-    noise = None
+    noise_and_background = None
 
     #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
     #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
@@ -458,14 +458,25 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 
-    def add_noise(self):
+    def add_noise_and_background(self, addBackground=True, addNoise=True):
         """
         Adds the noise model stored in self.noise to the images stored
         in the GalSimInterpreter
         """
 
-        if self.noise is not None:
-            self.galSimInterpreter.addNoise(noiseWrapper = self.noise, obs_metadata=self.obs_metadata)
+        m5Dict = {}
+        if self.obs_metadata is not None and self.obs_metadata.m5 is not None:
+            for m5Name in self.obs_metadata.m5:
+                m5Dict[m5Name] = self.obs_metadata.m5[m5name]
+        
+        for m5name in self._defaultM5:
+            if m5name not in m5Dict:
+                m5Dict[m5name] = self._defaultM5[m5name]
+
+        if self.noise_and_background is not None:
+            self.galSimInterpreter.addNoiseAndBackground(addBackground=addBackground, addNoise=addNoise,
+                                                         wrapper=self.noise_and_background, m5Dict=m5Dict)
+
 
     def write_images(self, nameRoot=None):
         """

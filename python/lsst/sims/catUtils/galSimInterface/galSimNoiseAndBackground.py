@@ -5,10 +5,66 @@ galsim into the CatSim interface
 
 import numpy
 import galsim
+from lsst.sims.photUtils import expectedSkyCountsForM5, PhotometricDefaults
 
 __all__ = ["ExampleCCDNoise"]
 
-class ExampleCCDNoise(object):
+class NoiseAndBackgroundBase(object):
+
+    def __init__(self, seed=None):
+        """
+        @param [in] seed is an (optional) int that will seed the
+        random number generator used by the noise model
+        """
+
+        if seed is None:
+            self.randomNumbers = galsim.UniformDeviate()
+        else:
+            self.randomNumbers = galsim.UniformDeviate(seed)
+
+        self.addedBackground = False
+
+
+    def getNoiseModel(self, *args, **kwargs):
+        raise NotImplementedError("There is no noise model for NoiseAndBackgroundBase")
+
+
+    def addNoiseAndBackground(self, image, bandpass=None, m5=None,
+                              addBackground=True,
+                              addNoise = True,
+                              expTime=PhotometricDefaults.exptime,
+                              nexp=PhotometricDefaults.nexp,
+                              readnoise=PhotometricDefaults.rdnoise,
+                              darkcurrent=PhotometricDefaults.darkcurrent,
+                              othernoise=PhotometricDefaults.othernoise,
+                              seeing=PhotometricDefaults.seeing['r'],
+                              platescale=PhotometricDefaults.platescale,
+                              gain=PhotometricDefaults.gain,
+                              effarea=PhotometricDefaults.effarea):
+    
+        skyCounts = expectedSkyCountsForM5(m5, bandpass,
+                                           expTime=expTime, nexp=nexp,
+                                           readnoise=readnoise, darkcurrent=darkcurrent,
+                                           othernoise=othernoise, seeing=seeing,
+                                           platescale=platescale, gain=gain,
+                                           effarea=effarea)
+
+        image = image.copy()
+
+        if addBackground:
+            image += skyCounts
+            skyLevel = 0.0
+        else:
+            skyLevel = skyCounts
+
+        if addNoise:
+            noiseModel = self.getNoiseModel(skyLevel=skyLevel, gain=gain, readNoise=readnoise)
+            image.addNoise(noiseModel)
+
+        return image
+        
+
+class ExampleCCDNoise(NoiseAndBackgroundBase):
     """
     This class wraps the GalSim class CCDNoise.  It is meant to be assigned as
     the self.noise member variable in a GalSim InstanceCatalog.  To instantiate
@@ -22,20 +78,8 @@ class ExampleCCDNoise(object):
     a GalSim noise model
     """
 
-    def __init__(self, seed=None):
-        if seed is None:
-            self.randomNumbers = galsim.UniformDeviate()
-        else:
-            self.randomNumbers = galsim.UniformDeviate(seed)
-
-    def getNoiseModel(self, obs_metadata=None, detector=None):
-        skyLevel = 10.0 #this is obviously nonsense; GalSim wants electrons-per-pixel; Peter thinks we are storing
-                        #sky brightness in magnitudes per square arc-second; once we have the new interface to
-                        #OpSim written, we will need to use that, plus filter information, to convert
-                        #between the two (which, in principle, can be done)
-
-        gain = detector.electronsPerADU
-        readNoise = detector.readNoise
+    def getNoiseModel(self, skyLevel=0.0, gain=PhotometricDefaults.gain,
+                      readNoise=PhotometricDefaults.rdnoise):
 
         return galsim.CCDNoise(self.randomNumbers, sky_level=skyLevel, gain=gain, read_noise=readNoise)
 
