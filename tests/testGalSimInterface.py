@@ -224,6 +224,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+
     def testGalaxyDisks(self):
         """
         Test that GalSimInterpreter puts the right number of counts on images of galaxy disks
@@ -235,6 +236,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
         if os.path.exists(catName):
             os.unlink(catName)
+
 
     def testStars(self):
         """
@@ -248,6 +250,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+
     def testAgns(self):
         """
         Test that GalSimInterpreter puts the right number of counts on images of AGN
@@ -259,6 +262,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
         if os.path.exists(catName):
             os.unlink(catName)
+
 
     def testPSFimages(self):
         """
@@ -272,6 +276,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.catalogTester(catName=catName, catalog=cat, nameRoot='psf')
         if os.path.exists(catName):
             os.unlink(catName)
+
 
     def testMultipleImages(self):
         """
@@ -304,6 +309,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         if os.path.exists(dbName):
             os.unlink(dbName)
+
 
     def testCompoundFitsFiles(self):
         """
@@ -347,6 +353,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             os.unlink(dbName2)
         if os.path.exists(catName):
             os.unlink(catName)
+
 
     def testPlacement(self):
         """
