@@ -592,8 +592,6 @@ class GalSimInterpreter(object):
                                                                               m5=m5Dict[bandpassName],
                                                                               addBackground=addBackground,
                                                                               addNoise=addNoise,
-                                                                              expTime=PhotometricDefaults.exptime,
-                                                                              nexp=1,
                                                                               readnoise=detector.readNoise,
                                                                               seeing=PhotometricDefaults.seeing[bandpassName],
                                                                               platescale=detector.plateScale,

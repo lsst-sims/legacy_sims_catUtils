@@ -185,7 +185,6 @@ class GalSimInterfaceTest(unittest.TestCase):
             backgroundCounts = {}
             for filterName in listOfFilters:
                 cts = expectedSkyCountsForM5(m5Dict[filterName], bandpassDict[filterName],
-                                             nexp=1,
                                              seeing = PhotometricDefaults.seeing[filterName])
 
                 backgroundCounts[filterName] = cts

@@ -64,7 +64,7 @@ class NoiseAndBackgroundBase(object):
                               addBackground=True,
                               addNoise = True,
                               expTime=PhotometricDefaults.exptime,
-                              nexp=1,
+                              nexp=PhotometricDefaults.nexp,
                               readnoise=PhotometricDefaults.rdnoise,
                               darkcurrent=PhotometricDefaults.darkcurrent,
                               othernoise=PhotometricDefaults.othernoise,
