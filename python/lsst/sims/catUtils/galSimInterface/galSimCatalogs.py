@@ -469,9 +469,9 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
             for m5Name in self.obs_metadata.m5:
                 m5Dict[m5Name] = self.obs_metadata.m5[m5name]
         
-        for m5name in self._defaultM5:
+        for m5name in PhotometricDefaults.m5:
             if m5name not in m5Dict:
-                m5Dict[m5name] = self._defaultM5[m5name]
+                m5Dict[m5name] = PhotometricDefaults.m5[m5name]
 
         if self.noise_and_background is not None:
             self.galSimInterpreter.addNoiseAndBackground(addBackground=addBackground, addNoise=addNoise,

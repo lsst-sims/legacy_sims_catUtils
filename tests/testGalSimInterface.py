@@ -178,10 +178,9 @@ class GalSimInterfaceTest(unittest.TestCase):
                   for name in catalog.obs_metadata.m5:
                       m5Dict[name] = obs_metadata.m5[name]
 
-            if hasattr(catalog, '_defaultM5'):
-                for name in catalog._defaultM5:
-                    if name not in m5Dict:
-                        m5Dict[name] = catalog._defaultM5[name]
+            for name in PhotometricDefaults.m5:
+                if name not in m5Dict:
+                    m5Dict[name] = PhotometricDefaults.m5[name]
 
             backgroundCounts = {}
             for filterName in listOfFilters:
