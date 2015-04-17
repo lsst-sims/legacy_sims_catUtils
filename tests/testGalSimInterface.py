@@ -6,11 +6,11 @@ import unittest
 import eups
 import galsim
 import lsst.utils.tests as utilsTests
-from lsst.sims.photUtils import Bandpass
+from lsst.sims.photUtils import Bandpass, expectedSkyCountsForM5, PhotometricDefaults
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, \
-                                               SNRdocumentPSF
+                                               SNRdocumentPSF, ExampleCCDNoise
 from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyAgnDBObj, testStarsDBObj
 import lsst.afw.image as afwImage
@@ -79,6 +79,13 @@ class psfCatalog(testGalaxyCatalog):
     """
     PSF = SNRdocumentPSF()
 
+class noisyCatalog(testGalaxyCatalog):
+    """
+    Adds a noise_and_background wrapper to testGalaxyCatalog
+    """
+    PSF = SNRdocumentPSF()
+    noise_and_background = ExampleCCDNoise()
+
 class GalSimInterfaceTest(unittest.TestCase):
 
     @classmethod
@@ -102,7 +109,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.connectionString
         del cls.obs_metadata
 
-    def catalogTester(self, catName=None, catalog=None, nameRoot=None):
+    def catalogTester(self, catName=None, catalog=None, nameRoot=None, addBackground=False):
         """
         Reads in a GalSim Instance Catalog.  Writes the images from that catalog.
         Then reads those images back in.  Uses AFW to calculate the number of counts
@@ -116,7 +123,13 @@ class GalSimInterfaceTest(unittest.TestCase):
         @paranm [in] catalog is the actual InstanceCatalog instantiation
 
         @param [in] nameRoot is a string appended to the names of the FITS files being written
+
+        @param [in] addBackground is a boolean controlling whether or not the sky background is
+        added to the image
         """
+
+        if addBackground:
+            catalog.add_noise_and_background(addBackground=addBackground, addNoise=False)
 
         #write the fits files
         catalog.write_images(nameRoot=nameRoot)
@@ -124,6 +137,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         #a dictionary of ADU for each FITS file as calculated by GalSim
         #(indexed on the name of the FITS file)
         galsimCounts = {}
+        galsimPixels = {}
 
         #a dictionary of ADU for each FITS file as calculated by sims_photUtils
         #(indexed on the name of the FITS file)
@@ -141,12 +155,46 @@ class GalSimInterfaceTest(unittest.TestCase):
             im = afwImage.ImageF(name)
             imArr = im.getArray()
             galsimCounts[name] = imArr.sum()
+            galsimPixels[name] = imArr.shape[0]*imArr.shape[1]
             controlCounts[name] = 0.0
 
             if name[-6] not in listOfFilters:
                 listOfFilters.append(name[-6])
 
             os.unlink(name)
+
+        bandpassDict = {}
+        for filterName in listOfFilters:
+            bandpassName=os.path.join(eups.productDir('throughputs'), \
+                                                     'baseline',('total_'+filterName+'.dat'))
+            bandpass = Bandpass()
+            bandpass.readThroughput(bandpassName)
+            bandpassDict[filterName] = bandpass
+
+        if addBackground:
+            #calculate the expected skyCounts in each filter
+            m5Dict = {}
+            if catalog.obs_metadata.m5 is not None:
+                  for name in catalog.obs_metadata.m5:
+                      m5Dict[name] = obs_metadata.m5[name]
+
+            if hasattr(catalog, '_defaultM5'):
+                for name in catalog._defaultM5:
+                    if name not in m5Dict:
+                        m5Dict[name] = catalog._defaultM5[name]
+
+            backgroundCounts = {}
+            for filterName in listOfFilters:
+                cts = expectedSkyCountsForM5(m5Dict[filterName], bandpassDict[filterName],
+                                             nexp=1,
+                                             seeing = PhotometricDefaults.seeing[filterName])
+
+                backgroundCounts[filterName] = cts
+
+            for name in controlCounts:
+                filterName = name[-6]
+                controlCounts[name] += backgroundCounts[filterName] * galsimPixels[name]
+
 
         #Read in the InstanceCatalog.  For each object in the catalog, use sims_photUtils
         #to calculate the ADU.  Keep track of how many ADU should be in each FITS file.
@@ -185,11 +233,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
                             fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
 
-                            bandpassName=os.path.join(eups.productDir('throughputs'), \
-                                                     'baseline',('total_'+filterName+'.dat'))
-                            bandpass = Bandpass()
-                            bandpass.readThroughput(bandpassName)
-                            controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpass,
+                            controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpassDict[filterName],
                                                                         redshift=redshift, magNorm=magNorm,
                                                                         internalAv=internalAv, internalRv=internalRv,
                                                                         galacticAv=galacticAv, galacticRv=galacticRv)
@@ -202,7 +246,10 @@ class GalSimInterfaceTest(unittest.TestCase):
                     #statistical imprecision in the GalSim drawing routine
                     #to violate the condition below
                     drawnDetectors += 1
-                    msg = 'controlCounts %e galsimCounts %e' % (controlCounts[ff], galsimCounts[ff])
+                    msg = 'controlCounts %e galsimCounts %e; %s ' % (controlCounts[ff], galsimCounts[ff],nameRoot)
+                    if addBackground:
+                        msg += 'background per pixel %e pixels %e %s' % (backgroundCounts[ff[-6]], galsimPixels[ff],ff)
+
                     self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff],
                                     msg=msg)
                 elif galsimCounts[ff] > 0.001:
@@ -277,6 +324,19 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+
+    def testBackground(self):
+        """
+        Test that GalSimInterpreter puts the right number of counts on images of Galaxy bulges with
+        a sky background
+        """
+        catName = 'testPSFcat.sav'
+        gals = testGalaxyBulgeDBObj(address=self.connectionString)
+        cat = noisyCatalog(gals, obs_metadata = self.obs_metadata)
+        cat.write_catalog(catName)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='noisy', addBackground=True)
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testMultipleImages(self):
         """

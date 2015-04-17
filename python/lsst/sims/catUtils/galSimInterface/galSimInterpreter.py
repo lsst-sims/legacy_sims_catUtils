@@ -593,14 +593,11 @@ class GalSimInterpreter(object):
                                                                               addBackground=addBackground,
                                                                               addNoise=addNoise,
                                                                               expTime=PhotometricDefaults.exptime,
-                                                                              nexp=PhotometricDefaults.nexp,
+                                                                              nexp=1,
                                                                               readnoise=detector.readNoise,
-                                                                              darkcurrent=PhotometricDefaults.darkcurrent,
-                                                                              othernoise=PhotometricDefaults.othernoise,
                                                                               seeing=PhotometricDefaults.seeing[bandpassName],
                                                                               platescale=detector.plateScale,
-                                                                              gain=detector.gain,
-                                                                              effarea=PhotometricDefaults.effarea)
+                                                                              gain=detector.gain)
 
 
     def writeImages(self, nameRoot=None):
