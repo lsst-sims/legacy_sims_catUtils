@@ -127,7 +127,7 @@ class NoiseAndBackgroundBase(object):
                            #sky background is included in the image, the Poisson noise
                            #will be calculated from the actuall image brightness.
         else:
-            skyLevel = skyCounts/gain
+            skyLevel = skyCounts*gain
 
         if addNoise:
             noiseModel = self.getNoiseModel(skyLevel=skyLevel, gain=gain, readNoise=readnoise)

@@ -336,6 +336,49 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+
+    def testNoise(self):
+        """
+        Test that ExampleCCDNoise puts the expected counts on an image
+        by generating a flat image, adding noise and background to it,
+        and calculating the variance of counts in the image.
+        """
+
+        gain = 2.5
+        readnoise = 6.0
+        img = galsim.Image(100,100)
+        noise = ExampleCCDNoise()
+        m5 = 24.5
+        bandpass = Bandpass()
+        bandpass.readThroughput(os.path.join(eups.productDir('throughputs'),'baseline','total_r.dat'))
+        background = expectedSkyCountsForM5(m5, bandpass, seeing=PhotometricDefaults.seeing['r'],
+                                            gain=gain, readnoise=readnoise)
+
+        noisyImage = noise.addNoiseAndBackground(img, bandpass, m5=m5,
+                                                 seeing=PhotometricDefaults.seeing['r'],
+                                                 gain=gain, readnoise=readnoise)
+
+        mean = 0.0
+        var = 0.0
+        for ix in range(1,101):
+            for iy in range(1,101):
+                mean += noisyImage(ix, iy)
+
+        mean = mean/10000.0
+
+        for ix in range(1,101):
+            for iy in range(1,101):
+                var += (noisyImage(ix, iy) - mean)*(noisyImage(ix, iy) - mean)
+
+        var = var/9999.0
+
+        varElectrons = background*gain + readnoise
+        varADU = varElectrons/(gain*gain)
+
+        self.assertTrue(numpy.abs(background/mean - 1.0) < 0.05)
+        self.assertTrue(numpy.abs(var/varADU - 1.0) < 0.05)
+
+
     def testMultipleImages(self):
         """
         Test that GalSimInterpreter puts the right number of counts on images of multiple objects
