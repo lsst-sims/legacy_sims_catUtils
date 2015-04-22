@@ -22,11 +22,21 @@ class NoiseAndBackgroundBase(object):
     details.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, addNoise=True, addBackground=True):
         """
+        @param [in] addNoise is a boolean telling the wrapper whether or not
+        to add noise to the image
+
+        @param [in] addBackground is a boolean telling the wrapper whether
+        or not to add the skybackground to the image
+
         @param [in] seed is an (optional) int that will seed the
-        random number generator used by the noise model
+        random number generator used by the noise model. Defaults to None,
+        which causes GalSim to generate the seed from the system.
         """
+
+        self.addNoise = addNoise
+        self.addBackground = addBackground
 
         if seed is None:
             self.randomNumbers = galsim.UniformDeviate()
@@ -61,8 +71,6 @@ class NoiseAndBackgroundBase(object):
 
 
     def addNoiseAndBackground(self, image, bandpass=None, m5=None,
-                              addBackground=True,
-                              addNoise = True,
                               expTime=PhotometricDefaults.exptime,
                               nexp=PhotometricDefaults.nexp,
                               readnoise=PhotometricDefaults.rdnoise,
@@ -80,12 +88,6 @@ class NoiseAndBackgroundBase(object):
 
         @param [in] bandpass is a CatSim bandpass object (not a GalSim bandpass
         object) characterizing the filter through which the image is being taken.
-
-        @param [in] addBackground = True if you want to actually add the sky background
-        to the image; False otherwise (default True).
-
-        @param [in] addNoise = True if you want to add noise to the image; False if
-        otherwise (default True).
 
         @param [in] expTime is the exposure time in seconds.
 
@@ -119,7 +121,7 @@ class NoiseAndBackgroundBase(object):
 
         image = image.copy()
 
-        if addBackground:
+        if self.addBackground:
             image += skyCounts
             skyLevel = 0.0 #if we are adding the skyCounts to the image,there is no need
                            #to pass a skyLevel parameter to the noise model.  skyLevel is
@@ -129,7 +131,7 @@ class NoiseAndBackgroundBase(object):
         else:
             skyLevel = skyCounts*gain
 
-        if addNoise:
+        if self.addNoise:
             noiseModel = self.getNoiseModel(skyLevel=skyLevel, gain=gain, readNoise=readnoise)
             image.addNoise(noiseModel)
 

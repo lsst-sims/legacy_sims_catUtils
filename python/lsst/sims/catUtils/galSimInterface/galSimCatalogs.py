@@ -399,6 +399,18 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
 
         if self.galSimInterpreter is None:
 
+            #build a dict of m5 values keyed on bandpass names
+            m5Dict = None
+            if self.noise_and_background is not None:
+                m5Dict = {}
+                for m5Name in self.bandpassNames:
+                    if self.obs_metadata.m5 is not None and m5Name in self.obs_metadata.m5:
+                        m5Dict[m5Name] = self.obs_metadata.m5[m5Name]
+                    elif m5Name in PhotometricDefaults.m5[m5Name]:
+                        m5Dict[m5Name] = PhotometricDefaults.m5[m5Name]
+                    else:
+                        raise RuntimeError('Do not know how to calculate m5 for bandpass ' % m5Name)
+
             #This list will contain instantiations of the GalSimDetector class
             #(see galSimInterpreter.py), which stores detector information in a way
             #that the GalSimInterpreter will understand
@@ -454,28 +466,10 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                                              skySED=self.skySEDname)
 
             self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassDict=self.bandpassDict,
-                                                       gain=self.gain)
+                                                       gain=self.gain, m5Dict=m5Dict,
+                                                       noiseWrapper=self.noise_and_background)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
-
-    def add_noise_and_background(self, addBackground=True, addNoise=True):
-        """
-        Adds the noise model stored in self.noise to the images stored
-        in the GalSimInterpreter
-        """
-
-        m5Dict = {}
-        if self.obs_metadata is not None and self.obs_metadata.m5 is not None:
-            for m5Name in self.obs_metadata.m5:
-                m5Dict[m5Name] = self.obs_metadata.m5[m5name]
-        
-        for m5name in PhotometricDefaults.m5:
-            if m5name not in m5Dict:
-                m5Dict[m5name] = PhotometricDefaults.m5[m5name]
-
-        if self.noise_and_background is not None:
-            self.galSimInterpreter.addNoiseAndBackground(addBackground=addBackground, addNoise=addNoise,
-                                                         wrapper=self.noise_and_background, m5Dict=m5Dict)
 
 
     def write_images(self, nameRoot=None):

@@ -79,9 +79,16 @@ class psfCatalog(testGalaxyCatalog):
     """
     PSF = SNRdocumentPSF()
 
+class backgroundCatalog(testGalaxyCatalog):
+    """
+    Add sky background but no noise to testGalaxyCatalog
+    """
+    PSF = SNRdocumentPSF()
+    nosie_and_background = ExampleCCDNoise(addNoise=False)
+
 class noisyCatalog(testGalaxyCatalog):
     """
-    Adds a noise_and_background wrapper to testGalaxyCatalog
+    Adds a noise and sky background wrapper to testGalaxyCatalog
     """
     PSF = SNRdocumentPSF()
     noise_and_background = ExampleCCDNoise()
@@ -109,7 +116,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.connectionString
         del cls.obs_metadata
 
-    def catalogTester(self, catName=None, catalog=None, nameRoot=None, addBackground=False):
+    def catalogTester(self, catName=None, catalog=None, nameRoot=None):
         """
         Reads in a GalSim Instance Catalog.  Writes the images from that catalog.
         Then reads those images back in.  Uses AFW to calculate the number of counts
@@ -127,9 +134,6 @@ class GalSimInterfaceTest(unittest.TestCase):
         @param [in] addBackground is a boolean controlling whether or not the sky background is
         added to the image
         """
-
-        if addBackground:
-            catalog.add_noise_and_background(addBackground=addBackground, addNoise=False)
 
         #write the fits files
         catalog.write_images(nameRoot=nameRoot)
@@ -171,7 +175,9 @@ class GalSimInterfaceTest(unittest.TestCase):
             bandpass.readThroughput(bandpassName)
             bandpassDict[filterName] = bandpass
 
-        if addBackground:
+        addBackground = False
+        if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
+            addBackground = True
             #calculate the expected skyCounts in each filter
             m5Dict = {}
             if catalog.obs_metadata.m5 is not None:
@@ -330,9 +336,9 @@ class GalSimInterfaceTest(unittest.TestCase):
         """
         catName = 'testPSFcat.sav'
         gals = testGalaxyBulgeDBObj(address=self.connectionString)
-        cat = noisyCatalog(gals, obs_metadata = self.obs_metadata)
+        cat = backgroundCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
-        self.catalogTester(catName=catName, catalog=cat, nameRoot='noisy', addBackground=True)
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='noisy')
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -347,7 +353,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         gain = 2.5
         readnoise = 6.0
         img = galsim.Image(100,100)
-        noise = ExampleCCDNoise()
+        noise = ExampleCCDNoise(seed=42)
         m5 = 24.5
         bandpass = Bandpass()
         bandpass.readThroughput(os.path.join(eups.productDir('throughputs'),'baseline','total_r.dat'))
@@ -375,8 +381,11 @@ class GalSimInterfaceTest(unittest.TestCase):
         varElectrons = background*gain + readnoise
         varADU = varElectrons/(gain*gain)
 
-        self.assertTrue(numpy.abs(background/mean - 1.0) < 0.05)
-        self.assertTrue(numpy.abs(var/varADU - 1.0) < 0.05)
+        msg = 'background %e mean %e ' % (background, mean)
+        self.assertTrue(numpy.abs(background/mean - 1.0) < 0.05, msg=msg)
+
+        msg = 'var %e varADU %e ; background %e' % (var, varADU, background)
+        self.assertTrue(numpy.abs(var/varADU - 1.0) < 0.05, msg=msg)
 
 
     def testMultipleImages(self):

@@ -78,7 +78,8 @@ class GalSimInterpreter(object):
     into FITS images.
     """
 
-    def __init__(self, detectors=None, bandpassDict=None, gain=2.3):
+    def __init__(self, detectors=None, bandpassDict=None, gain=2.3,
+                 m5Dict=None, noiseWrapper=None):
 
         """
         @param [in] detectors is a list of GalSimDetectors for which we are drawing FITS images
@@ -89,12 +90,19 @@ class GalSimInterpreter(object):
         @param [in] bandpassFiles is a list of paths to the bandpass data files corresponding to
         bandpassNames
 
-        @param gain is the number of photons per ADU for our detectors.  Note: this requires all
+        @param [in] gain is the number of photons per ADU for our detectors.  Note: this requires all
         detectors to have the same gain.  Maybe that is inappropriate...
+
+        @param [in] m5Dict is a dict of m5 values keyed to bandpassNames
+
+        @param [in] noiseWrapper is an instantiation of a NoiseAndBackgroundBase
+        class which tells the interpreter how to add sky noise to its images.
         """
 
         self.PSF = None
         self.gain = gain
+        self.m5Dict = m5Dict
+        self.noiseWrapper = noiseWrapper
 
         if detectors is None:
             raise RuntimeError("Will not create images; you passed no detectors to the GalSimInterpreter")
@@ -121,7 +129,7 @@ class GalSimInterpreter(object):
 
         The bandpasses will be stored in the member variable self.bandpasses, which is a dict
         """
-        
+
         self.catSimBandpasses = bandpassDict
         for bpname in bandpassDict:
 
@@ -436,6 +444,15 @@ class GalSimInterpreter(object):
                 name = self._getFileName(detector=detector, bandpassName=bandpassName)
                 if name not in self.detectorImages:
                     self.detectorImages[name] = self.blankImage(detector=detector)
+                    if self.noiseWrapper is not None:
+                        #Add sky background and noise to the image
+                        self.detectorImages[name] = self.noiseWrapper.addNoiseAndBackground(self.detectorImages[name],
+                                                                              bandpass=self.catSimBandpasses[bandpassName],
+                                                                              m5=self.m5Dict[bandpassName],
+                                                                              readnoise=detector.readNoise,
+                                                                              seeing=PhotometricDefaults.seeing[bandpassName],
+                                                                              platescale=detector.plateScale,
+                                                                              gain=detector.gain)
 
         xp = radiansToArcsec(xPupil)
         yp = radiansToArcsec(yPupil)
@@ -570,32 +587,6 @@ class GalSimInterpreter(object):
             centeredObj = None
 
         return centeredObj
-
-
-    def addNoiseAndBackground(self, addBackground=True, addNoise=True, wrapper=None, m5Dict=None):
-        """
-        Adds a GalSim noise model to the images being stored by this
-        GalSimInterpreter
-
-        @param [in] noiseWrapper is a wrapper for GalSim's noise models
-        (see ExampleCCDNoise for an example)
-
-        @param [in] obs_metadata is an ObservationMetaData instantiation
-        """
-
-        for detector in self.detectors:
-            for bandpassName in self.bandpasses:
-                name = self._getFileName(detector=detector, bandpassName=bandpassName)
-                if name in self.detectorImages:
-                    self.detectorImages[name] = wrapper.addNoiseAndBackground(self.detectorImages[name],
-                                                                              bandpass=self.catSimBandpasses[bandpassName],
-                                                                              m5=m5Dict[bandpassName],
-                                                                              addBackground=addBackground,
-                                                                              addNoise=addNoise,
-                                                                              readnoise=detector.readNoise,
-                                                                              seeing=PhotometricDefaults.seeing[bandpassName],
-                                                                              platescale=detector.plateScale,
-                                                                              gain=detector.gain)
 
 
     def writeImages(self, nameRoot=None):
