@@ -46,5 +46,4 @@ stars_noiseless.write_images(nameRoot='noiselessStars')
 
 stars_noisy = testGalSimStarsWithNoise(stars, obs_metadata=obs_metadata)
 stars_noisy.write_catalog('galSim_NoisyStars_example.txt', chunk_size=10000)
-stars_noisy.add_noise_and_background()
 stars_noisy.write_images(nameRoot='noisyStars')

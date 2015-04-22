@@ -42,5 +42,4 @@ gal_noiseless.write_images(nameRoot='noiselessGalaxies')
 
 gal_noisy = testGalSimGalaxiesNoisy(gals, obs_metadata=obs_metadata)
 gal_noisy.write_catalog('galSim_NoisyGalaxies_example.txt', chunk_size=10000)
-gal_noisy.add_noise_and_background()
 gal_noisy.write_images(nameRoot='noisyGalaxies')
