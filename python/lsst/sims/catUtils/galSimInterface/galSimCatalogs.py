@@ -406,10 +406,10 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 for m5Name in self.bandpassNames:
                     if self.obs_metadata.m5 is not None and m5Name in self.obs_metadata.m5:
                         m5Dict[m5Name] = self.obs_metadata.m5[m5Name]
-                    elif m5Name in PhotometricDefaults.m5[m5Name]:
+                    elif m5Name in PhotometricDefaults.m5:
                         m5Dict[m5Name] = PhotometricDefaults.m5[m5Name]
                     else:
-                        raise RuntimeError('Do not know how to calculate m5 for bandpass ' % m5Name)
+                        raise RuntimeError('Do not know how to calculate m5 for bandpass %s ' % m5Name)
 
             #This list will contain instantiations of the GalSimDetector class
             #(see galSimInterpreter.py), which stores detector information in a way
