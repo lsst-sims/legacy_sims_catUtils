@@ -137,7 +137,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     PSF = None
 
     #This member variable can store a GalSim noise model instantiation
-    #which will be applied to the FITS images by calling add_noise()
+    #which will be applied to the FITS images when they are created
     noise_and_background = None
 
     #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
