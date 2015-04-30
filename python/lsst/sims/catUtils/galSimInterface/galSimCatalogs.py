@@ -29,14 +29,14 @@ from lsst.sims.utils import radiansToArcsec
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
-from lsst.sims.photUtils import EBVmixin, Sed, Bandpass
+from lsst.sims.photUtils import EBVmixin, Sed, Bandpass, PhotometryHardware, PhotometricDefaults
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 
 __all__ = ["GalSimGalaxies", "GalSimAgn", "GalSimStars"]
 
-class GalSimBase(InstanceCatalog, CameraCoords):
+class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     """
     The catalog classes in this file use the InstanceCatalog infrastructure to construct
     FITS images for each detector-filter combination on a simulated camera.  This is done by
@@ -123,10 +123,13 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #column contain both ':' and ','
     delimiter = ';'
 
-    #default variables telling the InstanceCatalog where to find bandpass data
-    bandpass_names = ['u','g','r','i','z','y']
-    bandpass_directory = eups.productDir('throughputs')
-    bandpass_root = 'baseline/total'
+    bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
+    bandpassDir = os.path.join(eups.productDir('throughputs'), 'baseline')
+    bandpassRoot = 'filter_'
+    componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                     'lens1.dat', 'lens2.dat', 'lens3.dat']
+    skyBandpassName = 'atmos.dat'
+    skySEDname = 'darksky.dat'
 
     #This member variable will define a PSF to convolve with the sources.
     #See the classes PSFbase and DoubleGaussianPSF in
@@ -134,8 +137,8 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     PSF = None
 
     #This member variable can store a GalSim noise model instantiation
-    #which will be applied to the FITS images by calling add_noise()
-    noise = None
+    #which will be applied to the FITS images when they are created
+    noise_and_background = None
 
     #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
     #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
@@ -154,9 +157,9 @@ class GalSimBase(InstanceCatalog, CameraCoords):
     #These parameters can be set to different values by redefining them in daughter
     #classes of this class.
     #
-    effective_area = numpy.pi*(6.5*100.0/2.0)**2 #copied from Sed.py in sims_photUtils
-    exposure_time = 15.0 #copied from Sed.py in sims_photUtils
-    gain = 2.3 #copied from Sed.py in sims_photUtils
+    effective_area = PhotometricDefaults.effarea
+    exposure_time = PhotometricDefaults.exptime
+    gain = PhotometricDefaults.gain
 
     #This is just a place holder for the camera object associated with the InstanceCatalog.
     #If you want to assign a different camera, you can do so immediately after instantiating this class
@@ -334,20 +337,6 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         return numpy.array(output)
 
-    def _getBandpasses(self):
-        """
-        Create a list of paths to the files containing bandpass data.
-
-        returns the list of paths and the list self.bandpass_names (which are just
-        tags identifying each bandpass a la ['u', 'g', 'r', 'i', 'z', 'y'])
-        """
-        bandpassFiles = []
-        for bpn in self.bandpass_names:
-            name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
-            bandpassFiles.append(name)
-
-        return bandpassFiles, self.bandpass_names
-
     def copyGalSimInterpreter(self, otherCatalog):
         """
         Copy the camera, GalSimInterpreter, from another GalSim InstanceCatalog
@@ -410,6 +399,18 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
         if self.galSimInterpreter is None:
 
+            #build a dict of m5 values keyed on bandpass names
+            m5Dict = None
+            if self.noise_and_background is not None:
+                m5Dict = {}
+                for m5Name in self.bandpassNames:
+                    if self.obs_metadata.m5 is not None and m5Name in self.obs_metadata.m5:
+                        m5Dict[m5Name] = self.obs_metadata.m5[m5Name]
+                    elif m5Name in PhotometricDefaults.m5:
+                        m5Dict[m5Name] = PhotometricDefaults.m5[m5Name]
+                    else:
+                        raise RuntimeError('Do not know how to calculate m5 for bandpass %s ' % m5Name)
+
             #This list will contain instantiations of the GalSimDetector class
             #(see galSimInterpreter.py), which stores detector information in a way
             #that the GalSimInterpreter will understand
@@ -456,21 +457,20 @@ class GalSimBase(InstanceCatalog, CameraCoords):
 
                 detectors.append(detector)
 
-            bandpassFiles, bandpassNames = self._getBandpasses()
+            if self.bandpassDict is None:
+                self.loadBandpassesFromFiles(bandpassNames=self.bandpassNames,
+                                             filedir=self.bandpassDir,
+                                             bandpassRoot=self.bandpassRoot,
+                                             componentList=self.componentList,
+                                             skyBandpass=self.skyBandpassName,
+                                             skySED=self.skySEDname)
 
-            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassNames=bandpassNames,
-                                                       bandpassFiles=bandpassFiles, gain=self.gain)
+            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassDict=self.bandpassDict,
+                                                       gain=self.gain, m5Dict=m5Dict,
+                                                       noiseWrapper=self.noise_and_background)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 
-    def add_noise(self):
-        """
-        Adds the noise model stored in self.noise to the images stored
-        in the GalSimInterpreter
-        """
-
-        if self.noise is not None:
-            self.galSimInterpreter.addNoise(noiseWrapper = self.noise, obs_metadata=self.obs_metadata)
 
     def write_images(self, nameRoot=None):
         """

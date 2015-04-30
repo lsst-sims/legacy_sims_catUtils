@@ -25,7 +25,7 @@ class testGalSimGalaxiesNoiseless(GalSimGalaxies):
 class testGalSimGalaxiesNoisy(testGalSimGalaxiesNoiseless):
 
     #defined in galSimInterface/galSimUtilities.py
-    noise = ExampleCCDNoise(99)
+    noise_and_background = ExampleCCDNoise(99)
 
 #select an OpSim pointing
 obsMD = OpSim3_61DBObject()
@@ -42,5 +42,4 @@ gal_noiseless.write_images(nameRoot='noiselessGalaxies')
 
 gal_noisy = testGalSimGalaxiesNoisy(gals, obs_metadata=obs_metadata)
 gal_noisy.write_catalog('galSim_NoisyGalaxies_example.txt', chunk_size=10000)
-gal_noisy.add_noise()
 gal_noisy.write_images(nameRoot='noisyGalaxies')

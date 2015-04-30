@@ -12,6 +12,7 @@ import os
 import numpy
 import galsim
 from lsst.sims.utils import radiansToArcsec
+from lsst.sims.photUtils import PhotometricDefaults
 
 __all__ = ["GalSimInterpreter", "GalSimDetector"]
 
@@ -22,7 +23,9 @@ class GalSimDetector(object):
 
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
-                 plateScale=None, electronsPerADU=1.71234e3, readNoise=52.1237):
+                 plateScale=PhotometricDefaults.platescale,
+                 gain=PhotometricDefaults.gain,
+                 readNoise=PhotometricDefaults.rdnoise):
         """
         param [in] name is a string denoting the name of the detector (this should be the
         same name that will be returned by the astrometry method findChipName())
@@ -36,10 +39,9 @@ class GalSimDetector(object):
 
         param [in] plateScale in arcseconds per pixel on this detector
 
-        param [in] electronsPerADU default value is taken from afw/testUtils.py line 76
+        param [in] gain is the number of electrons per ADU
 
         param [in] readNoise per pixel in electrons
-        default value is taken from afw/testUtils.py line 77
 
         This class will generate its own internal variable self.fileName which is
         the name of the detector as it will appear in the output FITS files
@@ -53,7 +55,7 @@ class GalSimDetector(object):
         self.yMin = yMin
         self.yMax = yMax
         self.plateScale = plateScale
-        self.electronsPerADU = electronsPerADU
+        self.gain = gain
         self.readNoise = readNoise
         self.fileName = self._getFileName()
 
@@ -76,8 +78,8 @@ class GalSimInterpreter(object):
     into FITS images.
     """
 
-    def __init__(self, detectors=None, bandpassNames=None, bandpassFiles=None,
-                 gain=2.3):
+    def __init__(self, detectors=None, bandpassDict=None, gain=2.3,
+                 m5Dict=None, noiseWrapper=None):
 
         """
         @param [in] detectors is a list of GalSimDetectors for which we are drawing FITS images
@@ -88,12 +90,19 @@ class GalSimInterpreter(object):
         @param [in] bandpassFiles is a list of paths to the bandpass data files corresponding to
         bandpassNames
 
-        @param gain is the number of photons per ADU for our detectors.  Note: this requires all
+        @param [in] gain is the number of photons per ADU for our detectors.  Note: this requires all
         detectors to have the same gain.  Maybe that is inappropriate...
+
+        @param [in] m5Dict is a dict of m5 values keyed to bandpassNames
+
+        @param [in] noiseWrapper is an instantiation of a NoiseAndBackgroundBase
+        class which tells the interpreter how to add sky noise to its images.
         """
 
         self.PSF = None
         self.gain = gain
+        self.m5Dict = m5Dict
+        self.noiseWrapper = noiseWrapper
 
         if detectors is None:
             raise RuntimeError("Will not create images; you passed no detectors to the GalSimInterpreter")
@@ -102,13 +111,14 @@ class GalSimInterpreter(object):
 
         self.detectorImages = {} #this dict will contain the FITS images (as GalSim images)
         self.bandpasses = {} #this dict will contain the GalSim bandpass instantiations corresponding to the input bandpasses
+        self.catSimBandpasses = None
         self.blankImageCache = {} #this dict will cache blank images associated with specific detectors.
                                   #It turns out that calling the image's constructor is more time-consuming than
                                   #returning a deep copy
 
-        self.setBandpasses(bandpassNames=bandpassNames, bandpassFiles=bandpassFiles)
+        self.setBandpasses(bandpassDict=bandpassDict)
 
-    def setBandpasses(self, bandpassNames=None, bandpassFiles=None):
+    def setBandpasses(self, bandpassDict):
         """
         Read in files containing bandpass data and store them in a dict of GalSim bandpass instantiations.
 
@@ -119,9 +129,18 @@ class GalSimInterpreter(object):
 
         The bandpasses will be stored in the member variable self.bandpasses, which is a dict
         """
-        for bpn, bpf in zip(bandpassNames, bandpassFiles):
-            bp = galsim.Bandpass(bpf)
-            self.bandpasses[bpn] = bp
+
+        self.catSimBandpasses = bandpassDict
+        for bpname in bandpassDict:
+
+            # 14 April 2015
+            #For some reason, you need to pass in the bandpass as an instance of galsim.LookupTable.
+            #If you pass a lambda function, image generation will get much slower and unit tests
+            #will fail because too few counts are placed on images.
+            bptest = galsim.Bandpass(throughput = galsim.LookupTable(x=bandpassDict[bpname].wavelen, f=bandpassDict[bpname].sb),
+                                 wave_type='nm')
+
+            self.bandpasses[bpname] = bptest
 
     def setPSF(self, PSF=None):
         """
@@ -425,6 +444,15 @@ class GalSimInterpreter(object):
                 name = self._getFileName(detector=detector, bandpassName=bandpassName)
                 if name not in self.detectorImages:
                     self.detectorImages[name] = self.blankImage(detector=detector)
+                    if self.noiseWrapper is not None:
+                        #Add sky background and noise to the image
+                        self.detectorImages[name] = self.noiseWrapper.addNoiseAndBackground(self.detectorImages[name],
+                                                                              bandpass=self.catSimBandpasses[bandpassName],
+                                                                              m5=self.m5Dict[bandpassName],
+                                                                              readnoise=detector.readNoise,
+                                                                              seeing=PhotometricDefaults.seeing[bandpassName],
+                                                                              platescale=detector.plateScale,
+                                                                              gain=detector.gain)
 
         xp = radiansToArcsec(xPupil)
         yp = radiansToArcsec(yPupil)
@@ -560,24 +588,6 @@ class GalSimInterpreter(object):
 
         return centeredObj
 
-
-    def addNoise(self, noiseWrapper=None, obs_metadata=None):
-        """
-        Adds a GalSim noise model to the images being stored by this
-        GalSimInterpreter
-
-        @param [in] noiseWrapper is a wrapper for GalSim's noise models
-        (see ExampleCCDNoise for an example)
-
-        @param [in] obs_metadata is an ObservationMetaData instantiation
-        """
-
-        for detector in self.detectors:
-            for bandpassName in self.bandpasses:
-                name = self._getFileName(detector=detector, bandpassName=bandpassName)
-                if name in self.detectorImages:
-                    noiseModel = noiseWrapper.getNoiseModel(obs_metadata=obs_metadata, detector=detector)
-                    self.detectorImages[name].addNoise(noiseModel)
 
     def writeImages(self, nameRoot=None):
         """
