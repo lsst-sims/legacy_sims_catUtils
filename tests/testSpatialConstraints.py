@@ -25,6 +25,7 @@ class testCatalogBounds(unittest.TestCase):
             obs_metadata = objcls.testObservationMetaData
             for i in range(5):
                 try:
+                    #objcls.host = "fatboy.npl.washington.edu"
                     dbobj = objcls(verbose=False)
                     result = dbobj.query_columns(column_outputs, obs_metadata=obs_metadata)
                     break
@@ -56,6 +57,7 @@ class testCatalogBounds(unittest.TestCase):
             or (objcls.testObservationMetaData.bounds.boundType != 'circle'):
                 continue
             print "Running tests for", objname
+            #objcls.host = "fatboy.npl.washington.edu"
             circ_bounds = objcls.testObservationMetaData.bounds
             length = numpy.degrees(circ_bounds.radius)
             raCenter = numpy.degrees(circ_bounds.RA)+length

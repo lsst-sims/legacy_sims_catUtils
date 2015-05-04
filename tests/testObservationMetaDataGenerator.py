@@ -342,8 +342,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         if os.path.exists(dbName):
             os.unlink(dbName)
         junk_obs_metadata = makePhoSimTestDB(filename=dbName)
-        bulgeDB = testGalaxyBulge(address='sqlite:///'+dbName)
-
+        bulgeDB = testGalaxyBulge(driver='sqlite', database=dbName)
         gen = ObservationMetaDataGenerator()
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])

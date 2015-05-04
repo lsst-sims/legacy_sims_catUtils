@@ -1,18 +1,25 @@
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.db.spatialBounds import SpatialBounds
+import lsst.pex.policy as pexPolicy
 from collections import OrderedDict
 import numpy
 import math
 
 __all__ = ["OpSim3_61DBObject"]
 
+
 class OpSim3_61DBObject(DBObject):
     """
     This is a class which allows you to query the databse of OpSim runs (v 3_61)
     """
-    #: This is the default address.  Simply change this in the class definition for other
-    #: endpoints.
-    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
+
+    policyFile = pexPolicy.DefaultPolicyFile("sims_catUtils", "db.paf", "policy")
+    policy = pexPolicy.Policy(policyFile)
+
+    driver = policy.get('driver')
+    host = policy.get('host')
+    port = policy.get('port')
+    database = policy.get('database')
 
     #This is the table that this DBObject is querying
     tableid = 'output_opsim3_61'
@@ -55,8 +62,8 @@ class OpSim3_61DBObject(DBObject):
                   'Opsim_filter':(str,1),
                   'Opsim_obshistid':numpy.int64}
 
-    def __init__(self, address=None):
-        super(OpSim3_61DBObject, self).__init__(address=address)
+    def __init__(self, driver=None, host=None, port=None, database=None):
+        super(OpSim3_61DBObject, self).__init__(driver=driver, host=host, port=port, database=database)
 
     def getBasicQuery(self):
         """

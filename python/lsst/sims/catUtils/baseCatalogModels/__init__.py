@@ -1,3 +1,4 @@
+from .BaseCatalogModels import *
 from .GalaxyModels import *
 from .StarModels import *
 from .SsmModels import *

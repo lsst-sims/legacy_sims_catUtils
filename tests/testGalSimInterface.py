@@ -105,7 +105,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedDec = numpy.array([0.0])
         cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
-        cls.connectionString = 'sqlite:///'+cls.dbName
+        cls.driver = 'sqlite'
 
     @classmethod
     def tearDownClass(cls):
@@ -113,7 +113,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             os.unlink(cls.dbName)
 
         del cls.dbName
-        del cls.connectionString
+        del cls.driver
         del cls.obs_metadata
 
     def catalogTester(self, catName=None, catalog=None, nameRoot=None):
@@ -268,7 +268,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of galaxy bulges
         """
         catName = 'testBulgeCat.sav'
-        gals = testGalaxyBulgeDBObj(address=self.connectionString)
+        gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='bulge')
@@ -281,7 +281,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of galaxy disks
         """
         catName = 'testDiskCat.sav'
-        gals = testGalaxyDiskDBObj(address=self.connectionString)
+        gals = testGalaxyDiskDBObj(driver=self.driver, database=self.dbName)
         cat = testGalaxyCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='disk')
@@ -294,7 +294,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of stars
         """
         catName = 'testStarCat.sav'
-        stars = testStarsDBObj(address=self.connectionString)
+        stars = testStarsDBObj(driver=self.driver, database=self.dbName)
         cat = testStarCatalog(stars, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
@@ -307,7 +307,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of AGN
         """
         catName = 'testAgnCat.sav'
-        agn = testGalaxyAgnDBObj(address=self.connectionString)
+        agn = testGalaxyAgnDBObj(driver=self.driver, database=self.dbName)
         cat = testAgnCatalog(agn, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='agn')
@@ -321,7 +321,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         with a PSF
         """
         catName = 'testPSFcat.sav'
-        gals = testGalaxyBulgeDBObj(address=self.connectionString)
+        gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
         cat = psfCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='psf')
@@ -335,7 +335,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         a sky background
         """
         catName = 'testPSFcat.sav'
-        gals = testGalaxyBulgeDBObj(address=self.connectionString)
+        gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
         cat = backgroundCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
         self.catalogTester(catName=catName, catalog=cat, nameRoot='noisy')
@@ -393,6 +393,8 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of multiple objects
         """
         dbName = 'galSimTestMultipleDB.db'
+        driver = 'sqlite'
+
         if os.path.exists(dbName):
             os.unlink(dbName)
 
@@ -400,8 +402,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
         obs_metadata = makePhoSimTestDB(filename=dbName, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
-        connectionString = 'sqlite:///'+dbName
-        gals = testGalaxyBulgeDBObj(address=connectionString)
+        gals = testGalaxyBulgeDBObj(driver=driver, database=dbName)
         cat = testGalaxyCatalog(gals, obs_metadata=obs_metadata)
         catName = 'multipleCatalog.sav'
         cat.write_catalog(catName)
@@ -409,7 +410,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-        stars = testStarsDBObj(address=connectionString)
+        stars = testStarsDBObj(driver=driver, database=dbName)
         cat = testStarCatalog(stars, obs_metadata=obs_metadata)
         catName = 'multipleStarCatalog.sav'
         cat.write_catalog(catName)
@@ -425,6 +426,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         """
         Test that GalSimInterpreter puts the right number of counts on images containgin different types of objects
         """
+        driver = 'sqlite'
         dbName1 = 'galSimTestCompound1DB.db'
         if os.path.exists(dbName1):
             os.unlink(dbName1)
@@ -433,7 +435,6 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
         obs_metadata1 = makePhoSimTestDB(filename=dbName1, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
-        connectionString1 = 'sqlite:///'+dbName1
 
         dbName2 = 'galSimTestCompound2DB.db'
         if os.path.exists(dbName2):
@@ -443,15 +444,13 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedDec = numpy.array([-3.0/3600.0, 10.0/3600.0, 10.0/3600.0])
         obs_metadata2 = makePhoSimTestDB(filename=dbName2, size=1,
                                             displacedRA=displacedRA, displacedDec=displacedDec)
-        connectionString2 = 'sqlite:///'+dbName2
 
-
-        gals = testGalaxyBulgeDBObj(address=connectionString1)
+        gals = testGalaxyBulgeDBObj(driver=driver, database=dbName1)
         cat1 = testGalaxyCatalog(gals, obs_metadata=obs_metadata1)
         catName = 'compoundCatalog.sav'
         cat1.write_catalog(catName)
 
-        stars = testStarsDBObj(address=connectionString2)
+        stars = testStarsDBObj(driver=driver, database=dbName2)
         cat2 = testStarCatalog(stars, obs_metadata=obs_metadata2)
         cat2.copyGalSimInterpreter(cat1)
         cat2.write_catalog(catName, write_header=False, write_mode='a')
@@ -486,15 +485,16 @@ class GalSimInterfaceTest(unittest.TestCase):
         numpy.random.seed(32)
         catSize = 10
         dbName = 'galSimPlacementTestDB.db'
+        driver = 'sqlite'
         if os.path.exists(dbName):
             os.unlink(dbName)
 
         displacedRA = (-40.0 + numpy.random.sample(catSize)*(120.0))/3600.0
         displacedDec = (-20.0 + numpy.random.sample(catSize)*(80.0))/3600.0
         obs_metadata = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec)
-        connectionString = 'sqlite:///'+dbName
+
         catName = 'testPlacementCat.sav'
-        stars = testStarsDBObj(address=connectionString)
+        stars = testStarsDBObj(driver=driver, database=dbName)
 
         #create the catalog
         cat = testStarCatalog(stars, obs_metadata = obs_metadata)

@@ -56,7 +56,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         m5 = {'u':23.0, 'g':24.0, 'r':21.0, 'i':22.3, 'z':23.7, 'y':24.5}
         cls.obs_metadata.m5 = m5
-        cls.connectionString = 'sqlite:///'+cls.dbName
+        cls.driver = 'sqlite'
+        cls.host = ''
 
         cls.skySeds = []
         cls.hardwareBandpasses = []
@@ -94,7 +95,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
         del cls.dbName
-        del cls.connectionString
+        del cls.driver
+        del cls.host
         del cls.obs_metadata
         del cls.totalBandpasses
         del cls.hardwareBandpasses
@@ -104,7 +106,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         """
         Test in the case of a catalog of stars
         """
-        starDB = testStarsDBObj(address=self.connectionString)
+        starDB = testStarsDBObj(driver=self.driver, host=self.host, database=self.dbName)
         starCat = testStarCatalog(starDB, obs_metadata=self.obs_metadata)
 
         ct = 0
@@ -135,7 +137,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         """
         phot = PhotometryGalaxies()
         phot.loadTotalBandpassesFromFiles()
-        galDB = testGalaxyTileDBObj(address=self.connectionString)
+        galDB = testGalaxyTileDBObj(driver=self.driver, host=self.host, database=self.dbName)
         galCat = testGalaxyCatalog(galDB, obs_metadata=self.obs_metadata)
         imsimband = Bandpass()
         imsimband.imsimBandpass()

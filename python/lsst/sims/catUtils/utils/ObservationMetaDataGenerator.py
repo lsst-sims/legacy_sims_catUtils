@@ -32,22 +32,29 @@ class ObservationMetaDataGenerator(object):
         else:
             return "'%s'" % val
 
-    def __init__(self, address=None):
+    def __init__(self, driver=None, host=None, port=None, database=None):
         """
-        @param [in] address is the sql connection string for the opsim
-        db to be queried.  If None, the address will default to
-
-        opsimblitz1_1133_sqlite.db
-
-        stored in sims_data/OpSimData/
+        @param [in] name of opsim database driver (e.g. 'sqlite', 'mssql+pymssql')
+        @param [in] hostname of opsim database for the opsim db
+                    db to be queried
+        @param [in] port of opsim database
+        @param [in] database name. If None, will default to opsimblitz1_1133_sqlite.db
+                    stored in sims_data/OpSimData/
         """
-        if address is None:
+        if database is None:
             dbPath = os.path.join(eups.productDir('sims_data'),'OpSimData/')
-            self.address='sqlite:///' + dbPath + 'opsimblitz1_1133_sqlite.db'
+            self.database =  os.path.join(dbPath, 'opsimblitz1_1133_sqlite.db')
+            self.driver = 'sqlite'
+            self.host = None
+            self.port = None
         else:
-            self.address=address
+            self.driver = driver
+            self.database = database
+            self.host = host
+            self.port = port
 
-        self.opsimdb = DBObject(address=self.address)
+        self.opsimdb = DBObject(driver=self.driver, database=self.database,
+                                host=self.host, port=self.port)
 
         #27 January 2015
         #self.columnMapping is an list of tuples.  Each tuple corresponds to a column in the opsim

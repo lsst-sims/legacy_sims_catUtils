@@ -24,10 +24,10 @@ class PhoSimCatalogTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = makePhoSimTestDB(size=10)
-        self.bulgeDB = testGalaxyBulgeDBObj(address='sqlite:///PhoSimTestDatabase.db')
-        self.diskDB = testGalaxyDiskDBObj(address='sqlite:///PhoSimTestDatabase.db')
-        self.agnDB = testGalaxyAgnDBObj(address='sqlite:///PhoSimTestDatabase.db')
-        self.starDB = testStarsDBObj(address='sqlite:///PhoSimTestDatabase.db')
+        self.bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
+        self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
+        self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
+        self.starDB = testStarsDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         baseLineFileName = eups.productDir('sims_catUtils')+'/tests/testData/phoSimControlCatalog.txt'
         self.baseLineFile = open(baseLineFileName,'r')
 
