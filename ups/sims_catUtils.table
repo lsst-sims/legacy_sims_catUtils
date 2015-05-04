@@ -7,6 +7,7 @@ setupRequired(sims_data)
 setupRequired(palpy)
 setupRequired(python)
 setupRequired(pymssql)
+setupRequired(daf_persistence)
 setupRequired(GalSim)
 
 setupOptional(obs_lsstSim)
