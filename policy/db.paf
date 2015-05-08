@@ -1,4 +1,0 @@
-host: 'fatboy.npl.washington.edu'
-port: '1433'
-database: 'LSST'
-driver: 'mssql+pymssql'

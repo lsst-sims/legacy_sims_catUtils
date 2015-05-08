@@ -1,23 +1,48 @@
 import warnings
+import os
 from lsst.sims.catalogs.generation.db import CatalogDBObject,  ChunkIterator
 from sqlalchemy.sql import select, func, column
-import lsst.pex.policy as pexPolicy
+import lsst.pex.config as pexConfig
+from lsst.utils import getPackageDir
 
-__all__ = ["BaseCatalogObj"]
+__all__ = ["BaseCatalogObj", "BaseCatalogConfig"]
+
+class BaseCatalogConfig(pexConfig.Config):
+    host = pexConfig.Field(
+        dtype = str,
+        doc = "Name of the host",
+        default = "fatboy.npl.washington.edu",
+    )
+    port = pexConfig.Field(
+        dtype = str,
+        doc = "Port number of database",
+        default = "1433",
+    )
+    database = pexConfig.Field(
+        dtype = str,
+        doc = "Name of database. For 'sqlite', the filename is the database name",
+        default = "LSST",
+    )
+    driver = pexConfig.Field(
+        dtype = str,
+        doc = "Name of the database backend. Takes format of dialect+driver ",
+        default = "mssql+pymssql",
+    )
 
 class BaseCatalogObj(CatalogDBObject):
     """Base class for Catalogs that query the default
     UW CATSIM database
     """
 
-    policyFile = pexPolicy.DefaultPolicyFile("sims_catUtils", "db.paf", "policy")
-    policy = pexPolicy.Policy(policyFile)
+    config = BaseCatalogConfig()
 
-    host = policy.get('host')
-    port = policy.get('port')
-    database = policy.get('database')
-    driver = policy.get('driver')
+    #load $SIMS_CATUTILS_DIR/config/db.py
+    config.load(os.path.join(getPackageDir("sims_catUtils"), "config", "db.py"))
 
+    host = config.host
+    port = config.port
+    database = config.database
+    driver = config.driver
 
     def query_columns(self, colnames=None, chunk_size=None,
                       obs_metadata=None, constraint=None):

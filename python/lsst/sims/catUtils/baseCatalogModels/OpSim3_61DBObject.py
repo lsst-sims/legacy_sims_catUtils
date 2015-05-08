@@ -1,9 +1,10 @@
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.catalogs.generation.db.spatialBounds import SpatialBounds
-import lsst.pex.policy as pexPolicy
+from .BaseCatalogModels import BaseCatalogConfig
+from lsst.utils import getPackageDir
 from collections import OrderedDict
 import numpy
 import math
+import os
 
 __all__ = ["OpSim3_61DBObject"]
 
@@ -12,14 +13,12 @@ class OpSim3_61DBObject(DBObject):
     """
     This is a class which allows you to query the databse of OpSim runs (v 3_61)
     """
-
-    policyFile = pexPolicy.DefaultPolicyFile("sims_catUtils", "db.paf", "policy")
-    policy = pexPolicy.Policy(policyFile)
-
-    driver = policy.get('driver')
-    host = policy.get('host')
-    port = policy.get('port')
-    database = policy.get('database')
+    config = BaseCatalogConfig()
+    config.load(os.path.join(getPackageDir("sims_catUtils"), "config", "db.py"))
+    host = config.host
+    port = config.port
+    database = config.database
+    driver = config.driver
 
     #This is the table that this DBObject is querying
     tableid = 'output_opsim3_61'
