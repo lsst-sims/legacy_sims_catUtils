@@ -12,7 +12,6 @@ class TestCat(InstanceCatalog):
     catalog_type = 'unit_test_catalog'
     column_outputs = ['raJ2000', 'decJ2000']
 
-retry = 5
 
 class basicAccessTest(unittest.TestCase):
     @unittest.expectedFailure
@@ -20,12 +19,7 @@ class basicAccessTest(unittest.TestCase):
         for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
                 continue
-            for i in range(retry):   
-                try:
-                    dbobj = objcls(verbose=False)
-                    break
-                except:
-                    continue
+            dbobj = objcls(verbose=False)
             obs_metadata = dbobj.testObservationMetaData
             print "Running tests for", objname
             #Get results all at once
@@ -53,12 +47,7 @@ class basicAccessTest(unittest.TestCase):
     @unittest.expectedFailure
     def testObsCat(self):
         objname = 'wdstars'
-        for i in range(retry):   
-            try:
-                dbobj = CatalogDBObject.from_objid(objname)
-                break
-            except:
-                continue
+        dbobj = CatalogDBObject.from_objid(objname)
         obs_metadata = dbobj.testObservationMetaData
         # To cover the central ~raft
         obs_metadata.boundLength = 0.4
