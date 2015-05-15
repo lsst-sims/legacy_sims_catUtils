@@ -220,7 +220,7 @@ class ObservationMetaDataGenerator(object):
         #convert the results into ObservationMetaData instantiations
         obs_output = [ObservationMetaData(m5=pointing['fiveSigmaDepth'], boundType=boundType, boundLength=boundLength,
                                           skyBrightness=pointing['filtSkyBrightness'],
-                                          phoSimMetadata=OrderedDict([(column[2],
+                                          phoSimMetaData=OrderedDict([(column[2],
                                                                     (pointing[column[1]], pointing[column[1]].dtype))
                                                                     for column in self.columnMapping if column[2] is not None]))
                                           for pointing in results]

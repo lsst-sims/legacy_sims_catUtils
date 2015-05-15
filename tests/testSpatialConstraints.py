@@ -34,8 +34,8 @@ class testCatalogBounds(unittest.TestCase):
 
             #confirm radius > distance from all points to center
             self.assertGreater(obs_metadata.bounds.radius + 1.e-4,
-                           max(haversine(obs_metadata.unrefractedRA,
-                                                      obs_metadata.unrefractedDec,
+                           max(haversine(numpy.radians(obs_metadata.unrefractedRA),
+                                                      numpy.radians(obs_metadata.unrefractedDec),
                                                       result['raJ2000'], result['decJ2000'])))
 
     @unittest.expectedFailure

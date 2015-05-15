@@ -5,6 +5,7 @@ import eups
 
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, defaultSpecMap
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
 from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, setM5
@@ -53,9 +54,19 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
 
-        cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
-        m5 = {'u':23.0, 'g':24.0, 'r':21.0, 'i':22.3, 'z':23.7, 'y':24.5}
-        cls.obs_metadata.m5 = m5
+        default_obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
+        bandpass = ['u', 'g', 'r', 'i', 'z', 'y']
+        m5 = [23.0, 24.0, 21.0, 22.3, 23.7, 24.5]
+        
+        cls.obs_metadata = ObservationMetaData(
+                                              unrefractedRA = default_obs_metadata.unrefractedRA,
+                                              unrefractedDec = default_obs_metadata.unrefractedDec,
+                                              rotSkyPos = default_obs_metadata.rotSkyPos,
+                                              bandpassName = bandpass,
+                                              m5 = m5
+                                              )
+        
+        cls.obs_metadata.setBandpassAndM5(bandpassName=bandpass, m5=m5)
         cls.driver = 'sqlite'
         cls.host = ''
 
