@@ -28,7 +28,8 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
         the bandpasses are stored
 
         """
-        idNames = self.column_by_name('galid')
+        objectID = self.column_by_name('galid')
+        columnNames = [name for name in self.get_all_sdss_mags._colnames]
         bandpassNames = ['u','g','r','i','z']
         bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
         bandpassRoot = 'sdss_'
@@ -43,7 +44,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
                      bandpassRoot = bandpassRoot,
                      bandpassDir = bandpassDir)
 
-        return self.meta_magnitudes_getter(idNames)
+        return self.meta_magnitudes_getter(objectID, columnNames)
 
 
 
@@ -60,7 +61,8 @@ class sdssStars(InstanceCatalog,PhotometryStars):
         bandpassRoot is the root of the names of the files in which
         the bandpasses are stored
         """
-        idNames = self.column_by_name('id')
+        objectID = self.column_by_name('id')
+        columnNames = [name for name in self.get_sdss_magnitudes._colnames]
         bandpassNames = ['u','g','r','i','z']
         bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
         bandpassRoot = 'sdss_'
@@ -75,7 +77,7 @@ class sdssStars(InstanceCatalog,PhotometryStars):
                      bandpassRoot = bandpassRoot,
                      bandpassDir = bandpassDir)
 
-        return self.meta_magnitudes_getter(idNames)
+        return self.meta_magnitudes_getter(objectID, columnNames)
 
 
 obs_metadata_pointed = ObservationMetaData(mjd=2013.23, boundType='circle',
