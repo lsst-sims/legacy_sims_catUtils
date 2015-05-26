@@ -3,7 +3,6 @@ import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import radiansToArcsec
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
-from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin
 
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
@@ -49,7 +48,7 @@ class PhosimInputBase(InstanceCatalog):
                 outval = md[k][0]
             file_handle.write(templ%(k, outval)+"\n")
 
-class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmixin):
+class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
     catalog_type = 'phoSim_catalog_POINT'
     column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
@@ -65,7 +64,7 @@ class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVm
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 
-class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies, EBVmixin):
+class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
     catalog_type = 'phoSim_catalog_ZPOINT'
     column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
