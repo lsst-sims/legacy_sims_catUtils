@@ -13,9 +13,6 @@ from lsst.sims.photUtils import VariabilityStars, VariabilityGalaxies
 from lsst.sims.photUtils.utils import TestVariabilityMixin
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
 
-class PhoSimSersic2DVariable(PhoSimCatalogSersic2D, VariabilityStars, TestVariabilityMixin):
-    pass
-
 
 class PhoSimPointVariable(PhoSimCatalogPoint, VariabilityStars, TestVariabilityMixin):
     pass
@@ -86,7 +83,26 @@ class PhoSimVariabilityTest(unittest.TestCase):
             self.assertEqual(tt[3], bb[1])
             self.assertAlmostEqual(bb[2] + bb[3], tt[4], 10)
             self.assertTrue(numpy.abs(bb[3]) > 0.0)        
-        
+
+    def testBulges(self):
+        baseline = BulgeControlCatalog(self.bulgeDB, obs_metadata=self.obs_metadata)
+        test = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+
+        for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
+            self.assertEqual(tt[2], bb[0])
+            self.assertEqual(tt[3], bb[1])
+            self.assertAlmostEqual(bb[2], tt[4], 10)
+
+
+    def testDisks(self):
+        baseline = DiskControlCatalog(self.diskDB, obs_metadata=self.obs_metadata)
+        test = PhoSimCatalogSersic2D(self.diskDB, obs_metadata=self.obs_metadata)
+
+        for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
+            self.assertEqual(tt[2], bb[0])
+            self.assertEqual(tt[3], bb[1])
+            self.assertAlmostEqual(bb[2], tt[4], 10)
+
 
 def suite():
     utilsTests.init()
