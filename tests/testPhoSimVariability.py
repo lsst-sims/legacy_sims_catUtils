@@ -43,6 +43,10 @@ class StarControlCatalog(ControlCatalog, AstrometryStars, VariabilityStars, Test
 
 
 class PhoSimVariabilityTest(unittest.TestCase):
+    """
+    This class will test that variability gets correctly propagated into
+    PhoSim catalogs
+    """
 
     @classmethod
     def setUp(cls):
@@ -65,6 +69,13 @@ class PhoSimVariabilityTest(unittest.TestCase):
             os.unlink(cls.dbName)
 
     def testAgn(self):
+        """
+        Test that variability is correctly added to PhoSim Agn catalogs
+        by outputting both a variable PhoSim catalog and a control catalog
+        and making sure that the magNorm column in the PhoSim catalog
+        is equal to the sum of the magNorm column in the control plus
+        the detla_mag column from Variability.
+        """
         baseline = AgnControlCatalog(self.agnDB, obs_metadata=self.obs_metadata)
         test = PhoSimZPointVariable(self.agnDB, obs_metadata=self.obs_metadata)
         
@@ -75,6 +86,13 @@ class PhoSimVariabilityTest(unittest.TestCase):
             self.assertTrue(numpy.abs(bb[3]) > 0.0)
 
     def testStars(self):
+        """
+        Test that variability is correctly added to PhoSim star catalogs
+        by outputting both a variable PhoSim catalog and a control catalog
+        and making sure that the magNorm column in the PhoSim catalog
+        is equal to the sum of the magNorm column in the control plus
+        the detla_mag column from Variability.
+        """
         baseline = StarControlCatalog(self.starDB, obs_metadata=self.obs_metadata)
         test = PhoSimPointVariable(self.starDB, obs_metadata=self.obs_metadata)
         
@@ -85,6 +103,10 @@ class PhoSimVariabilityTest(unittest.TestCase):
             self.assertTrue(numpy.abs(bb[3]) > 0.0)        
 
     def testBulges(self):
+        """
+        Make sure that the magNorm output to PhoSim catalogs that lack
+        variability is the same as the column 'magNorm' taken from the database
+        """
         baseline = BulgeControlCatalog(self.bulgeDB, obs_metadata=self.obs_metadata)
         test = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
 
