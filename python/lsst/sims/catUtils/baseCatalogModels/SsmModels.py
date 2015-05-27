@@ -1,20 +1,14 @@
 import warnings
 import numpy
+from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
 
 __all__ = ["SolarSystemObj"]
 
-class SolarSystemObj(CatalogDBObject):
+class SolarSystemObj(BaseCatalogObj):
     objid = 'ssm'
-    # There is no materialized table since this is a table valued function
-
-    #: This is the default address.  Simply change this in the class definition for other
-    #: endpoints.
-    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
-
     tableid = ''
     objectTypeId = 40
-
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType = 'circle',
                                                   unrefractedRA = 0.0, unrefractedDec = 0.0,

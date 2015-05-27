@@ -1,19 +1,12 @@
-import warnings
-import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData, ChunkIterator
-from sqlalchemy.sql import select, func, column
+from .BaseCatalogModels import BaseCatalogObj
+from lsst.sims.catalogs.generation.db import ObservationMetaData
 
 __all__ = ["StarBase", "StarObj", "MsStarObj", "WdStarObj", "RRLyStarObj",
            "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj",
            "DwarfGalStarObj"]
 
-class StarBase(CatalogDBObject):
+class StarBase(BaseCatalogObj):
     objid = 'starbase'
-
-    #: This is the default address.  Simply change this in the class definition for other
-    #: endpoints.
-    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
-
     tableid = None
     idColKey = 'id'
     raColName = 'ra'
@@ -41,82 +34,6 @@ class StarBase(CatalogDBObject):
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', unicode, 40)]
-
-
-    def query_columns(self, colnames=None, chunk_size=None,
-                      obs_metadata=None, constraint=None):
-        """Execute a query
-
-        **Parameters**
-
-            * colnames : list or None
-              a list of valid column names, corresponding to entries in the
-              `columns` class attribute.  If not specified, all columns are
-              queried.
-            * chunk_size : int (optional)
-              if specified, then return an iterator object to query the database,
-              each time returning the next `chunk_size` elements.  If not
-              specified, all matching results will be returned.
-            * obs_metadata : object (optional)
-              an observation metadata object which has a "filter" method, which
-              will add a filter string to the query.
-            * constraint : str (optional)
-              a string which is interpreted as SQL and used as a predicate on the query
-
-        **Returns**
-
-            * result : list or iterator
-              If chunk_size is not specified, then result is a list of all
-              items which match the specified query.  If chunk_size is specified,
-              then result is an iterator over lists of the given size.
-        """
-        query = self._get_column_query(colnames)
-
-        if obs_metadata is not None and obs_metadata.bounds is not None:
-            if obs_metadata.bounds.boundType == 'circle':
-                regionStr = 'REGION CIRCLE J2000 %f %f %f'%(obs_metadata.bounds.RAdeg,
-                                                            obs_metadata.bounds.DECdeg,
-                                                            60.*obs_metadata.bounds.radiusdeg)
-            elif obs_metadata.bounds.boundType == 'box':
-                regionStr = 'REGION RECT J2000 %f %f %f %f'%(obs_metadata.bounds.RAminDeg,
-                                                             obs_metadata.bounds.DECminDeg,
-                                                             obs_metadata.bounds.RAmaxDeg,
-                                                             obs_metadata.bounds.DECmaxDeg)
-            else:
-                raise RuntimeError("StarBase does not know about boundType %s "
-                                   % obs_metadata.bounds.boundType)
-        else:
-            regionStr = 'REGION CIRCLE J2000 180. 0. 10800.'
-            warnings.warn("Searching over entire sky "
-                          "since no bounds specified. "
-                          "This could be a very bad idea "
-                          "if the database is large")
-
-        if obs_metadata is not None and regionStr is not None:
-            #add spatial constraints to query.
-
-            #Hint sql engine to seek on htmid
-            if not self.tableid.endswith('forceseek'):
-                query = query.with_hint(self.table, ' WITH(FORCESEEK)', 'mssql')
-
-            #aliased subquery for htmid ranges covering the search region
-            htmid_range_alias = select([column('htmidstart'), column('htmidend')]).\
-            select_from(func.fHtmCoverRegion(regionStr)).alias()
-
-            #Range join on htmid ranges
-            query = query.join(htmid_range_alias,
-                       self.table.c['htmID'].between(htmid_range_alias.c.htmidstart,
-                                                     htmid_range_alias.c.htmidend)
-                       )
-            query = query.filter(func.sph.fRegionContainsXYZ(func.sph.fSimplifyString(regionStr),
-                     self.table.c.cx, self.table.c.cy, self.table.c.cz) == 1)
-
-
-        if constraint is not None:
-            query = query.filter(constraint)
-
-        return ChunkIterator(self, query, chunk_size)
-
 
 
 class StarObj(StarBase):

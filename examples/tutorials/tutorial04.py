@@ -70,7 +70,7 @@ class TutorialDB(CatalogDBObject):
 
 
 makeTestDB('tutorialDB.db', size=10)
-myDB = TutorialDB(address='sqlite:///tutorialDB.db')
+myDB = TutorialDB(driver='sqlite', database='tutorialDB.db')
 
 
 
