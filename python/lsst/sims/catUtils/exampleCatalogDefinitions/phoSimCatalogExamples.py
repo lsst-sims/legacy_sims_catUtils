@@ -3,7 +3,6 @@ import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import radiansToArcsec
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
-from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.EBV import EBVmixin
 
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
@@ -31,6 +30,33 @@ class PhosimInputBase(InstanceCatalog):
         return numpy.array([self.spatialModel for i in
                chunkiter], dtype=(str, 8))
 
+    def get_phoSimMagNorm(self):
+        """
+        This getter returns the magnitude normalization expected by PhoSim (the magnitude at
+        500 nm).
+
+        To account for variability, the getter adds the delta_lsst_x column from the Variability
+        mixin where 'x' is the bandpass defined by self.observation_metadata.bandpass (assuming
+        that self.observation_metadata.bandpass is not list-like; if it is list-like, then no
+        variability is added to the magNorm value).
+
+        Redshift is currently ignored.  That may or may  not be appropriate.  This requires
+        further investigation into the behavior of PhoSim.
+        """
+
+        magNorm = self.column_by_name('magNorm')
+        varName = None
+        if self.obs_metadata is not None:
+            if self.obs_metadata.bandpass is not None:
+                if not hasattr(self.obs_metadata.bandpass, '__iter__'):
+                    varName = 'delta_lsst_' + self.obs_metadata.bandpass
+
+        if varName is not None and varName in self._all_available_columns:
+            magNorm += self.column_by_name(varName)
+
+        return magNorm
+
+
     def write_header(self, file_handle):
         md = self.obs_metadata.phoSimMetadata
         if md is None:
@@ -49,9 +75,9 @@ class PhosimInputBase(InstanceCatalog):
                 outval = md[k][0]
             file_handle.write(templ%(k, outval)+"\n")
 
-class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVmixin):
+class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
     catalog_type = 'phoSim_catalog_POINT'
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
                       'internalExtinctionModel']
@@ -65,9 +91,9 @@ class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, PhotometryStars, EBVm
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 
-class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxies, EBVmixin):
+class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
     catalog_type = 'phoSim_catalog_ZPOINT'
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
                       'internalExtinctionModel']
@@ -84,7 +110,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, PhotometryGalaxie
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
     catalog_type = 'phoSim_catalog_SERSIC2D'
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','magNorm','sedFilepath',
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
                       'redshift','shear1','shear2','kappa','raOffset','decOffset',
                       'spatialmodel','majorAxis','minorAxis','positionAngle','sindex',
                       'galacticExtinctionModel','galacticAv','galacticRv',
