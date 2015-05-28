@@ -56,12 +56,11 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
         cls.obs_metadata = makePhoSimTestDB(size=10, filename=cls.dbName)
 
-        connection = 'sqlite:///' + cls.dbName
+        cls.bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=cls.dbName)
+        cls.diskDB = testGalaxyDiskDBObj(driver='sqlite', database=cls.dbName)
+        cls.agnDB = testGalaxyAgnDBObj(driver='sqlite', database=cls.dbName)
+        cls.starDB = testStarsDBObj(driver='sqlite', database=cls.dbName)
 
-        cls.bulgeDB = testGalaxyBulgeDBObj(address=connection)
-        cls.diskDB = testGalaxyDiskDBObj(address=connection)
-        cls.agnDB = testGalaxyAgnDBObj(address=connection)
-        cls.starDB = testStarsDBObj(address=connection)
 
     @classmethod
     def tearDownClass(cls):
