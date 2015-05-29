@@ -143,8 +143,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     ct = 0
                     for obs_metadata in results:
                         ct += 1
-                        self.assertTrue(obs_metadata.phoSimMetadata[name][0]<xmax)
-                        self.assertTrue(obs_metadata.phoSimMetadata[name][0]>xmin)
+                        self.assertTrue(obs_metadata.phoSimMetaData[name][0]<xmax)
+                        self.assertTrue(obs_metadata.phoSimMetaData[name][0]>xmin)
 
                     #make sure that we did not accidentally choose values such that
                     #no ObservationMetaData were ever returned
@@ -180,11 +180,11 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                             for obs_metadata in results:
                                 ct += 1
                                 if name1 is not None:
-                                    self.assertTrue(obs_metadata.phoSimMetadata[name1][0]>xmin)
-                                    self.assertTrue(obs_metadata.phoSimMetadata[name1][0]<xmax)
+                                    self.assertTrue(obs_metadata.phoSimMetaData[name1][0]>xmin)
+                                    self.assertTrue(obs_metadata.phoSimMetaData[name1][0]<xmax)
                                 if name2 is not None:
-                                    self.assertTrue(obs_metadata.phoSimMetadata[name2][0]>ymin)
-                                    self.assertTrue(obs_metadata.phoSimMetadata[name2][0]<ymax)
+                                    self.assertTrue(obs_metadata.phoSimMetaData[name2][0]>ymin)
+                                    self.assertTrue(obs_metadata.phoSimMetaData[name2][0]<ymax)
 
         #Make sure that we didn't choose values such that no ObservationMetaData were
         #ever returned
@@ -235,7 +235,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 if name is not None:
                     ct = 0
                     for obs_metadata in results:
-                        self.assertAlmostEqual(value, obs_metadata.phoSimMetadata[name][0],10)
+                        self.assertAlmostEqual(value, obs_metadata.phoSimMetaData[name][0],10)
                         ct += 1
 
                     #Make sure that we did not choose a value which returns zero ObservationMetaData
@@ -259,8 +259,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
-            self.assertAlmostEqual(obs_metadata.phoSimMetadata['Unrefracted_RA'][0],1.370916)
-            self.assertEqual(obs_metadata.phoSimMetadata['Opsim_filter'][0],'i')
+            self.assertAlmostEqual(obs_metadata.phoSimMetaData['Unrefracted_RA'][0],1.370916)
+            self.assertEqual(obs_metadata.phoSimMetaData['Opsim_filter'][0],'i')
             ct += 1
 
         #Make sure that more than zero ObservationMetaData were returned
@@ -280,8 +280,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         for obs_metadata in results:
             self.assertTrue(isinstance(obs_metadata.bounds,CircleBounds))
             self.assertAlmostEqual(obs_metadata.bounds.radiusdeg,0.9,10)
-            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetaData['Unrefracted_RA'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetaData['Unrefracted_Dec'][0],10)
             ct += 1
 
         #Make sure that some ObservationMetaData were tested
@@ -292,8 +292,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                                              boundType='box', boundLength=1.2)
         ct = 0
         for obs_metadata in results:
-            RAdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_RA'][0])
-            DECdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_Dec'][0])
+            RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_RA'][0])
+            DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_Dec'][0])
             self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
 
             self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
@@ -301,8 +301,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-1.2,10)
             self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+1.2,10)
 
-            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetaData['Unrefracted_RA'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetaData['Unrefracted_Dec'][0],10)
 
             ct += 1
 
@@ -314,8 +314,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                                              boundType='box', boundLength=(1.2,0.6))
         ct = 0
         for obs_metadata in results:
-            RAdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_RA'][0])
-            DECdeg = numpy.degrees(obs_metadata.phoSimMetadata['Unrefracted_Dec'][0])
+            RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_RA'][0])
+            DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_Dec'][0])
             self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
 
             self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
@@ -323,8 +323,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-0.6,10)
             self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+0.6,10)
 
-            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetadata['Unrefracted_RA'][0],10)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetadata['Unrefracted_Dec'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetaData['Unrefracted_RA'][0],10)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetaData['Unrefracted_Dec'][0],10)
 
             ct += 1
 
@@ -364,9 +364,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         else:
                             value = float(words[1])
 
-                        self.assertAlmostEqual(value, results[0].phoSimMetadata[control[2]][0], 5)
+                        self.assertAlmostEqual(value, results[0].phoSimMetaData[control[2]][0], 5)
                     else:
-                        self.assertEqual(filterTranslation[int(words[1])],results[0].phoSimMetadata[control[2]][0])
+                        self.assertEqual(filterTranslation[int(words[1])],results[0].phoSimMetaData[control[2]][0])
 
                     ix += 1
 

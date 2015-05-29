@@ -58,9 +58,9 @@ class PhosimInputBase(InstanceCatalog):
 
 
     def write_header(self, file_handle):
-        md = self.obs_metadata.phoSimMetadata
+        md = self.obs_metadata.phoSimMetaData
         if md is None:
-            raise RuntimeError("Can't write a phoSim catalog without a full phoSimMetadata dictionary")
+            raise RuntimeError("Can't write a phoSim catalog without a full phoSimMetaData dictionary")
         for k in md:
             typ = md[k][1].kind
             templ = self.default_formats.get(typ, None)
