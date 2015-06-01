@@ -1,4 +1,4 @@
 root.driver='mssql+pymssql'
-root.host='fatboy.npl.washington.edu'
-root.port='1433'
+root.host='localhost'
+root.port='51433'
 root.database='LSST'
