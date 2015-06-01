@@ -1,7 +1,7 @@
 """Instance Catalog"""
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.utils import radiansToArcsec
+from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils import ValidationUtils
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
@@ -19,9 +19,9 @@ class RefCatalogGalaxyBase(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxi
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'meanRaJ2000':numpy.degrees, 'meanDecJ2000':numpy.degrees,
-                       'majorAxisDisk':radiansToArcsec, 'minorAxisDisk':radiansToArcsec,
+                       'majorAxisDisk':arcsecFromRadians, 'minorAxisDisk':arcsecFromRadians,
                        'positionAngleDisk':numpy.degrees,
-                       'majorAxisBulge':radiansToArcsec, 'minorAxisBulge':radiansToArcsec,
+                       'majorAxisBulge':arcsecFromRadians, 'minorAxisBulge':arcsecFromRadians,
                        'positionAngleBulge':numpy.degrees}
 
     def get_objectId(self):
@@ -45,8 +45,8 @@ class GalaxyPhotometry(RefCatalogGalaxyBase):
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab']
 
-    transformations = {'majorAxisDisk':radiansToArcsec, 'minorAxisDisk':radiansToArcsec,
-                       'majorAxisBulge':radiansToArcsec, 'minorAxisBulge':radiansToArcsec}
+    transformations = {'majorAxisDisk':arcsecFromRadians, 'minorAxisDisk':arcsecFromRadians,
+                       'majorAxisBulge':arcsecFromRadians, 'minorAxisBulge':arcsecFromRadians}
 
 class RefCatalogStarBase(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies):
     comment_char = ''

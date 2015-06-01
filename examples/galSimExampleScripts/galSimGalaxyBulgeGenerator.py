@@ -4,7 +4,6 @@ galaxy bulges (or any sersic profile)
 """
 
 import os
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, OpSim3_61DBObject
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, SNRdocumentPSF

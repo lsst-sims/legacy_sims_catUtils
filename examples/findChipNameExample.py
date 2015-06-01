@@ -6,8 +6,9 @@ using an ObservationMetaData generated from the OpSim database
 import numpy
 import os
 from collections import OrderedDict
-from lsst.sims.utils import radiansToArcsec
-from lsst.sims.coordUtils import CameraCoords, AstrometryBase
+from lsst.sims.utils import arcsecFromRadians
+from lsst.sims.coordUtils import CameraCoords, calculatePupilCoordinates, \
+                                 observedFromICRS, findChipName
 from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
 from lsst.obs.lsstSim import LsstSimMapper
 
@@ -22,8 +23,6 @@ radiusDegrees = 3.0
 OpSimDB = OpSim3_61DBObject()
 obs_metadata = OpSimDB.getObservationMetaData(obshistid, radiusDegrees, makeCircBounds=True)
 
-myCamCoords = CameraCoords()
-
 #generate some random RA and Dec to find chips for
 nsamples = 10
 numpy.random.seed(32)
@@ -32,14 +31,12 @@ theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
 ra = numpy.radians(obs_metadata.unrefractedRA) + rr*numpy.cos(theta)
 dec = numpy.radians(obs_metadata.unrefractedDec) + rr*numpy.sin(theta)
 
-astrometryObject = AstrometryBase()
-
 #need to correct coordinates for precession, nutation, and aberration
-ra, dec = astrometryObject.correctCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+ra, dec = observedFromICRS(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
 
-xx, yy = astrometryObject.calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+xx, yy = calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
 
-chipNames = myCamCoords.findChipName(ra=ra, dec=dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
+chipNames = findChipName(ra=ra, dec=dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
 
 for (rr,dd,x,y,nn) in zip(ra,dec,xx,yy,chipNames):
-    print rr,dd,radiansToArcsec(x),radiansToArcsec(y),nn
+    print rr,dd,arcsecFromRadians(x),arcsecFromRadians(y),nn

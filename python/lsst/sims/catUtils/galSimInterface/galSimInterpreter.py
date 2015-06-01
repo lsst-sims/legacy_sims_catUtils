@@ -11,7 +11,7 @@ GalSimInterpreter expects.
 import os
 import numpy
 import galsim
-from lsst.sims.utils import radiansToArcsec
+from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.photUtils import PhotometricDefaults
 
 __all__ = ["GalSimInterpreter", "GalSimDetector"]
@@ -249,8 +249,8 @@ class GalSimInterpreter(object):
         outputString = ''
         outputList = []
         centeredObjDict = {}
-        xp = radiansToArcsec(xPupil)
-        yp = radiansToArcsec(yPupil)
+        xp = arcsecFromRadians(xPupil)
+        yp = arcsecFromRadians(yPupil)
         centeredObj = None
         testScale = 0.1
 
@@ -454,8 +454,8 @@ class GalSimInterpreter(object):
                                                                               platescale=detector.plateScale,
                                                                               gain=detector.gain)
 
-        xp = radiansToArcsec(xPupil)
-        yp = radiansToArcsec(yPupil)
+        xp = arcsecFromRadians(xPupil)
+        yp = arcsecFromRadians(yPupil)
         spectrum = galsim.SED(spec = lambda ll: numpy.interp(ll, sed.wavelen, sed.flambda),
                               flux_type='flambda')
 
@@ -568,9 +568,9 @@ class GalSimInterpreter(object):
         of point sources
         """
 
-        xp = radiansToArcsec(xPupil)
-        yp = radiansToArcsec(yPupil)
-        hlr = radiansToArcsec(halfLightRadius)
+        xp = arcsecFromRadians(xPupil)
+        yp = arcsecFromRadians(yPupil)
+        hlr = arcsecFromRadians(halfLightRadius)
         if galSimType == 'sersic':
             centeredObj = self.drawSersic(xPupil=xp, yPupil=yp,
                                           bandpass=self.bandpasses[bandpassName],
