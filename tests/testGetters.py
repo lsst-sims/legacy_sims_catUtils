@@ -8,7 +8,7 @@ from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, defaultSpecMap
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, setM5
+from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, setM5
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
@@ -50,13 +50,14 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        lsstDefaults=LSSTdefaults()
         cls.dbName = 'uncertaintyTestDB.db'
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
 
         default_obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         bandpass = ['u', 'g', 'r', 'i', 'z', 'y']
-        m5 = [23.0, 24.0, 21.0, 22.3, 23.7, 24.5]
+        m5 = lsstDefaults._m5.values()
         
         cls.obs_metadata = ObservationMetaData(
                                               unrefractedRA = default_obs_metadata.unrefractedRA,
@@ -98,7 +99,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
-                                       seeing=PhotometricDefaults.seeing[cls.bandpasses[i]])
+                                       seeing=lsstDefaults.seeing(cls.bandpasses[i]))
             cls.skySeds.append(normalizedSedDummy)
 
     @classmethod
@@ -117,6 +118,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         """
         Test in the case of a catalog of stars
         """
+        lsstDefaults = LSSTdefaults()
         starDB = testStarsDBObj(driver=self.driver, host=self.host, database=self.dbName)
         starCat = testStarCatalog(starDB, obs_metadata=self.obs_metadata)
 
@@ -134,7 +136,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                 controlSNR = starSed.calcSNR_psf(self.totalBandpasses[i],
                                                  self.skySeds[i],
                                                  self.hardwareBandpasses[i],
-                                                 seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                                                 seeing=lsstDefaults.seeing(self.bandpasses[i]))
                 controlNoverS = 1.0/(controlSNR*controlSNR) + starCat.sig2sys
                 controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
                 testSigma = line[8+i]
@@ -146,6 +148,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         """
         Test in the case of a catalog of galaxies
         """
+        lsstDefaults = LSSTdefaults()
         phot = PhotometryGalaxies()
         phot.loadTotalBandpassesFromFiles()
         galDB = testGalaxyTileDBObj(driver=self.driver, host=self.host, database=self.dbName)
@@ -209,7 +212,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                     controlSNR = spectrum.calcSNR_psf(self.totalBandpasses[j],
                                                       self.skySeds[j],
                                                       self.hardwareBandpasses[j],
-                                                      seeing=PhotometricDefaults.seeing[b])
+                                                      seeing=lsstDefaults.seeing(b))
 
                     controlNoverS = 1./(controlSNR*controlSNR) + galCat.sig2sys
                     controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))

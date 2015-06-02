@@ -12,7 +12,7 @@ import os
 import numpy
 import galsim
 from lsst.sims.utils import arcsecFromRadians
-from lsst.sims.photUtils import PhotometricDefaults
+from lsst.sims.photUtils import PhotometricParameters, LSSTdefaults
 
 __all__ = ["GalSimInterpreter", "GalSimDetector"]
 
@@ -23,25 +23,21 @@ class GalSimDetector(object):
 
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
-                 plateScale=PhotometricDefaults.platescale,
-                 gain=PhotometricDefaults.gain,
-                 readNoise=PhotometricDefaults.rdnoise):
+                 photParams=PhotometricParameters()):
         """
-        param [in] name is a string denoting the name of the detector (this should be the
+        @param [in] name is a string denoting the name of the detector (this should be the
         same name that will be returned by the astrometry method findChipName())
 
-        param [in] xCenter is the x pupil coordinate of the center of the detector in arcseconds
+        @param [in] xCenter is the x pupil coordinate of the center of the detector in arcseconds
 
-        param [in] yCenter is the y pupil coordinate of the cneter of the detector in arcseconds
+        @param [in] yCenter is the y pupil coordinate of the center of the detector in arcseconds
 
-        param [in] xMin, xMax, yMin, yMax are the corresponding minimum and maximum values of the
+        @param [in] xMin, xMax, yMin, yMax are the corresponding minimum and maximum values of the
         pupil coordinates on this detector in arcseconds
 
-        param [in] plateScale in arcseconds per pixel on this detector
-
-        param [in] gain is the number of electrons per ADU
-
-        param [in] readNoise per pixel in electrons
+        @param [in] photParams is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.  Defaults to LSST values.
 
         This class will generate its own internal variable self.fileName which is
         the name of the detector as it will appear in the output FITS files
@@ -54,9 +50,7 @@ class GalSimDetector(object):
         self.xMax = xMax
         self.yMin = yMin
         self.yMax = yMax
-        self.plateScale = plateScale
-        self.gain = gain
-        self.readNoise = readNoise
+        self.photParams=photParams
         self.fileName = self._getFileName()
 
 
@@ -78,8 +72,7 @@ class GalSimInterpreter(object):
     into FITS images.
     """
 
-    def __init__(self, detectors=None, bandpassDict=None, gain=2.3,
-                 m5Dict=None, noiseWrapper=None):
+    def __init__(self, detectors=None, bandpassDict=None, m5Dict=None, noiseWrapper=None):
 
         """
         @param [in] detectors is a list of GalSimDetectors for which we are drawing FITS images
@@ -90,9 +83,6 @@ class GalSimInterpreter(object):
         @param [in] bandpassFiles is a list of paths to the bandpass data files corresponding to
         bandpassNames
 
-        @param [in] gain is the number of photons per ADU for our detectors.  Note: this requires all
-        detectors to have the same gain.  Maybe that is inappropriate...
-
         @param [in] m5Dict is a dict of m5 values keyed to bandpassNames
 
         @param [in] noiseWrapper is an instantiation of a NoiseAndBackgroundBase
@@ -100,7 +90,7 @@ class GalSimInterpreter(object):
         """
 
         self.PSF = None
-        self.gain = gain
+        self._LSSTdefaults = LSSTdefaults()
         self.m5Dict = m5Dict
         self.noiseWrapper = noiseWrapper
 
@@ -389,9 +379,9 @@ class GalSimInterpreter(object):
             return self.blankImageCache[detector.name].copy()
         else:
             #set the size of the image
-            nx = int((detector.xMax - detector.xMin)/detector.plateScale)
-            ny = int((detector.yMax - detector.yMin)/detector.plateScale)
-            image = galsim.Image(nx, ny, scale=detector.plateScale)
+            nx = int((detector.xMax - detector.xMin)/detector.photParams.platescale)
+            ny = int((detector.yMax - detector.yMin)/detector.photParams.platescale)
+            image = galsim.Image(nx, ny, scale=detector.photParams.platescale)
             self.blankImageCache[detector.name] = image
             return image.copy()
 
@@ -449,10 +439,8 @@ class GalSimInterpreter(object):
                         self.detectorImages[name] = self.noiseWrapper.addNoiseAndBackground(self.detectorImages[name],
                                                                               bandpass=self.catSimBandpasses[bandpassName],
                                                                               m5=self.m5Dict[bandpassName],
-                                                                              readnoise=detector.readNoise,
-                                                                              seeing=PhotometricDefaults.seeing[bandpassName],
-                                                                              platescale=detector.plateScale,
-                                                                              gain=detector.gain)
+                                                                              seeing=self._LSSTdefaults.seeing(bandpassName),
+                                                                              photParams=detector.photParams)
 
         xp = arcsecFromRadians(xPupil)
         yp = arcsecFromRadians(yPupil)
@@ -478,8 +466,8 @@ class GalSimInterpreter(object):
                 #convolve the object's shape profile with the spectrum
                 obj = obj*spectrum
                 localImage = self.blankImage(detector=detector)
-                localImage = obj.drawImage(bandpass=self.bandpasses[bandpassName], scale=detector.plateScale,
-                                           method='phot', gain=self.gain, image=localImage)
+                localImage = obj.drawImage(bandpass=self.bandpasses[bandpassName], scale=detector.photParams.platescale,
+                                           method='phot', gain=detector.photParams.gain, image=localImage)
 
                 self.detectorImages[name] += localImage
 
