@@ -83,6 +83,10 @@ class NoiseAndBackgroundBase(object):
         """
         This method actually adds the sky background and noise to an image.
 
+        Note: default parameters are defined in
+
+        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
         @param [in] image is the GalSim image object to which the background
         and noise are being added.
 
@@ -90,31 +94,23 @@ class NoiseAndBackgroundBase(object):
         object) characterizing the filter through which the image is being taken.
 
         @param [in] expTime is the exposure time in seconds.
-        (default 15)
 
         @param [in] nexp is the number of exposures
-        (default 2)
 
         @param [in] readnoise is the readnoise in electrons per pixel per exposure
-        (default 5)
 
         @param [in] darkcurrent in electrons per pixel per second
-        (default 0.2)
 
         @param [in] othernoise additional systematic noise in electrons per pixel
-        per exposure (default 4.69)
+        per exposure
 
         @param [in] seeing is the seeing in arcseconds
-        (default 0.7)
 
         @param [in] platescale is the number of arcseconds per pixel
-        (default 0.2)
 
         @param [in] gain is the number of electrons per ADU
-        (default 2.3)
 
         @param [in] effarea is the effective area of the telescope's primary mirror in cm^2
-        (default is for 6.5 meter diameter)
 
         @param [out] the input image with the background and noise model added to it.
         """
@@ -173,11 +169,13 @@ class ExampleCCDNoise(NoiseAndBackgroundBase):
         and there is no need to add an additional skyLevel.  If the sky
         background is still included in the image, set skyLevel equal to zero.
 
+        Note: default parameters are defined in
+
+        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
         @param [in] readNoise is the read noise in electrons per pixel
-        (default 5)
 
         @param [in] gain is the number of electrons per ADU
-        (default 2.3)
 
         @param [out] returns an instantiation of the GalSim CCDNoise class
         """
