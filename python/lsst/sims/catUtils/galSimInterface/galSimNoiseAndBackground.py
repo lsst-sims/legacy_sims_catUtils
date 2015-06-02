@@ -83,6 +83,10 @@ class NoiseAndBackgroundBase(object):
         """
         This method actually adds the sky background and noise to an image.
 
+        Note: default parameters are defined in
+
+        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
         @param [in] image is the GalSim image object to which the background
         and noise are being added.
 
@@ -91,21 +95,22 @@ class NoiseAndBackgroundBase(object):
 
         @param [in] expTime is the exposure time in seconds.
 
-        @param [in] nexp is the number of exposures (default 1).
+        @param [in] nexp is the number of exposures
 
-        @param [in] readnoise is the readnoise in electrons per pixel.
+        @param [in] readnoise is the readnoise in electrons per pixel per exposure
 
-        @param [in] darkcurrent
+        @param [in] darkcurrent in electrons per pixel per second
 
-        @param [in] othernoise additional systematic noise.
+        @param [in] othernoise additional systematic noise in electrons per pixel
+        per exposure
 
-        @param [in] seeing is the seeing in arcseconds.
+        @param [in] seeing is the seeing in arcseconds
 
-        @param [in] platescale is the number of arcseconds per pixel.
+        @param [in] platescale is the number of arcseconds per pixel
 
-        @param [in] gain is the number of electrons per ADU.
+        @param [in] gain is the number of electrons per ADU
 
-        @param [in] effarea is the effective area of the telescope's primary mirror.
+        @param [in] effarea is the effective area of the telescope's primary mirror in cm^2
 
         @param [out] the input image with the background and noise model added to it.
         """
@@ -163,6 +168,10 @@ class ExampleCCDNoise(NoiseAndBackgroundBase):
         will just set the noise level based on the intensity in each pixel
         and there is no need to add an additional skyLevel.  If the sky
         background is still included in the image, set skyLevel equal to zero.
+
+        Note: default parameters are defined in
+
+        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
 
         @param [in] readNoise is the read noise in electrons per pixel
 
