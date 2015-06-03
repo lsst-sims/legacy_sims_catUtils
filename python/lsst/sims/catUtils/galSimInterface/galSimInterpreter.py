@@ -12,7 +12,7 @@ import os
 import numpy
 import galsim
 from lsst.sims.utils import arcsecFromRadians
-from lsst.sims.photUtils import PhotometricParameters, LSSTdefaults
+from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["GalSimInterpreter", "GalSimDetector"]
 
@@ -23,7 +23,7 @@ class GalSimDetector(object):
 
     def __init__(self, name=None, xCenter=None, yCenter=None,
                  xMin=None, xMax=None, yMin=None, yMax=None,
-                 photParams=PhotometricParameters()):
+                 photParams=None):
         """
         @param [in] name is a string denoting the name of the detector (this should be the
         same name that will be returned by the astrometry method findChipName())
@@ -36,11 +36,15 @@ class GalSimDetector(object):
         pupil coordinates on this detector in arcseconds
 
         @param [in] photParams is an instantiation of the PhotometricParameters class that carries
-        details about the photometric response of the telescope.  Defaults to LSST values.
+        details about the photometric response of the telescope.
 
         This class will generate its own internal variable self.fileName which is
         the name of the detector as it will appear in the output FITS files
         """
+
+        if photParams is None:
+            raise RuntimeError("You need to specify an instantiation of PhotometricParameters " +
+                               "when constructing a GalSimDetector")
 
         self.name = name
         self.xCenter = xCenter
