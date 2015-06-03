@@ -9,7 +9,7 @@ from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, defaultSpecMap
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, setM5
-from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
+from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometricParameters
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
     sig2sys = 0.0003
@@ -99,7 +99,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
-                                       seeing=lsstDefaults.seeing(cls.bandpasses[i]))
+                                       seeing=lsstDefaults.seeing(cls.bandpasses[i]),
+                                       photParams=PhotometricParameters())
+
             cls.skySeds.append(normalizedSedDummy)
 
     @classmethod
@@ -136,7 +138,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                 controlSNR = starSed.calcSNR_psf(self.totalBandpasses[i],
                                                  self.skySeds[i],
                                                  self.hardwareBandpasses[i],
-                                                 seeing=lsstDefaults.seeing(self.bandpasses[i]))
+                                                 seeing=lsstDefaults.seeing(self.bandpasses[i]),
+                                                 photParams=PhotometricParameters())
+
                 controlNoverS = 1.0/(controlSNR*controlSNR) + starCat.sig2sys
                 controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
                 testSigma = line[8+i]
@@ -212,7 +216,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                     controlSNR = spectrum.calcSNR_psf(self.totalBandpasses[j],
                                                       self.skySeds[j],
                                                       self.hardwareBandpasses[j],
-                                                      seeing=lsstDefaults.seeing(b))
+                                                      seeing=lsstDefaults.seeing(b),
+                                                      photParams=PhotometricParameters())
 
                     controlNoverS = 1./(controlSNR*controlSNR) + galCat.sig2sys
                     controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))

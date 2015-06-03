@@ -1,7 +1,7 @@
 import os
 import eups
 import copy
-from lsst.sims.photUtils import Bandpass, Sed
+from lsst.sims.photUtils import Bandpass, Sed, PhotometricParameters
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyTileObj, GalaxyAgnObj, \
                                                  GalaxyDiskObj, GalaxyBulgeObj
@@ -33,7 +33,7 @@ def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, i
     a_int, b_int = sed.setupCCMab()
     sed.addCCMDust(a_int, b_int, A_v=galacticAv, R_v=galacticRv)
     
-    adu = sed.calcADU(bandpass)
+    adu = sed.calcADU(bandpass, photParams=PhotometricParameters())
     
     return adu
 
