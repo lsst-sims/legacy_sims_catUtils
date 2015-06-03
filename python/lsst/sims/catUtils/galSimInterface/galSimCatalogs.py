@@ -1,26 +1,3 @@
-"""
-The catalog classes in this file use the InstanceCatalog infrastructure to construct
-FITS images for each detector-filter combination on a simulated camera.  This is done by
-instantiating the class GalSimInterpreter.  This GalSimInterpreter is the class which
-actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
-each object in the catalog is passed to to the GalSimInterpeter, which adds the object
-to the appropriate FITS images.  The user can then write the images to disk by calling
-the write_images method in the GalSim InstanceCatalog.
-
-Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
-adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
-
-Note: because each GalSim InstanceCatalog has its own GalSimInterpreter, it means
-that each GalSimInterpreter will only draw FITS images containing one type of object
-(whatever type of object is contained in the GalSim InstanceCatalog).  If the user
-wishes to generate FITS images containing multiple types of object, the method
-copyGalSimInterpreter allows the user to pass the GalSimInterpreter from one
-GalSim InstanceCatalog to another (so, the user could create a GalSim Instance
-Catalog of stars, generate that InstanceCatalog, then create a GalSim InstanceCatalog
-of galaxies, pass the GalSimInterpreter from the star catalog to this new catalog,
-and thus create FITS images that contain both stars and galaxies).
-"""
-
 import numpy
 import os
 import eups
