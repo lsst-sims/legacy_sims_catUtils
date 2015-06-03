@@ -35,9 +35,8 @@ class GalSimDetector(object):
         @param [in] xMin, xMax, yMin, yMax are the corresponding minimum and maximum values of the
         pupil coordinates on this detector in arcseconds
 
-        @param [in] photParams is an instantiation of the
-        PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        @param [in] photParams is an instantiation of the PhotometricParameters class that carries
+        details about the photometric response of the telescope.  Defaults to LSST values.
 
         This class will generate its own internal variable self.fileName which is
         the name of the detector as it will appear in the output FITS files
@@ -50,7 +49,7 @@ class GalSimDetector(object):
         self.xMax = xMax
         self.yMin = yMin
         self.yMax = yMax
-        self.photParams=photParams
+        self.photParams = photParams
         self.fileName = self._getFileName()
 
 
