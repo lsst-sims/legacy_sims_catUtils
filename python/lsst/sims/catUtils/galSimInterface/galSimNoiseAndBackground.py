@@ -63,7 +63,7 @@ class NoiseAndBackgroundBase(object):
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.  Defaults to None.
 
         @param [out] returns an instantiation of a GalSim noise class, as
         specified by the particular wrapper class to which this method belongs.
@@ -74,7 +74,7 @@ class NoiseAndBackgroundBase(object):
 
     def addNoiseAndBackground(self, image, bandpass=None, m5=None,
                               seeing=LSSTdefaults().seeing('r'),
-                              photParams=PhotometricParameters()):
+                              photParams=None):
         """
         This method actually adds the sky background and noise to an image.
 
@@ -92,7 +92,7 @@ class NoiseAndBackgroundBase(object):
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.  Defaults to None.
 
         @param [out] the input image with the background and noise model added to it.
         """
@@ -147,7 +147,7 @@ class ExampleCCDNoise(NoiseAndBackgroundBase):
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.  Defaults to None.
 
         @param [out] returns an instantiation of the GalSim CCDNoise class
         """
