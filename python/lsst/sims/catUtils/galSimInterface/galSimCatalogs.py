@@ -1,3 +1,15 @@
+"""
+This file defines GalSimBase, which is a daughter of InstanceCatalog designed
+to interface with GalSimInterpreter and generate images using GalSim.
+
+It also defines daughter classes of GalSimBase designed for specific
+classes of astronomical objects:
+
+GalSimGalaxies
+GalSimAgn
+GalSimStars
+"""
+
 import numpy
 import os
 import eups
