@@ -1,4 +1,4 @@
-# rightAscension declination magnitudeNormalization sedFile
-45.0 72.0 17.0 kp10_9250.fits_g40_9290
-62.0 -18.0 kp05_7750.fits_g40_7750
-112.0 -5.0 16.1 km05_5750.fits_g15_5970
+# id rightAscension declination magnitudeNormalization sedFile
+1 45.0 72.0 17.0 kp10_9250.fits_g40_9290
+2 62.0 -18.0 kp05_7750.fits_g40_7750
+3 112.0 -5.0 16.1 km05_5750.fits_g15_5970
