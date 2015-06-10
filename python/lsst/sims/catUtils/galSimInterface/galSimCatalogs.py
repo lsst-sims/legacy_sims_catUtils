@@ -78,8 +78,8 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
         curves for the different components of the camera, e.g.
         ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat', 'lens1.dat', 'lens2.dat', 'lens3.dat']
 
-        skyBandpassName is the name of the file in bandpass_directory that contains the sky
-        response curve, e.g. 'atmos.dat'
+        atomTransmissionName is the name of the file in bandpass_directory that contains the
+        atmostpheric transmissivity, e.g. 'atmos.dat'
 
         skySEDname is the name of the file in bandpass_directory that contains the sky emission
         SED, e.g. 'darksky.dat'
@@ -131,7 +131,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     bandpassRoot = 'filter_'
     componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                      'lens1.dat', 'lens2.dat', 'lens3.dat']
-    skyBandpassName = 'atmos.dat'
+    atmoTransmissionName = 'atmos.dat'
     skySEDname = 'darksky.dat'
 
     #This member variable will define a PSF to convolve with the sources.
@@ -485,7 +485,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                                              filedir=self.bandpassDir,
                                              bandpassRoot=self.bandpassRoot,
                                              componentList=self.componentList,
-                                             skyBandpass=self.skyBandpassName,
+                                             atmoTransmission=self.atmoTransmissionName,
                                              skySED=self.skySEDname)
 
             self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassDict=self.bandpassDict,
