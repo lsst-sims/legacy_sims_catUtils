@@ -12,7 +12,7 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, setM5
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometricParameters
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
-    sig2sys = 0.0003
+    sigmaSysSq = 0.0003
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -20,7 +20,7 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
                       'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm']
 
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
-    sig2sys = 0.0003
+    sigmaSysSq = 0.0003
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -141,7 +141,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                                                  seeing=lsstDefaults.seeing(self.bandpasses[i]),
                                                  photParams=PhotometricParameters())
 
-                controlNoverS = 1.0/(controlSNR*controlSNR) + starCat.sig2sys
+                controlNoverS = 1.0/(controlSNR*controlSNR) + starCat.sigmaSysSq
                 controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
                 testSigma = line[8+i]
                 self.assertAlmostEqual(controlSigma, testSigma, 10)
@@ -219,7 +219,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                                                       seeing=lsstDefaults.seeing(b),
                                                       photParams=PhotometricParameters())
 
-                    controlNoverS = 1./(controlSNR*controlSNR) + galCat.sig2sys
+                    controlNoverS = 1./(controlSNR*controlSNR) + galCat.sigmaSysSq
                     controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
                     testSigma = line[26+(i*6)+j]
                     msg = '%e neq %e; ' % (testSigma, controlSigma) + msgroot
