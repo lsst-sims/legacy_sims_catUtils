@@ -1,24 +1,13 @@
 """
-The catalog classes in this file use the InstanceCatalog infrastructure to construct
-FITS images for each detector-filter combination on a simulated camera.  This is done by
-instantiating the class GalSimInterpreter.  This GalSimInterpreter is the class which
-actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
-each object in the catalog is passed to to the GalSimInterpeter, which adds the object
-to the appropriate FITS images.  The user can then write the images to disk by calling
-the write_images method in the GalSim InstanceCatalog.
+This file defines GalSimBase, which is a daughter of InstanceCatalog designed
+to interface with GalSimInterpreter and generate images using GalSim.
 
-Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
-adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
+It also defines daughter classes of GalSimBase designed for specific
+classes of astronomical objects:
 
-Note: because each GalSim InstanceCatalog has its own GalSimInterpreter, it means
-that each GalSimInterpreter will only draw FITS images containing one type of object
-(whatever type of object is contained in the GalSim InstanceCatalog).  If the user
-wishes to generate FITS images containing multiple types of object, the method
-copyGalSimInterpreter allows the user to pass the GalSimInterpreter from one
-GalSim InstanceCatalog to another (so, the user could create a GalSim Instance
-Catalog of stars, generate that InstanceCatalog, then create a GalSim InstanceCatalog
-of galaxies, pass the GalSimInterpreter from the star catalog to this new catalog,
-and thus create FITS images that contain both stars and galaxies).
+GalSimGalaxies
+GalSimAgn
+GalSimStars
 """
 
 import numpy
@@ -29,7 +18,8 @@ from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
-from lsst.sims.photUtils import EBVmixin, Sed, Bandpass, PhotometryHardware, PhotometricDefaults
+from lsst.sims.photUtils import EBVmixin, Sed, Bandpass, PhotometryHardware, \
+                                PhotometricParameters, LSSTdefaults
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
@@ -42,12 +32,13 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     FITS images for each detector-filter combination on a simulated camera.  This is done by
     instantiating the class GalSimInterpreter.  GalSimInterpreter is the class which
     actually generates the FITS images.  As the GalSim InstanceCatalogs are iterated over,
-    each object in the catalog is passed to to the GalSimInterpeter, which adds the object
+    each object in the catalog is passed to the GalSimInterpeter, which adds the object
     to the appropriate FITS images.  The user can then write the images to disk by calling
     the write_images method in the GalSim InstanceCatalog.
 
     Objects are passed to the GalSimInterpreter by the get_fitsFiles getter function, which
-    adds a column to the InstanceCatalog indicating which detectors' FITS files contain each image.
+    adds a column to the InstanceCatalog indicating which detectors' FITS files contain each
+    object.
 
     Note: because each GalSim InstanceCatalog has its own GalSimInterpreter, it means
     that each GalSimInterpreter will only draw FITS images containing one type of object
@@ -65,7 +56,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     with the following exceptions:
 
     1) If they re-define column_outputs, they must be certain to include the column
-    'fitsFiles', as the getter for this column (defined in this class) calls all of the
+    'fitsFiles.'  The getter for this column (defined in this class) calls all of the
     GalSim image generation infrastructure
 
     2) Daughter classes of this class must define a member variable galsim_type that is either
@@ -81,9 +72,21 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     for bpn in bandpass_names:
         name = self.bandpass_directory+'/'+self.bandpass_root+'_'+bpn+'.dat'
 
-    4) Telescope parameters such as exposure time, area, and gain are controled by the
-    GalSim InstanceCatalog member variables exposure_time (in s), effective_area (in cm^2),
-    and gain (in photons per ADU)
+    one should also define the following member variables:
+
+        componentList is a list of files ins banpass_directory containing the response
+        curves for the different components of the camera, e.g.
+        ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat', 'lens1.dat', 'lens2.dat', 'lens3.dat']
+
+        atomTransmissionName is the name of the file in bandpass_directory that contains the
+        atmostpheric transmissivity, e.g. 'atmos.dat'
+
+        skySEDname is the name of the file in bandpass_directory that contains the sky emission
+        SED, e.g. 'darksky.dat'
+
+    4) Telescope parameters such as exposure time, area, and gain are stored in the
+    GalSim InstanceCatalog member variable photParams, which is an instantiation of
+    the class PhotometricParameters defined in sims_photUtils.
 
     Daughter classes of GalSimBase will generate both FITS images for all of the detectors/filters
     in their corresponding cameras and InstanceCatalogs listing all of the objects
@@ -128,7 +131,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     bandpassRoot = 'filter_'
     componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                      'lens1.dat', 'lens2.dat', 'lens3.dat']
-    skyBandpassName = 'atmos.dat'
+    atmoTransmissionName = 'atmos.dat'
     skySEDname = 'darksky.dat'
 
     #This member variable will define a PSF to convolve with the sources.
@@ -140,26 +143,8 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     #which will be applied to the FITS images when they are created
     noise_and_background = None
 
-    #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
-    #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
-    #be converted to photons/nm (see the function __call__() and the assignment of
-    #self._rest_photons in the __init__() of galsim's sed.py file).  Thus, we need
-    #to read in our SEDs, normalize them, and then multiply by the exposure time
-    #and the effective area to get from ergs/s/cm^2/nm to ergs/nm.
-    #
-    #The gain parameter should convert between photons and ADU (so: it is the
-    #traditional definition of "gain" -- electrons per ADU -- multiplied by the
-    #quantum efficiency of the detector).  Because we fold the quantum efficiency
-    #of the detector into our total_[u,g,r,i,z,y].dat bandpass files
-    #(see the readme in the THROUGHPUTS_DIR/baseline/), we only need to multiply
-    #by the electrons per ADU gain.
-    #
-    #These parameters can be set to different values by redefining them in daughter
-    #classes of this class.
-    #
-    effective_area = PhotometricDefaults.effarea
-    exposure_time = PhotometricDefaults.exptime
-    gain = PhotometricDefaults.gain
+    #Stores the gain and readnoise
+    photParams = PhotometricParameters()
 
     #This is just a place holder for the camera object associated with the InstanceCatalog.
     #If you want to assign a different camera, you can do so immediately after instantiating this class
@@ -254,8 +239,25 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                     self.uniqueSeds[sedName] = sedCopy
 
                 #normalize the SED
+                #Consulting the file sed.py in GalSim/galsim/ it appears that GalSim expects
+                #its SEDs to ultimately be in units of ergs/nm so that, when called, they can
+                #be converted to photons/nm (see the function __call__() and the assignment of
+                #self._rest_photons in the __init__() of galsim's sed.py file).  Thus, we need
+                #to read in our SEDs, normalize them, and then multiply by the exposure time
+                #and the effective area to get from ergs/s/cm^2/nm to ergs/nm.
+                #
+                #The gain parameter should convert between photons and ADU (so: it is the
+                #traditional definition of "gain" -- electrons per ADU -- multiplied by the
+                #quantum efficiency of the detector).  Because we fold the quantum efficiency
+                #of the detector into our total_[u,g,r,i,z,y].dat bandpass files
+                #(see the readme in the THROUGHPUTS_DIR/baseline/), we only need to multiply
+                #by the electrons per ADU gain.
+                #
+                #We will take these parameters from an instantiation of the PhotometricParameters
+                #class (which can be reassigned by defining a daughter class of this class)
+                #
                 fNorm = sed.calcFluxNorm(norm, imsimband)
-                sed.multiplyFluxNorm(fNorm*self.exposure_time*self.effective_area)
+                sed.multiplyFluxNorm(fNorm*self.photParams.exptime*self.photParams.effarea*self.photParams.nexp)
 
                 #apply dust extinction (internal)
                 if iAv != 0.0 and iRv != 0.0:
@@ -343,6 +345,9 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
         so that multiple types of object (stars, AGN, galaxy bulges, galaxy disks, etc.)
         can be drawn on the same FITS files.
 
+        Note: This method does not copy the member variables PSF or noise_and_background
+        from one catalog to another.  Those need to be defined in each catalog separately.
+
         @param [in] otherCatalog is another GalSim InstanceCatalog that already has
         an initialized GalSimInterpreter
 
@@ -382,7 +387,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
         for detector in self.galSimInterpreter.detectors:
             file_handle.write('#detector;%s;%f;%f;%f;%f;%f;%f;%f\n' %
                                  (detector.name, detector.xCenter, detector.yCenter, detector.xMin,
-                                  detector.xMax, detector.yMin, detector.yMax, detector.plateScale))
+                                  detector.xMax, detector.yMin, detector.yMax, detector.photParams.platescale))
 
         InstanceCatalog.write_header(self, file_handle)
 
@@ -401,15 +406,20 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
 
             #build a dict of m5 values keyed on bandpass names
             m5Dict = None
+            m5Defaults = None
             if self.noise_and_background is not None:
                 m5Dict = {}
                 for m5Name in self.bandpassNames:
                     if self.obs_metadata.m5 is not None and m5Name in self.obs_metadata.m5:
                         m5Dict[m5Name] = self.obs_metadata.m5[m5Name]
-                    elif m5Name in PhotometricDefaults.m5:
-                        m5Dict[m5Name] = PhotometricDefaults.m5[m5Name]
                     else:
-                        raise RuntimeError('Do not know how to calculate m5 for bandpass %s ' % m5Name)
+                        if m5Defaults is None:
+                            m5Defaults = LSSTdefaults()
+
+                        try:
+                            m5Dict[m5Name] = m5Defaults.m5(m5Name)
+                        except:
+                            raise RuntimeError('Do not know how to calculate m5 for bandpass %s ' % m5Name)
 
             #This list will contain instantiations of the GalSimDetector class
             #(see galSimInterpreter.py), which stores detector information in a way
@@ -451,9 +461,22 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 yMax = 3600.0*numpy.degrees(ymax)
                 plateScale = 3600.0*numpy.degrees(plateScale)
 
+                #make a detector-custom photParams that copies all of the quantities
+                #in the catalog photParams, except the platescale, which is
+                #calculated above
+                params = PhotometricParameters(exptime=self.photParams.exptime,
+                                               nexp=self.photParams.nexp,
+                                               effarea=self.photParams.effarea,
+                                               gain=self.photParams.gain,
+                                               readnoise=self.photParams.readnoise,
+                                               darkcurrent=self.photParams.darkcurrent,
+                                               othernoise=self.photParams.othernoise,
+                                               platescale=plateScale)
+
+
                 detector = GalSimDetector(name=dd.getName(), xCenter=xCenter, yCenter=yCenter,
                                           xMin=xMin, yMin=yMin, xMax=xMax, yMax=yMax,
-                                          plateScale=plateScale)
+                                          photParams=params)
 
                 detectors.append(detector)
 
@@ -462,12 +485,11 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                                              filedir=self.bandpassDir,
                                              bandpassRoot=self.bandpassRoot,
                                              componentList=self.componentList,
-                                             skyBandpass=self.skyBandpassName,
+                                             atmoTransmission=self.atmoTransmissionName,
                                              skySED=self.skySEDname)
 
             self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassDict=self.bandpassDict,
-                                                       gain=self.gain, m5Dict=m5Dict,
-                                                       noiseWrapper=self.noise_and_background)
+                                                       m5Dict=m5Dict, noiseWrapper=self.noise_and_background)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 

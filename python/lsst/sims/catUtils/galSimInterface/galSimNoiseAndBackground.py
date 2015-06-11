@@ -5,7 +5,8 @@ galsim into the CatSim interface
 
 import numpy
 import galsim
-from lsst.sims.photUtils import expectedSkyCountsForM5, PhotometricDefaults
+from lsst.sims.photUtils import expectedSkyCountsForM5, PhotometricParameters, \
+                                LSSTdefaults
 
 __all__ = ["ExampleCCDNoise"]
 
@@ -17,9 +18,10 @@ class NoiseAndBackgroundBase(object):
     class member variable of GalSim InstanceCatalog classes.
     To implement a new noise model, users should write a new class
     that inherits from this one.  That new class should only define
-    a method getNoiseModel() that takes as arguments skyLevel, gain,
-    and readNoise.  See the docstring for getNoiseModel() for further
-    details.
+    a method getNoiseModel() that takes as arguments skyLevel, and an
+    instantiation of the PhotometricParameters class defined in sims_photUtils
+    (this will carry gain and readnoise information).  See the docstring
+    for getNoiseModel() for further details.
     """
 
     def __init__(self, seed=None, addNoise=True, addBackground=True):
@@ -44,7 +46,7 @@ class NoiseAndBackgroundBase(object):
             self.randomNumbers = galsim.UniformDeviate(seed)
 
 
-    def getNoiseModel(self, skyLevel=0.0, readNoise=None, gain=None):
+    def getNoiseModel(self, skyLevel=0.0, photParams=None):
         """
         This method returns the noise model implemented for this wrapper
         class.
@@ -59,9 +61,9 @@ class NoiseAndBackgroundBase(object):
         and there is no need to add an additional skyLevel.  If the sky
         background is still included in the image, set skyLevel equal to zero.
 
-        @param [in] readNoise is the read noise in electrons per pixel
-
-        @param [in] gain is the number of electrons per ADU
+        @param [in] photParams is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.  Defaults to None.
 
         @param [out] returns an instantiation of a GalSim noise class, as
         specified by the particular wrapper class to which this method belongs.
@@ -71,15 +73,8 @@ class NoiseAndBackgroundBase(object):
 
 
     def addNoiseAndBackground(self, image, bandpass=None, m5=None,
-                              expTime=PhotometricDefaults.exptime,
-                              nexp=PhotometricDefaults.nexp,
-                              readnoise=PhotometricDefaults.rdnoise,
-                              darkcurrent=PhotometricDefaults.darkcurrent,
-                              othernoise=PhotometricDefaults.othernoise,
-                              seeing=PhotometricDefaults.seeing['r'],
-                              platescale=PhotometricDefaults.platescale,
-                              gain=PhotometricDefaults.gain,
-                              effarea=PhotometricDefaults.effarea):
+                              seeing=LSSTdefaults().seeing('r'),
+                              photParams=None):
         """
         This method actually adds the sky background and noise to an image.
 
@@ -93,36 +88,18 @@ class NoiseAndBackgroundBase(object):
         @param [in] bandpass is a CatSim bandpass object (not a GalSim bandpass
         object) characterizing the filter through which the image is being taken.
 
-        @param [in] expTime is the exposure time in seconds.
-
-        @param [in] nexp is the number of exposures
-
-        @param [in] readnoise is the readnoise in electrons per pixel per exposure
-
-        @param [in] darkcurrent in electrons per pixel per second
-
-        @param [in] othernoise additional systematic noise in electrons per pixel
-        per exposure
-
         @param [in] seeing is the seeing in arcseconds
 
-        @param [in] platescale is the number of arcseconds per pixel
-
-        @param [in] gain is the number of electrons per ADU
-
-        @param [in] effarea is the effective area of the telescope's primary mirror in cm^2
+        @param [in] photParams is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.  Defaults to None.
 
         @param [out] the input image with the background and noise model added to it.
         """
 
 
         #calculate the sky background to be added to each pixel
-        skyCounts = expectedSkyCountsForM5(m5, bandpass,
-                                           expTime=expTime, nexp=nexp,
-                                           readnoise=readnoise, darkcurrent=darkcurrent,
-                                           othernoise=othernoise, seeing=seeing,
-                                           platescale=platescale, gain=gain,
-                                           effarea=effarea)
+        skyCounts = expectedSkyCountsForM5(m5, bandpass, seeing=seeing, photParams=photParams)
 
         image = image.copy()
 
@@ -134,10 +111,10 @@ class NoiseAndBackgroundBase(object):
                            #sky background is included in the image, the Poisson noise
                            #will be calculated from the actuall image brightness.
         else:
-            skyLevel = skyCounts*gain
+            skyLevel = skyCounts*photParams.gain
 
         if self.addNoise:
-            noiseModel = self.getNoiseModel(skyLevel=skyLevel, gain=gain, readNoise=readnoise)
+            noiseModel = self.getNoiseModel(skyLevel=skyLevel, photParams=photParams)
             image.addNoise(noiseModel)
 
         return image
@@ -152,8 +129,7 @@ class ExampleCCDNoise(NoiseAndBackgroundBase):
     readNoise, and gain and returns an instantiation of a GalSim noise model
     """
 
-    def getNoiseModel(self, skyLevel=0.0, gain=PhotometricDefaults.gain,
-                      readNoise=PhotometricDefaults.rdnoise):
+    def getNoiseModel(self, skyLevel=0.0, photParams=None):
 
         """
         This method returns the noise model implemented for this wrapper
@@ -169,17 +145,14 @@ class ExampleCCDNoise(NoiseAndBackgroundBase):
         and there is no need to add an additional skyLevel.  If the sky
         background is still included in the image, set skyLevel equal to zero.
 
-        Note: default parameters are defined in
-
-        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
-        @param [in] readNoise is the read noise in electrons per pixel
-
-        @param [in] gain is the number of electrons per ADU
+        @param [in] photParams is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.  Defaults to None.
 
         @param [out] returns an instantiation of the GalSim CCDNoise class
         """
 
-        return galsim.CCDNoise(self.randomNumbers, sky_level=skyLevel, gain=gain, read_noise=readNoise)
+        return galsim.CCDNoise(self.randomNumbers, sky_level=skyLevel,
+                               gain=photParams.gain, read_noise=photParams.readnoise)
 
 

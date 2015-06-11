@@ -6,7 +6,7 @@ import unittest
 import eups
 import galsim
 import lsst.utils.tests as utilsTests
-from lsst.sims.photUtils import Bandpass, expectedSkyCountsForM5, PhotometricDefaults
+from lsst.sims.photUtils import Bandpass, expectedSkyCountsForM5, LSSTdefaults, PhotometricParameters
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, \
@@ -176,6 +176,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             bandpassDict[filterName] = bandpass
 
         addBackground = False
+        lsstDefaults = LSSTdefaults()
         if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
             addBackground = True
             #calculate the expected skyCounts in each filter
@@ -184,14 +185,14 @@ class GalSimInterfaceTest(unittest.TestCase):
                   for name in catalog.obs_metadata.m5:
                       m5Dict[name] = obs_metadata.m5[name]
 
-            for name in PhotometricDefaults.m5:
+            for name in lsstDefaults._m5:
                 if name not in m5Dict:
-                    m5Dict[name] = PhotometricDefaults.m5[name]
+                    m5Dict[name] = _LSSTdefaults._m5[name]
 
             backgroundCounts = {}
             for filterName in listOfFilters:
                 cts = expectedSkyCountsForM5(m5Dict[filterName], bandpassDict[filterName],
-                                             seeing = PhotometricDefaults.seeing[filterName])
+                                             seeing = lsstDefaults.seeing(filterName))
 
                 backgroundCounts[filterName] = cts
 
@@ -350,19 +351,21 @@ class GalSimInterfaceTest(unittest.TestCase):
         and calculating the variance of counts in the image.
         """
 
+        lsstDefaults = LSSTdefaults()
         gain = 2.5
         readnoise = 6.0
+        photParams=PhotometricParameters(gain=gain, readnoise=readnoise)
         img = galsim.Image(100,100)
         noise = ExampleCCDNoise(seed=42)
         m5 = 24.5
         bandpass = Bandpass()
         bandpass.readThroughput(os.path.join(eups.productDir('throughputs'),'baseline','total_r.dat'))
-        background = expectedSkyCountsForM5(m5, bandpass, seeing=PhotometricDefaults.seeing['r'],
-                                            gain=gain, readnoise=readnoise)
+        background = expectedSkyCountsForM5(m5, bandpass, seeing=lsstDefaults.seeing('r'),
+                                            photParams=photParams)
 
         noisyImage = noise.addNoiseAndBackground(img, bandpass, m5=m5,
-                                                 seeing=PhotometricDefaults.seeing['r'],
-                                                 gain=gain, readnoise=readnoise)
+                                                 seeing=lsstDefaults.seeing('r'),
+                                                 photParams=photParams)
 
         mean = 0.0
         var = 0.0
@@ -384,7 +387,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         msg = 'background %e mean %e ' % (background, mean)
         self.assertTrue(numpy.abs(background/mean - 1.0) < 0.05, msg=msg)
 
-        msg = 'var %e varADU %e ; background %e' % (var, varADU, background)
+        msg = 'var %e varADU %e ; ratio %e ; background %e' % (var, varADU, var/varADU, background)
         self.assertTrue(numpy.abs(var/varADU - 1.0) < 0.05, msg=msg)
 
 
@@ -532,8 +535,8 @@ class GalSimInterfaceTest(unittest.TestCase):
                     obj = centeredObj.shift(dx, dy)
                     obj = obj*spectrum
                     localImage = cat.galSimInterpreter.blankImage(detector=detector)
-                    localImage = obj.drawImage(bandpass=bandpass, scale=detector.plateScale, method='phot',
-                                               gain=cat.galSimInterpreter.gain, image=localImage)
+                    localImage = obj.drawImage(bandpass=bandpass, scale=detector.photParams.platescale, method='phot',
+                                               gain=detector.photParams.gain, image=localImage)
 
                     controlImages['placementControl_' + \
                                   cat.galSimInterpreter._getFileName(detector=detector, bandpassName=bp)] += \
