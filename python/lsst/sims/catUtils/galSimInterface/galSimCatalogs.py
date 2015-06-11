@@ -25,7 +25,7 @@ import numpy
 import os
 import eups
 import copy
-from lsst.sims.utils import radiansToArcsec
+from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, is_null
 from lsst.sims.coordUtils import CameraCoords, AstrometryGalaxies, AstrometryStars
 from lsst.sims.catUtils.galSimInterface import GalSimInterpreter, GalSimDetector
@@ -113,9 +113,9 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                       'majorAxis', 'minorAxis', 'sindex', 'halfLightRadius',
                       'positionAngle','fitsFiles']
 
-    transformations = {'x_pupil':radiansToArcsec,
-                       'y_pupil':radiansToArcsec,
-                       'halfLightRadius':radiansToArcsec}
+    transformations = {'x_pupil':arcsecFromRadians,
+                       'y_pupil':arcsecFromRadians,
+                       'halfLightRadius':arcsecFromRadians}
 
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 

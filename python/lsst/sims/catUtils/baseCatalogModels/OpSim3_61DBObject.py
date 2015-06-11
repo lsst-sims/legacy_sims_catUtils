@@ -147,6 +147,5 @@ class OpSim3_61DBObject(DBObject):
             raise ValueErr("Need either makeBoxBounds or makeCircBounds")
 
         return ObservationMetaData(boundType=boundType,
-                           unrefractedRA=math.degrees(ra), unrefractedDec=math.degrees(dec),
-                           boundLength=boundLength,
-                           phoSimMetadata=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
+                                   boundLength=boundLength,
+                                   phoSimMetaData=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))

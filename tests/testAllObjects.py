@@ -1,3 +1,4 @@
+import numpy
 import unittest
 import lsst.utils.tests as utilsTests
 

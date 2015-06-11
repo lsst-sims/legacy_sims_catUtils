@@ -100,21 +100,20 @@ def examplePhoSimNoOpSim():
     #(ra and dec of the moon, rotation of the sky relative to the telescope, etc.)
     md =  makeObsParamsRaDecTel(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
 
-    obs_metadata_rd = ObservationMetaData(boundType='circle',unrefractedRA=raDeg,unrefractedDec=decDeg,
-                                                        boundLength=0.1,
-                                                        mjd=mjd,
-                                                        bandpassName='r',
-                                                        phoSimMetadata=md)
+    obs_metadata_rd = ObservationMetaData(boundType='circle',
+                                          boundLength=0.1,
+                                          mjd=mjd,
+                                          phoSimMetaData=md)
     azRad = math.radians(220.)
     altRad = math.radians(79.)
     md = makeObsParamsAzAltTel(azRad, altRad, mjd, 'r')
     raDeg = math.degrees(md['Unrefracted_RA'][0])
     decDeg = math.degrees(md['Unrefracted_Dec'][0])
-    obs_metadata_aa = ObservationMetaData(boundType='circle',unrefractedRA=raDeg,unrefractedDec=decDeg,
-                                                        boundLength=0.1,
-                                                        mjd=mjd,
-                                                        bandpassName='r',
-                                                        phoSimMetadata=md)
+    obs_metadata_aa = ObservationMetaData(boundType='circle',
+                                          boundLength=0.1,
+                                          mjd=mjd,
+                                          phoSimMetaData=md)
+
     dbobj = CatalogDBObject.from_objid('msstars')
     t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_rd)
     t.write_catalog('catalog_test_stars_rd.dat')
