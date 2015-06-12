@@ -166,7 +166,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.seeing
 
 
-    def getFiltersAndBandpasses(self, catalog, nameRoot=None,
+    def getFilesAndBandpasses(self, catalog, nameRoot=None,
                                 bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
                                 bandpassRoot='total_',):
 
@@ -216,6 +216,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         return listOfFiles, bandpassDict
 
+
     def catalogTester(self, catName=None, catalog=None, nameRoot=None,
                       bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
                       bandpassRoot='total_',
@@ -250,7 +251,7 @@ class GalSimInterfaceTest(unittest.TestCase):
         #(indexed on the name of the FITS file)
         controlCounts = {}
 
-        listOfFiles, bandpassDict = self.getFiltersAndBandpasses(catalog, nameRoot=nameRoot,
+        listOfFiles, bandpassDict = self.getFilesAndBandpasses(catalog, nameRoot=nameRoot,
                                                                  bandpassDir=bandpassDir,
                                                                  bandpassRoot=bandpassRoot)
 
@@ -342,6 +343,72 @@ class GalSimInterfaceTest(unittest.TestCase):
             #to make sure we did not neglect more than one detector
             self.assertTrue(unDrawnDetectors<2)
             self.assertTrue(drawnDetectors>0)
+
+
+    def compareCatalogs(self, cleanCatalog, noisyCatalog, gain, readnoise):
+        """
+        Read in two catalogs (one with noise, one without).  Compare the flux in each image
+        pixel by pixel.  Make sure that the variation between the two is within expected limits.
+
+        @param [in] cleanCatalog is the noiseless GalSimCatalog instantiation
+
+        @param [in] noisyCatalog is the noisy GalSimCatalog instantiation
+
+        @param [in] gain is the electrons per ADU for the GalSimCatalogs
+
+        @param [in] readnoise is the electrons per pixel per exposure of the GalSimCatalogs]
+        """
+
+        cleanFileList, cleanBandpassDict = self.getFilesAndBandpasses(cleanCatalog, nameRoot='clean')
+        noisyFileList, noisyBandpassDict = self.getFilesAndBandpasses(noisyCatalog, nameRoot='unclean')
+
+        #calculate the expected skyCounts in each filter
+        backgroundCounts = {}
+        for filterName in noisyBandpassDict.keys():
+            cts = expectedSkyCountsForM5(noisyCatalog.obs_metadata.m5[filterName], noisyBandpassDict[filterName],
+                                         noisyCatalog.photParams, seeing=noisyCatalog.obs_metadata.seeing[filterName])
+
+            backgroundCounts[filterName] = cts
+
+        # Go through each image pixel by pixel.
+        # Treat the value in the clean image as the mean intensity for that pixel.
+        # Sum up (noisy-clean)^2/var
+        # where var is determined by Poisson statistics from mean and readnoise.
+        # Divide by the number of pixel
+        # Make sure that this average does not deviate from unity
+
+        countedImages = 0
+        for noisyName, cleanName in zip(noisyFileList, cleanFileList):
+            noisyIm = afwImage.ImageF(noisyName).getArray()
+            cleanIm = afwImage.ImageF(cleanName).getArray()
+
+            totalVar = 0.0
+            totalMean = 0.0
+            ct = 0.0
+
+            self.assertEqual(cleanIm.shape[0], noisyIm.shape[0], msg='images not same shape')
+            self.assertEqual(cleanIm.shape[1], noisyIm.shape[1], msg='images not same shape')
+
+            for ix in range(cleanIm.shape[0]):
+                for iy in range(noisyIm.shape[1]):
+                    mean = cleanIm[ix, iy]
+                    var = mean/gain + readnoise/(gain*gain)
+                    totalVar += numpy.power(noisyIm[ix, iy] - mean,2)/var
+                    totalMean += mean
+                    ct += 1.0
+
+
+            totalVar = totalVar/ct
+            totalMean = totalMean/ct
+
+            if totalMean>=100.0:
+                countedImages += 1
+                self.assertTrue(numpy.abs(totalVar-1.0) < 0.05)
+
+            os.unlink(noisyName)
+            os.unlink(cleanName)
+
+        self.assertTrue(countedImages>0)
 
 
     def testGalaxyBulges(self):
@@ -480,6 +547,31 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.catalogTester(catName=catName, catalog=cat, nameRoot='background')
         if os.path.exists(catName):
             os.unlink(catName)
+
+
+    def testNoisyCatalog(self):
+        """
+        Compare noisy and noiseless images drawn from the same catalog.
+        Make sure that the pixel-by-pixel difference between the two is
+        as expected from Poisson statistics.
+        """
+        noisyCatName = 'testNoisyCatalog.sav'
+        cleanCatName = 'testCleanCatalog.sav'
+
+        gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
+
+        noisyCat = noisyCatalog(gals, obs_metadata=self.obs_metadata)
+        cleanCat = backgroundCatalog(gals, obs_metadata=self.obs_metadata)
+
+        noisyCat.write_catalog(noisyCatName)
+        cleanCat.write_catalog(cleanCatName)
+
+        self.compareCatalogs(cleanCat, noisyCat, PhotometricParameters().gain, PhotometricParameters().readnoise)
+
+        if os.path.exists(noisyCatName):
+            os.unlink(noisyCatName)
+        if os.path.exists(cleanCatName):
+            os.unlink(cleanCatName)
 
 
     def testNoise(self):
