@@ -178,7 +178,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         @param [in] catName is the name of the InstanceCatalog that has been written to disk
 
-        @paranm [in] catalog is the actual InstanceCatalog instantiation
+        @param [in] catalog is the actual InstanceCatalog instantiation
 
         @param [in] nameRoot is a string appended to the names of the FITS files being written
 
