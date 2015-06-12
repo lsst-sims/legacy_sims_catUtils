@@ -476,6 +476,17 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                                                  'bandpass has: %s \n' % self.bandpassNames.__repr__() +
                                                  'm5 has: %s ' % self.obs_metadata.m5.keys().__repr__())
 
+                    if self.obs_metadata.seeing is None:
+                        raise RuntimeError('WARNING  in GalSimCatalog; you did not specify seeing in your '+
+                                            'obs_metadata.  seeing is required in order to add noise to your images')
+
+                    for name in self.bandpassNames:
+                        if name not in self.obs_metadata.seeing:
+                            raise RuntimeError('WARNING in GalSimCatalog; your obs_metadata does not have ' +
+                                                 'seeing values for all of your bandpasses \n' +
+                                                 'bandpass has: %s \n' % self.bandpassNames.__repr__() +
+                                                 'seeing has: %s ' % self.obs_metadata.seeing.keys().__repr__())
+
                 self.loadBandpassesFromFiles(bandpassNames=self.bandpassNames,
                                              filedir=self.bandpassDir,
                                              bandpassRoot=self.bandpassRoot,
