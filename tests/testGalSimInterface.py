@@ -85,7 +85,7 @@ class backgroundCatalog(testGalaxyCatalog):
     Add sky background but no noise to testGalaxyCatalog
     """
     PSF = SNRdocumentPSF()
-    nosie_and_background = ExampleCCDNoise(addNoise=False)
+    noise_and_background = ExampleCCDNoise(addNoise=False)
 
 class noisyCatalog(testGalaxyCatalog):
     """
@@ -201,51 +201,29 @@ class GalSimInterfaceTest(unittest.TestCase):
         #(indexed on the name of the FITS file)
         controlCounts = {}
 
-        #a list of bandpasses over which we are integraging
-        listOfFilters = []
+        listOfFiles, bandpassDict = self.getFiltersAndBandpasses(catalog, nameRoot=nameRoot,
+                                                                 bandpassDir=bandpassDir,
+                                                                 bandpassRoot=bandpassRoot)
 
         #read in the names of all of the written fits files directly from the
         #InstanceCatalog's GalSimInterpreter
         #Use AFW to read in the FITS files and calculate the ADU
-        for name in catalog.galSimInterpreter.detectorImages:
-            if nameRoot is not None:
-                name = nameRoot+'_'+name
+        for name in listOfFiles:
             im = afwImage.ImageF(name)
             imArr = im.getArray()
             galsimCounts[name] = imArr.sum()
             galsimPixels[name] = imArr.shape[0]*imArr.shape[1]
             controlCounts[name] = 0.0
-
-            if name[-6] not in listOfFilters:
-                listOfFilters.append(name[-6])
-
             os.unlink(name)
 
-        bandpassDict = {}
-        for filterName in listOfFilters:
-            bandpassName=os.path.join(bandpassDir, bandpassRoot + filterName + '.dat')
-            bandpass = Bandpass()
-            bandpass.readThroughput(bandpassName)
-            bandpassDict[filterName] = bandpass
-
         addBackground = False
-        lsstDefaults = LSSTdefaults()
         if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
             addBackground = True
             #calculate the expected skyCounts in each filter
-            m5Dict = {}
-            if catalog.obs_metadata.m5 is not None:
-                  for name in catalog.obs_metadata.m5:
-                      m5Dict[name] = obs_metadata.m5[name]
-
-            for name in lsstDefaults._m5:
-                if name not in m5Dict:
-                    m5Dict[name] = _LSSTdefaults._m5[name]
-
             backgroundCounts = {}
-            for filterName in listOfFilters:
-                cts = expectedSkyCountsForM5(m5Dict[filterName], bandpassDict[filterName],
-                                             seeing = lsstDefaults.seeing(filterName))
+            for filterName in bandpassDict.keys():
+                cts = expectedSkyCountsForM5(catalog.obs_metadata.m5[filterName], bandpassDict[filterName],
+                                             catalog.photParams, seeing=catalog.obs_metadata.seeing[filterName])
 
                 backgroundCounts[filterName] = cts
 
