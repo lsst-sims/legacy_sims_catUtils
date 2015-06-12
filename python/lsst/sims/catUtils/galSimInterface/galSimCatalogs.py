@@ -467,7 +467,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 if self.noise_and_background is not None:
                     if self.obs_metadata.m5 is None:
                         raise RuntimeError('WARNING  in GalSimCatalog; you did not specify m5 in your '+
-                                            'obs_metadata, yet you are asking to add noise to your images')
+                                            'obs_metadata. m5 is required in order to add noise to your images')
 
                     for name in self.bandpassNames:
                         if name not in self.obs_metadata.m5:
