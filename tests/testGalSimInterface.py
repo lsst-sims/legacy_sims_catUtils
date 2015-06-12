@@ -5,6 +5,7 @@ import numpy
 import unittest
 import eups
 import galsim
+from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass, expectedSkyCountsForM5, LSSTdefaults, PhotometricParameters
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -164,6 +165,57 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.m5
         del cls.seeing
 
+
+    def getFiltersAndBandpasses(self, catalog, nameRoot=None,
+                                bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
+                                bandpassRoot='total_',):
+
+        """
+        Take a GalSimCatalog.  Return a list of fits files and and OrderedDict of bandpasses associated
+        with that catalog
+
+        @param [in] catalog is a GalSimCatalog instantiation
+
+        @param [in] nameRoot is the nameRoot prepended to the fits files output by that catalog
+
+        @param[in] bandpassDir is the directory where bandpass files can be found
+
+        @param [in] bandpassRoot is the root of the name of the bandpass files
+
+        @param [out] listOfFiles is a list of the names of the fits files written by this catalog
+
+        @param [out] bandpassDict is an OrderedDict of Bandpass instantiations corresponding to the
+        filters in this catalog.
+        """
+
+        #write the fits files
+        catalog.write_images(nameRoot=nameRoot)
+
+        #a list of bandpasses over which we are integraging
+        listOfFilters = []
+        listOfFiles = []
+
+        #read in the names of all of the written fits files directly from the
+        #InstanceCatalog's GalSimInterpreter
+        #Use AFW to read in the FITS files and calculate the ADU
+        for name in catalog.galSimInterpreter.detectorImages:
+            if nameRoot is not None:
+                name = nameRoot+'_'+name
+
+            listOfFiles.append(name)
+
+            if name[-6] not in listOfFilters:
+                listOfFilters.append(name[-6])
+
+        bandpassDict = OrderedDict()
+        for filterName in listOfFilters:
+            bandpassName=os.path.join(bandpassDir, bandpassRoot + filterName + '.dat')
+            bandpass = Bandpass()
+            bandpass.readThroughput(bandpassName)
+            bandpassDict[filterName] = bandpass
+
+        return listOfFiles, bandpassDict
+
     def catalogTester(self, catName=None, catalog=None, nameRoot=None,
                       bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
                       bandpassRoot='total_',
@@ -188,9 +240,6 @@ class GalSimInterfaceTest(unittest.TestCase):
 
             os.path.join(bandpassDir, bandpassRoot + bandpassName + '.dat')
         """
-
-        #write the fits files
-        catalog.write_images(nameRoot=nameRoot)
 
         #a dictionary of ADU for each FITS file as calculated by GalSim
         #(indexed on the name of the FITS file)
@@ -261,7 +310,7 @@ class GalSimInterfaceTest(unittest.TestCase):
                         #(this is not a terribly great idea, since our conservative implementation
                         #of GalSimInterpreter._doesObjectImpingeOnDetector means that some detectors
                         #will be listed here even though the object does not illumine them)
-                        for filterName in listOfFilters:
+                        for filterName in bandpassDict.keys():
                             chipName = name.replace(':','_')
                             chipName = chipName.replace(' ','_')
                             chipName = chipName.replace(',','_')
@@ -296,6 +345,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             #to make sure we did not neglect more than one detector
             self.assertTrue(unDrawnDetectors<2)
             self.assertTrue(drawnDetectors>0)
+
 
     def testGalaxyBulges(self):
         """
