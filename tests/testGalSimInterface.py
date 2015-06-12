@@ -131,7 +131,9 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.m5
         del cls.seeing
 
-    def catalogTester(self, catName=None, catalog=None, nameRoot=None):
+    def catalogTester(self, catName=None, catalog=None, nameRoot=None,
+                      bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
+                      bandpassRoot='total_'):
         """
         Reads in a GalSim Instance Catalog.  Writes the images from that catalog.
         Then reads those images back in.  Uses AFW to calculate the number of counts
@@ -145,6 +147,12 @@ class GalSimInterfaceTest(unittest.TestCase):
         @paranm [in] catalog is the actual InstanceCatalog instantiation
 
         @param [in] nameRoot is a string appended to the names of the FITS files being written
+
+        @param [in] bandpassDir is the directory containing the bandpasses against which to test
+
+        @param [in] bandpassRoot is the root of the name of the bandpass files, i.e.
+
+            os.path.join(bandpassDir, bandpassRoot + bandpassName + '.dat')
         """
 
         #write the fits files
@@ -181,8 +189,7 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         bandpassDict = {}
         for filterName in listOfFilters:
-            bandpassName=os.path.join(eups.productDir('throughputs'), \
-                                                     'baseline',('total_'+filterName+'.dat'))
+            bandpassName=os.path.join(bandpassDir, bandpassRoot + filterName + '.dat')
             bandpass = Bandpass()
             bandpass.readThroughput(bandpassName)
             bandpassDict[filterName] = bandpass
