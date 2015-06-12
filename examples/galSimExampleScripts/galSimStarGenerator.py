@@ -13,7 +13,7 @@ from lsst.sims.catUtils.galSimInterface import SNRdocumentPSF, GalSimStars
 
 class testGalSimStars(GalSimStars):
     #only draw images for u and g bands (for speed)
-    bandpass_names = ['u','g']
+    bandpassNames = ['u','g']
 
     #defined in galSimInterface/galSimUtilities.py
     PSF = SNRdocumentPSF()

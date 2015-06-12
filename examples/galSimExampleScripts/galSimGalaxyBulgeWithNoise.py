@@ -8,12 +8,14 @@ from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, OpSim3_61DBObje
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, ExampleCCDNoise, \
                                                SNRdocumentPSF
 
+from lsst.sims.photUtils import LSSTdefaults
+
 #if you want to use the actual LSST camera
 #from lsst.obs.lsstSim import LsstSimMapper
 
 class testGalSimGalaxiesNoiseless(GalSimGalaxies):
     #only draw images for u and g bands (for speed)
-    bandpass_names = ['u','g']
+    bandpassNames = ['u','g']
 
     #If you want to use the LSST camera, uncomment the line below.
     #You can similarly assign any camera object you want here
@@ -28,7 +30,18 @@ class testGalSimGalaxiesNoisy(testGalSimGalaxiesNoiseless):
 
 #select an OpSim pointing
 obsMD = OpSim3_61DBObject()
-obs_metadata = obsMD.getObservationMetaData(88625744, 0.05, makeCircBounds = True)
+raw_obs_metadata = obsMD.getObservationMetaData(88625744, 0.05, makeCircBounds = True)
+
+defaults = LSSTdefaults()
+obs_metadata = ObservationMetaData(unrefractedRA=raw_obs_metadata.unrefractedRA,
+                                   unrefractedDec=raw_obs_metadata.unrefractedDec,
+                                   boundType='circle',
+                                   boundLength=0.05,
+                                   mjd=raw_obs_metadata.mjd,
+                                   rotSkyPos=raw_obs_metadata.rotSkyPos,
+                                   bandpassName=['u','g'],
+                                   m5=[defaults.m5('u'), defaults.m5('g')],
+                                   seeing=[defaults.seeing('u'), defaults.seeing('g')])
 
 #grab a database of galaxies (in this case, galaxy bulges)
 gals = CatalogDBObject.from_objid('galaxyBulge')
