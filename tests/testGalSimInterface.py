@@ -448,11 +448,11 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of Galaxy bulges with
         a sky background
         """
-        catName = 'testPSFcat.sav'
+        catName = 'testBackgroundCat.sav'
         gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
         cat = backgroundCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
-        self.catalogTester(catName=catName, catalog=cat, nameRoot='noisy')
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='background')
         if os.path.exists(catName):
             os.unlink(catName)
 
