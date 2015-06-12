@@ -104,24 +104,16 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = numpy.array([72.0/3600.0])
         displacedDec = numpy.array([0.0])
-        obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=1,
-                                        displacedRA=displacedRA,
-                                        displacedDec=displacedDec)
-
         defaults = LSSTdefaults()
-        bandpassNameList = ['u', 'g', 'r', 'i', 'z', 'y']
-        m5 = defaults._m5.values()
-        seeing = defaults._seeing.values()
-        cls.obs_metadata = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                               unrefractedDec=obs_metadata.unrefractedDec,
-                                               boundType='circle',
-                                               boundLength=obs_metadata.boundLength,
-                                               mjd=obs_metadata.mjd,
-                                               bandpassName=bandpassNameList,
-                                               m5=m5,
-                                               seeing=seeing,
-                                               rotSkyPos=obs_metadata.rotSkyPos,
-                                               skyBrightness=obs_metadata.skyBrightness)
+        cls.bandpassNameList = ['u', 'g', 'r', 'i', 'z', 'y']
+        cls.m5 = defaults._m5.values()
+        cls.seeing = defaults._seeing.values()
+        cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=1,
+                                            displacedRA=displacedRA,
+                                            displacedDec=displacedDec,
+                                            bandpass=cls.bandpassNameList,
+                                            m5=cls.m5,
+                                            seeing=cls.seeing)
 
         cls.driver = 'sqlite'
 
@@ -135,6 +127,9 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.dbName
         del cls.driver
         del cls.obs_metadata
+        del cls.bandpassNameList
+        del cls.m5
+        del cls.seeing
 
     def catalogTester(self, catName=None, catalog=None, nameRoot=None):
         """
@@ -423,18 +418,10 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = numpy.array([72.0/3600.0, 55.0/3600.0, 75.0/3600.0])
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
-        obs = makePhoSimTestDB(filename=dbName, size=1,
-                               displacedRA=displacedRA, displacedDec=displacedDec)
-        obs_metadata = ObservationMetaData(unrefractedRA=obs.unrefractedRA,
-                                           unrefractedDec=obs.unrefractedDec,
-                                           boundType='circle',
-                                           boundLength=obs.boundLength,
-                                           mjd=obs.mjd,
-                                           bandpassName=LSSTdefaults()._m5.keys(),
-                                           m5=LSSTdefaults()._m5.values(),
-                                           seeing=LSSTdefaults()._seeing.values(),
-                                           rotSkyPos=obs.rotSkyPos,
-                                           skyBrightness=obs.skyBrightness)
+        obs_metadata = makePhoSimTestDB(filename=dbName, size=1,
+                                        displacedRA=displacedRA, displacedDec=displacedDec,
+                                        bandpass=self.bandpassNameList,
+                                        m5=self.m5, seeing=self.seeing)
 
         gals = testGalaxyBulgeDBObj(driver=driver, database=dbName)
         cat = testGalaxyCatalog(gals, obs_metadata=obs_metadata)
@@ -467,18 +454,10 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = numpy.array([72.0/3600.0, 55.0/3600.0, 75.0/3600.0])
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
-        obs = makePhoSimTestDB(filename=dbName1, size=1,
-                               displacedRA=displacedRA, displacedDec=displacedDec)
-        obs_metadata1 = ObservationMetaData(unrefractedRA=obs.unrefractedRA,
-                                           unrefractedDec=obs.unrefractedDec,
-                                           boundType='circle',
-                                           boundLength=obs.boundLength,
-                                           mjd=obs.mjd,
-                                           bandpassName=LSSTdefaults()._m5.keys(),
-                                           m5=LSSTdefaults()._m5.values(),
-                                           seeing=LSSTdefaults()._seeing.values(),
-                                           rotSkyPos=obs.rotSkyPos,
-                                           skyBrightness=obs.skyBrightness)
+        obs_metadata1 = makePhoSimTestDB(filename=dbName1, size=1,
+                                         displacedRA=displacedRA, displacedDec=displacedDec,
+                                         bandpass=self.bandpassNameList,
+                                         m5=self.m5, seeing=self.seeing)
 
         dbName2 = 'galSimTestCompound2DB.db'
         if os.path.exists(dbName2):
@@ -486,18 +465,10 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = numpy.array([55.0/3600.0, 60.0/3600.0, 62.0/3600.0])
         displacedDec = numpy.array([-3.0/3600.0, 10.0/3600.0, 10.0/3600.0])
-        obs = makePhoSimTestDB(filename=dbName2, size=1,
-                                            displacedRA=displacedRA, displacedDec=displacedDec)
-        obs_metadata2 = ObservationMetaData(unrefractedRA=obs.unrefractedRA,
-                                           unrefractedDec=obs.unrefractedDec,
-                                           boundType='circle',
-                                           boundLength=obs.boundLength,
-                                           mjd=obs.mjd,
-                                           bandpassName=LSSTdefaults()._m5.keys(),
-                                           m5=LSSTdefaults()._m5.values(),
-                                           seeing=LSSTdefaults()._seeing.values(),
-                                           rotSkyPos=obs.rotSkyPos,
-                                           skyBrightness=obs.skyBrightness)
+        obs_metadata2 = makePhoSimTestDB(filename=dbName2, size=1,
+                                            displacedRA=displacedRA, displacedDec=displacedDec,
+                                            bandpass=self.bandpassNameList,
+                                            m5=self.m5, seeing=self.seeing)
 
         gals = testGalaxyBulgeDBObj(driver=driver, database=dbName1)
         cat1 = testGalaxyCatalog(gals, obs_metadata=obs_metadata1)
@@ -545,17 +516,9 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = (-40.0 + numpy.random.sample(catSize)*(120.0))/3600.0
         displacedDec = (-20.0 + numpy.random.sample(catSize)*(80.0))/3600.0
-        obs = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec)
-        obs_metadata = ObservationMetaData(unrefractedRA=obs.unrefractedRA,
-                                           unrefractedDec=obs.unrefractedDec,
-                                           boundType='circle',
-                                           boundLength=obs.boundLength,
-                                           mjd=obs.mjd,
-                                           bandpassName=LSSTdefaults()._m5.keys(),
-                                           m5=LSSTdefaults()._m5.values(),
-                                           seeing=LSSTdefaults()._seeing.values(),
-                                           rotSkyPos=obs.rotSkyPos,
-                                           skyBrightness=obs.skyBrightness)
+        obs_metadata = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec,
+                                        bandpass=self.bandpassNameList,
+                                        m5=self.m5, seeing=self.seeing)
 
         catName = 'testPlacementCat.sav'
         stars = testStarsDBObj(driver=driver, database=dbName)
