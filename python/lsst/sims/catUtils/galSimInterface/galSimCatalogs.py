@@ -126,6 +126,8 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     #column contain both ':' and ','
     delimiter = ';'
 
+    sedDir = eups.productDir('sims_sed_library')
+
     bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
     bandpassDir = os.path.join(eups.productDir('throughputs'), 'baseline')
     bandpassRoot = 'filter_'
@@ -199,8 +201,6 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
         galacticRv = self.column_by_name('galacticRv')
         magNorm = self.column_by_name('magNorm')
 
-        sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
-
         #for setting magNorm
         imsimband = Bandpass()
         imsimband.imsimBandpass()
@@ -222,7 +222,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 else:
                     #load the SED of the object
                     sed = Sed()
-                    sedFile = os.path.join(sedDir, sedName)
+                    sedFile = os.path.join(self.sedDir, sedName)
                     sed.readSED_flambda(sedFile)
 
                     flambdaCopy = copy.deepcopy(sed.flambda)
