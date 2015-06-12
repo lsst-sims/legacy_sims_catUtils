@@ -464,10 +464,17 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 detectors.append(detector)
 
             if self.bandpassDict is None:
-                for name in self.bandpassNames:
-                    if name not in self.obs_metadata.m5:
-                        raise RuntimeWarning('WARNING in GalSimCatalog; your obs_metadata does not have ' +
-                                             'm5 values for all of your bandpasses')
+                if self.noise_and_background is not None:
+                    if self.obs_metadata.m5 is None:
+                        raise RuntimeError('WARNING  in GalSimCatalog; you did not specify m5 in your '+
+                                            'obs_metadata, yet you are asking to add noise to your images')
+
+                    for name in self.bandpassNames:
+                        if name not in self.obs_metadata.m5:
+                            raise RuntimeError('WARNING in GalSimCatalog; your obs_metadata does not have ' +
+                                                 'm5 values for all of your bandpasses \n' +
+                                                 'bandpass has: %s \n' % self.bandpassNames.__repr__() +
+                                                 'm5 has: %s ' % self.obs_metadata.m5.keys().__repr__())
 
                 self.loadBandpassesFromFiles(bandpassNames=self.bandpassNames,
                                              filedir=self.bandpassDir,
