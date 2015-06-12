@@ -22,7 +22,7 @@ class testGalaxyCatalog(GalSimGalaxies):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
-    bandpass_names = ['u', 'g', 'r']
+    bandpassNames = ['u', 'g', 'r']
 
     column_outputs = copy.deepcopy(GalSimGalaxies.column_outputs)
     column_outputs.remove('fitsFiles')
@@ -40,7 +40,7 @@ class testStarCatalog(GalSimStars):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
-    bandpass_names = ['u', 'g', 'r']
+    bandpassNames = ['u', 'g', 'r']
 
     column_outputs = copy.deepcopy(GalSimStars.column_outputs)
     column_outputs.remove('fitsFiles')
@@ -60,7 +60,7 @@ class testAgnCatalog(GalSimAgn):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
-    bandpass_names = ['u', 'g', 'r']
+    bandpassNames = ['u', 'g', 'r']
 
     column_outputs = copy.deepcopy(GalSimAgn.column_outputs)
     column_outputs.remove('fitsFiles')
@@ -93,6 +93,39 @@ class noisyCatalog(testGalaxyCatalog):
     """
     PSF = SNRdocumentPSF()
     noise_and_background = ExampleCCDNoise()
+
+
+class testFakeBandpassCatalog(testStarCatalog):
+    """
+    tests the GalSim interface on fake bandpasses
+    """
+    bandpassNames = ['x', 'y', 'z']
+
+    bandpassDir = os.path.join(eups.productDir('sims_catUtils'),'tests','testThroughputs')
+    bandpassRoot = 'fakeFilter_'
+    componentList = ['fakeM1.dat', 'fakeM2.dat']
+    atmoTransmissionName = 'fakeAtmo.dat'
+    skySEDname = 'fakeSky.dat'
+
+class testFakeSedCatalog(testFakeBandpassCatalog):
+    """
+    tests the GalSim interface on fake seds and bandpasses
+    """
+    sedDir = os.path.join(eups.productDir('sims_catUtils'),'tests','testSeds')
+
+    def get_sedFilepath(self):
+        """
+        map the sedFilenames created by makePhoSimTestDB to the SEDs in
+        in testSeds/
+        """
+
+        nameMap = {'km20_5750.fits_g40_5790':'fakeSed1.dat',
+                   'm2.0Full.dat':'fakeSed2.dat',
+                   'bergeron_6500_85.dat_6700':'fakeSed3.dat'}
+
+        rawNames = self.column_by_name('sedFilename')
+        return numpy.array([nameMap[nn] for nn in rawNames])
+
 
 class GalSimInterfaceTest(unittest.TestCase):
 
@@ -133,7 +166,8 @@ class GalSimInterfaceTest(unittest.TestCase):
 
     def catalogTester(self, catName=None, catalog=None, nameRoot=None,
                       bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
-                      bandpassRoot='total_'):
+                      bandpassRoot='total_',
+                      sedDir=eups.productDir('sims_sed_library')):
         """
         Reads in a GalSim Instance Catalog.  Writes the images from that catalog.
         Then reads those images back in.  Uses AFW to calculate the number of counts
@@ -257,7 +291,9 @@ class GalSimInterfaceTest(unittest.TestCase):
 
                             fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
 
-                            controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpassDict[filterName],
+                            fullSedName = os.path.join(sedDir, sedName)
+
+                            controlCounts[fullName] += calcADUwrapper(sedName=fullSedName, bandpass=bandpassDict[filterName],
                                                                         redshift=redshift, magNorm=magNorm,
                                                                         internalAv=internalAv, internalRv=internalRv,
                                                                         galacticAv=galacticAv, galacticRv=galacticRv)
@@ -320,6 +356,64 @@ class GalSimInterfaceTest(unittest.TestCase):
         self.catalogTester(catName=catName, catalog=cat, nameRoot='stars')
         if os.path.exists(catName):
             os.unlink(catName)
+
+
+    def testFakeBandpasses(self):
+        """
+        Test GalSim catalog with alternate bandpasses
+        """
+        catName = 'testFakeBandpassCat.sav'
+        m5 = [22.0, 23.0, 25.0]
+        seeing = [0.6, 0.5, 0.7]
+        bandpassNames = ['x', 'y', 'z']
+        obs_metadata = ObservationMetaData(
+                       unrefractedRA=self.obs_metadata.unrefractedRA,
+                       unrefractedDec=self.obs_metadata.unrefractedDec,
+                       rotSkyPos=self.obs_metadata.rotSkyPos,
+                       mjd=self.obs_metadata.mjd,
+                       bandpassName=bandpassNames,
+                       m5=m5,
+                       seeing=seeing)
+
+        stars = testStarsDBObj(driver=self.driver, database=self.dbName)
+        cat = testFakeBandpassCatalog(stars, obs_metadata=obs_metadata)
+        cat.write_catalog(catName)
+        bandpassDir = os.path.join(eups.productDir('sims_catUtils'),'tests','testThroughputs')
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='fakeBandpass',
+                           bandpassDir=bandpassDir, bandpassRoot='fakeTotal_')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def testFakeSeds(self):
+        """
+        Test GalSim catalog with alternate Seds
+        """
+        catName = 'testFakeSedCat.sav'
+        m5 = [22.0, 23.0, 25.0]
+        seeing = [0.6, 0.5, 0.7]
+        bandpassNames = ['x', 'y', 'z']
+        obs_metadata = ObservationMetaData(
+                       unrefractedRA=self.obs_metadata.unrefractedRA,
+                       unrefractedDec=self.obs_metadata.unrefractedDec,
+                       rotSkyPos=self.obs_metadata.rotSkyPos,
+                       mjd=self.obs_metadata.mjd,
+                       bandpassName=bandpassNames,
+                       m5=m5,
+                       seeing=seeing)
+
+        stars = testStarsDBObj(driver=self.driver, database=self.dbName)
+        cat = testFakeSedCatalog(stars, obs_metadata=obs_metadata)
+        cat.write_catalog(catName)
+        bandpassDir = os.path.join(eups.productDir('sims_catUtils'), 'tests', 'testThroughputs')
+        sedDir = os.path.join(eups.productDir('sims_catUtils'), 'tests', 'testSeds')
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='fakeBandpass',
+                           bandpassDir=bandpassDir, bandpassRoot='fakeTotal_',
+                           sedDir=sedDir)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
 
 
     def testAgns(self):
