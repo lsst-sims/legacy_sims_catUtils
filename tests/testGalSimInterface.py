@@ -145,9 +145,6 @@ class GalSimInterfaceTest(unittest.TestCase):
         @paranm [in] catalog is the actual InstanceCatalog instantiation
 
         @param [in] nameRoot is a string appended to the names of the FITS files being written
-
-        @param [in] addBackground is a boolean controlling whether or not the sky background is
-        added to the image
         """
 
         #write the fits files
