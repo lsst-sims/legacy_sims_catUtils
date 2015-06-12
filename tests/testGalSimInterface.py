@@ -265,9 +265,7 @@ class GalSimInterfaceTest(unittest.TestCase):
             controlCounts[name] = 0.0
             os.unlink(name)
 
-        addBackground = False
         if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
-            addBackground = True
             #calculate the expected skyCounts in each filter
             backgroundCounts = {}
             for filterName in bandpassDict.keys():
@@ -279,7 +277,6 @@ class GalSimInterfaceTest(unittest.TestCase):
             for name in controlCounts:
                 filterName = name[-6]
                 controlCounts[name] += backgroundCounts[filterName] * galsimPixels[name]
-
 
         #Read in the InstanceCatalog.  For each object in the catalog, use sims_photUtils
         #to calculate the ADU.  Keep track of how many ADU should be in each FITS file.
@@ -334,7 +331,7 @@ class GalSimInterfaceTest(unittest.TestCase):
                     #to violate the condition below
                     drawnDetectors += 1
                     msg = 'controlCounts %e galsimCounts %e; %s ' % (controlCounts[ff], galsimCounts[ff],nameRoot)
-                    if addBackground:
+                    if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
                         msg += 'background per pixel %e pixels %e %s' % (backgroundCounts[ff[-6]], galsimPixels[ff],ff)
 
                     self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff],
