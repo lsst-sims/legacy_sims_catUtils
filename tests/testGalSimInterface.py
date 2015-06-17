@@ -86,14 +86,14 @@ class backgroundCatalog(testGalaxyCatalog):
     Add sky background but no noise to testGalaxyCatalog
     """
     PSF = SNRdocumentPSF()
-    noise_and_background = ExampleCCDNoise(addNoise=False)
+    noise_and_background = ExampleCCDNoise(addNoise=False, seed=42)
 
 class noisyCatalog(testGalaxyCatalog):
     """
     Adds a noise and sky background wrapper to testGalaxyCatalog
     """
     PSF = SNRdocumentPSF()
-    noise_and_background = ExampleCCDNoise()
+    noise_and_background = ExampleCCDNoise(seed=42)
 
 
 class testFakeBandpassCatalog(testStarCatalog):
