@@ -389,15 +389,10 @@ class GalSimInterfaceTest(unittest.TestCase):
             self.assertEqual(cleanIm.shape[0], noisyIm.shape[0], msg='images not same shape')
             self.assertEqual(cleanIm.shape[1], noisyIm.shape[1], msg='images not same shape')
 
-            for ix in range(cleanIm.shape[0]):
-                for iy in range(noisyIm.shape[1]):
-                    mean = cleanIm[ix, iy]
-                    var = mean/gain + readnoise/(gain*gain)
-                    totalVar += numpy.power(noisyIm[ix, iy] - mean,2)/var
-                    totalMean += mean
-                    ct += 1.0
-
-
+            var = cleanIm/gain + readnoise/(gain*gain)
+            totalVar = (numpy.power(noisyIm-cleanIm,2)/var).sum()
+            totalMean = cleanIm.sum()
+            ct = float(cleanIm.shape[0]*cleanIm.shape[1])
             totalVar = totalVar/ct
             totalMean = totalMean/ct
 
