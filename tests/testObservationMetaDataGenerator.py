@@ -97,6 +97,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ('rotSkyPos',(numpy.degrees(3.116656), numpy.degrees(4.6974265))),
         ('telescopeFilter',('i','i')),
         ('rawSeeing',(0.728562, 1.040495)),
+        ('seeing', (0.7, 0.9)),
         ('sunAlt',(numpy.degrees(-0.522905), numpy.degrees(-0.366073))),
         ('moonAlt',(numpy.degrees(0.099096), numpy.degrees(0.5495415))),
         ('dist2Moon',(numpy.degrees(1.570307), numpy.degrees(2.347868))),
@@ -106,8 +107,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ('azimuth',(numpy.degrees(3.470077), numpy.degrees(4.8765995))),
         ('visitExpTime',(30.0,30.0)),
         ('airmass',(1.420459, 2.0048075)),
-        ('skyBrightness',(19.017605, 20.512553)),
-        ('m5',(22.815249, 24.0047695))]
+        ('m5',(22.815249, 24.0047695)),
+        ('skyBrightness',(19.017605, 20.512553))]
 
         #test querying on a single column
         for (ii,line) in enumerate(bounds):
@@ -207,6 +208,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ('rotSkyPos',numpy.degrees(3.116656)),
         ('telescopeFilter','i'),
         ('rawSeeing',0.728562),
+        ('seeing', 0.88911899999999999),
         ('sunAlt',numpy.degrees(-0.522905)),
         ('moonAlt',numpy.degrees(0.099096)),
         ('dist2Moon',numpy.degrees(1.570307)),
@@ -216,8 +218,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ('azimuth',numpy.degrees(3.470077)),
         ('visitExpTime',30.0),
         ('airmass',1.420459),
-        ('skyBrightness',19.017605),
-        ('m5',22.815249)]
+        ('m5',22.815249),
+        ('skyBrightness',19.017605)]
 
         for ii in range(len(bounds)):
             tag = bounds[ii][0]
@@ -240,6 +242,19 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
                     #Make sure that we did not choose a value which returns zero ObservationMetaData
                     self.assertTrue(ct>0)
+                elif tag == 'm5':
+                    ct = 0
+                    for obs_metadata in results:
+                        self.assertAlmostEqual(value, obs_metadata.m5.values()[0])
+                        ct += 1
+                    self.assertTrue(ct>0)
+                elif tag == 'seeing':
+                    ct = 0
+                    for obs_metadata in results:
+                        self.assertAlmostEqual(value, obs_metadata.seeing.values()[0])
+                        ct += 1
+                    self.assertTrue(ct>0)
+
 
     def testQueryLimit(self):
         """
@@ -354,7 +369,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             lines = inputFile.readlines()
             ix = 0
             for control in gen.columnMapping:
-                if control[0] != 'm5' and control[0]!='skyBrightness':
+                if control[0] != 'm5' and control[0]!='skyBrightness' and control[0]!='seeing':
                     words = lines[ix].split()
                     self.assertEqual(control[2], words[0])
 

@@ -67,7 +67,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                                               m5 = m5
                                               )
         
-        cls.obs_metadata.setBandpassAndM5(bandpassName=bandpass, m5=m5)
+        cls.obs_metadata.setBandpassM5andSeeing(bandpassName=bandpass, m5=m5)
         cls.driver = 'sqlite'
         cls.host = ''
 

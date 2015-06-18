@@ -75,9 +75,12 @@ class GalSimInterpreter(object):
     into FITS images.
     """
 
-    def __init__(self, detectors=None, bandpassDict=None, m5Dict=None, noiseWrapper=None):
+    def __init__(self, obs_metadata=None, detectors=None, bandpassDict=None, noiseWrapper=None):
 
         """
+        @param [in] obs_metadata is an instantiation of the ObservationMetaData class which
+        carries data about this particular observation (telescope site and pointing information)
+
         @param [in] detectors is a list of GalSimDetectors for which we are drawing FITS images
 
         @param [in] bandpassNames is a list of the form ['u', 'g', 'r', 'i', 'z', 'y'] denoting
@@ -86,15 +89,13 @@ class GalSimInterpreter(object):
         @param [in] bandpassFiles is a list of paths to the bandpass data files corresponding to
         bandpassNames
 
-        @param [in] m5Dict is a dict of m5 values keyed to bandpassNames
-
         @param [in] noiseWrapper is an instantiation of a NoiseAndBackgroundBase
         class which tells the interpreter how to add sky noise to its images.
         """
 
+        self.obs_metadata = obs_metadata
         self.PSF = None
         self._LSSTdefaults = LSSTdefaults()
-        self.m5Dict = m5Dict
         self.noiseWrapper = noiseWrapper
 
         if detectors is None:
@@ -441,8 +442,8 @@ class GalSimInterpreter(object):
                         #Add sky background and noise to the image
                         self.detectorImages[name] = self.noiseWrapper.addNoiseAndBackground(self.detectorImages[name],
                                                                               bandpass=self.catSimBandpasses[bandpassName],
-                                                                              m5=self.m5Dict[bandpassName],
-                                                                              seeing=self._LSSTdefaults.seeing(bandpassName),
+                                                                              m5=self.obs_metadata.m5[bandpassName],
+                                                                              seeing=self.obs_metadata.seeing[bandpassName],
                                                                               photParams=detector.photParams)
 
         xp = arcsecFromRadians(xPupil)

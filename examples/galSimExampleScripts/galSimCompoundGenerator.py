@@ -16,7 +16,7 @@ from lsst.sims.catUtils.galSimInterface import SNRdocumentPSF, GalSimStars, GalS
 
 class testGalSimStars(GalSimStars):
     #only draw images in the u and g band for speed
-    bandpass_names = ['u','g']
+    bandpassNames = ['u','g']
 
     #convolve with a PSF; note that galaxies are not convolved with a PSF
     #PSF defined in galSimInterface/galSimUtilities.py
@@ -29,7 +29,7 @@ class testGalSimStars(GalSimStars):
 
 
 class testGalSimGalaxies(GalSimGalaxies):
-    bandpass_names = ['u', 'g']
+    bandpassNames = ['u', 'g']
 
     PSF = SNRdocumentPSF()
 
@@ -41,7 +41,7 @@ class testGalSimGalaxies(GalSimGalaxies):
 
 
 class testGalSimAgn(GalSimAgn):
-    bandpass_names = ['u', 'g']
+    bandpassNames = ['u', 'g']
 
     #defined in galSimInterface/galSimUtilities.py
     PSF = SNRdocumentPSF()

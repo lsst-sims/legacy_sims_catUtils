@@ -5,10 +5,12 @@ import numpy
 import unittest
 import eups
 import galsim
+from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass, expectedSkyCountsForM5, LSSTdefaults, PhotometricParameters
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catUtils.galSimInterface import GalSimGalaxies, GalSimStars, GalSimAgn, \
                                                SNRdocumentPSF, ExampleCCDNoise
 from lsst.sims.catUtils.utils import calcADUwrapper, testGalaxyBulgeDBObj, testGalaxyDiskDBObj, \
@@ -21,7 +23,7 @@ class testGalaxyCatalog(GalSimGalaxies):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
-    bandpass_names = ['u', 'g', 'r']
+    bandpassNames = ['u', 'g', 'r']
 
     column_outputs = copy.deepcopy(GalSimGalaxies.column_outputs)
     column_outputs.remove('fitsFiles')
@@ -39,7 +41,7 @@ class testStarCatalog(GalSimStars):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
-    bandpass_names = ['u', 'g', 'r']
+    bandpassNames = ['u', 'g', 'r']
 
     column_outputs = copy.deepcopy(GalSimStars.column_outputs)
     column_outputs.remove('fitsFiles')
@@ -59,7 +61,7 @@ class testAgnCatalog(GalSimAgn):
     so that we can read the InstanceCatalog back in and verify that
     GalSim put the correct number of ADU in each FITS file.
     """
-    bandpass_names = ['u', 'g', 'r']
+    bandpassNames = ['u', 'g', 'r']
 
     column_outputs = copy.deepcopy(GalSimAgn.column_outputs)
     column_outputs.remove('fitsFiles')
@@ -84,14 +86,47 @@ class backgroundCatalog(testGalaxyCatalog):
     Add sky background but no noise to testGalaxyCatalog
     """
     PSF = SNRdocumentPSF()
-    nosie_and_background = ExampleCCDNoise(addNoise=False)
+    noise_and_background = ExampleCCDNoise(addNoise=False, seed=42)
 
 class noisyCatalog(testGalaxyCatalog):
     """
     Adds a noise and sky background wrapper to testGalaxyCatalog
     """
     PSF = SNRdocumentPSF()
-    noise_and_background = ExampleCCDNoise()
+    noise_and_background = ExampleCCDNoise(seed=42)
+
+
+class testFakeBandpassCatalog(testStarCatalog):
+    """
+    tests the GalSim interface on fake bandpasses
+    """
+    bandpassNames = ['x', 'y', 'z']
+
+    bandpassDir = os.path.join(eups.productDir('sims_catUtils'),'tests','testThroughputs')
+    bandpassRoot = 'fakeFilter_'
+    componentList = ['fakeM1.dat', 'fakeM2.dat']
+    atmoTransmissionName = 'fakeAtmo.dat'
+    skySEDname = 'fakeSky.dat'
+
+class testFakeSedCatalog(testFakeBandpassCatalog):
+    """
+    tests the GalSim interface on fake seds and bandpasses
+    """
+    sedDir = os.path.join(eups.productDir('sims_catUtils'),'tests','testSeds')
+
+    def get_sedFilepath(self):
+        """
+        map the sedFilenames created by makePhoSimTestDB to the SEDs in
+        in testSeds/
+        """
+
+        nameMap = {'km20_5750.fits_g40_5790':'fakeSed1.dat',
+                   'm2.0Full.dat':'fakeSed2.dat',
+                   'bergeron_6500_85.dat_6700':'fakeSed3.dat'}
+
+        rawNames = self.column_by_name('sedFilename')
+        return numpy.array([nameMap[nn] for nn in rawNames])
+
 
 class GalSimInterfaceTest(unittest.TestCase):
 
@@ -103,9 +138,20 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = numpy.array([72.0/3600.0])
         displacedDec = numpy.array([0.0])
+        defaults = LSSTdefaults()
+        cls.bandpassNameList = ['u', 'g', 'r', 'i', 'z', 'y']
+        cls.m5 = defaults._m5.values()
+        cls.seeing = defaults._seeing.values()
         cls.obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=1,
-                                            displacedRA=displacedRA, displacedDec=displacedDec)
+                                            displacedRA=displacedRA,
+                                            displacedDec=displacedDec,
+                                            bandpass=cls.bandpassNameList,
+                                            m5=cls.m5,
+                                            seeing=cls.seeing)
+
         cls.driver = 'sqlite'
+
+
 
     @classmethod
     def tearDownClass(cls):
@@ -115,8 +161,66 @@ class GalSimInterfaceTest(unittest.TestCase):
         del cls.dbName
         del cls.driver
         del cls.obs_metadata
+        del cls.bandpassNameList
+        del cls.m5
+        del cls.seeing
 
-    def catalogTester(self, catName=None, catalog=None, nameRoot=None):
+
+    def getFilesAndBandpasses(self, catalog, nameRoot=None,
+                                bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
+                                bandpassRoot='total_',):
+
+        """
+        Take a GalSimCatalog.  Return a list of fits files and and OrderedDict of bandpasses associated
+        with that catalog
+
+        @param [in] catalog is a GalSimCatalog instantiation
+
+        @param [in] nameRoot is the nameRoot prepended to the fits files output by that catalog
+
+        @param[in] bandpassDir is the directory where bandpass files can be found
+
+        @param [in] bandpassRoot is the root of the name of the bandpass files
+
+        @param [out] listOfFiles is a list of the names of the fits files written by this catalog
+
+        @param [out] bandpassDict is an OrderedDict of Bandpass instantiations corresponding to the
+        filters in this catalog.
+        """
+
+        #write the fits files
+        catalog.write_images(nameRoot=nameRoot)
+
+        #a list of bandpasses over which we are integraging
+        listOfFilters = []
+        listOfFiles = []
+
+        #read in the names of all of the written fits files directly from the
+        #InstanceCatalog's GalSimInterpreter
+        #Use AFW to read in the FITS files and calculate the ADU
+        for name in catalog.galSimInterpreter.detectorImages:
+            if nameRoot is not None:
+                name = nameRoot+'_'+name
+
+            listOfFiles.append(name)
+
+            if name[-6] not in listOfFilters:
+                listOfFilters.append(name[-6])
+
+        bandpassDict = OrderedDict()
+        for filterName in listOfFilters:
+            bandpassName=os.path.join(bandpassDir, bandpassRoot + filterName + '.dat')
+            bandpass = Bandpass()
+            bandpass.readThroughput(bandpassName)
+            bandpassDict[filterName] = bandpass
+
+        return listOfFiles, bandpassDict
+
+
+    def catalogTester(self, catName=None, catalog=None, nameRoot=None,
+                      bandpassDir=os.path.join(eups.productDir('throughputs'),'baseline'),
+                      bandpassRoot='total_',
+                      sedDir=eups.productDir('sims_sed_library')):
         """
         Reads in a GalSim Instance Catalog.  Writes the images from that catalog.
         Then reads those images back in.  Uses AFW to calculate the number of counts
@@ -127,16 +231,16 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         @param [in] catName is the name of the InstanceCatalog that has been written to disk
 
-        @paranm [in] catalog is the actual InstanceCatalog instantiation
+        @param [in] catalog is the actual InstanceCatalog instantiation
 
         @param [in] nameRoot is a string appended to the names of the FITS files being written
 
-        @param [in] addBackground is a boolean controlling whether or not the sky background is
-        added to the image
-        """
+        @param [in] bandpassDir is the directory containing the bandpasses against which to test
 
-        #write the fits files
-        catalog.write_images(nameRoot=nameRoot)
+        @param [in] bandpassRoot is the root of the name of the bandpass files, i.e.
+
+            os.path.join(bandpassDir, bandpassRoot + bandpassName + '.dat')
+        """
 
         #a dictionary of ADU for each FITS file as calculated by GalSim
         #(indexed on the name of the FITS file)
@@ -147,59 +251,33 @@ class GalSimInterfaceTest(unittest.TestCase):
         #(indexed on the name of the FITS file)
         controlCounts = {}
 
-        #a list of bandpasses over which we are integraging
-        listOfFilters = []
+        listOfFiles, bandpassDict = self.getFilesAndBandpasses(catalog, nameRoot=nameRoot,
+                                                                 bandpassDir=bandpassDir,
+                                                                 bandpassRoot=bandpassRoot)
 
         #read in the names of all of the written fits files directly from the
         #InstanceCatalog's GalSimInterpreter
         #Use AFW to read in the FITS files and calculate the ADU
-        for name in catalog.galSimInterpreter.detectorImages:
-            if nameRoot is not None:
-                name = nameRoot+'_'+name
+        for name in listOfFiles:
             im = afwImage.ImageF(name)
             imArr = im.getArray()
             galsimCounts[name] = imArr.sum()
             galsimPixels[name] = imArr.shape[0]*imArr.shape[1]
             controlCounts[name] = 0.0
-
-            if name[-6] not in listOfFilters:
-                listOfFilters.append(name[-6])
-
             os.unlink(name)
 
-        bandpassDict = {}
-        for filterName in listOfFilters:
-            bandpassName=os.path.join(eups.productDir('throughputs'), \
-                                                     'baseline',('total_'+filterName+'.dat'))
-            bandpass = Bandpass()
-            bandpass.readThroughput(bandpassName)
-            bandpassDict[filterName] = bandpass
-
-        addBackground = False
-        lsstDefaults = LSSTdefaults()
         if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
-            addBackground = True
             #calculate the expected skyCounts in each filter
-            m5Dict = {}
-            if catalog.obs_metadata.m5 is not None:
-                  for name in catalog.obs_metadata.m5:
-                      m5Dict[name] = obs_metadata.m5[name]
-
-            for name in lsstDefaults._m5:
-                if name not in m5Dict:
-                    m5Dict[name] = _LSSTdefaults._m5[name]
-
             backgroundCounts = {}
-            for filterName in listOfFilters:
-                cts = expectedSkyCountsForM5(m5Dict[filterName], bandpassDict[filterName],
-                                             seeing = lsstDefaults.seeing(filterName))
+            for filterName in bandpassDict.keys():
+                cts = expectedSkyCountsForM5(catalog.obs_metadata.m5[filterName], bandpassDict[filterName],
+                                             catalog.photParams, seeing=catalog.obs_metadata.seeing[filterName])
 
                 backgroundCounts[filterName] = cts
 
             for name in controlCounts:
                 filterName = name[-6]
                 controlCounts[name] += backgroundCounts[filterName] * galsimPixels[name]
-
 
         #Read in the InstanceCatalog.  For each object in the catalog, use sims_photUtils
         #to calculate the ADU.  Keep track of how many ADU should be in each FITS file.
@@ -230,7 +308,7 @@ class GalSimInterfaceTest(unittest.TestCase):
                         #(this is not a terribly great idea, since our conservative implementation
                         #of GalSimInterpreter._doesObjectImpingeOnDetector means that some detectors
                         #will be listed here even though the object does not illumine them)
-                        for filterName in listOfFilters:
+                        for filterName in bandpassDict.keys():
                             chipName = name.replace(':','_')
                             chipName = chipName.replace(' ','_')
                             chipName = chipName.replace(',','_')
@@ -238,7 +316,9 @@ class GalSimInterfaceTest(unittest.TestCase):
 
                             fullName = nameRoot+'_'+chipName+'_'+filterName+'.fits'
 
-                            controlCounts[fullName] += calcADUwrapper(sedName=sedName, bandpass=bandpassDict[filterName],
+                            fullSedName = os.path.join(sedDir, sedName)
+
+                            controlCounts[fullName] += calcADUwrapper(sedName=fullSedName, bandpass=bandpassDict[filterName],
                                                                         redshift=redshift, magNorm=magNorm,
                                                                         internalAv=internalAv, internalRv=internalRv,
                                                                         galacticAv=galacticAv, galacticRv=galacticRv)
@@ -252,7 +332,7 @@ class GalSimInterfaceTest(unittest.TestCase):
                     #to violate the condition below
                     drawnDetectors += 1
                     msg = 'controlCounts %e galsimCounts %e; %s ' % (controlCounts[ff], galsimCounts[ff],nameRoot)
-                    if addBackground:
+                    if catalog.noise_and_background is not None and catalog.noise_and_background.addBackground:
                         msg += 'background per pixel %e pixels %e %s' % (backgroundCounts[ff[-6]], galsimPixels[ff],ff)
 
                     self.assertTrue(numpy.abs(controlCounts[ff] - galsimCounts[ff]) < 0.05*controlCounts[ff],
@@ -263,6 +343,68 @@ class GalSimInterfaceTest(unittest.TestCase):
             #to make sure we did not neglect more than one detector
             self.assertTrue(unDrawnDetectors<2)
             self.assertTrue(drawnDetectors>0)
+
+
+    def compareCatalogs(self, cleanCatalog, noisyCatalog, gain, readnoise):
+        """
+        Read in two catalogs (one with noise, one without).  Compare the flux in each image
+        pixel by pixel.  Make sure that the variation between the two is within expected limits.
+
+        @param [in] cleanCatalog is the noiseless GalSimCatalog instantiation
+
+        @param [in] noisyCatalog is the noisy GalSimCatalog instantiation
+
+        @param [in] gain is the electrons per ADU for the GalSimCatalogs
+
+        @param [in] readnoise is the electrons per pixel per exposure of the GalSimCatalogs]
+        """
+
+        cleanFileList, cleanBandpassDict = self.getFilesAndBandpasses(cleanCatalog, nameRoot='clean')
+        noisyFileList, noisyBandpassDict = self.getFilesAndBandpasses(noisyCatalog, nameRoot='unclean')
+
+        #calculate the expected skyCounts in each filter
+        backgroundCounts = {}
+        for filterName in noisyBandpassDict.keys():
+            cts = expectedSkyCountsForM5(noisyCatalog.obs_metadata.m5[filterName], noisyBandpassDict[filterName],
+                                         noisyCatalog.photParams, seeing=noisyCatalog.obs_metadata.seeing[filterName])
+
+            backgroundCounts[filterName] = cts
+
+        # Go through each image pixel by pixel.
+        # Treat the value in the clean image as the mean intensity for that pixel.
+        # Sum up (noisy-clean)^2/var
+        # where var is determined by Poisson statistics from mean and readnoise.
+        # Divide by the number of pixel
+        # Make sure that this average does not deviate from unity
+
+        countedImages = 0
+        for noisyName, cleanName in zip(noisyFileList, cleanFileList):
+            noisyIm = afwImage.ImageF(noisyName).getArray()
+            cleanIm = afwImage.ImageF(cleanName).getArray()
+
+            totalVar = 0.0
+            totalMean = 0.0
+            ct = 0.0
+
+            self.assertEqual(cleanIm.shape[0], noisyIm.shape[0], msg='images not same shape')
+            self.assertEqual(cleanIm.shape[1], noisyIm.shape[1], msg='images not same shape')
+
+            var = cleanIm/gain + readnoise/(gain*gain)
+            totalVar = (numpy.power(noisyIm-cleanIm,2)/var).sum()
+            totalMean = cleanIm.sum()
+            ct = float(cleanIm.shape[0]*cleanIm.shape[1])
+            totalVar = totalVar/ct
+            totalMean = totalMean/ct
+
+            if totalMean>=100.0:
+                countedImages += 1
+                self.assertTrue(numpy.abs(totalVar-1.0) < 0.05)
+
+            os.unlink(noisyName)
+            os.unlink(cleanName)
+
+        self.assertTrue(countedImages>0)
+
 
     def testGalaxyBulges(self):
         """
@@ -303,6 +445,64 @@ class GalSimInterfaceTest(unittest.TestCase):
             os.unlink(catName)
 
 
+    def testFakeBandpasses(self):
+        """
+        Test GalSim catalog with alternate bandpasses
+        """
+        catName = 'testFakeBandpassCat.sav'
+        m5 = [22.0, 23.0, 25.0]
+        seeing = [0.6, 0.5, 0.7]
+        bandpassNames = ['x', 'y', 'z']
+        obs_metadata = ObservationMetaData(
+                       unrefractedRA=self.obs_metadata.unrefractedRA,
+                       unrefractedDec=self.obs_metadata.unrefractedDec,
+                       rotSkyPos=self.obs_metadata.rotSkyPos,
+                       mjd=self.obs_metadata.mjd,
+                       bandpassName=bandpassNames,
+                       m5=m5,
+                       seeing=seeing)
+
+        stars = testStarsDBObj(driver=self.driver, database=self.dbName)
+        cat = testFakeBandpassCatalog(stars, obs_metadata=obs_metadata)
+        cat.write_catalog(catName)
+        bandpassDir = os.path.join(eups.productDir('sims_catUtils'),'tests','testThroughputs')
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='fakeBandpass',
+                           bandpassDir=bandpassDir, bandpassRoot='fakeTotal_')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def testFakeSeds(self):
+        """
+        Test GalSim catalog with alternate Seds
+        """
+        catName = 'testFakeSedCat.sav'
+        m5 = [22.0, 23.0, 25.0]
+        seeing = [0.6, 0.5, 0.7]
+        bandpassNames = ['x', 'y', 'z']
+        obs_metadata = ObservationMetaData(
+                       unrefractedRA=self.obs_metadata.unrefractedRA,
+                       unrefractedDec=self.obs_metadata.unrefractedDec,
+                       rotSkyPos=self.obs_metadata.rotSkyPos,
+                       mjd=self.obs_metadata.mjd,
+                       bandpassName=bandpassNames,
+                       m5=m5,
+                       seeing=seeing)
+
+        stars = testStarsDBObj(driver=self.driver, database=self.dbName)
+        cat = testFakeSedCatalog(stars, obs_metadata=obs_metadata)
+        cat.write_catalog(catName)
+        bandpassDir = os.path.join(eups.productDir('sims_catUtils'), 'tests', 'testThroughputs')
+        sedDir = os.path.join(eups.productDir('sims_catUtils'), 'tests', 'testSeds')
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='fakeBandpass',
+                           bandpassDir=bandpassDir, bandpassRoot='fakeTotal_',
+                           sedDir=sedDir)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
+
     def testAgns(self):
         """
         Test that GalSimInterpreter puts the right number of counts on images of AGN
@@ -335,13 +535,38 @@ class GalSimInterfaceTest(unittest.TestCase):
         Test that GalSimInterpreter puts the right number of counts on images of Galaxy bulges with
         a sky background
         """
-        catName = 'testPSFcat.sav'
+        catName = 'testBackgroundCat.sav'
         gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
         cat = backgroundCatalog(gals, obs_metadata = self.obs_metadata)
         cat.write_catalog(catName)
-        self.catalogTester(catName=catName, catalog=cat, nameRoot='noisy')
+        self.catalogTester(catName=catName, catalog=cat, nameRoot='background')
         if os.path.exists(catName):
             os.unlink(catName)
+
+
+    def testNoisyCatalog(self):
+        """
+        Compare noisy and noiseless images drawn from the same catalog.
+        Make sure that the pixel-by-pixel difference between the two is
+        as expected from Poisson statistics.
+        """
+        noisyCatName = 'testNoisyCatalog.sav'
+        cleanCatName = 'testCleanCatalog.sav'
+
+        gals = testGalaxyBulgeDBObj(driver=self.driver, database=self.dbName)
+
+        noisyCat = noisyCatalog(gals, obs_metadata=self.obs_metadata)
+        cleanCat = backgroundCatalog(gals, obs_metadata=self.obs_metadata)
+
+        noisyCat.write_catalog(noisyCatName)
+        cleanCat.write_catalog(cleanCatName)
+
+        self.compareCatalogs(cleanCat, noisyCat, PhotometricParameters().gain, PhotometricParameters().readnoise)
+
+        if os.path.exists(noisyCatName):
+            os.unlink(noisyCatName)
+        if os.path.exists(cleanCatName):
+            os.unlink(cleanCatName)
 
 
     def testNoise(self):
@@ -404,7 +629,10 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedRA = numpy.array([72.0/3600.0, 55.0/3600.0, 75.0/3600.0])
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
         obs_metadata = makePhoSimTestDB(filename=dbName, size=1,
-                                            displacedRA=displacedRA, displacedDec=displacedDec)
+                                        displacedRA=displacedRA, displacedDec=displacedDec,
+                                        bandpass=self.bandpassNameList,
+                                        m5=self.m5, seeing=self.seeing)
+
         gals = testGalaxyBulgeDBObj(driver=driver, database=dbName)
         cat = testGalaxyCatalog(gals, obs_metadata=obs_metadata)
         catName = 'multipleCatalog.sav'
@@ -437,7 +665,9 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedRA = numpy.array([72.0/3600.0, 55.0/3600.0, 75.0/3600.0])
         displacedDec = numpy.array([0.0, 15.0/3600.0, -15.0/3600.0])
         obs_metadata1 = makePhoSimTestDB(filename=dbName1, size=1,
-                                            displacedRA=displacedRA, displacedDec=displacedDec)
+                                         displacedRA=displacedRA, displacedDec=displacedDec,
+                                         bandpass=self.bandpassNameList,
+                                         m5=self.m5, seeing=self.seeing)
 
         dbName2 = 'galSimTestCompound2DB.db'
         if os.path.exists(dbName2):
@@ -446,7 +676,9 @@ class GalSimInterfaceTest(unittest.TestCase):
         displacedRA = numpy.array([55.0/3600.0, 60.0/3600.0, 62.0/3600.0])
         displacedDec = numpy.array([-3.0/3600.0, 10.0/3600.0, 10.0/3600.0])
         obs_metadata2 = makePhoSimTestDB(filename=dbName2, size=1,
-                                            displacedRA=displacedRA, displacedDec=displacedDec)
+                                            displacedRA=displacedRA, displacedDec=displacedDec,
+                                            bandpass=self.bandpassNameList,
+                                            m5=self.m5, seeing=self.seeing)
 
         gals = testGalaxyBulgeDBObj(driver=driver, database=dbName1)
         cat1 = testGalaxyCatalog(gals, obs_metadata=obs_metadata1)
@@ -494,7 +726,9 @@ class GalSimInterfaceTest(unittest.TestCase):
 
         displacedRA = (-40.0 + numpy.random.sample(catSize)*(120.0))/3600.0
         displacedDec = (-20.0 + numpy.random.sample(catSize)*(80.0))/3600.0
-        obs_metadata = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec)
+        obs_metadata = makePhoSimTestDB(filename=dbName, displacedRA=displacedRA, displacedDec=displacedDec,
+                                        bandpass=self.bandpassNameList,
+                                        m5=self.m5, seeing=self.seeing)
 
         catName = 'testPlacementCat.sav'
         stars = testStarsDBObj(driver=driver, database=dbName)

@@ -16,10 +16,8 @@ def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, i
 
     imsimband = Bandpass()
     imsimband.imsimBandpass()
-    sedDir = eups.productDir('sims_sed_library')
-    sedFile = os.path.join(sedDir, sedName)
     sed = Sed()
-    sed.readSED_flambda(sedFile)
+    sed.readSED_flambda(sedName)
     fNorm = sed.calcFluxNorm(magNorm, imsimband)
     sed.multiplyFluxNorm(fNorm)
     if internalAv is not None and internalRv is not None:

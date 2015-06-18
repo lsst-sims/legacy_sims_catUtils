@@ -73,7 +73,7 @@ class NoiseAndBackgroundBase(object):
 
 
     def addNoiseAndBackground(self, image, bandpass=None, m5=None,
-                              seeing=LSSTdefaults().seeing('r'),
+                              seeing=None,
                               photParams=None):
         """
         This method actually adds the sky background and noise to an image.
@@ -109,7 +109,7 @@ class NoiseAndBackgroundBase(object):
                            #to pass a skyLevel parameter to the noise model.  skyLevel is
                            #just used to calculate the level of Poisson noise.  If the
                            #sky background is included in the image, the Poisson noise
-                           #will be calculated from the actuall image brightness.
+                           #will be calculated from the actual image brightness.
         else:
             skyLevel = skyCounts*photParams.gain
 

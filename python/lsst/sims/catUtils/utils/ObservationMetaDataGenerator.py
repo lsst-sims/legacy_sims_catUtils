@@ -88,6 +88,7 @@ class ObservationMetaDataGenerator(object):
                               ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
                               ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
                               ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
+                              ('seeing', 'finSeeing', None, float, None),
                               ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
                               ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
                               ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
@@ -115,7 +116,7 @@ class ObservationMetaDataGenerator(object):
 
     def getObservationMetaData(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
-                               rawSeeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
+                               rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
                                visitExpTime=None, airmass=None, skyBrightness=None,
                                m5=None, boundType='circle', boundLength=0.1, limit=None):
@@ -159,7 +160,8 @@ class ObservationMetaDataGenerator(object):
         @param [in] telescopeFilter a string that is one of u,g,r,i,z,y
 
         @param [in] airmass
-        @param [in] rawSeeing
+        @param [in] rawSeeing (this is an idealized seeing at zenith at 500nm in arcseconds)
+        @param [in] seeing (this is the OpSim column 'finSeeing' in arcseconds)
 
         @param [in] visitExpTime the exposure time in seconds
         @param [in] obsHistID the integer used by OpSim to label pointings
@@ -220,6 +222,7 @@ class ObservationMetaDataGenerator(object):
         #convert the results into ObservationMetaData instantiations
         obs_output = [ObservationMetaData(m5=pointing['fiveSigmaDepth'], boundType=boundType, boundLength=boundLength,
                                           skyBrightness=pointing['filtSkyBrightness'],
+                                          seeing=pointing['finSeeing'],
                                           phoSimMetaData=OrderedDict([(column[2],
                                                                     (pointing[column[1]], pointing[column[1]].dtype))
                                                                     for column in self.columnMapping if column[2] is not None]))

@@ -126,6 +126,8 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
     #column contain both ':' and ','
     delimiter = ';'
 
+    sedDir = eups.productDir('sims_sed_library')
+
     bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
     bandpassDir = os.path.join(eups.productDir('throughputs'), 'baseline')
     bandpassRoot = 'filter_'
@@ -199,8 +201,6 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
         galacticRv = self.column_by_name('galacticRv')
         magNorm = self.column_by_name('magNorm')
 
-        sedDir = os.getenv('SIMS_SED_LIBRARY_DIR')
-
         #for setting magNorm
         imsimband = Bandpass()
         imsimband.imsimBandpass()
@@ -222,7 +222,7 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 else:
                     #load the SED of the object
                     sed = Sed()
-                    sedFile = os.path.join(sedDir, sedName)
+                    sedFile = os.path.join(self.sedDir, sedName)
                     sed.readSED_flambda(sedFile)
 
                     flambdaCopy = copy.deepcopy(sed.flambda)
@@ -404,23 +404,6 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
 
         if self.galSimInterpreter is None:
 
-            #build a dict of m5 values keyed on bandpass names
-            m5Dict = None
-            m5Defaults = None
-            if self.noise_and_background is not None:
-                m5Dict = {}
-                for m5Name in self.bandpassNames:
-                    if self.obs_metadata.m5 is not None and m5Name in self.obs_metadata.m5:
-                        m5Dict[m5Name] = self.obs_metadata.m5[m5Name]
-                    else:
-                        if m5Defaults is None:
-                            m5Defaults = LSSTdefaults()
-
-                        try:
-                            m5Dict[m5Name] = m5Defaults.m5(m5Name)
-                        except:
-                            raise RuntimeError('Do not know how to calculate m5 for bandpass %s ' % m5Name)
-
             #This list will contain instantiations of the GalSimDetector class
             #(see galSimInterpreter.py), which stores detector information in a way
             #that the GalSimInterpreter will understand
@@ -481,6 +464,29 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                 detectors.append(detector)
 
             if self.bandpassDict is None:
+                if self.noise_and_background is not None:
+                    if self.obs_metadata.m5 is None:
+                        raise RuntimeError('WARNING  in GalSimCatalog; you did not specify m5 in your '+
+                                            'obs_metadata. m5 is required in order to add noise to your images')
+
+                    for name in self.bandpassNames:
+                        if name not in self.obs_metadata.m5:
+                            raise RuntimeError('WARNING in GalSimCatalog; your obs_metadata does not have ' +
+                                                 'm5 values for all of your bandpasses \n' +
+                                                 'bandpass has: %s \n' % self.bandpassNames.__repr__() +
+                                                 'm5 has: %s ' % self.obs_metadata.m5.keys().__repr__())
+
+                    if self.obs_metadata.seeing is None:
+                        raise RuntimeError('WARNING  in GalSimCatalog; you did not specify seeing in your '+
+                                            'obs_metadata.  seeing is required in order to add noise to your images')
+
+                    for name in self.bandpassNames:
+                        if name not in self.obs_metadata.seeing:
+                            raise RuntimeError('WARNING in GalSimCatalog; your obs_metadata does not have ' +
+                                                 'seeing values for all of your bandpasses \n' +
+                                                 'bandpass has: %s \n' % self.bandpassNames.__repr__() +
+                                                 'seeing has: %s ' % self.obs_metadata.seeing.keys().__repr__())
+
                 self.loadBandpassesFromFiles(bandpassNames=self.bandpassNames,
                                              filedir=self.bandpassDir,
                                              bandpassRoot=self.bandpassRoot,
@@ -488,8 +494,8 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                                              atmoTransmission=self.atmoTransmissionName,
                                              skySED=self.skySEDname)
 
-            self.galSimInterpreter = GalSimInterpreter(detectors=detectors, bandpassDict=self.bandpassDict,
-                                                       m5Dict=m5Dict, noiseWrapper=self.noise_and_background)
+            self.galSimInterpreter = GalSimInterpreter(obs_metadata=self.obs_metadata, detectors=detectors,
+                                                       bandpassDict=self.bandpassDict, noiseWrapper=self.noise_and_background)
 
             self.galSimInterpreter.setPSF(PSF=self.PSF)
 
