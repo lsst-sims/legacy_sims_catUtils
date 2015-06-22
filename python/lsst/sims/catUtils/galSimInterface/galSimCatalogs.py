@@ -264,13 +264,12 @@ class GalSimBase(InstanceCatalog, CameraCoords, PhotometryHardware):
                     a_int, b_int = sed.setupCCMab()
                     sed.addCCMDust(a_int, b_int, A_v=iAv, R_v=iRv)
 
-                #13 November 2014
+                #22 June 2015
                 #apply redshift; there is no need to apply the distance modulus from
-                #sims/photUtils/CosmologyWrapper; I believe magNorm takes that into account
-                #
-                #also: no need to apply dimming for the same reason
+                #sims/photUtils/CosmologyWrapper; magNorm takes that into account
+                #however, magNorm does not take into account cosmological dimming
                 if zz != 0.0:
-                    sed.redshiftSED(zz, dimming=False)
+                    sed.redshiftSED(zz, dimming=True)
 
                 #apply dust extinction (galactic)
                 a_int, b_int = sed.setupCCMab()
