@@ -25,8 +25,8 @@ def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, i
             a_int, b_int = sed.setupCCMab()
             sed.addCCMDust(a_int, b_int, A_v=internalAv, R_v=internalRv)
     
-    if redshift is not None and redshift!=0.0:
-        sed.redshiftSED(redshift, dimming=False)
+    if redshift is not None and redshift != 0.0:
+        sed.redshiftSED(redshift, dimming=True)
     
     a_int, b_int = sed.setupCCMab()
     sed.addCCMDust(a_int, b_int, A_v=galacticAv, R_v=galacticRv)

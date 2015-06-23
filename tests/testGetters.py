@@ -189,9 +189,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             fNorm = agnSed.calcFluxNorm(magNormAgn, imsimband)
             agnSed.multiplyFluxNorm(fNorm)
 
-
-            phot.applyAvAndRedshift([bulgeSed, diskSed], internalAv = [avBulge, avDisk], redshift=[redshift, redshift])
-            phot.applyAvAndRedshift([agnSed], redshift=[redshift])
+            phot.applyAv([bulgeSed, diskSed], [avBulge, avDisk])
+            phot.applyRedshift([bulgeSed, diskSed, agnSed], [redshift, redshift, redshift])
 
             numpy.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
             numpy.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)
