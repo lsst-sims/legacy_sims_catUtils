@@ -8,11 +8,11 @@ from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, defaultSpecMap
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
-from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, setM5
+from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcMagError_sed
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometricParameters
+from lsst.sims.photUtils.utils import setM5
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
-    sigmaSysSq = 0.0003
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -20,7 +20,6 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
                       'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm']
 
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
-    sigmaSysSq = 0.0003
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -135,14 +134,12 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             starSed.multiplyFluxNorm(fNorm)
 
             for i in range(len(self.bandpasses)):
-                controlSNR = starSed.calcSNR_psf(self.totalBandpasses[i],
-                                                 self.skySeds[i],
-                                                 self.hardwareBandpasses[i],
-                                                 seeing=lsstDefaults.seeing(self.bandpasses[i]),
-                                                 photParams=PhotometricParameters())
+                controlSigma = calcMagError_sed(starSed, self.totalBandpasses[i],
+                                             self.skySeds[i],
+                                             self.hardwareBandpasses[i],
+                                             seeing=lsstDefaults.seeing(self.bandpasses[i]),
+                                             photParams=PhotometricParameters())
 
-                controlNoverS = 1.0/(controlSNR*controlSNR) + starCat.sigmaSysSq
-                controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
                 testSigma = line[8+i]
                 self.assertAlmostEqual(controlSigma, testSigma, 10)
                 ct += 1
@@ -212,14 +209,12 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                     msgroot = 'failed on agn'
 
                 for j, b in enumerate(self.bandpasses):
-                    controlSNR = spectrum.calcSNR_psf(self.totalBandpasses[j],
-                                                      self.skySeds[j],
-                                                      self.hardwareBandpasses[j],
-                                                      seeing=lsstDefaults.seeing(b),
-                                                      photParams=PhotometricParameters())
+                    controlSigma = calcMagError_sed(spectrum, self.totalBandpasses[j],
+                                             self.skySeds[j],
+                                             self.hardwareBandpasses[j],
+                                             seeing=lsstDefaults.seeing(b),
+                                             photParams=PhotometricParameters())
 
-                    controlNoverS = 1./(controlSNR*controlSNR) + galCat.sigmaSysSq
-                    controlSigma = 2.5*numpy.log10(1.0+numpy.sqrt(controlNoverS))
                     testSigma = line[26+(i*6)+j]
                     msg = '%e neq %e; ' % (testSigma, controlSigma) + msgroot
                     self.assertAlmostEqual(testSigma, controlSigma, 10, msg=msg)
