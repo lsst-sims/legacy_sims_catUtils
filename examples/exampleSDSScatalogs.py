@@ -1,9 +1,10 @@
 import os
 
-from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
-from lsst.sims.photUtils.EBV import EBVmixin
+from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
+from lsst.sims.catUtils.mixins import EBVmixin
 from lsst.sims.catalogs.measures.instance import compound, InstanceCatalog
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 
 from lsst.sims.catUtils.baseCatalogModels import *
 
