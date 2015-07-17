@@ -14,14 +14,14 @@ from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 
-from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
 
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
+from lsst.sims.photUtils.EBV import EBVbase
 
-from lsst.sims.photUtils.Variability import Variability, VariabilityStars, VariabilityGalaxies
+from lsst.sims.catUtils.mixins import PhotometryGalaxies, PhotometryStars, Variability, \
+                                      VariabilityStars, VariabilityGalaxies, EBVmixin
 
 __all__ = ["makeStarDatabase", "makeGalaxyDatabase",
            "TestVariabilityMixin", "testDefaults", "cartoonPhotometryStars",

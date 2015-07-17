@@ -6,7 +6,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.utils import makeStarTestDB, myTestStars
 from lsst.sims.catalogs.generation.utils import makeGalTestDB, myTestGals
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
-from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
+from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 
 class FakeStellarVariabilityMixin(object):
 

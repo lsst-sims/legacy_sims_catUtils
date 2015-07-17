@@ -4,7 +4,8 @@ import unittest
 import numpy
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.catalogs.generation.db import CatalogDBObject, CircleBounds, BoxBounds
+from lsst.sims.utils import CircleBounds, BoxBounds
+from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB

@@ -8,10 +8,10 @@ from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
                                                          PhoSimCatalogZPoint
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
-from lsst.sims.catalogs.generation.db import ObservationMetaData
-from lsst.sims.photUtils import VariabilityStars, VariabilityGalaxies
-from lsst.sims.photUtils.utils import TestVariabilityMixin
-from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
+from lsst.sims.utils import ObservationMetaData
+from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
+from lsst.sims.catUtils.utils import TestVariabilityMixin
+from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 
 
 class PhoSimPointVariable(PhoSimCatalogPoint, VariabilityStars, TestVariabilityMixin):

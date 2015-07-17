@@ -1,7 +1,8 @@
 import warnings
 import numpy
 from .BaseCatalogModels import BaseCatalogObj
-from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["SolarSystemObj"]
 

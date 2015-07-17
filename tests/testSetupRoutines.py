@@ -7,9 +7,10 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
-from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, setupPhotometryCatalog
-from lsst.sims.photUtils.utils import makeStarDatabase, makeGalaxyDatabase
+from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
+from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
+from lsst.sims.catUtils.utils import setupPhotometryCatalog
+from lsst.sims.catUtils.utils import makeStarDatabase, makeGalaxyDatabase
 
 class testStarCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     """

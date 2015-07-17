@@ -2,9 +2,10 @@ import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
 from lsst.sims.catalogs.measures.instance import cached
+from lsst.sims.photUtils import CosmologyObject
 flatnessthresh = 1.0e-12
 
-__all__ = ["CosmologyWrapper"]
+__all__ = ["CosmologyMixin"]
 
 class CosmologyMixin(object):
     """

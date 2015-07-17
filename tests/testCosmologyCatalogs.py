@@ -4,14 +4,17 @@ import lsst.utils.tests as utilsTests
 import numpy
 import scipy
 
-from lsst.sims.photUtils import CosmologyObject, CosmologyWrapper, PhotometryGalaxies
+from lsst.sims.photUtils import CosmologyObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 
 from lsst.sims.catalogs.generation.utils import myTestGals, makeGalTestDB
-from lsst.sims.photUtils.utils import testGalaxies, comovingDistanceIntegrand, \
+from lsst.sims.photUtils.utils import comovingDistanceIntegrand, \
                                       cosmologicalOmega
 
-class cosmologicalGalaxyCatalog(testGalaxies, CosmologyWrapper):
+from lsst.sims.catUtils.utils import testGalaxies
+from lsst.sims.catUtils.mixins import CosmologyMixin, PhotometryGalaxies
+
+class cosmologicalGalaxyCatalog(testGalaxies, CosmologyMixin):
     column_outputs = ['galid','lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',

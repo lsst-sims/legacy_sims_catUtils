@@ -1,7 +1,8 @@
 import unittest
 import numpy
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import haversine
 
 #The following is to get the object ids in the registry

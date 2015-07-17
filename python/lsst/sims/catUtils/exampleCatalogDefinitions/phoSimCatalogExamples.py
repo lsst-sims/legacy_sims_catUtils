@@ -2,8 +2,8 @@
 import numpy
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import arcsecFromRadians
-from lsst.sims.coordUtils.Astrometry import AstrometryStars, AstrometryGalaxies
-from lsst.sims.photUtils.EBV import EBVmixin
+from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
+                                      EBVmixin
 
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
            "PhoSimCatalogSersic2D"]
