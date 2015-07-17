@@ -1,9 +1,10 @@
 """
-This is a version of tutorial02_UsingMixins.py without the running commentary
+This is a version of tutorial02.ipynb without the running commentary
 """
 
 import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, compound
 
