@@ -1,7 +1,7 @@
 """
 This file defines some test catalog and DBObject classes for use with unit tests.
 
-To date (30 October 2014) testPhotometry.py and testCosmology.py import from this module
+To date (30 October 2014) testPhotometryMixins.py and testCosmologyMixins.py import from this module
 """
 
 import numpy
@@ -9,17 +9,8 @@ import os
 import sqlite3
 import json
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
-from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
-from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
-                                                makeStarTestDB, makeGalTestDB, getOneChunk
-
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
-
-from lsst.sims.photUtils.Bandpass import Bandpass
-from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.EBV import EBVbase
-
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, PhotometryStars, Variability, \
                                       VariabilityStars, VariabilityGalaxies, EBVmixin
 
