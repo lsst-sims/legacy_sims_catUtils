@@ -3,7 +3,6 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import numpy
-import sqlalchemy
 import sqlite3
 import json
 from lsst.sims.utils import ObservationMetaData
