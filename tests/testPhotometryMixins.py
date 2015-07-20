@@ -11,14 +11,9 @@ from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.EBV import EBVbase
-from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, calcGamma, \
-                                calcM5, calcSNR_sed, calcSkyCountsPerPixelForM5, magErrorFromSNR
-from lsst.sims.catUtils.utils import testDefaults, cartoonPhotometryStars, \
-                                      cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
-                                      cartoonGalaxies, testStars, testGalaxies, \
-                                      cartoonStarsOnlyI, cartoonStarsIZ, \
-                                      cartoonGalaxiesIG, galaxiesWithHoles
+from lsst.sims.catUtils.utils import cartoonStars, cartoonGalaxies, testStars, testGalaxies, \
+                                     cartoonStarsOnlyI, cartoonStarsIZ, \
+                                     cartoonGalaxiesIG, galaxiesWithHoles
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 
 
