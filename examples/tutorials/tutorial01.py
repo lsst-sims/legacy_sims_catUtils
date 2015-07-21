@@ -1,10 +1,11 @@
 """
-This is a version of tutorial01_WritingAnInstanceCatalog.py without the
+This is a version of tutorial01.ipynb without the
 running commentary
 """
 
 import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, compound
 

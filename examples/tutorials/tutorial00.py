@@ -1,5 +1,5 @@
 """
-This is a version of tutorial00_BasicCatSimStructure.py without the
+This is a version of tutorial00.ipynb without the
 running commentary
 """
 
@@ -9,7 +9,7 @@ from lsst.sims.catUtils.baseCatalogModels import *
 myGalaxyDB = CatalogDBObject.from_objid('galaxyTiled')
 myStarDB = CatalogDBObject.from_objid('allstars')
 
-from lsst.sims.catalogs.generation.db import ObservationMetaData
+from lsst.sims.utils import ObservationMetaData
 
 obs_metadata = ObservationMetaData(unrefractedRA = 220.0,
                                    unrefractedDec = 19.0,

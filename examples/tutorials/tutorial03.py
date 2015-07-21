@@ -1,14 +1,14 @@
 """
-This is a version of tutorial03_ActualMixins.py without the running commentary
+This is a version of tutorial03.ipynb without the running commentary
 """
 
 import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import haversine
 from lsst.sims.catUtils.baseCatalogModels import *
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
-from lsst.sims.coordUtils import AstrometryStars
-from lsst.sims.photUtils import PhotometryStars
+from lsst.sims.catUtils.mixins import AstrometryStars, PhotometryStars
 
 class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
 

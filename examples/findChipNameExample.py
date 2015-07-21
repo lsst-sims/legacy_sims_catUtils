@@ -7,7 +7,7 @@ import numpy
 import os
 from collections import OrderedDict
 from lsst.sims.utils import arcsecFromRadians
-from lsst.sims.coordUtils import CameraCoords, calculatePupilCoordinates, \
+from lsst.sims.coordUtils import calculatePupilCoordinates, \
                                  observedFromICRS, findChipName
 from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
 from lsst.obs.lsstSim import LsstSimMapper

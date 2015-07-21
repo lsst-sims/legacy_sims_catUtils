@@ -2,7 +2,8 @@ import os
 import eups
 import numpy
 from collections import OrderedDict
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import DBObject
+from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["ObservationMetaDataGenerator"]
 

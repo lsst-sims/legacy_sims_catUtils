@@ -1,5 +1,5 @@
 """
-This is a version of tutorial04_CatalogDBObject.py without the running commentary
+This is a version of tutorial04.ipynb without the running commentary
 """
 
 import os

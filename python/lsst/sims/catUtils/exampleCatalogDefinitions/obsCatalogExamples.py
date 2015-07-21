@@ -2,8 +2,7 @@
 import numpy
 import eups
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
-from lsst.sims.photUtils.Photometry import PhotometryStars
+from lsst.sims.catUtils.mixins import AstrometryStars, CameraCoords, PhotometryStars
 from lsst.obs.lsstSim.utils import loadCamera
 
 __all__ = ["ObsStarCatalogBase"]

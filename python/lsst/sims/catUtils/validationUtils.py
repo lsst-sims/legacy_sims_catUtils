@@ -1,6 +1,6 @@
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
-from lsst.sims.catalogs.measures.instance.fileMaps import defaultSpecMap
+from lsst.sims.utils import defaultSpecMap
 import matplotlib.pylab as plt
 import warnings
 import numpy
