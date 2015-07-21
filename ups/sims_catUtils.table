@@ -1,4 +1,5 @@
 setupRequired(utils)
+setupRequired(sims_utils)
 setupRequired(sims_catalogs_measures)
 setupRequired(sims_catalogs_generation)
 setupRequired(sims_coordUtils)
