@@ -465,6 +465,20 @@ class VariabilityTest(unittest.TestCase):
         if os.path.exists('hybridTestCatalog.dat'):
             os.unlink('hybridTestCatalog.dat')
 
+    def testInheritance(self):
+        """
+        Directly test the contents of the _methodRegistrys for
+        StellarVariabilityCatalog and StellarVariabilityCatalogWithTest
+        to make sure that method inheritance was handled correctly
+        """
+
+        for m1 in StellarVariabilityCatalog._methodRegistry:
+            self.assertTrue(m1 in StellarVariabilityCatalogWithTest._methodRegistry)
+
+        self.assertTrue('testVar' in StellarVariabilityCatalogWithTest._methodRegistry)
+        self.assertFalse('testVar' in StellarVariabilityCatalog._methodRegistry)
+
+
     def testMflares(self):
         makeMflareTable()
         myDB = CatalogDBObject.from_objid('mflareTest')
