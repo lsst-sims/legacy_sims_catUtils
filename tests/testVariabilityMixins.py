@@ -410,6 +410,11 @@ class StellarVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars, Variab
     column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
     default_columns=[('magNorm', 14.0, float)]
 
+class OtherVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars, TestVariabilityMixin, VariabilityStars):
+    catalog_type = 'otherVariabilityCatalog'
+    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
+    default_columns=[('magNorm', 14.0, float)]
+
 class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, VariabilityGalaxies):
     catalog_type = 'galaxyVariabilityCatalog'
     column_outputs = ['varsimobjid', 'sedFilenameAgn', 'lsstUdiff', 'delta_uAgn']
@@ -465,6 +470,22 @@ class VariabilityTest(unittest.TestCase):
         if os.path.exists('hybridTestCatalog.dat'):
             os.unlink('hybridTestCatalog.dat')
 
+        # make sure order of mixin inheritance does not matter
+        myCatalog = myDB.getCatalog('otherVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
+
+        if os.path.exists('hybridTestCatalog.dat'):
+            os.unlink('hybridTestCatalog.dat')
+
+        # make sure that, if a catalog does not contain a variability method,
+        # an error is thrown
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        self.assertRaises(KeyError, myCatalog.write_catalog, 'hybridTestCatalog.dat')
+
+        if os.path.exists('hybridTestCatalog.dat'):
+            os.unlink('hybridTestCatalog.dat')
+
+
     def testInheritance(self):
         """
         Directly test the contents of the _methodRegistrys for
@@ -474,8 +495,10 @@ class VariabilityTest(unittest.TestCase):
 
         for m1 in StellarVariabilityCatalog._methodRegistry:
             self.assertTrue(m1 in StellarVariabilityCatalogWithTest._methodRegistry)
+            self.assertTrue(m1 in OtherVariabilityCatalogWithTest._methodRegistry)
 
         self.assertTrue('testVar' in StellarVariabilityCatalogWithTest._methodRegistry)
+        self.assertTrue('testVar' in OtherVariabilityCatalogWithTest._methodRegistry)
         self.assertFalse('testVar' in StellarVariabilityCatalog._methodRegistry)
 
 
