@@ -478,7 +478,7 @@ class VariabilityTest(unittest.TestCase):
             os.unlink('hybridTestCatalog.dat')
 
         # make sure that, if a catalog does not contain a variability method,
-        # an error is thrown
+        # an error is thrown; verify that it contains the correct error message
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         with self.assertRaises(RuntimeError) as context:
             myCatalog.write_catalog('hybridTestCatalog.dat')
