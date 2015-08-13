@@ -179,7 +179,6 @@ class Variability(object):
 
     @register_method('applyCepheid')
     def applyCepheid(self, params, expmjd):
-
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)

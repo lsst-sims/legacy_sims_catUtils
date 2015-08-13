@@ -340,15 +340,20 @@ def makeHybridTable(size=100, **kwargs):
     mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
     for i in xrange(size):
         sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
-        if i%2 == 0:
+        if i%3 ==0:
+            # just to make sure that Variability mixins no how to andle
+            # objects with no variability
+            varParam = None
+            paramStr = None
+        elif i%2 == 0:
             varParam = {'varMethodName':'applyCepheid',
                'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
-
         else:
             varParam = {'varMethodName':'testVar',
                         'pars':{'period':5.0, 'amplitude':2.0}}
 
-        paramStr = json.dumps(varParam)
+        if varParam is not None:
+            paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO hybrid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
         c.execute(qstr)
