@@ -622,6 +622,8 @@ class PhotometryStars(PhotometryBase):
                                 % (len(objectID), len(magNorm), len(sedNames)))
 
         sedList = self.loadSeds(sedNames, magNorm=magNorm, specFileMap=specFileMap)
+        avList = self.column_by_name('galacticAv')
+        self.applyAv(sedList, avList)
 
         magDict = {}
         for (name,sed) in zip(objectID,sedList):
