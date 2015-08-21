@@ -12,4 +12,4 @@ config.log
 doc/htmlDir
 tests/.tests
 ups/*.cfgc
-python/lsst/sims/catalogs/generation/version.py
+version.py
