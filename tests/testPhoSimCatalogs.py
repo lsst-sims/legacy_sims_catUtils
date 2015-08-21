@@ -11,7 +11,7 @@ import lsst.utils.tests as utilsTests
 import sqlite3
 import numpy
 import json
-import eups
+import lsst.utils
 from collections import OrderedDict
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
@@ -28,7 +28,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.starDB = testStarsDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        baseLineFileName = eups.productDir('sims_catUtils')+'/tests/testData/phoSimControlCatalog.txt'
+        baseLineFileName = lsst.utils.getPackageDir('sims_catUtils')+'/tests/testData/phoSimControlCatalog.txt'
         self.baseLineFile = open(baseLineFileName,'r')
 
     def tearDown(self):

@@ -12,7 +12,6 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
-import eups
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, magErrorFromSNR

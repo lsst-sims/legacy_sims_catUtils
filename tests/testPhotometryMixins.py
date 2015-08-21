@@ -2,7 +2,7 @@ import numpy
 
 import os
 import unittest
-import eups
+import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
@@ -615,7 +615,7 @@ class photometryUnitTest(unittest.TestCase):
         Use manMagCalc_list with specified indices on an Sed.  Make sure
         that the appropriate magnitudes are or are not Nan
         """
-        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
         starPhot = PhotometryStars()
         starPhot.loadTotalBandpassesFromFiles()
         testSed = Sed()

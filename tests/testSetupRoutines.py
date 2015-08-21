@@ -2,7 +2,6 @@ import numpy
 
 import os
 import unittest
-import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import CatalogDBObject
