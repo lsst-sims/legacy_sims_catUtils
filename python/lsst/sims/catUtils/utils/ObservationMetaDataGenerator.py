@@ -1,7 +1,7 @@
 import os
-import eups
 import numpy
 from collections import OrderedDict
+import lsst.utils
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
@@ -43,7 +43,7 @@ class ObservationMetaDataGenerator(object):
                     stored in sims_data/OpSimData/
         """
         if database is None:
-            dbPath = os.path.join(eups.productDir('sims_data'),'OpSimData/')
+            dbPath = os.path.join(lsst.utils.getPackageDir('sims_data'),'OpSimData/')
             self.database =  os.path.join(dbPath, 'opsimblitz1_1133_sqlite.db')
             self.driver = 'sqlite'
             self.host = None

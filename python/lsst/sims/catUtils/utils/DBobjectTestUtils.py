@@ -1,5 +1,4 @@
 import os
-import eups
 import copy
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyTileObj, GalaxyAgnObj, \

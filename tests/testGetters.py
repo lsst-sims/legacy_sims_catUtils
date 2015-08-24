@@ -1,8 +1,8 @@
 import os
 import numpy
 import unittest
-import eups
 
+import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
@@ -82,22 +82,22 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         for b in cls.bandpasses:
             bandpassDummy = Bandpass()
-            bandpassDummy.readThroughput(os.path.join(eups.productDir('throughputs'),
+            bandpassDummy.readThroughput(os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                       'baseline', 'total_%s.dat' % b))
             cls.totalBandpasses.append(bandpassDummy)
 
         for b in cls.bandpasses:
             finalComponents = []
             for c in components:
-                finalComponents.append(os.path.join(eups.productDir('throughputs'), 'baseline', c))
-            finalComponents.append(os.path.join(eups.productDir('throughputs'), 'baseline', 'filter_%s.dat' %b))
+                finalComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', c))
+            finalComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'filter_%s.dat' %b))
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(finalComponents)
             cls.hardwareBandpasses.append(bandpassDummy)
 
         for i in range(len(cls.bandpasses)):
             sedDummy = Sed()
-            sedDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            sedDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
                                        seeing=lsstDefaults.seeing(cls.bandpasses[i]),
@@ -128,7 +128,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         ct = 0
         for line in starCat.iter_catalog():
             starSed = Sed()
-            starSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+            starSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
                                                  defaultSpecMap[line[14]]))
             imsimband = Bandpass()
             imsimband.imsimBandpass()
@@ -171,19 +171,19 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             redshift = line[58]
 
             bulgeSed = Sed()
-            bulgeSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+            bulgeSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
                                      defaultSpecMap[bulgeSedName]))
             fNorm=bulgeSed.calcFluxNorm(magNormBulge, imsimband)
             bulgeSed.multiplyFluxNorm(fNorm)
 
             diskSed = Sed()
-            diskSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+            diskSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
                                     defaultSpecMap[diskSedName]))
             fNorm = diskSed.calcFluxNorm(magNormDisk, imsimband)
             diskSed.multiplyFluxNorm(fNorm)
 
             agnSed = Sed()
-            agnSed.readSED_flambda(os.path.join(eups.productDir('sims_sed_library'),
+            agnSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
                                    defaultSpecMap[agnSedName]))
             fNorm = agnSed.calcFluxNorm(magNormAgn, imsimband)
             agnSed.multiplyFluxNorm(fNorm)
