@@ -265,6 +265,14 @@ class GalaxyTileObj(BaseCatalogObj):
 
 
 class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
+    """
+    This is a daughter class of CompoundCatalogDBObject that specifically
+    inherits from GalaxyTileObj.  This is necessary because GalaxyTileObj
+    implements a custom query_columns that executes a stored procedure
+    on fatboy (as opposed to the generic query_columns implemented in
+    CatalogDBObject, which converts self.columns into a SQL
+    query in the most naive way possible).
+    """
 
     _table_restriction = ['galaxy']
 
