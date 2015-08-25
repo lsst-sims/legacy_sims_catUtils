@@ -244,7 +244,7 @@ class DwarfGalStarObj(StarBase):
 
 class StarCompoundObj(CompoundCatalogDBObject, StarBase):
 
-    _allowed_tables = ['starsALL_forceseek', 'starsMSRGB_forceseek',
-                       'starsRRLy', 'starsBHB', 'ebstars',
-                       'cepheidstars', 'AstromEasterEggs',
-                       'dwarfGalaxies']
+    _table_restriction = ['starsALL_forceseek', 'starsMSRGB_forceseek',
+                          'starsRRLy', 'starsBHB', 'ebstars',
+                          'cepheidstars', 'AstromEasterEggs',
+                          'dwarfGalaxies']

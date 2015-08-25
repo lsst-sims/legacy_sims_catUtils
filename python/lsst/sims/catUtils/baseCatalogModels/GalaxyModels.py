@@ -265,7 +265,7 @@ class GalaxyTileObj(BaseCatalogObj):
 
 class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
 
-    _allowed_tables = ['galaxy']
+    _table_restriction = ['galaxy']
 
     def _final_pass(self, results):
         for name in results.dtype.fields:
