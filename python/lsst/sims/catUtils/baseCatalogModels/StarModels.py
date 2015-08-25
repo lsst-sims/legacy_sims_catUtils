@@ -1,5 +1,6 @@
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.catalogs.generation.db import CompoundCatalogDBObject
 
 __all__ = ["StarBase", "StarObj", "MsStarObj", "WdStarObj", "RRLyStarObj",
            "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj",
@@ -240,3 +241,10 @@ class DwarfGalStarObj(StarBase):
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', unicode, 40)]
 
+
+class StarCompoundObj(CompoundCatalogDBObject, StarBase):
+
+    _allowed_tables = ['starsALL_forceseek', 'starsMSRGB_forceseek',
+                       'starsRRLy', 'starsBHB', 'ebstars',
+                       'cepheidstars', 'AstromEasterEggs',
+                       'dwarfGalaxies']
