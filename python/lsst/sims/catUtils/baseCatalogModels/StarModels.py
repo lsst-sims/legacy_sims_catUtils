@@ -4,7 +4,7 @@ from lsst.sims.catalogs.generation.db import CompoundCatalogDBObject
 
 __all__ = ["StarBase", "StarObj", "MsStarObj", "WdStarObj", "RRLyStarObj",
            "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj",
-           "DwarfGalStarObj", "StarCompoundObj"]
+           "DwarfGalStarObj"]
 
 class StarBase(BaseCatalogObj):
     objid = 'starbase'
@@ -240,11 +240,3 @@ class DwarfGalStarObj(StarBase):
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', unicode, 40)]
-
-
-class StarCompoundObj(CompoundCatalogDBObject, StarBase):
-
-    _table_restriction = ['starsALL_forceseek', 'starsMSRGB_forceseek',
-                          'starsRRLy', 'starsBHB', 'ebstars',
-                          'cepheidstars', 'AstromEasterEggs',
-                          'dwarfGalaxies']
