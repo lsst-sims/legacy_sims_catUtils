@@ -5,7 +5,8 @@ from lsst.sims.catalogs.generation.db import ChunkIterator, CompoundCatalogDBObj
 from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj",
-           "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj"]
+           "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj",
+           "GalaxyTileCompoundObj"]
 
 class GalaxyObj(BaseCatalogObj):
     """

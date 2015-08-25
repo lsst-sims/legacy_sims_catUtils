@@ -4,7 +4,7 @@ from lsst.sims.catalogs.generation.db import CompoundCatalogDBObject
 
 __all__ = ["StarBase", "StarObj", "MsStarObj", "WdStarObj", "RRLyStarObj",
            "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj",
-           "DwarfGalStarObj"]
+           "DwarfGalStarObj", "StarCompoundObj"]
 
 class StarBase(BaseCatalogObj):
     objid = 'starbase'
