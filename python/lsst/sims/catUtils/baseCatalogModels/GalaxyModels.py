@@ -265,6 +265,8 @@ class GalaxyTileObj(BaseCatalogObj):
 
 class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
 
+    _allowed_tables = ['galaxy']
+
     def _final_pass(self, results):
         for name in results.dtype.fields:
             if 'raJ2000' in name or 'decJ2000' in name:
