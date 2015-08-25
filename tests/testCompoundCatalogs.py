@@ -172,12 +172,11 @@ class CompoundCatalogTest(unittest.TestCase):
         for line in test:
             self.assertTrue(line in control)
 
-        #if os.path.exists(controlFileName):
-        #    os.unlink(controlFileName)
+        if os.path.exists(controlFileName):
+            os.unlink(controlFileName)
 
-        #if os.path.exists(testFileName):
-        #    os.unlink(testFileName)
-
+        if os.path.exists(testFileName):
+            os.unlink(testFileName)
 
 
 def suite():
