@@ -218,8 +218,17 @@ class GalaxyTileObj(BaseCatalogObj):
 
         #We know that galtileid comes back with the query, but we don't want
         #to add it to the query since it's generated on the fly.
-        while 'galtileid' in colnames:
-            colnames.remove('galtileid')
+        #
+        # 25 August 2015
+        # The code below has been modified to remove all column names
+        # that contain 'galtileid.'  This is to accommodate the
+        # CompoundInstanceCatalog and CompoundDBObject classes, which
+        # mangle column names such that they include the objid of the
+        # specific CatalogDBObject that is asking for them.
+        for name in colnames:
+            if 'galtileid' in name:
+                colnames.remove(name)
+
         mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
 
