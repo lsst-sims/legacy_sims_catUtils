@@ -1,7 +1,7 @@
 import warnings
 import numpy
 from .BaseCatalogModels import BaseCatalogObj
-from lsst.sims.catalogs.generation.db import ChunkIterator
+from lsst.sims.catalogs.generation.db import ChunkIterator, CompoundCatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj",
@@ -261,6 +261,17 @@ class GalaxyTileObj(BaseCatalogObj):
             query += ", @WhereClause = '%s'"%(constraint)
 
         return ChunkIterator(self, query, chunk_size)
+
+
+class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
+
+    def _final_pass(self, results):
+        for name in results.dtype.fields:
+            if 'raJ2000' in name or 'decJ2000' in name:
+                results[name] = numpy.radians(results[name])
+
+        return results
+
 
 class GalaxyBulgeObj(GalaxyTileObj):
     objid = 'galaxyBulge'
