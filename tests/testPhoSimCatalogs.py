@@ -48,7 +48,9 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
-        catName = 'phoSimTestCatalog.txt'
+        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
+                               'tests','scratchSpace','phoSimTestCatalog.txt')
+
         testBulge.write_catalog(catName)
         testDisk.write_catalog(catName, write_header=False, write_mode='a')
         testAgn.write_catalog(catName, write_header=False, write_mode='a')
