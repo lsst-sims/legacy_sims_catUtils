@@ -12,7 +12,6 @@ from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
 
 from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS, calculatePupilCoordinates
-from lsst.sims.coordUtils.AstrometryUtils import calculateGnomonicProjection
 from lsst.sims.coordUtils.CameraUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.coordUtils.CameraUtils import calculateFocalPlaneCoordinates
 
@@ -39,14 +38,6 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-
-
-    @compound('x_focal_nominal', 'y_focal_nominal')
-    def get_gnomonicProjection(self):
-        ra = self.column_by_name('raObserved')
-        dec = self.column_by_name('decObserved')
-        return calculateGnomonicProjection(ra, dec, obs_metadata=self.obs_metadata,
-                                           epoch=self.db_obj.epoch)
 
     @compound('x_pupil','y_pupil')
     def get_pupilFromSky(self):

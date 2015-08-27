@@ -11,7 +11,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
 from lsst.sims.coordUtils import observedFromAppGeo, calculatePupilCoordinates
-from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
+from lsst.sims.coordUtils import calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
                                                 myTestGals, makeGalTestDB
@@ -44,7 +44,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     """
     catalog_type = 'test_stars'
     column_outputs=['id','raPhoSim','decPhoSim','raObserved','decObserved',
-                   'x_focal_nominal', 'y_focal_nominal', 'x_pupil','y_pupil',
+                   'x_pupil','y_pupil',
                    'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
     #Needed to do camera coordinate transforms.
     camera = camTestUtils.CameraWrapper().camera
@@ -66,9 +66,12 @@ class testStellarCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
 
     camera = camTestUtils.CameraWrapper().camera
 
-    column_outputs = ['glon', 'glat', 'x_focal_nominal', 'y_focal_nominal',
-                      'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
-                      'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
+    column_outputs = ['glon', 'glat',
+                      'x_pupil', 'y_pupil',
+                      'xPix', 'yPix',
+                      'xFocalPlane', 'yFocalPlane',
+                      'chipName', 'raPhoSim', 'decPhoSim',
+                      'raObserved', 'decObserved']
 
 class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
     """
@@ -77,7 +80,7 @@ class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
 
     camera = camTestUtils.CameraWrapper().camera
 
-    column_outputs = ['glon', 'glat', 'x_focal_nominal', 'y_focal_nominal',
+    column_outputs = ['glon', 'glat',
                       'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
                       'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
 
@@ -176,10 +179,12 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
-        dtype = [('id',int),('raPhoSim',float),('decPhoSim',float),('raObserved',float),
-                 ('decObserved',float),('x_focal_nominal',float),('y_focal_nominal',float),
-                 ('x_pupil',float),('y_pupil',float),('chipName',str,11),('xPix',float),
-                 ('yPix',float),('xFocalPlane',float),('yFocalPlane',float)]
+        dtype = [('id',int),
+                 ('raPhoSim',float), ('decPhoSim',float),
+                 ('raObserved',float), ('decObserved',float),
+                 ('x_pupil',float), ('y_pupil',float), ('chipName',str,11),
+                 ('xPix',float), ('yPix',float),
+                 ('xFocalPlane',float), ('yFocalPlane',float)]
 
         baselineData = numpy.loadtxt('AstrometryTestCatalog.txt', dtype=dtype, delimiter=';')
 
@@ -235,15 +240,6 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertTrue(numpy.isnan(xxtest))
                 self.assertTrue(numpy.isnan(yytest))
 
-        gnomonTest = calculateGnomonicProjection(baselineData['raObserved'],
-                             baselineData['decObserved'], obs_metadata=self.obs_metadata,
-                             epoch=2000.0)
-        for (xxtest, yytest, xx, yy) in \
-                zip(gnomonTest[0], gnomonTest[1],
-                    baselineData['x_focal_nominal'], baselineData['y_focal_nominal']):
-
-            self.assertAlmostEqual(xxtest,xx,6)
-            self.assertAlmostEqual(yytest,yy,6)
 
         nameTest = findChipName(xPupil=pupilTest[0], yPupil=pupilTest[1],
                                 epoch=self.cat.db_obj.epoch,
