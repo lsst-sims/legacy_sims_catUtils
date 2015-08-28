@@ -10,6 +10,7 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
+from lsst.sims.catUtils.utils import TestVariabilityMixin
 
 def makeMflareTable(size=10, **kwargs):
     """
@@ -310,6 +311,56 @@ def makeAgnTable(size=100, **kwargs):
     conn.commit()
     conn.close()
 
+def makeHybridTable(size=100, **kwargs):
+    """
+    Make a test database that contains a mix of Cepheid variables
+    and 'testVar' variables (variables that use the applySineVar
+    method defined in the TestVariabilityMixin)
+    """
+
+    #a haphazard sample of stellar SEDs
+    sedFiles = ['kp10_8750.fits_g35_8950', 'kp03_10500.fits_g45_10600', 'km50_6750.fits_g20_6750']
+
+    #a haphazard sample of cepheid light curves
+    lcFiles = ['cepheid_lc/classical_longPer_specfile', 'cepheid_lc/classical_medPer_specfile',
+               'cepheid_lc/classical_shortPer_specfile', 'cepheid_lc/classical_shortPer_specfile',
+               'cepheid_lc/popII_longPer_specfile', 'cepheid_lc/popII_shortPer_specfile']
+
+    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    c = conn.cursor()
+    try:
+        c.execute('''CREATE TABLE hybrid
+                     (varsimobjid int, variability text, sedfilename text)''')
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating database.")
+
+    numpy.random.seed(32)
+    periods = numpy.random.sample(size)*50.0
+    mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
+    for i in xrange(size):
+        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        if i%3 ==0:
+            # just to make sure that Variability mixins no how to andle
+            # objects with no variability
+            varParam = None
+            paramStr = None
+        elif i%2 == 0:
+            varParam = {'varMethodName':'applyCepheid',
+               'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+        else:
+            varParam = {'varMethodName':'testVar',
+                        'pars':{'period':5.0, 'amplitude':2.0}}
+
+        if varParam is not None:
+            paramStr = json.dumps(varParam)
+
+        qstr = '''INSERT INTO hybrid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        c.execute(qstr)
+    conn.commit()
+    conn.close()
+
+
 class variabilityDB(CatalogDBObject):
     driver = 'sqlite'
     database = 'VariabilityTestDatabase.db'
@@ -321,6 +372,10 @@ class variabilityDB(CatalogDBObject):
 class mflareDB(variabilityDB):
     objid = 'mflareTest'
     tableid = 'mFlare'
+
+class hybridDB(variabilityDB):
+    objid = 'hybridTest'
+    tableid = 'hybrid'
 
 class rrlyDB(variabilityDB):
     objid = 'rrlyTest'
@@ -355,6 +410,15 @@ class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, VariabilitySta
     column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
     default_columns=[('magNorm', 14.0, float)]
 
+class StellarVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars, VariabilityStars, TestVariabilityMixin):
+    catalog_type = 'testVariabilityCatalog'
+    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
+    default_columns=[('magNorm', 14.0, float)]
+
+class OtherVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars, TestVariabilityMixin, VariabilityStars):
+    catalog_type = 'otherVariabilityCatalog'
+    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
+    default_columns=[('magNorm', 14.0, float)]
 
 class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, VariabilityGalaxies):
     catalog_type = 'galaxyVariabilityCatalog'
@@ -395,6 +459,58 @@ class VariabilityTest(unittest.TestCase):
 
     def tearDown(self):
         del self.obs_metadata
+
+    def testHybridVariability(self):
+        """
+        Test that we can generate a catalog which inherits from multiple variability mixins
+        (in this case, TestVariability and VariabilityStars).  This is to make sure that
+        the register_method and register_class decorators do not mangle inheritance of
+        methods from mixins.
+        """
+        makeHybridTable()
+        myDB = CatalogDBObject.from_objid('hybridTest')
+        myCatalog = myDB.getCatalog('testVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
+
+        if os.path.exists('hybridTestCatalog.dat'):
+            os.unlink('hybridTestCatalog.dat')
+
+        # make sure order of mixin inheritance does not matter
+        myCatalog = myDB.getCatalog('otherVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
+
+        if os.path.exists('hybridTestCatalog.dat'):
+            os.unlink('hybridTestCatalog.dat')
+
+        # make sure that, if a catalog does not contain a variability method,
+        # an error is thrown; verify that it contains the correct error message
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        with self.assertRaises(RuntimeError) as context:
+            myCatalog.write_catalog('hybridTestCatalog.dat')
+
+        expectedMessage = "Your InstanceCatalog does not contain a variability method"
+        expectedMessage += " corresponding to 'testVar'"
+        self.assertTrue(context.exception.message==expectedMessage)
+
+        if os.path.exists('hybridTestCatalog.dat'):
+            os.unlink('hybridTestCatalog.dat')
+
+
+    def testInheritance(self):
+        """
+        Directly test the contents of the _methodRegistrys for
+        StellarVariabilityCatalog and StellarVariabilityCatalogWithTest
+        to make sure that method inheritance was handled correctly
+        """
+
+        for m1 in StellarVariabilityCatalog._methodRegistry:
+            self.assertTrue(m1 in StellarVariabilityCatalogWithTest._methodRegistry)
+            self.assertTrue(m1 in OtherVariabilityCatalogWithTest._methodRegistry)
+
+        self.assertTrue('testVar' in StellarVariabilityCatalogWithTest._methodRegistry)
+        self.assertTrue('testVar' in OtherVariabilityCatalogWithTest._methodRegistry)
+        self.assertFalse('testVar' in StellarVariabilityCatalog._methodRegistry)
+
 
     def testMflares(self):
         makeMflareTable()

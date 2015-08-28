@@ -69,7 +69,12 @@ class Variability(object):
         method = varCmd['varMethodName']
         params = varCmd['pars']
         expmjd=self.obs_metadata.mjd
-        output = self._methodRegistry[method](self, params,expmjd)
+        try:
+            output = self._methodRegistry[method](self, params,expmjd)
+        except KeyError:
+            raise RuntimeError("Your InstanceCatalog does not contain " \
+                               + "a variability method corresponding to '%s'" % method)
+
 
         return output
 
@@ -174,7 +179,6 @@ class Variability(object):
 
     @register_method('applyCepheid')
     def applyCepheid(self, params, expmjd):
-
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
