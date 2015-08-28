@@ -13,7 +13,7 @@ import numpy
 import json
 import lsst.utils
 from collections import OrderedDict
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.measures.instance import compound, CompoundInstanceCatalog
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyBulgeDBObj, testGalaxyAgnDBObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
@@ -48,7 +48,9 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
-        catName = 'phoSimTestCatalog.txt'
+        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
+                               'tests','scratchSpace','phoSimTestCatalog.txt')
+
         testBulge.write_catalog(catName)
         testDisk.write_catalog(catName, write_header=False, write_mode='a')
         testAgn.write_catalog(catName, write_header=False, write_mode='a')
@@ -68,6 +70,46 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         if os.path.exists(catName):
             os.unlink(catName)
+
+
+    def testCompoundCatalog(self):
+        """
+        This test writes a PhoSim input catalog and compares it, one line at a time
+        to a previously written catalog that should be identical.
+
+        This test uses CompoundInstanceCatalog
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
+        testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
+        testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
+        testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
+
+        compoundCatalog = CompoundInstanceCatalog([testBulge, testDisk, testAgn, testStar],
+                                                   obs_metadata=self.obs_metadata)
+
+        self.assertEqual(len(compoundCatalog._dbObjectGroupList[0]), 3)
+
+        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'phoSimTestCatalog_compound.txt')
+
+        compoundCatalog.write_catalog(catName)
+
+        testFile = open(catName,'r')
+        testLines = testFile.readlines()
+        testFile.close()
+        controlLines = self.baseLineFile.readlines()
+        for line in testLines:
+            msg = '%s not in controlLines' % line
+            self.assertTrue(line in controlLines, msg=msg)
+
+        for line in controlLines:
+            msg = '%s not in testLines'
+            self.assertTrue(line in testLines, msg=msg)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
 
 def suite():
     utilsTests.init()

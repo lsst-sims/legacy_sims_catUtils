@@ -1,11 +1,12 @@
 import warnings
 import numpy
 from .BaseCatalogModels import BaseCatalogObj
-from lsst.sims.catalogs.generation.db import ChunkIterator
+from lsst.sims.catalogs.generation.db import ChunkIterator, CompoundCatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj",
-           "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj"]
+           "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj",
+           "GalaxyTileCompoundObj"]
 
 class GalaxyObj(BaseCatalogObj):
     """
@@ -218,8 +219,17 @@ class GalaxyTileObj(BaseCatalogObj):
 
         #We know that galtileid comes back with the query, but we don't want
         #to add it to the query since it's generated on the fly.
-        while 'galtileid' in colnames:
-            colnames.remove('galtileid')
+        #
+        # 25 August 2015
+        # The code below has been modified to remove all column names
+        # that contain 'galtileid.'  This is to accommodate the
+        # CompoundInstanceCatalog and CompoundDBObject classes, which
+        # mangle column names such that they include the objid of the
+        # specific CatalogDBObject that is asking for them.
+        for name in colnames:
+            if 'galtileid' in name:
+                colnames.remove(name)
+
         mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
         mappedcolnames = ",".join(mappedcolnames)
 
@@ -252,6 +262,27 @@ class GalaxyTileObj(BaseCatalogObj):
             query += ", @WhereClause = '%s'"%(constraint)
 
         return ChunkIterator(self, query, chunk_size)
+
+
+class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
+    """
+    This is a daughter class of CompoundCatalogDBObject that specifically
+    inherits from GalaxyTileObj.  This is necessary because GalaxyTileObj
+    implements a custom query_columns that executes a stored procedure
+    on fatboy (as opposed to the generic query_columns implemented in
+    CatalogDBObject, which converts self.columns into a SQL
+    query in the most naive way possible).
+    """
+
+    _table_restriction = ['galaxy']
+
+    def _final_pass(self, results):
+        for name in results.dtype.fields:
+            if 'raJ2000' in name or 'decJ2000' in name:
+                results[name] = numpy.radians(results[name])
+
+        return results
+
 
 class GalaxyBulgeObj(GalaxyTileObj):
     objid = 'galaxyBulge'
