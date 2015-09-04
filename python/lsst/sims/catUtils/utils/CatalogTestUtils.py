@@ -11,7 +11,7 @@ import json
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
-from lsst.sims.photUtils import loadTotalBandpassesFromFiles
+from lsst.sims.photUtils import loadTotalBandpassesFromFiles, CatSimSedList
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, PhotometryStars, Variability, \
                                       VariabilityStars, VariabilityGalaxies, EBVmixin
 
@@ -278,8 +278,8 @@ class cartoonPhotometryStars(PhotometryStars):
         #the two variables below will allow us to get at the SED and magnitude
         #data from within the unit test class, so that we can be sure
         #that the mixin loaded the correct bandpasses
-        sublist = self.loadSeds(sedNames,magNorm = magNormList)
-        self.applyAv(sublist, av)
+        sublist = CatSimSedList(sedNames, magNormList, galacticAvList=av)
+
         for ss in sublist:
             self.sedMasterList.append(ss)
 
@@ -374,12 +374,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
 
 
             redshift = self.column_by_name("redshift")
-
-            sublist = self.loadSeds(sedNames, magNorm = magNormList)
-            if Av is not None:
-                self.applyAv(sublist, Av)
-
-            self.applyRedshift(sublist, redshift)
+            sublist = CatSimSedList(sedNames, magNormList,
+                                    internalAvList=Av, redshiftList=redshift)
 
             for ss in sublist:
                 self.sedMasterDict[cc].append(ss)

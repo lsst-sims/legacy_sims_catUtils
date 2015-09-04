@@ -18,7 +18,7 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 loadTotalBandpassesFromFiles
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.photUtils import PhotometryBase
+from lsst.sims.photUtils import PhotometryBase, CatSimSedList
 
 __all__ = ["PhotometryGalaxies", "PhotometryStars"]
 
@@ -82,16 +82,13 @@ class PhotometryGalaxies(PhotometryBase):
             cosmologicalDimming = False
 
         if componentNames != [] and componentNames is not None:
-            componentSed = self.loadSeds(componentNames, magNorm = magNorm, specFileMap=specFileMap)
-
-            if internalAv is not None:
-                self.applyAv(componentSed, internalAv)
-
-            if redshift is not None:
-                self.applyRedshift(componentSed, redshift, dimming=cosmologicalDimming)
+            componentSedList = CatSimSedList(componentNames, magNorm, specMap=specFileMap,
+                                            internalAvList=internalAv,
+                                            redshiftList=redshift,
+                                            cosmologicalDimming=cosmologicalDimming)
 
             for i in range(len(objectID)):
-                subList = self.bandpassDict.calcMagList(componentSed[i], indices=indices)
+                subList = self.bandpassDict.calcMagList(componentSedList[i], indices=indices)
 
                 if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
                     for j in range(len(subList)):
@@ -626,9 +623,10 @@ class PhotometryStars(PhotometryBase):
             raise RuntimeError('In PhotometryStars.calculate_magnitudes, had %d objectID, %d magNorms, and %d sedNames '
                                 % (len(objectID), len(magNorm), len(sedNames)))
 
-        sedList = self.loadSeds(sedNames, magNorm=magNorm, specFileMap=specFileMap)
         avList = self.column_by_name('galacticAv')
-        self.applyAv(sedList, avList)
+
+        sedList = CatSimSedList(sedNames, magNormList=magNorm, specMap=specFileMap,
+                                galacticAvList=avList)
 
         magDict = {}
         for (name,sed) in zip(objectID,sedList):
