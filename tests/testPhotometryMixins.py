@@ -11,6 +11,7 @@ from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
+from lsst.sims.photUtils import loadTotalBandpassesFromFiles
 from lsst.sims.catUtils.utils import cartoonStars, cartoonGalaxies, testStars, testGalaxies, \
                                      cartoonStarsOnlyI, cartoonStarsIZ, \
                                      cartoonGalaxiesIG, galaxiesWithHoles
@@ -454,7 +455,7 @@ class photometryUnitTest(unittest.TestCase):
         that the appropriate magnitudes are or are not Nan
         """
         starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
-        starPhot = PhotometryStars().loadTotalBandpassesFromFiles()
+        starPhot = loadTotalBandpassesFromFiles()
         testSed = Sed()
         testSed.readSED_flambda(starName)
         indices = [1,3]

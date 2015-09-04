@@ -11,6 +11,7 @@ import json
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
+from lsst.sims.photUtils import loadTotalBandpassesFromFiles
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, PhotometryStars, Variability, \
                                       VariabilityStars, VariabilityGalaxies, EBVmixin
 
@@ -259,8 +260,8 @@ class cartoonPhotometryStars(PhotometryStars):
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                                  bandpassRoot = 'test_bandpass_')
+            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                             bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
 
@@ -323,8 +324,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                                  bandpassRoot = 'test_bandpass_')
+            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                             bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
 
@@ -434,8 +435,8 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                                  bandpassRoot = 'test_bandpass_')
+            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                             bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
@@ -515,8 +516,8 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                                  bandpassRoot = 'test_bandpass_')
+            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                             bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
         return output

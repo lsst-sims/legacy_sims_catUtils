@@ -14,7 +14,8 @@ import os
 import numpy
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcMagError_m5, PhotometricParameters, magErrorFromSNR
+                                calcMagError_m5, PhotometricParameters, magErrorFromSNR, \
+                                loadTotalBandpassesFromFiles
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.photUtils import PhotometryBase
@@ -563,7 +564,7 @@ class PhotometryGalaxies(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles()
+            self.bandpassDict = loadTotalBandpassesFromFiles()
 
         indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_all_mags._colnames) \
                                if name in self._actually_calculated_columns])
@@ -714,7 +715,7 @@ class PhotometryStars(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles()
+            self.bandpassDict = loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \
                    if name in self._actually_calculated_columns]

@@ -7,6 +7,7 @@ from lsst.sims.catalogs.generation.utils import makeStarTestDB, myTestStars
 from lsst.sims.catalogs.generation.utils import makeGalTestDB, myTestGals
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
+from lsst.sims.photUtils import loadTotalBandpassesFromFiles
 
 class FakeStellarVariabilityMixin(object):
 
@@ -38,7 +39,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
         columnNames = [name for name in self.get_test_mags._colnames]
 
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles()
+            self.bandpassDict = loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_mags._colnames) \
                    if name in self._actually_calculated_columns]
@@ -111,7 +112,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = self.loadTotalBandpassesFromFiles()
+            self.bandpassDict = loadTotalBandpassesFromFiles()
 
         indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_test_mags._colnames) \
                                if name in self._actually_calculated_columns])
