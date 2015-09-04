@@ -20,6 +20,8 @@ class FakeStellarVariabilityMixin(object):
 
 class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
+    default_columns = [('galacticAv', 0.1, float)]
+
     def get_sedFilename(self):
 
         star_seds = ['km20_5750.fits_g40_5790',
@@ -35,8 +37,8 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
         columnNames = [name for name in self.get_test_mags._colnames]
 
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles()
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_mags._colnames) \
                    if name in self._actually_calculated_columns]
@@ -108,8 +110,8 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles()
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles()
 
         indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_test_mags._colnames) \
                                if name in self._actually_calculated_columns])

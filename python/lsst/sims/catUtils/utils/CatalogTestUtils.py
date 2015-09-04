@@ -40,7 +40,7 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
     try:
         c.execute('''CREATE TABLE starsALL_forceseek
                   (simobjid int, ra real, decl real, magNorm real,
-                  mudecl real, mura real, galacticAv real, vrad real, varParamStar text, sedFilename text, parallax real)''')
+                  mudecl real, mura real, ebv real, vrad real, varParamStar text, sedFilename text, parallax real)''')
     except:
         raise RuntimeError("Error creating starsALL_forceseek table.")
 
@@ -48,7 +48,7 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
     magnormStar = numpy.random.sample(size)*4.0 + 17.0
     mudecl = numpy.random.sample(size)*0.0001
     mura = numpy.random.sample(size)*0.0001
-    galacticAv = numpy.random.sample(size)*0.05*3.1
+    ebv = numpy.random.sample(size)*0.05
     vrad = numpy.random.sample(size)*1.0
     parallax = 0.00045+numpy.random.sample(size)*0.00001
 
@@ -58,7 +58,7 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
 
         cmd = '''INSERT INTO starsALL_forceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
                   (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
-                  galacticAv[i], vrad[i], 'NULL', star_seds[i%len(star_seds)], parallax[i])
+                  ebv[i], vrad[i], 'NULL', star_seds[i%len(star_seds)], parallax[i])
 
         c.execute(cmd)
 
@@ -258,9 +258,9 @@ class cartoonPhotometryStars(PhotometryStars):
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                    bandpassRoot = 'test_bandpass_')
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                                  bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
 
@@ -272,11 +272,13 @@ class cartoonPhotometryStars(PhotometryStars):
 
         magNormList = self.column_by_name('magNorm')
         sedNames = self.column_by_name('sedFilename')
+        av = self.column_by_name('galacticAv')
 
         #the two variables below will allow us to get at the SED and magnitude
         #data from within the unit test class, so that we can be sure
         #that the mixin loaded the correct bandpasses
         sublist = self.loadSeds(sedNames,magNorm = magNormList)
+        self.applyAv(sublist, av)
         for ss in sublist:
             self.sedMasterList.append(ss)
 
@@ -320,9 +322,9 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                      bandpassRoot = 'test_bandpass_')
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                                  bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
 
@@ -409,7 +411,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,VariabilityStars,car
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = 'km30_5250.fits_g00_5370'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
-                       ('glat', 30., float)]
+                       ('glat', 30., float), ('galacticAv', 0.1, float)]
 
 class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityStars, PhotometryStars):
     catalog_type = 'cartoonStarsOnlyI'
@@ -418,7 +420,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = 'km30_5250.fits_g00_5370'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
-                       ('glat', 30., float)]
+                       ('glat', 30., float), ('galacticAv', 0.1, float)]
 
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
     def get_magnitudes(self):
@@ -431,9 +433,9 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                    bandpassRoot = 'test_bandpass_')
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                                  bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
@@ -512,9 +514,9 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                      bandpassRoot = 'test_bandpass_')
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                                  bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
@@ -597,7 +599,7 @@ class testStars(InstanceCatalog, EBVmixin, VariabilityStars, TestVariabilityMixi
     'EBV','varParamStr']
     defSedName = 'sed_flat.txt'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
-                       ('glat', 30., float)]
+                       ('glat', 30., float), ('galacticAv', 0.1, float)]
 
 class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,TestVariabilityMixin,PhotometryGalaxies,testDefaults):
     """

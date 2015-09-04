@@ -19,7 +19,7 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
-                      'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm']
+                      'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm', 'galacticAv']
 
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
 
@@ -59,7 +59,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         default_obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         bandpass = ['u', 'g', 'r', 'i', 'z', 'y']
         m5 = lsstDefaults._m5.values()
-        
+
         cls.obs_metadata = ObservationMetaData(
                                               unrefractedRA = default_obs_metadata.unrefractedRA,
                                               unrefractedDec = default_obs_metadata.unrefractedDec,
@@ -67,7 +67,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                                               bandpassName = bandpass,
                                               m5 = m5
                                               )
-        
+
         cls.obs_metadata.setBandpassM5andSeeing(bandpassName=bandpass, m5=m5)
         cls.driver = 'sqlite'
         cls.host = ''
@@ -124,6 +124,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         lsstDefaults = LSSTdefaults()
         starDB = testStarsDBObj(driver=self.driver, host=self.host, database=self.dbName)
         starCat = testStarCatalog(starDB, obs_metadata=self.obs_metadata)
+        phot = PhotometryStars()
 
         ct = 0
         for line in starCat.iter_catalog():
@@ -134,6 +135,9 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             imsimband.imsimBandpass()
             fNorm = starSed.calcFluxNorm(line[15], imsimband)
             starSed.multiplyFluxNorm(fNorm)
+
+            aV = numpy.float(line[16])
+            phot.applyAv([starSed], [aV])
 
             for i in range(len(self.bandpasses)):
                 controlSigma = calcMagError_sed(starSed, self.totalBandpasses[i],
@@ -153,7 +157,6 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         """
         lsstDefaults = LSSTdefaults()
         phot = PhotometryGalaxies()
-        phot.loadTotalBandpassesFromFiles()
         galDB = testGalaxyTileDBObj(driver=self.driver, host=self.host, database=self.dbName)
         galCat = testGalaxyCatalog(galDB, obs_metadata=self.obs_metadata)
         imsimband = Bandpass()
@@ -190,6 +193,10 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
             phot.applyAv([bulgeSed, diskSed], [avBulge, avDisk])
             phot.applyRedshift([bulgeSed, diskSed, agnSed], [redshift, redshift, redshift])
+
+            bulgeSed.resampleSED(wavelen_match=self.totalBandpasses[0].wavelen)
+            diskSed.resampleSED(wavelen_match=bulgeSed.wavelen)
+            agnSed.resampleSED(wavelen_match=bulgeSed.wavelen)
 
             numpy.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
             numpy.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)

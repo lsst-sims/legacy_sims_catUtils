@@ -62,7 +62,7 @@ class testStarDBObject(CatalogDBObject):
                ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
                ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
                ('parallax', 'parallax*PI()/648000000.'),
-               ('galacticAv', 'CONVERT(float, ebv*3.1)'),
+               ('galacticAv', '3.1*ebv'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', str, 40)]
@@ -385,7 +385,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                      ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float)])
-
 
             testCat.write_catalog(testName)
             baselineCat.write_catalog(baseName)

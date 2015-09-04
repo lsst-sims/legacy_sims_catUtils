@@ -90,7 +90,7 @@ class PhotometryGalaxies(PhotometryBase):
                 self.applyRedshift(componentSed, redshift, dimming=cosmologicalDimming)
 
             for i in range(len(objectID)):
-                subList = self.manyMagCalc_list(componentSed[i], indices=indices)
+                subList = self.bandpassDict.calcMagList(componentSed[i], indices=indices)
 
                 if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
                     for j in range(len(subList)):
@@ -100,7 +100,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         else:
             subList=[]
-            for i in range(self.nBandpasses):
+            for i in range(self.bandpassDict.nBandpasses):
                 subList.append(numpy.NaN)
             for i in range(len(objectID)):
                 componentMags[objectID[i]]=subList
@@ -375,7 +375,7 @@ class PhotometryGalaxies(PhotometryBase):
         outputDisk = None
         outputAgn = None
 
-        for i in range(self.nBandpasses):
+        for i in range(self.bandpassDict.nBandpasses):
             rowDisk = []
             rowBulge = []
             rowAgn = []
@@ -409,9 +409,9 @@ class PhotometryGalaxies(PhotometryBase):
 
         #Add variability to the bulge components (if any)
         for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[self.nBandpasses:2*self.nBandpasses], outputBulge)):
+        enumerate(zip(columnNameList[self.bandpassDict.nBandpasses:2*self.bandpassDict.nBandpasses], outputBulge)):
 
-            bandpassDex = ix % self.nBandpasses
+            bandpassDex = ix % self.bandpassDict.nBandpasses
             if indices is None or bandpassDex in indices:
                 variabilityName = 'delta_' + columnName
                 if variabilityName in self._all_available_columns:
@@ -420,9 +420,9 @@ class PhotometryGalaxies(PhotometryBase):
 
         #Add variability to the disk components (if any)
         for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[2*self.nBandpasses:3*self.nBandpasses], outputDisk)):
+        enumerate(zip(columnNameList[2*self.bandpassDict.nBandpasses:3*self.bandpassDict.nBandpasses], outputDisk)):
 
-            bandpassDex = ix % self.nBandpasses
+            bandpassDex = ix % self.bandpassDict.nBandpasses
             if indices is None or bandpassDex in indices:
                 variabilityName = 'delta_' + columnName
                 if variabilityName in self._all_available_columns:
@@ -431,9 +431,9 @@ class PhotometryGalaxies(PhotometryBase):
 
         #Add variability to the agn components (if any)
         for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[3*self.nBandpasses:4*self.nBandpasses], outputAgn)):
+        enumerate(zip(columnNameList[3*self.bandpassDict.nBandpasses:4*self.bandpassDict.nBandpasses], outputAgn)):
 
-            bandpassDex = ix % self.nBandpasses
+            bandpassDex = ix % self.bandpassDict.nBandpasses
             if indices is None or bandpassDex in indices:
                 variabilityName = 'delta_' + columnName
                 if variabilityName in self._all_available_columns:
@@ -445,7 +445,7 @@ class PhotometryGalaxies(PhotometryBase):
         #We do this here so that the variability models added above
         #have an influence on the total magnitude.
         outputTotal = None
-        for ib in range(self.nBandpasses):
+        for ib in range(self.bandpassDict.nBandpasses):
             if outputTotal is None:
                 outputTotal = self.sum_magnitudes(bulge=outputBulge[ib],
                                                   disk=outputDisk[ib],
@@ -465,9 +465,9 @@ class PhotometryGalaxies(PhotometryBase):
         #Adding variability to the components above and then adding variability
         #here is probably unphysical.
         for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[:self.nBandpasses], outputTotal)):
+        enumerate(zip(columnNameList[:self.bandpassDict.nBandpasses], outputTotal)):
 
-            bandpassDex = ix % self.nBandpasses
+            bandpassDex = ix % self.bandpassDict.nBandpasses
             if indices is None or bandpassDex in indices:
                 variabilityName = 'delta_' + columnName
                 if variabilityName in self._all_available_columns:
@@ -493,7 +493,8 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('lsst_z'),
                                   self.column_by_name('lsst_y')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.bandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
     @compound('sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
               'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge')
@@ -508,7 +509,8 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('zBulge'),
                                   self.column_by_name('yBulge')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.bandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
     @compound('sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk',
               'sigma_iDisk', 'sigma_zDisk', 'sigma_yDisk')
@@ -523,7 +525,8 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('zDisk'),
                                   self.column_by_name('yDisk')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.bandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
     @compound('sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn',
               'sigma_iAgn', 'sigma_zAgn', 'sigma_yAgn')
@@ -538,7 +541,8 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('zAgn'),
                                   self.column_by_name('yAgn')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.bandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
     @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -558,8 +562,8 @@ class PhotometryGalaxies(PhotometryBase):
         into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles()
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles()
 
         indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_all_mags._colnames) \
                                if name in self._actually_calculated_columns])
@@ -627,7 +631,7 @@ class PhotometryStars(PhotometryBase):
 
         magDict = {}
         for (name,sed) in zip(objectID,sedList):
-            subList = self.manyMagCalc_list(sed, indices=indices)
+            subList = self.bandpassDict.calcMagList(sed, indices=indices)
             magDict[name] = subList
 
         return magDict
@@ -656,7 +660,7 @@ class PhotometryStars(PhotometryBase):
         magDict = self.calculate_magnitudes(objectID, magNorm=magNorm, sedNames=sedNames, indices=indices)
         output = None
 
-        for i in range(self.nBandpasses):
+        for i in range(self.bandpassDict.nBandpasses):
             row = []
             for name in objectID:
                 row.append(magDict[name][i])
@@ -667,7 +671,7 @@ class PhotometryStars(PhotometryBase):
                 output=numpy.vstack([output,row])
 
         for ix, (columnName, columnData) in enumerate(zip(columnNameList, output)):
-            if indices is None or ix%self.nBandpasses in indices:
+            if indices is None or ix%self.bandpassDict.nBandpasses in indices:
                 deltaName = 'delta_' + columnName
                 if deltaName in self._all_available_columns:
                     delta = self.column_by_name(deltaName)
@@ -690,7 +694,8 @@ class PhotometryStars(PhotometryBase):
                                   self.column_by_name('lsst_z'),
                                   self.column_by_name('lsst_y')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.bandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
@@ -708,8 +713,8 @@ class PhotometryStars(PhotometryBase):
         into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles()
+        if not hasattr(self, 'bandpassDict'):
+            self.bandpassDict = self.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \
                    if name in self._actually_calculated_columns]
