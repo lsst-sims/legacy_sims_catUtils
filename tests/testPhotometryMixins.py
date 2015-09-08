@@ -462,7 +462,7 @@ class photometryUnitTest(unittest.TestCase):
         testSed = Sed()
         testSed.readSED_flambda(starName)
         indices = [1,3]
-        mags = starPhot.calcMagList(testSed, indices=indices)
+        mags = starPhot.calcMagListFromSed(testSed, indices=indices)
         self.assertTrue(numpy.isnan(mags[0]))
         self.assertFalse(numpy.isnan(mags[1]))
         self.assertTrue(numpy.isnan(mags[2]))
@@ -537,7 +537,7 @@ class UncertaintyMixinTest(unittest.TestCase):
         bandpassDict = loadTotalBandpassesFromFiles()
         phot = PhotometryBase()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagList(self.starSED)
+        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
 
         skySeds = []
 
@@ -575,7 +575,7 @@ class UncertaintyMixinTest(unittest.TestCase):
 
         bandpassDict = loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagList(self.starSED)
+        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
 
         skySeds = []
 
@@ -620,7 +620,7 @@ class UncertaintyMixinTest(unittest.TestCase):
 
         bandpassDict = loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagList(self.starSED)
+        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
 
         skySeds = []
 

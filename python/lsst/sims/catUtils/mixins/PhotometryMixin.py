@@ -170,7 +170,7 @@ class PhotometryGalaxies(PhotometryBase):
                                             cosmologicalDimming=cosmologicalDimming)
 
             for i in range(len(objectID)):
-                subList = self.bandpassDict.calcMagList(componentSedList[i], indices=indices)
+                subList = self.bandpassDict.calcMagListFromSed(componentSedList[i], indices=indices)
 
                 if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
                     for j in range(len(subList)):
@@ -712,7 +712,7 @@ class PhotometryStars(PhotometryBase):
 
         magDict = {}
         for (name,sed) in zip(objectID,sedList):
-            subList = self.bandpassDict.calcMagList(sed, indices=indices)
+            subList = self.bandpassDict.calcMagListFromSed(sed, indices=indices)
             magDict[name] = subList
 
         return magDict
