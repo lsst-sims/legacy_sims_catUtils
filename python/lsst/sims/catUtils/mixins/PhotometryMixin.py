@@ -662,107 +662,68 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, objectID, magNorm, sedNames, indices=None, specFileMap=None):
+    def _loadSedList(self, wavelen_match):
         """
-        Take the bandpasses in bandpassDict and the array of
-        star names objectID and return a dict of lists of magnitudes
-
-        The first level key will be the name of the star (idName)
-
-        This will give you a list of magnitudes corresponding to self.bandpassDict
-
-        As with galaxies, it is important that we identify stars by a unique
-        identifier, rather than their sedFilename, because different stars
-        can have identical SEDs but different magnitudes.
-
-        @param [in] objectID is a list of names uniquely identifying the objects being considered
-
-        @param [in] magNorm is a list of magnitude normalizations
-
-        @param [in] sedNames is a list of sed file names
-
-        @param [in] indices is an optional list of indices indicating which
-        bandpasses to actually calculate magnitudes for
-
-        @param [in] specFileMap is a class which maps between sedNames and the absolute path to
-        the SED files.  It is an instantiation of the class defined in
-
-        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
-
-        if not provided, a default will be instantiated
-
-        @param [out] magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
-
+        Method to load the member variable self._sedList, which is a CatSimSedList.
+        If self._sedList does not already exist, this method sets it up.
+        If it does already exist, this method flushes its contents and loads a new
+        chunk of Seds.
         """
 
-        if specFileMap is None:
-            if hasattr(self, 'specFileMap'):
-                specFileMap=self.specFileMap
-            else:
-                specFileMap = defaultSpecMap
+        sedNameList = self.column_by_name('sedFilename')
+        magNormList = self.column_by_name('magNorm')
+        galacticAvList = self.column_by_name('galacticAv')
 
-        if len(objectID) != len(magNorm) or len(objectID) != len(sedNames) or len(sedNames) != len(magNorm):
-            raise RuntimeError('In PhotometryStars.calculate_magnitudes, had %d objectID, %d magNorms, and %d sedNames '
-                                % (len(objectID), len(magNorm), len(sedNames)))
+        if len(sedNameList)==0:
+            return numpy.ones((0))
 
-        avList = self.column_by_name('galacticAv')
-
-        sedList = CatSimSedList(sedNames, magNormList=magNorm, specMap=specFileMap,
-                                galacticAvList=avList)
-
-        magDict = {}
-        for (name,sed) in zip(objectID,sedList):
-            subList = self.bandpassDict.calcMagListFromSed(sed, indices=indices)
-            magDict[name] = subList
-
-        return magDict
+        if not hasattr(self, '_sedList'):
+            self._sedList = CatSimSedList(sedNameList, magNormList,
+                                         galacticAvList=galacticAvList,
+                                         wavelenMatch=wavelen_match)
+        else:
+            self._sedList.flush()
+            self._sedList.loadSedsFromList(sedNameList, magNormList,
+                                          galacticAvList=galacticAvList)
 
 
-    def meta_magnitudes_getter(self, objectID, columnNameList, indices=None):
+    def _magnitudeGetter(self, bandpassDict, columnNameList, indices=None):
         """
-        This method does most of the work for stellar magnitude getters
+        This method gets the magnitudes for an InstanceCatalog, returning them
+        in a 2-D numpy array in which rows correspond to bandpasses and columns
+        correspond to astronomical objects.
 
-        @param [in] objectID is a list of object names
+        @param [in] bandpassDict is a CatSimBandpassDict containing the bandpasses
+        whose magnitudes are to be calculated
 
-        @param [in] columnNameList is a list of the names of the columns
-        this method will ultimately be returning.
+        @param [in] columnNameList is a list of the names of the magnitude columns
+        being calculated (so that any variability model can determine if a
+        'delta_column_name' exists
 
-        @param [in] indices is an optional list indicating the indices of the
-        bandpasses to calculate magnitudes for.  Note: even if a bandpass does
-        not appear in indices, its columns should be listed in columnNames.
-
-        @param [out] output is a 2d numpy array in which the rows are the bandpasses
-        from bandpassDict and the columns are the objects from objectID
-
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for
         """
 
-        magNorm = self.column_by_name('magNorm')
-        sedNames = self.column_by_name('sedFilename')
-        magDict = self.calculate_magnitudes(objectID, magNorm=magNorm, sedNames=sedNames, indices=indices)
-        output = None
+        self._loadSedList(bandpassDict.wavelenMatch)
 
-        for i in range(self.bandpassDict.nBandpasses):
-            row = []
-            for name in objectID:
-                row.append(magDict[name][i])
+        if not hasattr(self, '_sedList'):
+            baseLine = numpy.ones((len(columnNameList),0))
+        else:
+            baseLine = bandpassDict.calcMagListFromSedList(self._sedList, indices=indices).transpose()
 
-            if output is None:
-                output = numpy.array(row)
-            else:
-                output=numpy.vstack([output,row])
+        for ix, columnName in enumerate(columnNameList):
+            if indices is None or ix in indices:
+                delta_name = 'delta_' + columnName
+                if delta_name in self._all_available_columns:
+                    delta = self.column_by_name(delta_name)
+                    baseLine[ix] += delta
 
-        for ix, (columnName, columnData) in enumerate(zip(columnNameList, output)):
-            if indices is None or ix%self.bandpassDict.nBandpasses in indices:
-                deltaName = 'delta_' + columnName
-                if deltaName in self._all_available_columns:
-                    delta = self.column_by_name(deltaName)
-                    columnData += delta
+        return baseLine
 
-        return output
 
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
               'sigma_lsst_z','sigma_lsst_y')
-    def get_photometric_uncertainties(self):
+    def get_lsst_photometric_uncertainties(self):
         """
         Getter for photometric uncertainties associated with stellar
         magnitudes
@@ -775,33 +736,23 @@ class PhotometryStars(PhotometryBase):
                                   self.column_by_name('lsst_z'),
                                   self.column_by_name('lsst_y')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, self.bandpassDict,
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
                                                   obs_metadata=self.obs_metadata)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
-    def get_magnitudes(self):
+    def get_lsst_magnitudes(self):
         """
         getter for LSST stellar magnitudes
-
         """
-        objectID = self.column_by_name('id')
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = loadTotalBandpassesFromFiles()
 
-        columnNames = [name for name in self.get_magnitudes._colnames]
-
-        """
-        Here is where we need some code to load a list of bandpass objects
-        into self.bandpassDict so that the bandpasses are available to the
-        mixin.  Ideally, we would only do this once for the whole catalog
-        """
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles()
-
-        indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \
+        indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames) \
                    if name in self._actually_calculated_columns]
 
         if len(indices) == 6:
             indices = None
 
-        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
+        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames, indices=indices)
 

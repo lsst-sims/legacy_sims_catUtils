@@ -34,12 +34,8 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
     @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y')
     def get_test_mags(self):
-        objectID = self.column_by_name('id')
-
-        columnNames = [name for name in self.get_test_mags._colnames]
-
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles()
+        if not hasattr(self, 'variabilitybandpassDict'):
+            self.variabilityBandpassDict = loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_mags._colnames) \
                    if name in self._actually_calculated_columns]
@@ -47,7 +43,13 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
         if len(indices) == 6:
             indices = None
 
-        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
+        self._loadSedList(self.variabilityBandpassDict.wavelenMatch)
+        if not hasattr(self, '_sedList'):
+            return numpy.ones((6,0))
+
+        return self._magnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames,
+                                     indices=indices)
+
 
 class StellarVariabilityCatalogClass(StellarBaselineCatalogClass, FakeStellarVariabilityMixin):
     pass

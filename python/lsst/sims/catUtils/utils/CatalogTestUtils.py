@@ -259,11 +259,12 @@ class cartoonPhotometryStars(PhotometryStars):
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+        if not hasattr(self, 'cartoonBandpassDict'):
+            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                                                              bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames, columnNames)
+
+        output = self._magnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
 
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
@@ -424,18 +425,19 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         """
         Example photometry getter for alternative (i.e. non-LSST) bandpasses
         """
+        if not hasattr(self, 'cartoonBandpassDict'):
+            bandpassNames=['u','g','r','i','z']
+            bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                                                                    bandpassRoot = 'test_bandpass_')
 
-        idNames = self.column_by_name('id')
-        columnNames = [name for name in self.get_magnitudes._colnames]
-        bandpassNames=['u','g','r','i','z']
-        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \
+                   if name in self._actually_calculated_columns]
 
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                             bandpassRoot = 'test_bandpass_')
+        return self._magnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames,
+                                     indices=indices)
 
-        output = self.meta_magnitudes_getter(idNames, columnNames)
-        return output
+
 
 class cartoonStarsIZ(cartoonStarsOnlyI):
     catalog_type = 'cartoonStarsIR'
