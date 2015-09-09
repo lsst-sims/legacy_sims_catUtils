@@ -91,38 +91,77 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
 
         return numpy.array([bulgeSeds, diskSeds, agnSeds])
 
+    @compound('test_bulge_u', 'test_bulge_g', 'test_bulge_r',
+              'test_bulge_i' ,'test_bulge_z', 'test_bulge_y')
+    def get_test_bulge_mags(self):
 
-    @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y',
-              'test_bulge_u', 'test_bulge_g', 'test_bulge_r',
-              'test_bulge_i', 'test_bulge_z', 'test_bulge_y',
-              'test_disk_u', 'test_disk_g', 'test_disk_r',
-              'test_disk_i', 'test_disk_z', 'test_disk_y',
-              'test_agn_u', 'test_agn_g', 'test_agn_r',
-              'test_agn_i', 'test_agn_z', 'test_agn_y')
-    def get_test_mags(self):
-        """
-        Getter for test galaxy magnitudes
+        if not hasattr(self, 'testBandpassDict'):
+            self.testBandpassDict = loadTotalBandpassesFromFiles()
 
-        """
-        objectID = self.column_by_name('id')
-
-        columnNames = [name for name in self.get_test_mags._colnames]
-
-        """
-        Here is where we need some code to load a list of bandpass objects
-        into self.bandpassDict so that the bandpasses are available to the
-        mixin.  Ideally, we would only do this once for the whole catalog
-        """
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles()
-
-        indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_test_mags._colnames) \
-                               if name in self._actually_calculated_columns])
+        indices = [ii for ii, name in enumerate(self.get_test_bulge_mags._colnames) \
+                   if name in self._actually_calculated_columns]
 
         if len(indices)==6:
-            indices=None
+            indices = None
 
-        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
+        return self._magnitudeGetter('bulge', self.testBandpassDict,
+                                     self.get_test_bulge_mags._colnames,
+                                     indices=indices)
+
+
+    @compound('test_disk_u', 'test_disk_g', 'test_disk_r',
+              'test_disk_i', 'test_disk_z', 'test_disk_y')
+    def get_test_disk_mags(self):
+
+        if not hasattr(self, 'testBandpassDict'):
+            self.testBandpassDict = loadTotalBandpassesFromFiles()
+
+        indices = [ii for ii, name in enumerate(self.get_test_disk_mags._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices)==6:
+            indices = None
+
+        return self._magnitudeGetter('disk', self.testBandpassDict,
+                                     self.get_test_disk_mags._colnames,
+                                     indices=indices)
+
+
+    @compound('test_agn_u', 'test_agn_g', 'test_agn_r',
+              'test_agn_i', 'test_agn_z', 'test_agn_y')
+    def get_test_agn_mags(self):
+
+        if not hasattr(self, 'testBandpassDict'):
+            self.testBandpassDict = loadTotalBandpassesFromFiles()
+
+        indices = [ii for ii, name in enumerate(self.get_test_agn_mags._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices)==6:
+            indices = None
+
+        return self._magnitudeGetter('agn', self.testBandpassDict,
+                                     self.get_test_agn_mags._colnames,
+                                     indices=indices)
+
+
+    @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y')
+    def get_test_total_mags(self):
+        idList = self.column_by_name('uniqueId')
+        numObj = len(idList)
+        output = []
+        for columnName in self.get_test_total_mags._colnames:
+            if columnName not in self._actually_calculated_columns:
+                sub_list = [numpy.NaN]*numObj
+            else:
+                bandpass = columnName[-1]
+                bulge = self.column_by_name('test_bulge_%s' % bandpass)
+                disk = self.column_by_name('test_disk_%s' % bandpass)
+                agn = self.column_by_name('test_agn_%s' % bandpass)
+                sub_list = self.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
+
+            output.append(sub_list)
+        return numpy.array(output)
 
 
 class GalaxyVariabilityCatalogClass(GalaxyBaselineCatalogClass, FakeGalaxyVariabilityMixin):

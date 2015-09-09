@@ -312,45 +312,142 @@ class photometryUnitTest(unittest.TestCase):
         the same as testAlternateBandpassesStars, but for galaxies
         """
 
+        catName = 'testAlternateBandpassesGalaxies.txt'
+
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                                boundLength=10.0)
 
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testGalaxiesCartoon.txt")
+        test_cat.write_catalog(catName)
 
-        cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-        testBandPasses = {}
+        dtype = numpy.dtype([
+                             ('galid', numpy.int),
+                             ('ra', numpy.float),
+                             ('dec', numpy.float),
+                             ('uTotal', numpy.float),
+                             ('gTotal', numpy.float),
+                             ('rTotal', numpy.float),
+                             ('iTotal', numpy.float),
+                             ('zTotal', numpy.float),
+                             ('uBulge', numpy.float),
+                             ('gBulge', numpy.float),
+                             ('rBulge', numpy.float),
+                             ('iBulge', numpy.float),
+                             ('zBulge', numpy.float),
+                             ('uDisk', numpy.float),
+                             ('gDisk', numpy.float),
+                             ('rDisk', numpy.float),
+                             ('iDisk', numpy.float),
+                             ('zDisk', numpy.float),
+                             ('uAgn', numpy.float),
+                             ('gAgn', numpy.float),
+                             ('rAgn', numpy.float),
+                             ('iAgn', numpy.float),
+                             ('zAgn', numpy.float),
+                             ('bulgeName', str, 200),
+                             ('bulgeNorm', numpy.float),
+                             ('bulgeAv', numpy.float),
+                             ('diskName', str, 200),
+                             ('diskNorm', numpy.float),
+                             ('diskAv', numpy.float),
+                             ('agnName', str, 200),
+                             ('agnNorm', numpy.float),
+                             ('redshift', numpy.float)
+                            ])
+
+        catData = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
+
+        cartoonDir = lsst.utils.getPackageDir('sims_photUtils')
+        cartoonDir = os.path.join(cartoonDir, 'tests', 'cartoonSedTestData')
+        sedDir = lsst.utils.getPackageDir('sims_sed_library')
+
+        testBandpasses = {}
         keys = ['u','g','r','i','z']
 
-        bplist = []
-
         for kk in keys:
-            testBandPasses[kk] = Bandpass()
-            testBandPasses[kk].readThroughput(os.path.join(cartoonDir,"test_bandpass_%s.dat" % kk))
-            bplist.append(testBandPasses[kk])
+            testBandpasses[kk] = Bandpass()
+            testBandpasses[kk].readThroughput(os.path.join(cartoonDir,"test_bandpass_%s.dat" % kk))
 
-        sedObj = Sed()
-        phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
+        imsimBand = Bandpass()
+        imsimBand.imsimBandpass()
 
-        components = ['Bulge', 'Disk', 'Agn']
+        specMap = defaultSpecMap
 
         ct = 0
-        for cc in components:
-            i = 0
+        for line in catData:
+            bulgeMagList = []
+            diskMagList = []
+            agnMagList = []
+            if line['bulgeName'] == 'None':
+                for bp in keys:
+                    self.assertTrue(numpy.isnan(line['%sBulge' % bp]))
+                    bulgeMagList.append(numpy.NaN)
+            else:
+                ct += 1
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['bulgeName']]))
+                fnorm = dummySed.calcFluxNorm(line['bulgeNorm'], imsimBand)
+                dummySed.multiplyFluxNorm(fnorm)
+                a_int, b_int = dummySed.setupCCMab()
+                dummySed.addCCMDust(a_int, b_int, A_v=line['bulgeAv'])
+                dummySed.redshiftSED(line['redshift'], dimming=True)
+                dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
+                for bpName in keys:
+                    mag = dummySed.calcMag(testBandpasses[bpName])
+                    self.assertAlmostEqual(mag, line['%sBulge' % bpName], 10)
+                    bulgeMagList.append(mag)
 
-            for ss in test_cat.sedMasterDict[cc]:
-                if ss.wavelen != None:
-                    ss.resampleSED(wavelen_match = bplist[0].wavelen)
-                    ss.flambdaTofnu()
-                    mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-                    for j in range(len(mags)):
-                        ct += 1
-                        self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
-                i += 1
+            if line['diskName'] == 'None':
+                for bp in keys:
+                    self.assertTrue(numpy.isnan(line['%sDisk' % bp]))
+                    diskMagList.append(numpy.NaN)
+            else:
+                ct += 1
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['diskName']]))
+                fnorm = dummySed.calcFluxNorm(line['diskNorm'], imsimBand)
+                dummySed.multiplyFluxNorm(fnorm)
+                a_int, b_int = dummySed.setupCCMab()
+                dummySed.addCCMDust(a_int, b_int, A_v=line['diskAv'])
+                dummySed.redshiftSED(line['redshift'], dimming=True)
+                dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
+                for bpName in keys:
+                    mag = dummySed.calcMag(testBandpasses[bpName])
+                    self.assertAlmostEqual(mag, line['%sDisk' % bpName], 10)
+                    diskMagList.append(mag)
+
+            if line['agnName'] == 'None':
+                for bp in keys:
+                    self.assertTrue(numpy.isnan(line['%sAgn' % bp]))
+                    agnMagList.append(numpy.NaN)
+            else:
+                ct += 1
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['agnName']]))
+                fnorm = dummySed.calcFluxNorm(line['agnNorm'], imsimBand)
+                dummySed.multiplyFluxNorm(fnorm)
+                dummySed.redshiftSED(line['redshift'], dimming=True)
+                dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
+                for bpName in keys:
+                    mag = dummySed.calcMag(testBandpasses[bpName])
+                    self.assertAlmostEqual(mag, line['%sAgn' % bpName], 10)
+                    agnMagList.append(mag)
+
+            totalMags = PhotometryGalaxies().sum_magnitudes(bulge=numpy.array(bulgeMagList),
+                                                            disk=numpy.array(diskMagList),
+                                                            agn=numpy.array(agnMagList))
+
+            for testMag, bpName in zip(totalMags, keys):
+                if numpy.isnan(line['%sTotal' % bpName]):
+                    self.assertTrue(numpy.isnan(testMag))
+                else:
+                    self.assertAlmostEqual(testMag, line['%sTotal' % bpName],10)
+
 
         self.assertTrue(ct>0)
-        os.unlink("testGalaxiesCartoon.txt")
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testStellarPhotometryIndices(self):
         """

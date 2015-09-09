@@ -372,38 +372,47 @@ class variabilityDB(CatalogDBObject):
 class mflareDB(variabilityDB):
     objid = 'mflareTest'
     tableid = 'mFlare'
+    objectTypeId = 53
 
 class hybridDB(variabilityDB):
     objid = 'hybridTest'
     tableid = 'hybrid'
+    objectTypeId = 54
 
 class rrlyDB(variabilityDB):
     objid = 'rrlyTest'
     tableid = 'RRly'
+    objectTypeId = 55
 
 class cepheidDB(variabilityDB):
     objid = 'cepheidTest'
     tableid = 'cepheid'
+    objectTypeId = 56
 
 class ebDB(variabilityDB):
     objid = 'ebTest'
     tableid = 'eb'
+    objectTypeId = 57
 
 class microlensDB(variabilityDB):
     objid = 'microlensTest'
     tableid = 'microlensing'
+    objectTypeId = 58
 
 class BHmicrolensDB(variabilityDB):
     objid = 'bhmicrolensTest'
     tableid = 'bhmicrolensing'
+    objectTypeId = 59
 
 class amcvnDB(variabilityDB):
     objid = 'amcvnTest'
     tableid = 'amcvn'
+    objectTypeId = 60
 
 class agnDB(variabilityDB):
     objid = 'agnTest'
     tableid = 'agn'
+    objectTypeId = 61
 
 class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, VariabilityStars):
     catalog_type = 'stellarVariabilityCatalog'

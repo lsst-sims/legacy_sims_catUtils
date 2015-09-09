@@ -55,6 +55,7 @@ class testStarDBObject(CatalogDBObject):
     idColKey = 'id'
     raColName = 'ra'
     decColName = 'decl'
+    objectTypeId = 49
     columns = [('id','simobjid', int),
                ('raJ2000', 'ra*PI()/180.'),
                ('decJ2000', 'decl*PI()/180.'),
@@ -75,6 +76,7 @@ class testGalaxyDBObject(CatalogDBObject):
     idColKey = 'galtileid'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
+    objectTypeId = 51
 
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),

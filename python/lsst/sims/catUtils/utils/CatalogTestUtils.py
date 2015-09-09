@@ -8,6 +8,7 @@ import numpy
 import os
 import sqlite3
 import json
+from lsst.utils import getPackageDir
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
@@ -308,80 +309,93 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
     (see testAlternateBandpassesGalaxies in testPhotometry.py to see how this works)
     """
 
-    @compound('ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z',
-              'cbulge_u','cbulge_g','cbulge_r','cbulge_i','cbulge_z',
-              'cdisk_u','cdisk_g','cdisk_r','cdisk_i','cdisk_z',
-              'cagn_u','cagn_g','cagn_r','cagn_i','cagn_z')
-    def get_magnitudes(self):
-        """
-        getter for photometry of galaxies using non-LSST bandpasses
-        """
+    @compound('cbulge_u', 'cbulge_g', 'cbulge_r', 'cbulge_i' ,'cbulge_z')
+    def get_cartoon_bulge_mags(self):
 
-        idNames = self.column_by_name('galid')
+        if not hasattr(self, 'cartoonBandpassDict'):
+            bandpassNames = ['u','g','r','i','z']
+            bandpassDir = getPackageDir('sims_photUtils')
+            bandpassDir = os.path.join(bandpassDir, 'tests', 'cartoonSedTestData')
 
-        columnNames = [name for name in self.get_magnitudes._colnames]
+            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+                                                                   bandpassDir=bandpassDir,
+                                                                   bandpassRoot = 'test_bandpass_')
 
-        bandpassNames=['u','g','r','i','z']
-        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        indices = [ii for ii, name in enumerate(self.get_cartoon_bulge_mags._colnames) \
+                   if name in self._actually_calculated_columns]
 
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                             bandpassRoot = 'test_bandpass_')
+        if len(indices)==6:
+            indices = None
 
-        output = self.meta_magnitudes_getter(idNames, columnNames)
-
-        ##########################################################################
-        #Everything below this comment exists only for the purposes of the unittest.
-        #If you need to write your own customized getter for photometry using
-        #non-LSST bandpasses, you only need to emulate the code above this comment
-
-        if len(output) > 0:
-            for i in range(len(output[0])):
-                j = 5
-                subList = []
-                while j < 10:
-                    subList.append(output[j][i])
-                    j += 1
-                self.magnitudeMasterDict['Bulge'].append(subList)
-
-                subList = []
-                while j < 15:
-                    subList.append(output[j][i])
-                    j += 1
-                self.magnitudeMasterDict['Disk'].append(subList)
-
-                subList = []
-                while j < 20:
-                    subList.append(output[j][i])
-                    j += 1
-                self.magnitudeMasterDict['Agn'].append(subList)
+        return self._magnitudeGetter('bulge', self.cartoonBandpassDict,
+                                     self.get_cartoon_bulge_mags._colnames,
+                                     indices=indices)
 
 
+    @compound('cdisk_u', 'cdisk_g', 'cdisk_r', 'cdisk_i', 'cdisk_z')
+    def get_cartoon_disk_mags(self):
+
+        if not hasattr(self, 'cartoonBandpassDict'):
+            bandpassNames = ['u','g','r','i','z']
+            bandpassDir = getPackageDir('sims_photUtils')
+            bandpassDir = os.path.join(bandpassDir, 'tests', 'cartoonSedTestData')
+
+            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+                                                                   bandpassDir=bandpassDir,
+                                                                   bandpassRoot = 'test_bandpass_')
+
+        indices = [ii for ii, name in enumerate(self.get_cartoon_disk_mags._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices)==6:
+            indices = None
+
+        return self._magnitudeGetter('disk', self.cartoonBandpassDict,
+                                     self.get_cartoon_disk_mags._colnames,
+                                     indices=indices)
 
 
-        componentNames = ['Bulge','Disk','Agn']
+    @compound('cagn_u', 'cagn_g', 'cagn_r', 'cagn_i', 'cagn_z')
+    def get_cartoon_agn_mags(self):
 
-        for cc in componentNames:
-            magName = "magNorm" + cc
-            magNormList = self.column_by_name(magName)
-            sName = "sedFilename" + cc
-            sedNames = self.column_by_name(sName)
+        if not hasattr(self, 'cartoonBandpassDict'):
+            bandpassNames = ['u','g','r','i','z']
+            bandpassDir = getPackageDir('sims_photUtils')
+            bandpassDir = os.path.join(bandpassDir, 'tests', 'cartoonSedTestData')
 
-            if cc == 'Bulge' or cc == 'Disk':
-                AvName = "internalAv"+cc
-                Av = self.column_by_name(AvName)
+            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+                                                                   bandpassDir=bandpassDir,
+                                                                   bandpassRoot = 'test_bandpass_')
+
+        indices = [ii for ii, name in enumerate(self.get_cartoon_agn_mags._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices)==6:
+            indices = None
+
+        return self._magnitudeGetter('agn', self.cartoonBandpassDict,
+                                     self.get_cartoon_agn_mags._colnames,
+                                     indices=indices)
+
+
+    @compound('ctotal_u', 'ctotal_g', 'ctotal_r', 'ctotal_i', 'ctotal_z')
+    def get_cartoon_total_mags(self):
+        idList = self.column_by_name('uniqueId')
+        numObj = len(idList)
+        output = []
+        for columnName in self.get_cartoon_total_mags._colnames:
+            if columnName not in self._actually_calculated_columns:
+                sub_list = [numpy.NaN]*numObj
             else:
-                Av = None
+                bandpass = columnName[-1]
+                bulge = self.column_by_name('cbulge_%s' % bandpass)
+                disk = self.column_by_name('cdisk_%s' % bandpass)
+                agn = self.column_by_name('cagn_%s' % bandpass)
+                sub_list = self.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
 
+            output.append(sub_list)
+        return numpy.array(output)
 
-            redshift = self.column_by_name("redshift")
-            sublist = CatSimSedList(sedNames, magNormList,
-                                    internalAvList=Av, redshiftList=redshift)
-
-            for ss in sublist:
-                self.sedMasterDict[cc].append(ss)
-
-        return output
 
 class testCatalog(InstanceCatalog,AstrometryStars,VariabilityStars,testDefaults):
     catalog_type = 'MISC'
@@ -449,8 +463,14 @@ class cartoonGalaxies(InstanceCatalog, AstrometryGalaxies, EBVmixin, Variability
     and output extra data for use by unit tests)
     """
     catalog_type = 'cartoonGalaxies'
-    column_outputs=['galid','raObserved','decObserved',\
-    'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
+    column_outputs=['galid', 'raObserved', 'decObserved',
+                    'ctotal_u', 'ctotal_g', 'ctotal_r', 'ctotal_i', 'ctotal_z',
+                    'cbulge_u', 'cbulge_g', 'cbulge_r', 'cbulge_i', 'cbulge_z',
+                    'cdisk_u', 'cdisk_g', 'cdisk_r', 'cdisk_i', 'cdisk_z',
+                    'cagn_u', 'cagn_g', 'cagn_r', 'cagn_i', 'cagn_z',
+                    'sedFilenameBulge', 'magNormBulge', 'internalAvBulge',
+                    'sedFilenameDisk', 'magNormDisk', 'internalAvDisk',
+                    'sedFilenameAgn', 'magNormAgn', 'redshift']
 
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = "Inst.80E09.25Z.spec"
@@ -462,25 +482,14 @@ class cartoonGalaxies(InstanceCatalog, AstrometryGalaxies, EBVmixin, Variability
                        ('internalAvBulge',3.1,float),
                        ('internalAvDisk',3.1,float)]
 
+    default_formats = {'f' : '%.12f'}
+
 
     def get_galid(self):
         return self.column_by_name('id')
 
-    #the dicts below will contain the SED objects and the magnitudes
-    #in a form that unittest can access and validate
 
-    sedMasterDict = {}
-    sedMasterDict["Bulge"] = []
-    sedMasterDict["Disk"] = []
-    sedMasterDict["Agn"] = []
-
-    magnitudeMasterDict = {}
-    magnitudeMasterDict["Bulge"] = []
-    magnitudeMasterDict["Disk"] = []
-    magnitudeMasterDict["Agn"] = []
-
-
-class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGalaxies,PhotometryGalaxies):
+class cartoonGalaxiesIG(InstanceCatalog, AstrometryGalaxies, EBVmixin, VariabilityGalaxies, cartoonPhotometryGalaxies):
 
     catalog_type = 'cartoonGalaxiesIG'
     column_outputs=['galid','raObserved','decObserved','ctotal_i','ctotal_g']
@@ -495,30 +504,11 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
                        ('internalAvBulge',3.1,float),
                        ('internalAvDisk',3.1,float)]
 
+    default_formats = {'f' : '%.12f'}
+
     def get_galid(self):
         return self.column_by_name('id')
 
-    @compound('ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z',
-              'cbulge_u','cbulge_g','cbulge_r','cbulge_i','cbulge_z',
-              'cdisk_u','cdisk_g','cdisk_r','cdisk_i','cdisk_z',
-              'cagn_u','cagn_g','cagn_r','cagn_i','cagn_z')
-    def get_magnitudes(self):
-        """
-        getter for photometry of galaxies using non-LSST bandpasses
-        """
-
-        idNames = self.column_by_name('galid')
-        columnNames = [name for name in self.get_magnitudes._colnames]
-
-        bandpassNames=['u','g','r','i','z']
-        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-
-        if not hasattr(self, 'bandpassDict'):
-            self.bandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
-                                                             bandpassRoot = 'test_bandpass_')
-
-        output = self.meta_magnitudes_getter(idNames, columnNames)
-        return output
 
 
 class galaxiesWithHoles(InstanceCatalog, PhotometryGalaxies):
