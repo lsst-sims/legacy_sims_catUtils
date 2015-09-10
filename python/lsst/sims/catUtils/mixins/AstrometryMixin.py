@@ -7,7 +7,7 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
-                            galacticFromEquatorial, sphericalFromCartesian, \
+                            _galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
 
 from lsst.sims.coordUtils.AstrometryUtils import _appGeoFromICRS, _observedFromAppGeo
@@ -34,7 +34,7 @@ class AstrometryBase(object):
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
 
-        glon, glat = galacticFromEquatorial(ra,dec)
+        glon, glat = _galacticFromEquatorial(ra,dec)
 
         return numpy.array([glon,glat])
 

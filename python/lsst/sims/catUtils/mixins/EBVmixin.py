@@ -4,7 +4,6 @@ import numpy
 import os
 
 from lsst.sims.catalogs.measures.instance import cached
-from lsst.sims.utils import galacticFromEquatorial
 from lsst.sims.photUtils import EBVmap, EBVbase
 
 __all__ = ["EBVmixin"]
