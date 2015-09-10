@@ -18,7 +18,7 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 loadTotalBandpassesFromFiles
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.photUtils import CatSimSedList
+from lsst.sims.photUtils import SedList
 
 __all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
 
@@ -54,7 +54,7 @@ class PhotometryBase(object):
         a bandpass, which is to say that magnitudes[i][j] is the magnitude of the jth object in the
         bandpass characterized by self.bandpassDict.values()[i]
 
-        @param [in] bandpassDict is a CatSimBandpassDict characterizing the bandpasses being used
+        @param [in] bandpassDict is a BandpassDict characterizing the bandpasses being used
 
         @param [in] obs_metadata is the metadata of this observation (mostly desired because
         it will contain information about m5, the magnitude at which objects are detected
@@ -123,7 +123,7 @@ class PhotometryGalaxies(PhotometryBase):
 
     def _loadBulgeSedList(self, wavelen_match):
         """
-        Load a CatSimSedList of galaxy bulge Seds.
+        Load a SedList of galaxy bulge Seds.
         The list will be stored in the variable self._bulgeSedList.
 
         @param [in] wavelen_match is the wavelength grid (in nm)
@@ -140,7 +140,7 @@ class PhotometryGalaxies(PhotometryBase):
             return numpy.ones((0))
 
         if not hasattr(self, '_bulgeSedList'):
-            self._bulgeSedList = CatSimSedList(sedNameList, magNormList,
+            self._bulgeSedList = SedList(sedNameList, magNormList,
                                                internalAvList=internalAvList,
                                                redshiftList=redshiftList,
                                                cosmologicalDimming=cosmologicalDimming,
@@ -154,7 +154,7 @@ class PhotometryGalaxies(PhotometryBase):
 
     def _loadDiskSedList(self, wavelen_match):
         """
-        Load a CatSimSedList of galaxy disk Seds.
+        Load a SedList of galaxy disk Seds.
         The list will be stored in the variable self._bulgeSedList.
 
         @param [in] wavelen_match is the wavelength grid (in nm)
@@ -171,7 +171,7 @@ class PhotometryGalaxies(PhotometryBase):
             return numpy.ones((0))
 
         if not hasattr(self, '_diskSedList'):
-            self._diskSedList = CatSimSedList(sedNameList, magNormList,
+            self._diskSedList = SedList(sedNameList, magNormList,
                                                internalAvList=internalAvList,
                                                redshiftList=redshiftList,
                                                cosmologicalDimming=cosmologicalDimming,
@@ -185,7 +185,7 @@ class PhotometryGalaxies(PhotometryBase):
 
     def _loadAgnSedList(self, wavelen_match):
         """
-        Load a CatSimSedList of galaxy AGN Seds.
+        Load a SedList of galaxy AGN Seds.
         The list will be stored in the variable self._bulgeSedList.
 
         @param [in] wavelen_match is the wavelength grid (in nm)
@@ -201,7 +201,7 @@ class PhotometryGalaxies(PhotometryBase):
             return numpy.ones((0))
 
         if not hasattr(self, '_agnSedList'):
-            self._agnSedList = CatSimSedList(sedNameList, magNormList,
+            self._agnSedList = SedList(sedNameList, magNormList,
                                                redshiftList=redshiftList,
                                                cosmologicalDimming=cosmologicalDimming,
                                                wavelenMatch=wavelen_match)
@@ -293,7 +293,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         @param [in] componentName is either 'bulge', 'disk', or 'agn'
 
-        @param [in] bandpassDict is a CatSimBandpassDict of the bandpasses
+        @param [in] bandpassDict is a BandpassDict of the bandpasses
         in which to calculate the magnitudes
 
         @param [in] columnNameList is a list of the columns corresponding to
@@ -424,7 +424,7 @@ class PhotometryGalaxies(PhotometryBase):
         Getter for bulge magnitudes in LSST bandpasses
         """
 
-        # load a CatSimBandpassDict of LSST bandpasses, if not done already
+        # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = loadTotalBandpassesFromFiles()
 
@@ -450,7 +450,7 @@ class PhotometryGalaxies(PhotometryBase):
         Getter for galaxy disk magnitudes in the LSST bandpasses
         """
 
-        # load a CatSimBandpassDict of LSST bandpasses, if not done already
+        # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = loadTotalBandpassesFromFiles()
 
@@ -475,7 +475,7 @@ class PhotometryGalaxies(PhotometryBase):
         Getter for AGN magnitudes in the LSST bandpasses
         """
 
-        # load a CatSimBandpassDict of LSST bandpasses, if not done already
+        # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = loadTotalBandpassesFromFiles()
 
@@ -533,7 +533,7 @@ class PhotometryStars(PhotometryBase):
 
     def _loadSedList(self, wavelen_match):
         """
-        Method to load the member variable self._sedList, which is a CatSimSedList.
+        Method to load the member variable self._sedList, which is a SedList.
         If self._sedList does not already exist, this method sets it up.
         If it does already exist, this method flushes its contents and loads a new
         chunk of Seds.
@@ -547,7 +547,7 @@ class PhotometryStars(PhotometryBase):
             return numpy.ones((0))
 
         if not hasattr(self, '_sedList'):
-            self._sedList = CatSimSedList(sedNameList, magNormList,
+            self._sedList = SedList(sedNameList, magNormList,
                                          galacticAvList=galacticAvList,
                                          wavelenMatch=wavelen_match)
         else:
@@ -562,7 +562,7 @@ class PhotometryStars(PhotometryBase):
         in a 2-D numpy array in which rows correspond to bandpasses and columns
         correspond to astronomical objects.
 
-        @param [in] bandpassDict is a CatSimBandpassDict containing the bandpasses
+        @param [in] bandpassDict is a BandpassDict containing the bandpasses
         whose magnitudes are to be calculated
 
         @param [in] columnNameList is a list of the names of the magnitude columns

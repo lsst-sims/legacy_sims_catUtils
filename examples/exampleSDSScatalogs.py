@@ -25,7 +25,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
         An example getter for SDSS bulge magnitudes
         """
 
-        # load a CatSimBandpassDict of SDSS bandpasses, if not done already
+        # load a BandpassDict of SDSS bandpasses, if not done already
         if not hasattr(self, 'sdssBandpassDict'):
             bandpassNames = ['u','g','r','i','z']
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
@@ -46,7 +46,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
         An example getter for SDSS disk magnitudes
         """
 
-        # load a CatSimBandpassDict of SDSS bandpasses, if not done already
+        # load a BandpassDict of SDSS bandpasses, if not done already
         if not hasattr(self, 'sdssBandpassDict'):
             bandpassNames = ['u','g','r','i','z']
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
@@ -67,7 +67,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
         An example getter for SDSS AGN magnitudes
         """
 
-        # load a CatSimBandpassDict of SDSS bandpasses, if not done already
+        # load a BandpassDict of SDSS bandpasses, if not done already
         if not hasattr(self, 'sdssBandpassDict'):
             bandpassNames = ['u','g','r','i','z']
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
@@ -121,7 +121,7 @@ class sdssStars(InstanceCatalog,PhotometryStars):
         An example getter for stellar magnitudes in SDSS bands
         """
 
-        # Load a CatSimBandpassDict of SDSS bandpasses, if not done already
+        # Load a BandpassDict of SDSS bandpasses, if not done already
         if not hasattr(self, 'sdssBandpassDict'):
             bandpassNames = ['u','g','r','i','z']
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
