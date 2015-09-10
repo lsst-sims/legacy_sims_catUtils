@@ -10,7 +10,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
-from lsst.sims.coordUtils import observedFromAppGeo, calculatePupilCoordinates
+from lsst.sims.coordUtils import _observedFromAppGeo, _calculatePupilCoordinates
 from lsst.sims.coordUtils import calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
@@ -188,7 +188,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         baselineData = numpy.loadtxt('AstrometryTestCatalog.txt', dtype=dtype, delimiter=';')
 
-        pupilTest = calculatePupilCoordinates(baselineData['raObserved'],
+        pupilTest = _calculatePupilCoordinates(baselineData['raObserved'],
                                               baselineData['decObserved'],
                                               obs_metadata=self.obs_metadata,
                                               epoch=2000.0)
@@ -292,7 +292,7 @@ class astrometryUnitTest(unittest.TestCase):
             ra_apparent, dec_apparent = pal.mapqk(ra0, dec0, pmra, pmdec, px, rv, prms)
             ra_apparent = numpy.array([ra_apparent])
             dec_apparent = numpy.array([dec_apparent])
-            raObserved, decObserved = observedFromAppGeo(ra_apparent, dec_apparent,
+            raObserved, decObserved = _observedFromAppGeo(ra_apparent, dec_apparent,
                                                                  obs_metadata=cat.obs_metadata)
 
             self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),7)

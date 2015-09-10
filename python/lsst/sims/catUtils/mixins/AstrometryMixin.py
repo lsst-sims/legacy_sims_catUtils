@@ -10,8 +10,8 @@ from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
                             galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
 
-from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
-from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS, calculatePupilCoordinates
+from lsst.sims.coordUtils.AstrometryUtils import _appGeoFromICRS, _observedFromAppGeo
+from lsst.sims.coordUtils.AstrometryUtils import _observedFromICRS, _calculatePupilCoordinates
 from lsst.sims.coordUtils.CameraUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.coordUtils.CameraUtils import calculateFocalPlaneCoordinates
 
@@ -49,7 +49,7 @@ class AstrometryBase(object):
         raObj = self.column_by_name('raObserved')
         decObj = self.column_by_name('decObserved')
 
-        return calculatePupilCoordinates(raObj, decObj, epoch=self.db_obj.epoch,
+        return _calculatePupilCoordinates(raObj, decObj, epoch=self.db_obj.epoch,
                                          obs_metadata=self.obs_metadata)
 
 class CameraCoords(AstrometryBase):
@@ -95,7 +95,7 @@ class AstrometryGalaxies(AstrometryBase):
     def get_phoSimCoordinates(self):
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
-        return observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
+        return _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
                                 epoch=self.db_obj.epoch)
 
 
@@ -107,7 +107,7 @@ class AstrometryGalaxies(AstrometryBase):
         """
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
-        return observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
+        return _observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
 
 
 class AstrometryStars(AstrometryBase):
@@ -133,7 +133,7 @@ class AstrometryStars(AstrometryBase):
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
 
-        return observedFromICRS(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
+        return _observedFromICRS(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
                      includeRefraction = includeRefraction, obs_metadata=self.obs_metadata,
                      epoch=self.db_obj.epoch)
 
