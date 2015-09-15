@@ -25,21 +25,12 @@ __all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
 
 class PhotometryBase(object):
     """
-    This class provides the basic infrastructure for photometry.
-    It can read in SEDs and bandpasses, apply extinction and redshift, and, given
-    an SED object it can calculate magnitudes.
+    This class provides an InstanceCatalog with a member variable photParams,
+    which is an instance of the class PhotometricParameters.
 
-    In order to avoid duplication of work, the bandpasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by either self.loadTotalBandpassesFromFiles()
-    or self.loadBandpassesFromFiles()
-
-    See the documentation of PhotometryHardware (from which this class inherits) for instructions how
-    to read in alternative bandpasses.
-
-    Once self.loadBandPassesFromFiles() as been called, self.loadSeds() can be used to return an array
-    of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
-    the magnitudes of the the SEDs, integrated over the loaded bandpasses, and return them as a
-    dict keeyed to the array of bandpass keys stored in self.bandpassKey
+    It also provides the method calculateMagnitudeUncertainty, which takes magnitudes,
+    a BandpassDict, and an ObservationMetaData as inputs and returns the uncertainties
+    on those magnitudes.
     """
 
     #an object carrying around photometric parameters like readnoise, effective area, plate scale, etc.
