@@ -10,9 +10,10 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
-from lsst.sims.coordUtils import _observedFromAppGeo, _calculatePupilCoordinates
-from lsst.sims.coordUtils import calculateFocalPlaneCoordinates
-from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
+from lsst.sims.coordUtils import _observedFromAppGeo, _pupilCoordsFromRaDec
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, _focalPlaneCoordsFromRaDec
+from lsst.sims.coordUtils import chipNameFromPupilCoords, _chipNameFromRaDec
+from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, _pixelCoordsFromRaDec
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
                                                 myTestGals, makeGalTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
@@ -188,7 +189,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         baselineData = numpy.loadtxt('AstrometryTestCatalog.txt', dtype=dtype, delimiter=';')
 
-        pupilTest = _calculatePupilCoordinates(baselineData['raObserved'],
+        pupilTest = _pupilCoordsFromRaDec(baselineData['raObserved'],
                                               baselineData['decObserved'],
                                               obs_metadata=self.obs_metadata,
                                               epoch=2000.0)
@@ -198,13 +199,11 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        focalTest = calculateFocalPlaneCoordinates(xPupil=pupilTest[0],
-                                      yPupil=pupilTest[1], camera=self.cat.camera)
+        focalTest = focalPlaneCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
-        focalRa = calculateFocalPlaneCoordinates(ra=baselineData['raObserved'],
-                        dec=baselineData['decObserved'],
-                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
-                        camera=self.cat.camera)
+        focalRa = _focalPlaneCoordsFromRaDec(baselineData['raObserved'], baselineData['decObserved'],
+                                             epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
+                                             camera=self.cat.camera)
 
         for (xxtest, yytest, xxra, yyra, xx, yy) in \
                 zip(focalTest[0], focalTest[1], focalRa[0], focalRa[1],
@@ -215,13 +214,12 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxra,xx,6)
             self.assertAlmostEqual(yyra,yy,6)
 
-        pixTest = calculatePixelCoordinates(xPupil=pupilTest[0], yPupil=pupilTest[1],
-                                            camera=self.cat.camera)
-        pixTestRaDec = calculatePixelCoordinates(ra=baselineData['raObserved'],
-                                   dec=baselineData['decObserved'],
-                                   epoch=self.cat.db_obj.epoch,
-                                   obs_metadata=self.cat.obs_metadata,
-                                   camera=self.cat.camera)
+        pixTest = pixelCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
+
+        pixTestRaDec = _pixelCoordsFromRaDec(baselineData['raObserved'], baselineData['decObserved'],
+                                             epoch=self.cat.db_obj.epoch,
+                                             obs_metadata=self.cat.obs_metadata,
+                                             camera=self.cat.camera)
 
         for (xxtest, yytest, xxra, yyra, xx, yy) in \
                 zip(pixTest[0], pixTest[1], pixTestRaDec[0], pixTestRaDec[1],
@@ -241,13 +239,12 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertTrue(numpy.isnan(yytest))
 
 
-        nameTest = findChipName(xPupil=pupilTest[0], yPupil=pupilTest[1],
-                                epoch=self.cat.db_obj.epoch,
-                                obs_metadata=self.cat.obs_metadata,
-                                camera=self.cat.camera)
-        nameRA = findChipName(ra=baselineData['raObserved'], dec=baselineData['decObserved'],
-                              epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
-                              camera=self.cat.camera)
+        nameTest = chipNameFromPupilCoords(pupilTest[0], pupilTest[1],
+                                           camera=self.cat.camera)
+
+        nameRA = _chipNameFromRaDec(baselineData['raObserved'], baselineData['decObserved'],
+                                    epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
+                                    camera=self.cat.camera)
 
         for (ntest, nra, ncontrol) in zip(nameTest, nameRA, baselineData['chipName']):
             if ncontrol != 'None':

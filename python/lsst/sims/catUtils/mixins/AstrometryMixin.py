@@ -11,9 +11,9 @@ from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
                             cartesianFromSpherical
 
 from lsst.sims.coordUtils.AstrometryUtils import _appGeoFromICRS, _observedFromAppGeo
-from lsst.sims.coordUtils.AstrometryUtils import _observedFromICRS, _calculatePupilCoordinates
-from lsst.sims.coordUtils.CameraUtils import findChipName, calculatePixelCoordinates
-from lsst.sims.coordUtils.CameraUtils import calculateFocalPlaneCoordinates
+from lsst.sims.coordUtils.AstrometryUtils import _observedFromICRS, _pupilCoordsFromRaDec
+from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
+from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -49,14 +49,15 @@ class AstrometryBase(object):
         raObj = self.column_by_name('raObserved')
         decObj = self.column_by_name('decObserved')
 
-        return _calculatePupilCoordinates(raObj, decObj, epoch=self.db_obj.epoch,
-                                         obs_metadata=self.obs_metadata)
+        return _pupilCoordsFromRaDec(raObj, decObj, epoch=self.db_obj.epoch,
+                                            obs_metadata=self.obs_metadata)
+
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
     allow_multiple_chips = False #this is a flag which, if true, would allow
-                                 #findChipName to return objects that land on
+                                 #chipNameFromPupilCoords to return objects that land on
                                  #multiple chips; only the first chip would be
                                  #written to the catalog
 
@@ -65,8 +66,8 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return findChipName(xPupil=xPupil, yPupil=yPupil, camera=self.camera,
-                            allow_multiple_chips=self.allow_multiple_chips)
+        return chipNameFromPupilCoords(xPupil, yPupil, camera=self.camera,
+                                       allow_multiple_chips=self.allow_multiple_chips)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
@@ -76,15 +77,15 @@ class CameraCoords(AstrometryBase):
         chipNames = self.column_by_name('chipName')
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
-        return calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, chipNames=chipNames,
-                                         camera=self.camera)
+        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNames,
+                                          camera=self.camera)
 
     @compound('xFocalPlane', 'yFocalPlane')
     def get_focalPlaneCoordinates(self):
         """Get the focal plane coordinates for all objects in the catalog."""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
-        return calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.camera)
+        return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=self.camera)
 
 class AstrometryGalaxies(AstrometryBase):
     """
