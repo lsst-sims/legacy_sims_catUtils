@@ -15,10 +15,10 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'lsst_u', 'raObserved', 'decObserved',
                       'shift']
     #to see where lsst_u comes from, see the PhotometryStars class in
-    #sims_photUtils/python/lsst/sims/photUtils/Photometry.py
+    #sims_catUtils/python/lsst/sims/catUtils/mixins/PhotometryMixin.py
     #
     #to see where raObserved and decObserved come from, see the AstrometryStars class in
-    #sims_coordUtils/python/lsst/sims/coordUtils/Astrometry.py
+    #sims_catUtils/python/lsst/sims/catUtils/AstrometryMixin.py
 
 
     #transform all of the angles into degrees
