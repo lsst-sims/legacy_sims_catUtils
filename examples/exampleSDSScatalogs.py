@@ -2,7 +2,7 @@ import os
 import numpy
 
 from lsst.utils import getPackageDir
-from lsst.sims.photUtils import loadTotalBandpassesFromFiles
+from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import EBVmixin
 from lsst.sims.catalogs.measures.instance import compound, InstanceCatalog
@@ -31,7 +31,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
             bandpassRoot = 'sdss_'
 
-            self.sdssBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.sdssBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                  bandpassRoot = bandpassRoot,
                                                                  bandpassDir = bandpassDir)
 
@@ -52,7 +52,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
             bandpassRoot = 'sdss_'
 
-            self.sdssBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.sdssBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                  bandpassRoot = bandpassRoot,
                                                                  bandpassDir = bandpassDir)
 
@@ -73,7 +73,7 @@ class sdssGalaxies(InstanceCatalog,EBVmixin,PhotometryGalaxies):
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
             bandpassRoot = 'sdss_'
 
-            self.sdssBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.sdssBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                  bandpassRoot = bandpassRoot,
                                                                  bandpassDir = bandpassDir)
 
@@ -127,7 +127,7 @@ class sdssStars(InstanceCatalog,PhotometryStars):
             bandpassDir = os.path.join(getPackageDir('throughputs'),'sdss')
             bandpassRoot = 'sdss_'
 
-            self.sdssBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.sdssBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                  bandpassRoot = bandpassRoot,
                                                                  bandpassDir = bandpassDir)
 
