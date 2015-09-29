@@ -12,7 +12,7 @@ from lsst.utils import getPackageDir
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
-from lsst.sims.photUtils import loadTotalBandpassesFromFiles, SedList
+from lsst.sims.photUtils import BandpassDict, SedList
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, PhotometryStars, Variability, \
                                       VariabilityStars, VariabilityGalaxies, EBVmixin
 
@@ -261,7 +261,7 @@ class cartoonPhotometryStars(PhotometryStars):
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if not hasattr(self, 'cartoonBandpassDict'):
-            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+            self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                                                              bandpassRoot = 'test_bandpass_')
 
 
@@ -317,7 +317,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
             bandpassDir = getPackageDir('sims_photUtils')
             bandpassDir = os.path.join(bandpassDir, 'tests', 'cartoonSedTestData')
 
-            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
@@ -340,7 +340,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
             bandpassDir = getPackageDir('sims_photUtils')
             bandpassDir = os.path.join(bandpassDir, 'tests', 'cartoonSedTestData')
 
-            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
@@ -363,7 +363,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
             bandpassDir = getPackageDir('sims_photUtils')
             bandpassDir = os.path.join(bandpassDir, 'tests', 'cartoonSedTestData')
 
-            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,
+            self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
@@ -442,7 +442,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         if not hasattr(self, 'cartoonBandpassDict'):
             bandpassNames=['u','g','r','i','z']
             bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-            self.cartoonBandpassDict = loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+            self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                                                                     bandpassRoot = 'test_bandpass_')
 
         indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \

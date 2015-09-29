@@ -7,7 +7,7 @@ from lsst.sims.catalogs.generation.utils import makeStarTestDB, myTestStars
 from lsst.sims.catalogs.generation.utils import makeGalTestDB, myTestGals
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
-from lsst.sims.photUtils import loadTotalBandpassesFromFiles
+from lsst.sims.photUtils import BandpassDict
 
 class FakeStellarVariabilityMixin(object):
 
@@ -35,7 +35,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
     @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y')
     def get_test_mags(self):
         if not hasattr(self, 'variabilitybandpassDict'):
-            self.variabilityBandpassDict = loadTotalBandpassesFromFiles()
+            self.variabilityBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_mags._colnames) \
                    if name in self._actually_calculated_columns]
@@ -96,7 +96,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
     def get_test_bulge_mags(self):
 
         if not hasattr(self, 'testBandpassDict'):
-            self.testBandpassDict = loadTotalBandpassesFromFiles()
+            self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_bulge_mags._colnames) \
                    if name in self._actually_calculated_columns]
@@ -114,7 +114,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
     def get_test_disk_mags(self):
 
         if not hasattr(self, 'testBandpassDict'):
-            self.testBandpassDict = loadTotalBandpassesFromFiles()
+            self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_disk_mags._colnames) \
                    if name in self._actually_calculated_columns]
@@ -132,7 +132,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
     def get_test_agn_mags(self):
 
         if not hasattr(self, 'testBandpassDict'):
-            self.testBandpassDict = loadTotalBandpassesFromFiles()
+            self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_agn_mags._colnames) \
                    if name in self._actually_calculated_columns]

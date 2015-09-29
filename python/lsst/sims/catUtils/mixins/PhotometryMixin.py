@@ -15,7 +15,7 @@ import numpy
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, magErrorFromSNR, \
-                                loadTotalBandpassesFromFiles
+                                BandpassDict
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.photUtils import SedList
@@ -68,7 +68,7 @@ class PhotometryBase(object):
         m5Defaults = None
 
         if not hasattr(self, '_gammaList') or \
-        len(self._gammaList) != bandpassDict.nBandpasses:
+        len(self._gammaList) != len(bandpassDict):
 
             mm = []
             gg = []
@@ -324,7 +324,7 @@ class PhotometryGalaxies(PhotometryBase):
         if sedList is None:
             magnitudes = numpy.ones((len(columnNameList), 0))
         else:
-            magnitudes = bandpassDict.calcMagListFromSedList(sedList, indices=indices).transpose()
+            magnitudes = bandpassDict.magListForSedList(sedList, indices=indices).transpose()
 
         if self._hasCosmoDistMod():
             cosmoDistMod = self.column_by_name('cosmologicalDistanceModulus')
@@ -417,7 +417,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = loadTotalBandpassesFromFiles()
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # totally optional; list the indices in self.lsstBandpassDict
         # of the columns which will actually be output (so that we don't
@@ -443,7 +443,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = loadTotalBandpassesFromFiles()
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # totally optional; list the indices in self.lsstBandpassDict
         # of the columns which will actually be output (so that we don't
@@ -468,7 +468,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = loadTotalBandpassesFromFiles()
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # totally optional; list the indices in self.lsstBandpassDict
         # of the columns which will actually be output (so that we don't
@@ -573,7 +573,7 @@ class PhotometryStars(PhotometryBase):
         if not hasattr(self, '_sedList'):
             magnitudes = numpy.ones((len(columnNameList),0))
         else:
-            magnitudes = bandpassDict.calcMagListFromSedList(self._sedList, indices=indices).transpose()
+            magnitudes = bandpassDict.magListForSedList(self._sedList, indices=indices).transpose()
 
         for ix, columnName in enumerate(columnNameList):
             if indices is None or ix in indices:
@@ -610,7 +610,7 @@ class PhotometryStars(PhotometryBase):
         getter for LSST stellar magnitudes
         """
         if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = loadTotalBandpassesFromFiles()
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames) \
                    if name in self._actually_calculated_columns]

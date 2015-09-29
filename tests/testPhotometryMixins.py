@@ -11,7 +11,7 @@ from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils import loadTotalBandpassesFromFiles, loadBandpassesFromFiles
+from lsst.sims.photUtils import BandpassDict
 from lsst.sims.photUtils import PhotometricParameters, calcSNR_m5, LSSTdefaults
 from lsst.sims.photUtils import calcSNR_sed, magErrorFromSNR
 from lsst.sims.photUtils.utils import setM5
@@ -555,11 +555,11 @@ class photometryUnitTest(unittest.TestCase):
         that the appropriate magnitudes are or are not Nan
         """
         starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
-        starPhot = loadTotalBandpassesFromFiles()
+        starPhot = BandpassDict.loadTotalBandpassesFromFiles()
         testSed = Sed()
         testSed.readSED_flambda(starName)
         indices = [1,3]
-        mags = starPhot.calcMagListFromSed(testSed, indices=indices)
+        mags = starPhot.magListForSed(testSed, indices=indices)
         self.assertTrue(numpy.isnan(mags[0]))
         self.assertFalse(numpy.isnan(mags[1]))
         self.assertTrue(numpy.isnan(mags[2]))
@@ -606,7 +606,7 @@ class UncertaintyMixinTest(unittest.TestCase):
         Test the calculateMagnitudeUncertainty raises exceptions when it needs to
         """
         phot = PhotometryBase()
-        totalDict, hardwareDict = loadBandpassesFromFiles()
+        totalDict, hardwareDict = BandpassDict.loadBandpassesFromFiles()
         magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
         shortMagnitudes = numpy.array([22.0])
         self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes, totalDict)
@@ -631,10 +631,10 @@ class UncertaintyMixinTest(unittest.TestCase):
         """
 
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        bandpassDict = loadTotalBandpassesFromFiles()
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         phot = PhotometryBase()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
 
@@ -670,9 +670,9 @@ class UncertaintyMixinTest(unittest.TestCase):
         phot = PhotometryBase()
         phot.photParams = photParams
 
-        bandpassDict = loadTotalBandpassesFromFiles()
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
 
@@ -715,9 +715,9 @@ class UncertaintyMixinTest(unittest.TestCase):
         phot = PhotometryBase()
         phot.photParams = photParams
 
-        bandpassDict = loadTotalBandpassesFromFiles()
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
 
