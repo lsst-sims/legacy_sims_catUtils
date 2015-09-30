@@ -55,6 +55,7 @@ class testStarDBObject(CatalogDBObject):
     idColKey = 'id'
     raColName = 'ra'
     decColName = 'decl'
+    objectTypeId = 49
     columns = [('id','simobjid', int),
                ('raJ2000', 'ra*PI()/180.'),
                ('decJ2000', 'decl*PI()/180.'),
@@ -62,7 +63,7 @@ class testStarDBObject(CatalogDBObject):
                ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
                ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
                ('parallax', 'parallax*PI()/648000000.'),
-               ('galacticAv', 'CONVERT(float, ebv*3.1)'),
+               ('galacticAv', '3.1*ebv'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', str, 40)]
@@ -75,6 +76,7 @@ class testGalaxyDBObject(CatalogDBObject):
     idColKey = 'galtileid'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
     decColName = 'dec'
+    objectTypeId = 51
 
     columns = [('galtileid', None, numpy.int64),
             ('galid', None, str, 30),
@@ -385,7 +387,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                      ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float)])
-
 
             testCat.write_catalog(testName)
             baselineCat.write_catalog(baseName)

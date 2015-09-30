@@ -11,10 +11,14 @@ from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
+from lsst.sims.photUtils import BandpassDict
+from lsst.sims.photUtils import PhotometricParameters, calcSNR_m5, LSSTdefaults
+from lsst.sims.photUtils import calcSNR_sed, magErrorFromSNR
+from lsst.sims.photUtils.utils import setM5
 from lsst.sims.catUtils.utils import cartoonStars, cartoonGalaxies, testStars, testGalaxies, \
                                      cartoonStarsOnlyI, cartoonStarsIZ, \
                                      cartoonGalaxiesIG, galaxiesWithHoles
-from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
+from lsst.sims.catUtils.mixins import PhotometryBase, PhotometryStars, PhotometryGalaxies
 
 
 class variabilityUnitTest(unittest.TestCase):
@@ -251,168 +255,6 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-    def testStandAloneStellarPhotometry(self):
-        """
-        Test that it is possible to run PhotometryStars.calculate_magnitudes
-        outside of the context of an InstanceCatalog
-        """
-        objectID = ['1','2','3']
-        sedNames = ['km20_5750.fits_g40_5790','m2.0Full.dat',
-                     'bergeron_6500_85.dat_6700']
-        magNorm = [28.5, 23.0, 21.0]
-
-        dummyId = ['1', '2']
-        dummySed = ['km20_5750.fits_g40_5790','m2.0Full.dat']
-        dummyMagNorm = [28.5, 23.0]
-        bandpassNames = ['u','g','r','i','z','y']
-
-        phot = PhotometryStars()
-        phot.loadTotalBandpassesFromFiles(bandpassNames)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
-                          objectID=dummyId, sedNames=sedNames, magNorm=magNorm)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
-                          objectID=objectID, sedNames=dummySed, magNorm=magNorm)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
-                          objectID=objectID, sedNames=sedNames, magNorm=dummyMagNorm)
-
-        magnitudes = phot.calculate_magnitudes(objectID=objectID, sedNames=sedNames,
-                                               magNorm=magNorm)
-        for n in objectID:
-            self.assertTrue(len(magnitudes[n])==len(bandpassNames)) #to make sure we calculated all the magnitudes
-
-    def testGalaxyPhotometryStandAlone(self):
-        objectID = ['Alice', 'Bob', 'Charlie']
-
-        diskSeds = ['Const.80E07.02Z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
-        diskMagNorm = [24.2, 28.1, 29.0]
-        diskAv = [3.1, 3.2, 2.9]
-
-        bulgeSeds = ['Inst.80E07.002Z.spec','Const.80E07.02Z.spec','Burst.19E07.0005Z.spec']
-        bulgeMagNorm = [25.0, 28.0, 27.1]
-        bulgeAv = [2.8, 3.2, 3.3]
-
-        agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
-        agnMagNorm = [22.0, 23.0, 26.0]
-
-        redshift = [0.2, 0.3, 1.1]
-        cosmologicalDistanceModulus = [5.0, 3.0, 4.5]
-
-        diskSedsDummy = ['Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
-        diskMagNormDummy = [28.1, 29.0]
-        diskAvDummy = [3.2, 2.9]
-
-        bulgeSedsDummy = ['Const.80E07.02Z.spec','Burst.19E07.0005Z.spec']
-        bulgeMagNormDummy = [28.0, 27.1]
-        bulgeAvDummy = [3.2, 3.3]
-
-        agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
-        agnMagNorm = [22.0, 23.0, 26.0]
-
-        agnSedsDummy = ['agn.spec', 'agn.spec']
-        agnMagNormDummy = [22.0, 26.0]
-
-        redshiftDummy = [0.3, 1.1]
-        cosmologicalDistanceModulusDummy = [3.0, 4.5]
-
-        phot = PhotometryGalaxies()
-        phot.loadTotalBandpassesFromFiles(bandpassNames=['u','g','r','i','z','y'])
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,
-                          redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          diskNames=diskSeds, diskMagNorm=diskMagNormDummy, diskAv=diskAvDummy,
-                          redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          diskNames=diskSeds, diskMagNorm=diskMagNorm, diskAv=diskAvDummy,
-                          redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSedsDummy, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
-                          redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNormDummy, bulgeAv=bulgeAv,
-                          redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAvDummy,
-                          redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          agnNames=agnSedsDummy, agnMagNorm=agnMagNorm)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          agnNames=agnSeds, agnMagNorm=agnMagNormDummy)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
-                          redshift=redshiftDummy)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
-                          redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulusDummy)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, redshift=redshift)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeAv=bulgeAv, redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          diskNames=diskSeds, diskMagNorm=diskMagNorm, redshift=redshift)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          diskNames=diskSeds, diskAv=diskAv, redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          agnNames=agnSeds, redshift=redshift)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          diskNames=diskSeds, diskMagNorm=diskMagNorm, diskAv=diskAv)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes, objectID,
-                          agnNames=agnSeds, agnMagNorm=agnMagNorm)
-
-        bulgeNamePossibilities = [bulgeSeds, None]
-        diskNamePossibilities = [diskSeds, None]
-        agnNamePossibilities = [agnSeds, None]
-
-        for bulgeNames in bulgeNamePossibilities:
-            for diskNames in diskNamePossibilities:
-                for agnNames in agnNamePossibilities:
-
-                    magnitudes = phot.calculate_magnitudes(objectID, redshift=redshift,
-                                                           bulgeNames=bulgeNames, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
-                                                           diskNames=diskNames, diskMagNorm=diskMagNorm, diskAv=diskAv,
-                                                           agnNames=agnNames, agnMagNorm=agnMagNorm)
-
-                    for name in objectID:
-                        for i in range(len(phot.bandpassDict)):
-                            flux=0.0
-                            if bulgeNames is None:
-                                self.assertTrue(numpy.isnan(magnitudes[name]['bulge'][i]))
-                            else:
-                                self.assertTrue(magnitudes[name]['bulge'][i] is not None)
-                                self.assertFalse(numpy.isnan(magnitudes[name]['bulge'][i]))
-                                flux += numpy.power(10.0, -0.4*(magnitudes[name]['bulge'][i]-22.0))
-
-                            if diskNames is None:
-                                self.assertTrue(numpy.isnan(magnitudes[name]['disk'][i]))
-                            else:
-                                self.assertTrue(magnitudes[name]['disk'][i] is not None)
-                                self.assertFalse(numpy.isnan(magnitudes[name]['disk'][i]))
-                                flux += numpy.power(10.0, -0.4*(magnitudes[name]['disk'][i]-22.0))
-
-                            if agnNames is None:
-                                self.assertTrue(numpy.isnan(magnitudes[name]['agn'][i]))
-                            else:
-                                self.assertTrue(magnitudes[name]['agn'][i] is not None)
-                                self.assertFalse(numpy.isnan(magnitudes[name]['agn'][i]))
-                                flux += numpy.power(10.0, -0.4*(magnitudes[name]['agn'][i]-22.0))
-
 
     def testAlternateBandpassesStars(self):
         """
@@ -457,7 +299,7 @@ class photometryUnitTest(unittest.TestCase):
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
         mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-        self.assertTrue(len(mags)==len(test_cat.bandpassDict))
+        self.assertTrue(len(mags)==len(test_cat.cartoonBandpassDict))
         self.assertTrue(len(mags)>0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
@@ -470,45 +312,142 @@ class photometryUnitTest(unittest.TestCase):
         the same as testAlternateBandpassesStars, but for galaxies
         """
 
+        catName = 'testAlternateBandpassesGalaxies.txt'
+
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                                boundLength=10.0)
 
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testGalaxiesCartoon.txt")
+        test_cat.write_catalog(catName)
 
-        cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-        testBandPasses = {}
+        dtype = numpy.dtype([
+                             ('galid', numpy.int),
+                             ('ra', numpy.float),
+                             ('dec', numpy.float),
+                             ('uTotal', numpy.float),
+                             ('gTotal', numpy.float),
+                             ('rTotal', numpy.float),
+                             ('iTotal', numpy.float),
+                             ('zTotal', numpy.float),
+                             ('uBulge', numpy.float),
+                             ('gBulge', numpy.float),
+                             ('rBulge', numpy.float),
+                             ('iBulge', numpy.float),
+                             ('zBulge', numpy.float),
+                             ('uDisk', numpy.float),
+                             ('gDisk', numpy.float),
+                             ('rDisk', numpy.float),
+                             ('iDisk', numpy.float),
+                             ('zDisk', numpy.float),
+                             ('uAgn', numpy.float),
+                             ('gAgn', numpy.float),
+                             ('rAgn', numpy.float),
+                             ('iAgn', numpy.float),
+                             ('zAgn', numpy.float),
+                             ('bulgeName', str, 200),
+                             ('bulgeNorm', numpy.float),
+                             ('bulgeAv', numpy.float),
+                             ('diskName', str, 200),
+                             ('diskNorm', numpy.float),
+                             ('diskAv', numpy.float),
+                             ('agnName', str, 200),
+                             ('agnNorm', numpy.float),
+                             ('redshift', numpy.float)
+                            ])
+
+        catData = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
+
+        cartoonDir = lsst.utils.getPackageDir('sims_photUtils')
+        cartoonDir = os.path.join(cartoonDir, 'tests', 'cartoonSedTestData')
+        sedDir = lsst.utils.getPackageDir('sims_sed_library')
+
+        testBandpasses = {}
         keys = ['u','g','r','i','z']
 
-        bplist = []
-
         for kk in keys:
-            testBandPasses[kk] = Bandpass()
-            testBandPasses[kk].readThroughput(os.path.join(cartoonDir,"test_bandpass_%s.dat" % kk))
-            bplist.append(testBandPasses[kk])
+            testBandpasses[kk] = Bandpass()
+            testBandpasses[kk].readThroughput(os.path.join(cartoonDir,"test_bandpass_%s.dat" % kk))
 
-        sedObj = Sed()
-        phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
+        imsimBand = Bandpass()
+        imsimBand.imsimBandpass()
 
-        components = ['Bulge', 'Disk', 'Agn']
+        specMap = defaultSpecMap
 
         ct = 0
-        for cc in components:
-            i = 0
+        for line in catData:
+            bulgeMagList = []
+            diskMagList = []
+            agnMagList = []
+            if line['bulgeName'] == 'None':
+                for bp in keys:
+                    self.assertTrue(numpy.isnan(line['%sBulge' % bp]))
+                    bulgeMagList.append(numpy.NaN)
+            else:
+                ct += 1
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['bulgeName']]))
+                fnorm = dummySed.calcFluxNorm(line['bulgeNorm'], imsimBand)
+                dummySed.multiplyFluxNorm(fnorm)
+                a_int, b_int = dummySed.setupCCMab()
+                dummySed.addCCMDust(a_int, b_int, A_v=line['bulgeAv'])
+                dummySed.redshiftSED(line['redshift'], dimming=True)
+                dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
+                for bpName in keys:
+                    mag = dummySed.calcMag(testBandpasses[bpName])
+                    self.assertAlmostEqual(mag, line['%sBulge' % bpName], 10)
+                    bulgeMagList.append(mag)
 
-            for ss in test_cat.sedMasterDict[cc]:
-                if ss.wavelen != None:
-                    ss.resampleSED(wavelen_match = bplist[0].wavelen)
-                    ss.flambdaTofnu()
-                    mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-                    for j in range(len(mags)):
-                        ct += 1
-                        self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
-                i += 1
+            if line['diskName'] == 'None':
+                for bp in keys:
+                    self.assertTrue(numpy.isnan(line['%sDisk' % bp]))
+                    diskMagList.append(numpy.NaN)
+            else:
+                ct += 1
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['diskName']]))
+                fnorm = dummySed.calcFluxNorm(line['diskNorm'], imsimBand)
+                dummySed.multiplyFluxNorm(fnorm)
+                a_int, b_int = dummySed.setupCCMab()
+                dummySed.addCCMDust(a_int, b_int, A_v=line['diskAv'])
+                dummySed.redshiftSED(line['redshift'], dimming=True)
+                dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
+                for bpName in keys:
+                    mag = dummySed.calcMag(testBandpasses[bpName])
+                    self.assertAlmostEqual(mag, line['%sDisk' % bpName], 10)
+                    diskMagList.append(mag)
+
+            if line['agnName'] == 'None':
+                for bp in keys:
+                    self.assertTrue(numpy.isnan(line['%sAgn' % bp]))
+                    agnMagList.append(numpy.NaN)
+            else:
+                ct += 1
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['agnName']]))
+                fnorm = dummySed.calcFluxNorm(line['agnNorm'], imsimBand)
+                dummySed.multiplyFluxNorm(fnorm)
+                dummySed.redshiftSED(line['redshift'], dimming=True)
+                dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
+                for bpName in keys:
+                    mag = dummySed.calcMag(testBandpasses[bpName])
+                    self.assertAlmostEqual(mag, line['%sAgn' % bpName], 10)
+                    agnMagList.append(mag)
+
+            totalMags = PhotometryGalaxies().sum_magnitudes(bulge=numpy.array(bulgeMagList),
+                                                            disk=numpy.array(diskMagList),
+                                                            agn=numpy.array(agnMagList))
+
+            for testMag, bpName in zip(totalMags, keys):
+                if numpy.isnan(line['%sTotal' % bpName]):
+                    self.assertTrue(numpy.isnan(testMag))
+                else:
+                    self.assertAlmostEqual(testMag, line['%sTotal' % bpName],10)
+
 
         self.assertTrue(ct>0)
-        os.unlink("testGalaxiesCartoon.txt")
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testStellarPhotometryIndices(self):
         """
@@ -616,12 +555,11 @@ class photometryUnitTest(unittest.TestCase):
         that the appropriate magnitudes are or are not Nan
         """
         starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
-        starPhot = PhotometryStars()
-        starPhot.loadTotalBandpassesFromFiles()
+        starPhot = BandpassDict.loadTotalBandpassesFromFiles()
         testSed = Sed()
         testSed.readSED_flambda(starName)
         indices = [1,3]
-        mags = starPhot.manyMagCalc_list(testSed, indices=indices)
+        mags = starPhot.magListForSed(testSed, indices=indices)
         self.assertTrue(numpy.isnan(mags[0]))
         self.assertFalse(numpy.isnan(mags[1]))
         self.assertTrue(numpy.isnan(mags[2]))
@@ -631,11 +569,194 @@ class photometryUnitTest(unittest.TestCase):
         self.assertTrue(len(mags)==6)
 
 
+class UncertaintyMixinTest(unittest.TestCase):
+    def setUp(self):
+        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        self.starSED = Sed()
+        self.starSED.readSED_flambda(starName)
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
+        fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
+        self.starSED.multiplyFluxNorm(fNorm)
+
+        self.totalBandpasses = []
+        self.hardwareBandpasses = []
+
+        componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                         'lens1.dat', 'lens2.dat', 'lens3.dat']
+        hardwareComponents = []
+        for c in componentList:
+            hardwareComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline',c))
+
+        self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
+        for b in self.bandpasses:
+            filterName = os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','filter_%s.dat' % b)
+            components = hardwareComponents + [filterName]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.hardwareBandpasses.append(bandpassDummy)
+            components = components + [os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','atmos.dat')]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.totalBandpasses.append(bandpassDummy)
+
+
+    def testUncertaintyExceptions(self):
+        """
+        Test the calculateMagnitudeUncertainty raises exceptions when it needs to
+        """
+        phot = PhotometryBase()
+        totalDict, hardwareDict = BandpassDict.loadBandpassesFromFiles()
+        magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
+        shortMagnitudes = numpy.array([22.0])
+        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes, totalDict)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
+        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, totalDict, \
+                          obs_metadata=obs_metadata)
+
+        photParams = PhotometricParameters()
+        shortGamma = numpy.array([1.0, 1.0])
+        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), shortMagnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, shortMagnitudes, totalDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), magnitudes, photParams, gamma=shortGamma)
+        snr, gg = calcSNR_m5(magnitudes, totalDict.values(), magnitudes, photParams)
+
+
+
+
+    def testRawUncertainty(self):
+        """
+        Test that values calculated by calculatePhotometricUncertainty agree
+        with values calculated by calcSNR_sed
+        """
+
+        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        phot = PhotometryBase()
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
+
+        skySeds = []
+
+        for i in range(len(self.bandpasses)):
+            skyDummy = Sed()
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
+                                       self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                       photParams=PhotometricParameters())
+
+            skySeds.append(normalizedSkyDummy)
+
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
+        for i in range(len(self.bandpasses)):
+            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                              photParams=PhotometricParameters())
+
+            ss = 2.5*numpy.log10(1.0+1.0/snr)
+            ss = numpy.sqrt(ss*ss + numpy.power(phot.photParams.sigmaSys,2))
+            msg = '%e is not %e; failed' % (ss, sigma[i])
+            self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
+
+    def testSystematicUncertainty(self):
+        """
+        Test that systematic uncertainty is added correctly.
+        """
+        sigmaSys = 0.002
+        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
+        photParams= PhotometricParameters(sigmaSys=sigmaSys)
+
+        phot = PhotometryBase()
+        phot.photParams = photParams
+
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
+
+        skySeds = []
+
+        for i in range(len(self.bandpasses)):
+            skyDummy = Sed()
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
+                                                       self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                                       photParams=PhotometricParameters())
+
+            skySeds.append(normalizedSkyDummy)
+
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
+        for i in range(len(self.bandpasses)):
+            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                              photParams=PhotometricParameters())
+
+            testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
+                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=0.0))
+
+            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
+                                                               % (snr, testSNR[0]))
+
+            control = numpy.sqrt(numpy.power(magErrorFromSNR(testSNR),2) + numpy.power(sigmaSys,2))
+
+            msg = '%e is not %e; failed' % (sigma[i], control)
+
+            self.assertAlmostEqual(sigma[i], control, 10, msg=msg)
+
+
+    def testNoSystematicUncertainty(self):
+        """
+        Test that systematic uncertainty is handled correctly when set to None.
+        """
+        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
+        photParams= PhotometricParameters(sigmaSys=0.0)
+
+        phot = PhotometryBase()
+        phot.photParams = photParams
+
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
+
+        skySeds = []
+
+        for i in range(len(self.bandpasses)):
+            skyDummy = Sed()
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
+                                                       self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                                       photParams=PhotometricParameters())
+
+            skySeds.append(normalizedSkyDummy)
+
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
+        for i in range(len(self.bandpasses)):
+            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                              photParams=PhotometricParameters())
+
+            testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
+                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=0.0))
+
+            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
+                                                               % (snr, testSNR[0]))
+
+            control = magErrorFromSNR(testSNR)
+
+            msg = '%e is not %e; failed' % (sigma[i], control)
+
+            self.assertAlmostEqual(sigma[i], control, 10, msg=msg)
+
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
+    suites += unittest.makeSuite(UncertaintyMixinTest)
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 

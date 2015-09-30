@@ -14,12 +14,86 @@ import os
 import numpy
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcMagError_m5, PhotometricParameters, magErrorFromSNR
+                                calcMagError_m5, PhotometricParameters, magErrorFromSNR, \
+                                BandpassDict
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.photUtils import PhotometryBase
+from lsst.sims.photUtils import SedList
 
-__all__ = ["PhotometryGalaxies", "PhotometryStars"]
+__all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
+
+
+class PhotometryBase(object):
+    """
+    This class provides an InstanceCatalog with a member variable photParams,
+    which is an instance of the class PhotometricParameters.
+
+    It also provides the method calculateMagnitudeUncertainty, which takes magnitudes,
+    a BandpassDict, and an ObservationMetaData as inputs and returns the uncertainties
+    on those magnitudes.
+    """
+
+    #an object carrying around photometric parameters like readnoise, effective area, plate scale, etc.
+    #defaults to LSST values
+    photParams = PhotometricParameters()
+
+    def calculateMagnitudeUncertainty(self, magnitudes, bandpassDict, obs_metadata=None):
+        """
+        Calculate the uncertainty in magnitudes using the model from equation (5) of arXiv:0805.2366
+
+        @param [in] magnitudes is a numpy array containing the object magnitudes.  Every row corresponds to
+        a bandpass, which is to say that magnitudes[i][j] is the magnitude of the jth object in the
+        bandpass characterized by self.bandpassDict.values()[i]
+
+        @param [in] bandpassDict is a BandpassDict characterizing the bandpasses being used
+
+        @param [in] obs_metadata is the metadata of this observation (mostly desired because
+        it will contain information about m5, the magnitude at which objects are detected
+        at the 5-sigma limit in each bandpass)
+
+        @param [out] a 1-dimensional numpy array containing the magntiude uncertainty
+        corresponding to the magnitudes passed into this method.
+        """
+
+        if obs_metadata is None:
+            raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
+
+        if magnitudes.shape[0] != len(bandpassDict):
+            raise RuntimeError("Passed %d magnitudes to " % magnitudes.shape[0] + \
+                                " PhotometryBase.calculatePhotometricUncertainty; " + \
+                                "needed %d " % len(bandpassDict))
+
+        #if we have not run this method before, calculate and cache the m5 and gamma parameter
+        #values (see eqn 5 of arXiv:0805.2366) for future use
+        m5Defaults = None
+
+        if not hasattr(self, '_gammaList') or \
+        len(self._gammaList) != len(bandpassDict):
+
+            mm = []
+            gg = []
+            for b in bandpassDict.keys():
+                if b in obs_metadata.m5:
+                    mm.append(obs_metadata.m5[b])
+                    gg.append(calcGamma(bandpassDict[b], obs_metadata.m5[b],
+                              photParams=self.photParams))
+                else:
+                    if m5Defaults is None:
+                        m5Defaults = LSSTdefaults()
+
+                    try:
+                        mm.append(m5Defaults.m5(b))
+                        gg.append(m5Defaults.gamma(b))
+                    except:
+                        raise RuntimeError("No way to calculate gamma or m5 for filter %s " % b)
+
+            self._m5List = numpy.array(mm)
+            self._gammaList = numpy.array(gg)
+
+        error = calcMagError_m5(magnitudes, bandpassDict.values(), self._m5List,
+                                gamma=self._gammaList, photParams=self.photParams)
+
+        return error
 
 
 class PhotometryGalaxies(PhotometryBase):
@@ -28,84 +102,105 @@ class PhotometryGalaxies(PhotometryBase):
     galaxies.  It assumes that we want LSST filters.
     """
 
-    def calculate_component_magnitudes(self,objectID, componentNames, \
-                                       magNorm = None, internalAv = None, redshift = None,
-                                       cosmologicalDistanceModulus = None, specFileMap=None,
-                                       indices=None):
-
+    def _hasCosmoDistMod(self):
         """
-        Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
-        This method is designed to be used such that you feed it all of the disk Seds from your data
-        base and it returns the associated magnitudes.  Then you feed it all of the bulge Seds, etc.
+        Determine whether or not this InstanceCatalog has a column
+        specifically devoted to the cosmological distance modulus.
+        """
+        if 'cosmologicalDistanceModulus' in self._all_available_columns:
+            return True
+        return False
 
-        @param [in] objectID is the name of the galaxies (the whole galaxies)
 
-        @param [in] componentNames gives the name of the SED filenames
+    def _loadBulgeSedList(self, wavelen_match):
+        """
+        Load a SedList of galaxy bulge Seds.
+        The list will be stored in the variable self._bulgeSedList.
 
-        @param [in] magNorm is the normalizing magnitude
-
-        @param [in] internalAv is the internal Av extinction
-
-        @param [in] redshift is pretty self-explanatory
-
-        @param [in] cosmologicalDistanceModulus is the effective distance modulus due to cosmological
-        expansion (if that has not already been accounted for in magNorm).  This is optional.
-
-        @param [in] specFileMap is a mapping between the filenames in diskNames, bulgeNames, and agnNames
-        and the absolute locations of the corresponding files.  It is an instantiation of the class defined
-        in
-
-        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
-
-        If not provided, a default will be instantiated.
-
-        @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for
-
-        @param [out] componentMags is a dict of lists such that
-        magnitude["objectname"][i] will return the magnitude in the ith
-        for the associated component Sed
-
+        @param [in] wavelen_match is the wavelength grid (in nm)
+        on which the Seds are to be sampled.
         """
 
+        sedNameList = self.column_by_name('sedFilenameBulge')
+        magNormList = self.column_by_name('magNormBulge')
+        redshiftList = self.column_by_name('redshift')
+        internalAvList = self.column_by_name('internalAvBulge')
+        cosmologicalDimming = not self._hasCosmoDistMod()
 
-        componentMags = {}
+        if len(sedNameList)==0:
+            return numpy.ones((0))
 
-        if cosmologicalDistanceModulus is None:
-            # if there is not a separate column for cosmologicalDistanceModulus,
-            # assume that magNorm includes the distance effects of redshift but
-            # not the additional 1/(1+z) dimming.  This is how magNorms
-            # on the University of Washington LSST database work.
-            cosmologicalDimming = True
+        if not hasattr(self, '_bulgeSedList'):
+            self._bulgeSedList = SedList(sedNameList, magNormList,
+                                               internalAvList=internalAvList,
+                                               redshiftList=redshiftList,
+                                               cosmologicalDimming=cosmologicalDimming,
+                                               wavelenMatch=wavelen_match)
         else:
-            cosmologicalDimming = False
+            self._bulgeSedList.flush()
+            self._bulgeSedList.loadSedsFromList(sedNameList, magNormList,
+                                               internalAvList=internalAvList,
+                                               redshiftList=redshiftList)
 
-        if componentNames != [] and componentNames is not None:
-            componentSed = self.loadSeds(componentNames, magNorm = magNorm, specFileMap=specFileMap)
 
-            if internalAv is not None:
-                self.applyAv(componentSed, internalAv)
+    def _loadDiskSedList(self, wavelen_match):
+        """
+        Load a SedList of galaxy disk Seds.
+        The list will be stored in the variable self._bulgeSedList.
 
-            if redshift is not None:
-                self.applyRedshift(componentSed, redshift, dimming=cosmologicalDimming)
+        @param [in] wavelen_match is the wavelength grid (in nm)
+        on which the Seds are to be sampled.
+        """
 
-            for i in range(len(objectID)):
-                subList = self.manyMagCalc_list(componentSed[i], indices=indices)
+        sedNameList = self.column_by_name('sedFilenameDisk')
+        magNormList = self.column_by_name('magNormDisk')
+        redshiftList = self.column_by_name('redshift')
+        internalAvList = self.column_by_name('internalAvDisk')
+        cosmologicalDimming = not self._hasCosmoDistMod()
 
-                if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
-                    for j in range(len(subList)):
-                        subList[j] += cosmologicalDistanceModulus[i]
+        if len(sedNameList)==0:
+            return numpy.ones((0))
 
-                componentMags[objectID[i]] = subList
-
+        if not hasattr(self, '_diskSedList'):
+            self._diskSedList = SedList(sedNameList, magNormList,
+                                               internalAvList=internalAvList,
+                                               redshiftList=redshiftList,
+                                               cosmologicalDimming=cosmologicalDimming,
+                                               wavelenMatch=wavelen_match)
         else:
-            subList=[]
-            for i in range(self.nBandpasses):
-                subList.append(numpy.NaN)
-            for i in range(len(objectID)):
-                componentMags[objectID[i]]=subList
+            self._diskSedList.flush()
+            self._diskSedList.loadSedsFromList(sedNameList, magNormList,
+                                               internalAvList=internalAvList,
+                                               redshiftList=redshiftList)
 
-        return componentMags
+
+    def _loadAgnSedList(self, wavelen_match):
+        """
+        Load a SedList of galaxy AGN Seds.
+        The list will be stored in the variable self._bulgeSedList.
+
+        @param [in] wavelen_match is the wavelength grid (in nm)
+        on which the Seds are to be sampled.
+        """
+
+        sedNameList = self.column_by_name('sedFilenameAgn')
+        magNormList = self.column_by_name('magNormAgn')
+        redshiftList = self.column_by_name('redshift')
+        cosmologicalDimming = not self._hasCosmoDistMod()
+
+        if len(sedNameList)==0:
+            return numpy.ones((0))
+
+        if not hasattr(self, '_agnSedList'):
+            self._agnSedList = SedList(sedNameList, magNormList,
+                                               redshiftList=redshiftList,
+                                               cosmologicalDimming=cosmologicalDimming,
+                                               wavelenMatch=wavelen_match)
+        else:
+            self._agnSedList.flush()
+            self._agnSedList.loadSedsFromList(sedNameList, magNormList,
+                                               redshiftList=redshiftList)
+
 
     def sum_magnitudes(self, disk = None, bulge = None, agn = None):
         """
@@ -182,302 +277,69 @@ class PhotometryGalaxies(PhotometryBase):
                 return numpy.NaN
 
 
-
-    def calculate_magnitudes(self, objectID, diskNames=None, diskMagNorm=None, diskAv=None,
-                             bulgeNames=None, bulgeMagNorm=None, bulgeAv=None,
-                             agnNames=None, agnMagNorm=None,
-                             redshift=None, cosmologicalDistanceModulus=None, specFileMap=None,
-                             indices=None):
+    def _magnitudeGetter(self, componentName, bandpassDict,
+                         columnNameList, indices=None):
         """
-        Take the array of bandpasses in self.bandpassDict and the array of galaxy
-        names objectID ane return a dict of dicts of lists of magnitudes
+        A generic getter for magnitudes of galaxy components.
 
-        the first level key is galid (the name of the galaxy)
+        @param [in] componentName is either 'bulge', 'disk', or 'agn'
 
-        the second level key is "bulge", "disk", or "agn"
+        @param [in] bandpassDict is a BandpassDict of the bandpasses
+        in which to calculate the magnitudes
 
-        this yields a list of magnitudes corresponding to the bandpasses in self.bandpassDict
+        @param [in] columnNameList is a list of the columns corresponding to
+        these magnitudes (for purposes of applying variability).
 
-        We need to index the galaxies by some unique identifier, such as galid
-        because it is possible for galaxies to have the same sed filenames but
-        different normalizations
+        @param [in] indices is an optional list of ints corresponding to
+        the index in bandpassDict of the magnitudes that will actually
+        be output by the InstanceCatalog
 
-        @param [in] objectID is a list of names uniquely identifying the objects whose magnitudes
-        are being calculated
-
-        @param [in] diskNames is a list of the names of the files containing disk SEDs
-
-        @param [in] diskMagNorm is a list of magnitude normalizations for disk SEDs
-
-        @param [in] diskAv is a list of extinction Av due to dust internal to the disk of the galaxy
-
-        @param [in] bulgeNames is a list of the names of the files containing bulge SEDs
-
-        @param [in] bulgeMagNorm is a list of the magnitude normalizations of the bulge SEDs
-
-        @param [in] bulgeAv is a ist of extinction Av due to dust internal to the bulge of the galaxy
-
-        @param [in] agnNames is a list of the names of the files containing AGN SEDs
-
-        @param [in] agnMagNorm is a list of the magnitude normalizations of the AGN SEDs
-
-        @param [in] redshift is a list of the redshifts of the galaxies
-
-        @param [in] cosmologicalDistanceModulus is a list of the distance modulii due to
-        cosmological expansion (assuming that has not been accounted for by the magNorms).
-        This is optional.
-
-        @param [in] specFileMap is a mapping between the filenames in diskNames, bulgeNames, and agnNames
-        and the absolute locations of the corresponding files.  It is an instantiation of the class defined
-        in
-
-        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
-
-        If not provided, a default will be instantiated.
-
-        @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for
-
-        @param [out] masterDict is a dict of magnitudes such that
-        masterDict['AAA']['BBB'][i] is the magnitude in the ith bandpass of component BBB of galaxy AAA
-
-
+        @param [out] magnitudes is a 2-D numpy array of magnitudes in which
+        rows correspond to bandpasses and columns correspond to astronomical
+        objects.
         """
 
-        if specFileMap is None:
-            if hasattr(self, 'specFileMap'):
-                specFileMap = self.specFileMap
+        if componentName == 'bulge':
+            self._loadBulgeSedList(bandpassDict.wavelenMatch)
+            if not hasattr(self, '_bulgeSedList'):
+                sedList = None
             else:
-                specFileMap = defaultSpecMap
-
-        if diskNames is not None:
-            if diskAv is None:
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need diskAv')
-
-            if diskMagNorm is None:
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need diskMagNorm')
-
-            if len(diskNames) != len(objectID):
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d diskNames'
-                                   % (len(diskNames), len(objectID)))
-            if len(diskNames) != len(diskAv) or len(diskNames) != len(diskMagNorm) or len(diskMagNorm) != len(diskAv):
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d diskNames, %d diskAvs, and %d diskMagNorms'
-                                   % (len(diskNames), len(diskAv), len(diskMagNorm)))
-
-        if bulgeNames is not None:
-            if bulgeAv is None:
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need bulgeAv')
-
-            if bulgeMagNorm is None:
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need bulgeMagNorm')
-
-            if len(bulgeNames) != len(objectID):
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d bulgeNames'
-                                   % (len(bulgeNames), len(objectID)))
-            if len(bulgeNames) != len(bulgeAv) or len(bulgeNames) != len(bulgeMagNorm) or len(bulgeMagNorm) != len(bulgeAv):
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d bulgeNames, %d bulgeAvs, and %d bulgeMagNorms'
-                                   % (len(bulgeNames), len(bulgeAv), len(bulgeMagNorm)))
-
-        if agnNames is not None:
-            if agnMagNorm is None:
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need agnMagNorm')
-
-            if len(agnNames) != len(objectID):
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d agnNames'
-                                   % (len(agnNames), len(objectID)))
-            if len(agnNames) != len(agnMagNorm):
-                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d agnNames and %d agnMagNorms'
-                                   % (len(agnNames), len(agnMagNorm)))
-
-        if redshift is None:
-            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need redshift')
-
-        if len(objectID) != len(redshift):
-            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d redshifts'
-                               % (len(objectID), len(redshift)))
-
-
-        if cosmologicalDistanceModulus is not None and len(objectID) != len(cosmologicalDistanceModulus):
-            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d cosmologicalDistanceModuli'
-                               % (len(objectID), len(cosmologicalDistanceModulus)))
-
-        diskMags = self.calculate_component_magnitudes(objectID,diskNames,magNorm = diskMagNorm, \
-                        internalAv = diskAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                        specFileMap=specFileMap, indices=indices)
-
-        bulgeMags = self.calculate_component_magnitudes(objectID,bulgeNames,magNorm = bulgeMagNorm, \
-                        internalAv = bulgeAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                        specFileMap=specFileMap, indices=indices)
-
-        agnMags = self.calculate_component_magnitudes(objectID,agnNames,magNorm = agnMagNorm, \
-                        redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                        specFileMap=specFileMap, indices=indices)
-
-        masterDict = {}
-
-        for i in range(len(objectID)):
-            total_mags=[]
-
-            subDict={}
-            subDict["bulge"] = bulgeMags[objectID[i]]
-            subDict["disk"] = diskMags[objectID[i]]
-            subDict["agn"] = agnMags[objectID[i]]
-
-            masterDict[objectID[i]] = subDict
-
-
-        return masterDict
-
-
-    def meta_magnitudes_getter(self, objectID, columnNameList, indices=None):
-        """
-        This method will return the magnitudes for galaxies in the bandpasses stored in self.bandpassDict
-
-        @param [in] objectID is a list of object IDs
-
-        @param [in] columnNameList is a list of the name of the columns this method will ultimately
-        be returning.  It exists so that it knows how to search for variability methods associated
-        with those magnitudes.
-
-        @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for.  Note: even columns associated with bandpasses not included
-        in indices should appear in columnNames above.
-        """
-
-        diskNames=self.column_by_name('sedFilenameDisk')
-        bulgeNames=self.column_by_name('sedFilenameBulge')
-        agnNames=self.column_by_name('sedFilenameAgn')
-
-        diskmn = self.column_by_name('magNormDisk')
-        bulgemn = self.column_by_name('magNormBulge')
-        agnmn = self.column_by_name('magNormAgn')
-
-        bulgeAv = self.column_by_name('internalAvBulge')
-        diskAv = self.column_by_name('internalAvDisk')
-
-        redshift = self.column_by_name('redshift')
-
-        if 'cosmologicalDistanceModulus' in self._all_available_columns:
-            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
+                sedList = self._bulgeSedList
+        elif componentName == 'disk':
+            self._loadDiskSedList(bandpassDict.wavelenMatch)
+            if not hasattr(self, '_diskSedList'):
+                sedList = None
+            else:
+                sedList = self._diskSedList
+        elif componentName == 'agn':
+            self._loadAgnSedList(bandpassDict.wavelenMatch)
+            if not hasattr(self, '_agnSedList'):
+                sedList = None
+            else:
+                sedList = self._agnSedList
         else:
-            cosmologicalDistanceModulus = None
+            raise RuntimeError('_magnitudeGetter does not understand component %s ' \
+                               % componentName)
 
-        magDict=self.calculate_magnitudes(objectID,
-                                          diskNames=diskNames, diskMagNorm=diskmn, diskAv=diskAv,
-                                          bulgeNames=bulgeNames, bulgeMagNorm=bulgemn, bulgeAv=bulgeAv,
-                                          agnNames=agnNames, agnMagNorm=agnmn,
-                                          redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                                          specFileMap=self.specFileMap, indices=indices)
+        if sedList is None:
+            magnitudes = numpy.ones((len(columnNameList), 0))
+        else:
+            magnitudes = bandpassDict.magListForSedList(sedList, indices=indices).transpose()
 
-        failure = None
+        if self._hasCosmoDistMod():
+            cosmoDistMod = self.column_by_name('cosmologicalDistanceModulus')
+            if len(cosmoDistMod)>0:
+               for ix in range(magnitudes.shape[0]):
+                   magnitudes[ix] += cosmoDistMod
 
-        outputBulge = None
-        outputDisk = None
-        outputAgn = None
+        for ix, columnName in enumerate(columnNameList):
+            if indices is None or ix in indices:
+                delta_name = 'delta_' + columnName
+                if delta_name in self._all_available_columns:
+                    delta = self.column_by_name(delta_name)
+                    magnitudes[ix] += delta
 
-        for i in range(self.nBandpasses):
-            rowDisk = []
-            rowBulge = []
-            rowAgn = []
-
-            for name in objectID:
-
-                if magDict[name]["bulge"] is not None:
-                    rowBulge.append(magDict[name]["bulge"][i])
-                else:
-                    rowBulge.append(failure)
-
-                if magDict[name]["disk"] is not None:
-                    rowDisk.append(magDict[name]["disk"][i])
-                else:
-                    rowDisk.append(failure)
-
-                if magDict[name]["agn"] is not None:
-                    rowAgn.append(magDict[name]["agn"][i])
-                else:
-                    rowAgn.append(failure)
-
-            if outputBulge is None:
-                outputBulge = numpy.array(rowBulge)
-                outputDisk = numpy.array(rowDisk)
-                outputAgn = numpy.array(rowAgn)
-            else:
-                outputBulge = numpy.vstack([outputBulge,rowBulge])
-                outputDisk = numpy.vstack([outputDisk,rowDisk])
-                outputAgn = numpy.vstack([outputAgn,rowAgn])
-
-
-        #Add variability to the bulge components (if any)
-        for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[self.nBandpasses:2*self.nBandpasses], outputBulge)):
-
-            bandpassDex = ix % self.nBandpasses
-            if indices is None or bandpassDex in indices:
-                variabilityName = 'delta_' + columnName
-                if variabilityName in self._all_available_columns:
-                    delta = self.column_by_name(variabilityName)
-                    columnData += delta
-
-        #Add variability to the disk components (if any)
-        for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[2*self.nBandpasses:3*self.nBandpasses], outputDisk)):
-
-            bandpassDex = ix % self.nBandpasses
-            if indices is None or bandpassDex in indices:
-                variabilityName = 'delta_' + columnName
-                if variabilityName in self._all_available_columns:
-                    delta = self.column_by_name(variabilityName)
-                    columnData += delta
-
-        #Add variability to the agn components (if any)
-        for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[3*self.nBandpasses:4*self.nBandpasses], outputAgn)):
-
-            bandpassDex = ix % self.nBandpasses
-            if indices is None or bandpassDex in indices:
-                variabilityName = 'delta_' + columnName
-                if variabilityName in self._all_available_columns:
-                    delta = self.column_by_name(variabilityName)
-                    columnData += delta
-
-
-        #Calculate the total magnitude of the galaxy.
-        #We do this here so that the variability models added above
-        #have an influence on the total magnitude.
-        outputTotal = None
-        for ib in range(self.nBandpasses):
-            if outputTotal is None:
-                outputTotal = self.sum_magnitudes(bulge=outputBulge[ib],
-                                                  disk=outputDisk[ib],
-                                                  agn=outputAgn[ib])
-            else:
-                outputTotal = numpy.vstack([outputTotal,
-                                            self.sum_magnitudes(bulge=outputBulge[ib],
-                                                                disk=outputDisk[ib],
-                                                                agn=outputAgn[ib])])
-
-
-        #Add variability to the total components (if any).
-        #This would be in the case that the catalog class is
-        #only worried about total galaxy fluxes and thus only
-        #adds variability to the whole galaxy, without worrying about
-        #dividing it among the galaxy's components.
-        #Adding variability to the components above and then adding variability
-        #here is probably unphysical.
-        for ix, (columnName, columnData) in \
-        enumerate(zip(columnNameList[:self.nBandpasses], outputTotal)):
-
-            bandpassDex = ix % self.nBandpasses
-            if indices is None or bandpassDex in indices:
-                variabilityName = 'delta_' + columnName
-                if variabilityName in self._all_available_columns:
-                    delta = self.column_by_name(variabilityName)
-                    columnData += delta
-
-        return numpy.vstack([outputTotal, outputBulge, outputDisk, outputAgn])
-
-
-
+        return magnitudes
 
 
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r',
@@ -493,7 +355,8 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('lsst_z'),
                                   self.column_by_name('lsst_y')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
     @compound('sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
               'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge')
@@ -508,7 +371,8 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('zBulge'),
                                   self.column_by_name('yBulge')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
     @compound('sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk',
               'sigma_iDisk', 'sigma_zDisk', 'sigma_yDisk')
@@ -523,7 +387,9 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('zDisk'),
                                   self.column_by_name('yDisk')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
+
 
     @compound('sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn',
               'sigma_iAgn', 'sigma_zAgn', 'sigma_yAgn')
@@ -538,36 +404,114 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('zAgn'),
                                   self.column_by_name('yAgn')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
-    @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-              'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
-              'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
-              'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
-    def get_all_mags(self):
+
+
+    @compound('uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge')
+    def get_lsst_bulge_mags(self):
         """
-        Getter for LSST galaxy magnitudes
-
+        Getter for bulge magnitudes in LSST bandpasses
         """
-        objectID = self.column_by_name('galid')
 
-        columnNames = [name for name in self.get_all_mags._colnames]
+        # load a BandpassDict of LSST bandpasses, if not done already
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        """
-        Here is where we need some code to load a list of bandpass objects
-        into self.bandpassDict so that the bandpasses are available to the
-        mixin.  Ideally, we would only do this once for the whole catalog
-        """
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles()
-
-        indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_all_mags._colnames) \
-                               if name in self._actually_calculated_columns])
+        # totally optional; list the indices in self.lsstBandpassDict
+        # of the columns which will actually be output (so that we don't
+        # spend time calculating things we do not need)
+        indices = [ii for ii, name in enumerate(self.get_lsst_bulge_mags._colnames) \
+                   if name in self._actually_calculated_columns]
 
         if len(indices)==6:
-            indices=None
+            indices = None
 
-        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
+        # actually calculate the magnitudes
+        return self._magnitudeGetter('bulge', self.lsstBandpassDict,
+                                     self.get_lsst_bulge_mags._colnames,
+                                     indices=indices)
+
+
+
+    @compound('uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk')
+    def get_lsst_disk_mags(self):
+        """
+        Getter for galaxy disk magnitudes in the LSST bandpasses
+        """
+
+        # load a BandpassDict of LSST bandpasses, if not done already
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        # totally optional; list the indices in self.lsstBandpassDict
+        # of the columns which will actually be output (so that we don't
+        # spend time calculating things we do not need)
+        indices = [ii for ii, name in enumerate(self.get_lsst_disk_mags._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices)==6:
+            indices = None
+
+        # actually calculate the magnitudes
+        return self._magnitudeGetter('disk', self.lsstBandpassDict,
+                                     self.get_lsst_disk_mags._colnames,
+                                     indices=indices)
+
+
+    @compound('uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
+    def get_lsst_agn_mags(self):
+        """
+        Getter for AGN magnitudes in the LSST bandpasses
+        """
+
+        # load a BandpassDict of LSST bandpasses, if not done already
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        # totally optional; list the indices in self.lsstBandpassDict
+        # of the columns which will actually be output (so that we don't
+        # spend time calculating things we do not need)
+        indices = [ii for ii, name in enumerate(self.get_lsst_agn_mags._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices)==6:
+            indices = None
+
+        # actually calculate the magnitudes
+        return self._magnitudeGetter('agn', self.lsstBandpassDict,
+                                     self.get_lsst_agn_mags._colnames,
+                                     indices=indices)
+
+
+    @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')
+    def get_lsst_total_mags(self):
+        """
+        Getter for total galaxy magnitudes in the LSST bandpasses
+        """
+
+        idList = self.column_by_name('uniqueId')
+        numObj = len(idList)
+        output = []
+
+        # Loop over the columns calculated by this getter.  For each
+        # column, calculate the bluge, disk, and agn magnitude in the
+        # corresponding bandpass, then sum them using the
+        # sum_magnitudes method.
+        for columnName in self.get_lsst_total_mags._colnames:
+            if columnName not in self._actually_calculated_columns:
+                sub_list = [numpy.NaN]*numObj
+            else:
+                bandpass = columnName[-1]
+                bulge = self.column_by_name('%sBulge' % bandpass)
+                disk = self.column_by_name('%sDisk' % bandpass)
+                agn = self.column_by_name('%sAgn' % bandpass)
+                sub_list = self.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
+
+            output.append(sub_list)
+        return numpy.array(output)
+
 
 
 
@@ -578,104 +522,72 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, objectID, magNorm, sedNames, indices=None, specFileMap=None):
+    def _loadSedList(self, wavelen_match):
         """
-        Take the bandpasses in bandpassDict and the array of
-        star names objectID and return a dict of lists of magnitudes
-
-        The first level key will be the name of the star (idName)
-
-        This will give you a list of magnitudes corresponding to self.bandpassDict
-
-        As with galaxies, it is important that we identify stars by a unique
-        identifier, rather than their sedFilename, because different stars
-        can have identical SEDs but different magnitudes.
-
-        @param [in] objectID is a list of names uniquely identifying the objects being considered
-
-        @param [in] magNorm is a list of magnitude normalizations
-
-        @param [in] sedNames is a list of sed file names
-
-        @param [in] indices is an optional list of indices indicating which
-        bandpasses to actually calculate magnitudes for
-
-        @param [in] specFileMap is a class which maps between sedNames and the absolute path to
-        the SED files.  It is an instantiation of the class defined in
-
-        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
-
-        if not provided, a default will be instantiated
-
-        @param [out] magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
-
+        Method to load the member variable self._sedList, which is a SedList.
+        If self._sedList does not already exist, this method sets it up.
+        If it does already exist, this method flushes its contents and loads a new
+        chunk of Seds.
         """
 
-        if specFileMap is None:
-            if hasattr(self, 'specFileMap'):
-                specFileMap=self.specFileMap
-            else:
-                specFileMap = defaultSpecMap
+        sedNameList = self.column_by_name('sedFilename')
+        magNormList = self.column_by_name('magNorm')
+        galacticAvList = self.column_by_name('galacticAv')
 
-        if len(objectID) != len(magNorm) or len(objectID) != len(sedNames) or len(sedNames) != len(magNorm):
-            raise RuntimeError('In PhotometryStars.calculate_magnitudes, had %d objectID, %d magNorms, and %d sedNames '
-                                % (len(objectID), len(magNorm), len(sedNames)))
+        if len(sedNameList)==0:
+            return numpy.ones((0))
 
-        sedList = self.loadSeds(sedNames, magNorm=magNorm, specFileMap=specFileMap)
-
-        magDict = {}
-        for (name,sed) in zip(objectID,sedList):
-            subList = self.manyMagCalc_list(sed, indices=indices)
-            magDict[name] = subList
-
-        return magDict
+        if not hasattr(self, '_sedList'):
+            self._sedList = SedList(sedNameList, magNormList,
+                                         galacticAvList=galacticAvList,
+                                         wavelenMatch=wavelen_match)
+        else:
+            self._sedList.flush()
+            self._sedList.loadSedsFromList(sedNameList, magNormList,
+                                          galacticAvList=galacticAvList)
 
 
-    def meta_magnitudes_getter(self, objectID, columnNameList, indices=None):
+    def _magnitudeGetter(self, bandpassDict, columnNameList, indices=None):
         """
-        This method does most of the work for stellar magnitude getters
+        This method gets the magnitudes for an InstanceCatalog, returning them
+        in a 2-D numpy array in which rows correspond to bandpasses and columns
+        correspond to astronomical objects.
 
-        @param [in] objectID is a list of object names
+        @param [in] bandpassDict is a BandpassDict containing the bandpasses
+        whose magnitudes are to be calculated
 
-        @param [in] columnNameList is a list of the names of the columns
-        this method will ultimately be returning.
+        @param [in] columnNameList is a list of the names of the magnitude columns
+        being calculated (so that any variability model can determine if a
+        'delta_column_name' exists
 
-        @param [in] indices is an optional list indicating the indices of the
-        bandpasses to calculate magnitudes for.  Note: even if a bandpass does
-        not appear in indices, its columns should be listed in columnNames.
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for
 
-        @param [out] output is a 2d numpy array in which the rows are the bandpasses
-        from bandpassDict and the columns are the objects from objectID
-
+        @param [out] magnitudes is a 2-D numpy array of magnitudes in which
+        rows correspond to bandpasses in bandpassDict and columns correspond
+        to astronomical objects.
         """
 
-        magNorm = self.column_by_name('magNorm')
-        sedNames = self.column_by_name('sedFilename')
-        magDict = self.calculate_magnitudes(objectID, magNorm=magNorm, sedNames=sedNames, indices=indices)
-        output = None
+        self._loadSedList(bandpassDict.wavelenMatch)
 
-        for i in range(self.nBandpasses):
-            row = []
-            for name in objectID:
-                row.append(magDict[name][i])
+        if not hasattr(self, '_sedList'):
+            magnitudes = numpy.ones((len(columnNameList),0))
+        else:
+            magnitudes = bandpassDict.magListForSedList(self._sedList, indices=indices).transpose()
 
-            if output is None:
-                output = numpy.array(row)
-            else:
-                output=numpy.vstack([output,row])
+        for ix, columnName in enumerate(columnNameList):
+            if indices is None or ix in indices:
+                delta_name = 'delta_' + columnName
+                if delta_name in self._all_available_columns:
+                    delta = self.column_by_name(delta_name)
+                    magnitudes[ix] += delta
 
-        for ix, (columnName, columnData) in enumerate(zip(columnNameList, output)):
-            if indices is None or ix%self.nBandpasses in indices:
-                deltaName = 'delta_' + columnName
-                if deltaName in self._all_available_columns:
-                    delta = self.column_by_name(deltaName)
-                    columnData += delta
+        return magnitudes
 
-        return output
 
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
               'sigma_lsst_z','sigma_lsst_y')
-    def get_photometric_uncertainties(self):
+    def get_lsst_photometric_uncertainties(self):
         """
         Getter for photometric uncertainties associated with stellar
         magnitudes
@@ -688,32 +600,23 @@ class PhotometryStars(PhotometryBase):
                                   self.column_by_name('lsst_z'),
                                   self.column_by_name('lsst_y')])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata)
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
-    def get_magnitudes(self):
+    def get_lsst_magnitudes(self):
         """
         getter for LSST stellar magnitudes
-
         """
-        objectID = self.column_by_name('id')
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        columnNames = [name for name in self.get_magnitudes._colnames]
-
-        """
-        Here is where we need some code to load a list of bandpass objects
-        into self.bandpassDict so that the bandpasses are available to the
-        mixin.  Ideally, we would only do this once for the whole catalog
-        """
-        if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles()
-
-        indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \
+        indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames) \
                    if name in self._actually_calculated_columns]
 
         if len(indices) == 6:
             indices = None
 
-        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
+        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames, indices=indices)
 
