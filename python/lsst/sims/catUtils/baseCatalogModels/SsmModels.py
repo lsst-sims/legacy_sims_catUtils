@@ -4,9 +4,13 @@ from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["SolarSystemObj"]
+__all__ = ["SolarSystemObj", "CometObj", "NEOObj", "MBAObj", "MiscSolarSystemObj"]
 
 class SolarSystemObj(BaseCatalogObj):
+    """
+    This is the base CatalogDBObject from which all other Solar System CatalogDBObjects
+    derive.  It will query all of the Solar System object tables on fatboy.
+    """
     objid = 'ssm'
     tableid = ''
 
@@ -122,3 +126,32 @@ class SolarSystemObj(BaseCatalogObj):
             query += "where %s"%(constraint)
 
         return ChunkIterator(self, query, chunk_size)
+
+
+class CometObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queries the table of comets on fatboy
+    """
+    ssmtable = 'fSSMCometBase'
+
+
+class NEOObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queries the table of Near Earth Objects on fatboy
+    """
+    ssmtable = 'fSSMNEOBase'
+
+
+class MBAObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queries the table of Main Belt Asteroids on fatboy
+    """
+    ssmtable = 'fSSMMBABase'
+
+
+class MiscSolarSystemObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queriess the table of Solar Systems objects on fatboy
+    that are not comets, near Earth objects, or main belt asteroids
+    """
+    ssmtable = 'fSSMnonMBABase'
