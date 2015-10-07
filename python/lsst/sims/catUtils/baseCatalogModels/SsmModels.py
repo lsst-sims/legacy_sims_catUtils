@@ -9,6 +9,16 @@ __all__ = ["SolarSystemObj"]
 class SolarSystemObj(BaseCatalogObj):
     objid = 'ssm'
     tableid = ''
+
+    ssmtable = 'fSSMAllBase'
+    # The variable ssmtable specifies which Table Valued Function to call on
+    # fatboy.  Valid values are:
+    # fSSMCometBase -- to query comets
+    # fSSMNEOBase -- to query Near Earth Objects
+    # fSSMMBABase -- to query Main Belt Asteroids
+    # fSSMnonMBABase -- to query objects that are none of the above
+    # fSSMAllBase -- to query the union of all of the above
+
     objectTypeId = 40
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType = 'circle',
@@ -105,7 +115,7 @@ class SolarSystemObj(BaseCatalogObj):
                           "This could be a very bad idea "
                           "if the database is large")
 
-        query = "select %s from [LSST].[dbo].fSSMAllBase("%(mappedcolnames)+\
+        query = "select %s from [LSST].[dbo].%s("%(mappedcolnames, self.ssmtable)+\
                 "%f, '%s')"%(obs_metadata.mjd, regionStr)
 
         if constraint is not None:
