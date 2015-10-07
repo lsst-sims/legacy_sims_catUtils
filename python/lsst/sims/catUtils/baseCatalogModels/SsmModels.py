@@ -10,6 +10,9 @@ class SolarSystemObj(BaseCatalogObj):
     """
     This is the base CatalogDBObject from which all other Solar System CatalogDBObjects
     derive.  It will query all of the Solar System object tables on fatboy.
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
     """
     objid = 'ssm'
     tableid = ''
@@ -131,6 +134,9 @@ class SolarSystemObj(BaseCatalogObj):
 class CometObj(SolarSystemObj):
     """
     This CatalogDBObject class queries the table of comets on fatboy
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
     """
     ssmtable = 'fSSMCometBase'
 
@@ -138,6 +144,9 @@ class CometObj(SolarSystemObj):
 class NEOObj(SolarSystemObj):
     """
     This CatalogDBObject class queries the table of Near Earth Objects on fatboy
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
     """
     ssmtable = 'fSSMNEOBase'
 
@@ -145,6 +154,9 @@ class NEOObj(SolarSystemObj):
 class MBAObj(SolarSystemObj):
     """
     This CatalogDBObject class queries the table of Main Belt Asteroids on fatboy
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
     """
     ssmtable = 'fSSMMBABase'
 
@@ -153,5 +165,8 @@ class MiscSolarSystemObj(SolarSystemObj):
     """
     This CatalogDBObject class queriess the table of Solar Systems objects on fatboy
     that are not comets, near Earth objects, or main belt asteroids
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
     """
     ssmtable = 'fSSMnonMBABase'
