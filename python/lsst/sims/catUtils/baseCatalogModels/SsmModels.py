@@ -37,8 +37,16 @@ class SolarSystemObj(BaseCatalogObj):
             ('raJ2000', 'ra*PI()/180.'),
             ('decJ2000', 'decl*PI()/180.'),
             ('sedFilename', 'sed_filename', unicode, 40),
+            ('dist', 'dist', numpy.float),
             ('velRa', 'dradt*PI()/180.'),
-            ('velDec', 'ddecldt*PI()/180.')]
+            ('velDec', 'ddecldt*PI()/180.'),
+            ('magNorm', 'magNorm', numpy.float),
+            ('umag', 'umag', numpy.float),
+            ('gmag', 'gmag', numpy.float),
+            ('rmag', 'rmag', numpy.float),
+            ('imag', 'imag', numpy.float),
+            ('zmag', 'zmag', numpy.float),
+            ('ymag', 'ymag', numpy.float)]
 
     def _get_column_query(self, colnames=None):
         raise NotImplementedError("We are calling a stored procedure so "
