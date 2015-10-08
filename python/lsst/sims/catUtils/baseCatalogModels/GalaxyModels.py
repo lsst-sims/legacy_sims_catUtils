@@ -1,5 +1,6 @@
 import warnings
 import numpy
+import copy
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.catalogs.generation.db import ChunkIterator, CompoundCatalogDBObject
 from lsst.sims.utils import ObservationMetaData
@@ -213,9 +214,15 @@ class GalaxyTileObj(BaseCatalogObj):
               names in the columns class attribute.  If chunksize is specified,
               then result is an iterator over structured arrays of the given size.
 
+            WARNING: whatever column names you specify, galtileid will always be returned
+            as the first column of the returned structured array.  To determine the order
+            of the columns actually returned, consult the dtype of the returned structured
+            array.
         """
         if colnames is None:
-            colnames = [k for k in self.columnMap.keys()]
+            _colnames = [k for k in self.columnMap.keys()]
+        else:
+            _colnames = copy.deepcopy(colnames)
 
         #We know that galtileid comes back with the query, but we don't want
         #to add it to the query since it's generated on the fly.
@@ -226,11 +233,11 @@ class GalaxyTileObj(BaseCatalogObj):
         # CompoundInstanceCatalog and CompoundDBObject classes, which
         # mangle column names such that they include the objid of the
         # specific CatalogDBObject that is asking for them.
-        for name in colnames:
+        for name in _colnames:
             if 'galtileid' in name:
-                colnames.remove(name)
+                _colnames.remove(name)
 
-        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
+        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in _colnames]
         mappedcolnames = ",".join(mappedcolnames)
 
         if obs_metadata is not None and obs_metadata.bounds is not None:
