@@ -117,17 +117,17 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 if tag == 'skyBrightness':
                     ct = 0
                     for obs_metadata in results:
-                        self.assertTrue(obs_metadata.skyBrightness<line[1][1])
-                        self.assertTrue(obs_metadata.skyBrightness>line[1][0])
+                        self.assertLess(obs_metadata.skyBrightness, line[1][1])
+                        self.assertGreater(obs_metadata.skyBrightness, line[1][0])
                         ct += 1
-                    self.assertTrue(ct>0)
+                    self.assertGreater(ct, 0)
                 elif tag == 'm5':
                     ct = 0
                     for obs_metadata in results:
-                        self.assertTrue(obs_metadata.m5[obs_metadata.bandpass]<line[1][1])
-                        self.assertTrue(obs_metadata.m5[obs_metadata.bandpass]>line[1][0])
+                        self.assertLess(obs_metadata.m5[obs_metadata.bandpass], line[1][1])
+                        self.assertGreater(obs_metadata.m5[obs_metadata.bandpass], line[1][0])
                         ct += 1
-                    self.assertTrue(ct>0)
+                    self.assertGreater(ct, 0)
 
                 name = gen.columnMapping[ii][2]
                 if name is not None:
@@ -140,12 +140,12 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     ct = 0
                     for obs_metadata in results:
                         ct += 1
-                        self.assertTrue(obs_metadata.phoSimMetaData[name][0]<xmax)
-                        self.assertTrue(obs_metadata.phoSimMetaData[name][0]>xmin)
+                        self.assertLess(obs_metadata.phoSimMetaData[name][0], xmax)
+                        self.assertGreater(obs_metadata.phoSimMetaData[name][0], xmin)
 
                     #make sure that we did not accidentally choose values such that
                     #no ObservationMetaData were ever returned
-                    self.assertTrue(ct>0)
+                    self.assertGreater(ct, 0)
 
         #test querying on two columns at once
         ct = 0
@@ -187,15 +187,15 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                             for obs_metadata in results:
                                 ct += 1
                                 if name1 is not None:
-                                    self.assertTrue(obs_metadata.phoSimMetaData[name1][0]>xmin)
-                                    self.assertTrue(obs_metadata.phoSimMetaData[name1][0]<xmax)
+                                    self.assertGreater(obs_metadata.phoSimMetaData[name1][0], xmin)
+                                    self.assertLess(obs_metadata.phoSimMetaData[name1][0], xmax)
                                 if name2 is not None:
-                                    self.assertTrue(obs_metadata.phoSimMetaData[name2][0]>ymin)
-                                    self.assertTrue(obs_metadata.phoSimMetaData[name2][0]<ymax)
+                                    self.assertGreater(obs_metadata.phoSimMetaData[name2][0], ymin)
+                                    self.assertLess(obs_metadata.phoSimMetaData[name2][0], ymax)
 
         #Make sure that we didn't choose values such that no ObservationMetaData were
         #ever returned
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
     def testQueryExactValues(self):
         """
@@ -247,19 +247,19 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         ct += 1
 
                     #Make sure that we did not choose a value which returns zero ObservationMetaData
-                    self.assertTrue(ct>0)
+                    self.assertGreater(ct, 0)
                 elif tag == 'm5':
                     ct = 0
                     for obs_metadata in results:
                         self.assertAlmostEqual(value, obs_metadata.m5.values()[0])
                         ct += 1
-                    self.assertTrue(ct>0)
+                    self.assertGreater(ct, 0)
                 elif tag == 'seeing':
                     ct = 0
                     for obs_metadata in results:
                         self.assertAlmostEqual(value, obs_metadata.seeing.values()[0])
                         ct += 1
-                    self.assertTrue(ct>0)
+                    self.assertGreater(ct, 0)
 
 
     def testQueryLimit(self):
@@ -285,7 +285,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             ct += 1
 
         #Make sure that more than zero ObservationMetaData were returned
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
     def testObsMetaDataBounds(self):
         """
@@ -306,7 +306,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             ct += 1
 
         #Make sure that some ObservationMetaData were tested
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
         #test a square
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
@@ -328,7 +328,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             ct += 1
 
         #Make sure that some ObservationMetaData were tested
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
         #test a rectangle
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
@@ -350,7 +350,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             ct += 1
 
         #Make sure that some ObservationMetaData were tested
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
     def testCreationOfPhoSimCatalog(self):
         """
