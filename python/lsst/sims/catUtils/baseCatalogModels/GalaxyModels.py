@@ -274,6 +274,9 @@ class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
     query in the most naive way possible).
     """
 
+    doRunTest = False # because this is not like other CatalogDBObjects
+                      # and should not be tested in the same way
+
     _table_restriction = ['galaxy']
 
     def _final_pass(self, results):
