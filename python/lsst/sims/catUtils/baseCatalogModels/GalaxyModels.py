@@ -222,6 +222,14 @@ class GalaxyTileObj(BaseCatalogObj):
         if colnames is None:
             _colnames = [k for k in self.columnMap.keys()]
         else:
+            if colnames[0] != 'galtileid' and not hasattr(self,'_galtileidWarning'):
+                warnings.warn("Be aware: because searches of the galaxy tables call stored "
+                              "methods on the database server, the first column "
+                              "returned by query_columns() will actually be "
+                              "'galtileid', whether or not that is what you asked for.")
+
+                self._galtileidWarning = True
+
             _colnames = copy.deepcopy(colnames)
 
         #We know that galtileid comes back with the query, but we don't want
