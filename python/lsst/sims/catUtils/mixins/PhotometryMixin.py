@@ -620,3 +620,21 @@ class PhotometryStars(PhotometryBase):
 
         return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames, indices=indices)
 
+
+class PhotometrySSM(PhotometryBase):
+    """
+    A mixin to calculate photometry for solar system objects.
+    """
+    # Because solar system objects will not have dust extinctions, we should be able to read in every
+    # SED exactly once, calculate the colors and magnitudes, and then get actual magnitudes by adding
+    # an offset based on magNorm.
+
+    def _magnitudeGetter(bandpassDict):
+
+        if not hasattr(self, '_ssmSedDict'):
+            _ssmSedDict = {}
+            _ssmMagDict = {}
+            _ssmMagNormDict = {}
+
+
+
