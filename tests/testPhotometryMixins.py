@@ -275,7 +275,7 @@ class photometryUnitTest(unittest.TestCase):
         test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsCartoon.txt")
 
-        cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        cartoonDir = os.path.join(lsst.utils.getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
         testBandPasses = {}
         keys = ['u','g','r','i','z']
 
