@@ -1,4 +1,4 @@
-#silly header line
+# id spedfilename magNorm velRA velDec
 1 A.dat 15.0 0.02 0.03
 2 Cb.dat 22.0 -0.015 0.02
 3 Q.dat 13.0 0.013 -0.05

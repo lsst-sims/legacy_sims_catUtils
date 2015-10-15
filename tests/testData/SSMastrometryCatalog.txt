@@ -1,4 +1,4 @@
-#silly header line
+# id raJ2000 decJ2000
 1 0.23 0.157
 2 1.23 -1.2
 3 2.567 0.9
