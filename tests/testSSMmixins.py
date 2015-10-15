@@ -20,9 +20,9 @@ class SSMphotometryTest(unittest.TestCase):
     def setUpClass(cls):
         cls.dbFile = os.path.join(getPackageDir('sims_catUtils'),
                         'tests', 'testData', 'SSMphotometryCatalog.txt')
-                      
+
         cls.dtype = np.dtype([('id', np.int), ('sedFilename', str, 100), ('magNorm', np.float)])
-        
+
         cls.photDB = fileDBObject(cls.dbFile, runtable='test', dtype=cls.dtype, idColKey='id')
 
 
@@ -42,11 +42,11 @@ class SSMphotometryTest(unittest.TestCase):
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
-        
+
         LSSTbandpasses = BandpassDict.loadTotalBandpassesFromFiles()
         controlSedList = SedList(controlData['sedFilename'], controlData['magNorm'],
                                  wavelenMatch=LSSTbandpasses.wavelenMatch)
-        
+
         controlMags = LSSTbandpasses.magListForSedList(controlSedList)
 
         for ii in range(len(controlMags)):
