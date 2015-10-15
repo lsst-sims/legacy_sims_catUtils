@@ -714,13 +714,18 @@ class PhotometrySSM(PhotometryBase):
         its PSF
         """
 
+        if self.obs_metadata.seeing is None:
+            raise RuntimeError("Cannot calculate dmagTraling/dmagDetection. "
+                               "Your catalog's ObservationMetaData does not "
+                               "specify seeing.")
+
         if not isinstance(self.obs_metadata.bandpass, str):
             raise RuntimeError("dmagTrailing/dmagDetection calculation is confused. "
                                "Your catalog's ObservationMetaData contains multiple "
                                "bandpasses.  It is unclear what seeing value you mean. "
                                "Re-create your catalog with only one bandpass.")
 
-        if not hasattr(self, 'photParams'):
+        if not hasattr(self, 'photParams') or self.photParams is None:
             raise RuntimeError("You cannot calculate dmagTrailing/dmagDetection. "
                                "Your catalog does not have an associated PhotometricParameters "
                                "member variable.  It is impossible to know what the exposure time is.")

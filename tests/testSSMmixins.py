@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import unittest
 import os
 import numpy as np
@@ -128,6 +129,37 @@ class SSMphotometryTest(unittest.TestCase):
                 self.assertAlmostEqual(controlLsstMags[ii][jj], testData[bpName][ii], 10)
             for jj, bpName in enumerate(['cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z']):
                 self.assertAlmostEqual(controlCartoonMags[ii][jj], testData[bpName][ii], 10)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
+    def testDmagExceptions(self):
+        """
+        Test that the dmagTrailing and dmagDetection getters raise expected
+        exceptions
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmDmagCatExceptions.txt')
+
+
+        obs = ObservationMetaData()
+        with self.assertRaises(RuntimeError) as context:
+            cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
+        self.assertTrue("does not specify seeing" in context.exception.args[0])
+
+        obs = ObservationMetaData(bandpassName = ['u', 'g'], seeing=[0.6, 0.5])
+
+        with self.assertRaises(RuntimeError) as context:
+            cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
+        self.assertTrue("multiple bandpasses" in context.exception.args[0])
+
+        obs = ObservationMetaData(bandpassName = 'u', seeing=0.7)
+        with self.assertRaises(RuntimeError) as context:
+            cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
+            cat.photParams = None
+            cat.write_catalog(catName)
+        self.assertTrue("does not have an associated PhotometricParameters"
+                        in context.exception.args[0])
 
         if os.path.exists(catName):
             os.unlink(catName)
