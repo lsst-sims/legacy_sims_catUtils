@@ -8,7 +8,7 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import fileDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM
-from lsst.sims.photUtils import BandpassDict, SedList
+from lsst.sims.photUtils import BandpassDict, SedList, PhotometricParameters
 from lsst.sims.coordUtils import _observedFromICRS
 
 class LSST_SSM_photCat(InstanceCatalog, PhotometrySSM):
@@ -39,6 +39,12 @@ class Compound_SSM_photCat(InstanceCatalog, PhotometrySSM):
         return self._magnitudeGetter(self.cartoonBandpassDict, bandpassTag='cartoon')
 
 
+class SSM_dmagCat(InstanceCatalog, PhotometrySSM):
+    column_outputs = ['id', 'dmagTrailing', 'dmagDetection']
+
+    default_formats = {'f': '%.13f'}
+
+
 class SSMphotometryTest(unittest.TestCase):
 
     @classmethod
@@ -46,7 +52,8 @@ class SSMphotometryTest(unittest.TestCase):
         cls.dbFile = os.path.join(getPackageDir('sims_catUtils'),
                         'tests', 'testData', 'SSMphotometryCatalog.txt')
 
-        cls.dtype = np.dtype([('id', np.int), ('sedFilename', str, 100), ('magNorm', np.float)])
+        cls.dtype = np.dtype([('id', np.int), ('sedFilename', str, 100), ('magNorm', np.float),
+                              ('velRa', np.float), ('velDec', np.float)])
 
         cls.photDB = fileDBObject(cls.dbFile, runtable='test', dtype=cls.dtype, idColKey='id')
 
@@ -125,6 +132,41 @@ class SSMphotometryTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+
+    def testDmag(self):
+        """
+        Test the calculation of dmagTrailing and dmagDetection
+        """
+
+        obs = ObservationMetaData(bandpassName = 'u', seeing=0.6)
+        photParams = PhotometricParameters()
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmDmagCat.txt')
+
+        controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
+
+        cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
+        cat.write_catalog(catName)
+
+        dtype = np.dtype([('id', np.int), ('dmagTrail', np.float), ('dmagDetect', np.float)])
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+
+        a_trail = 0.76
+        b_trail = 1.16
+        a_det = 0.42
+        b_det = 0.00
+
+        velocity = np.sqrt(np.power(np.degrees(controlData['velRa']), 2) + np.power(np.degrees(controlData['velDec']), 2))
+        x = velocity * photParams.nexp * photParams.exptime /(obs.seeing[obs.bandpass] * 24.0)
+        xsq = np.power(x, 2)
+
+        dmagTrailControl = 1.25*np.log10(1.0 + a_trail*xsq/(1.0+b_trail*x))
+        dmagDetectControl = 1.25*np.log10(1.0 + a_det*xsq/(1.0+b_det*x))
+
+        np.testing.assert_array_almost_equal(dmagTrailControl, testData['dmagTrail'], 10)
+        np.testing.assert_array_almost_equal(dmagDetectControl, testData['dmagDetect'], 10)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
 
 class SSM_astrometryCat(InstanceCatalog, AstrometrySSM):

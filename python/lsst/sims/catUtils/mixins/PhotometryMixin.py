@@ -699,3 +699,50 @@ class PhotometrySSM(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         return self._magnitudeGetter(self.lsstBandpassDict)
+
+
+    @compound('dmagTrailing', 'dmagDetection')
+    def get_ssm_dmag(self):
+        """
+        This getter will calculate:
+
+        dmagTrailing: the offset in m5 used to represent the loss in signal to noise
+        resulting from the fact that the object's motion smears out its PSF
+
+        dmagDetection: the offset in m5 used to represent the shift in detection
+        threshold resulting from the fact that the object's motion smears out
+        its PSF
+        """
+
+        if not isinstance(self.obs_metadata.bandpass, str):
+            raise RuntimeError("dmagTrailing/dmagDetection calculation is confused. "
+                               "Your catalog's ObservationMetaData contains multiple "
+                               "bandpasses.  It is unclear what seeing value you mean. "
+                               "Re-create your catalog with only one bandpass.")
+
+        if not hasattr(self, 'photParams'):
+            raise RuntimeError("You cannot calculate dmagTrailing/dmagDetection. "
+                               "Your catalog does not have an associated PhotometricParameters "
+                               "member variable.  It is impossible to know what the exposure time is.")
+
+        dradt = self.column_by_name('velRa') # in radians per day (actual sky velocity;
+                                             # i.e., no need to divide by cos(dec))
+
+        ddecdt = self.column_by_name('velDec') # in radians per day
+
+        if len(dradt)==0:
+            return numpy.zeros((2,0))
+
+        a_trail = 0.76
+        b_trail = 1.16
+        a_det = 0.42
+        b_det = 0.00
+        seeing = self.obs_metadata.seeing[self.obs_metadata.bandpass] # this will be in arcsec
+        texp = self.photParams.nexp*self.photParams.exptime
+        velocity = numpy.sqrt(numpy.power(numpy.degrees(dradt),2) + numpy.power(numpy.degrees(ddecdt),2))
+        x = velocity*texp/(24.0*seeing)
+        xsq = numpy.power(x,2)
+        dmagTrail = 1.25*numpy.log10(1.0 + a_trail * xsq/(1.0+b_trail*x))
+        dmagDetect = 1.25*numpy.log10(1.0 + a_det * xsq/(1.0 + b_det*x))
+
+        return numpy.array([dmagTrail, dmagDetect])
