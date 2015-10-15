@@ -1,0 +1,9 @@
+#silly header line
+1 A.dat 15.0
+2 Cb.dat 22.0
+3 Q.dat 13.0
+4 A.dat 13.0
+5 Q.dat 11.0
+6 Cb.dat 24.0
+7 T.dat 19.0
+8 T.dat 15.0
