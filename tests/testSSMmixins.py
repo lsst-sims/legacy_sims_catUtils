@@ -17,7 +17,7 @@ class LSST_SSM_photCat(InstanceCatalog, PhotometrySSM):
     default_formats = {'f':'%.13f'}
 
 
-class LSST_SSM_multiplePhotCat(InstanceCatalog, PhotometrySSM):
+class Compound_SSM_photCat(InstanceCatalog, PhotometrySSM):
     column_outputs = ['id', 'lsst_u' ,'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z']
 
@@ -89,7 +89,7 @@ class SSMphotometryTest(unittest.TestCase):
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'compoundSsmPhotCat.txt')
 
-        cat=LSST_SSM_multiplePhotCat(self.photDB)
+        cat=Compound_SSM_photCat(self.photDB)
         cat.write_catalog(catName)
 
         dtype = np.dtype([('id', np.int), ('lsst_u', np.float), ('lsst_g', np.float),
