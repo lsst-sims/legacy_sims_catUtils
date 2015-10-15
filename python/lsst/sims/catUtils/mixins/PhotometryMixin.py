@@ -13,6 +13,7 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 import os
 import numpy
 from collections import OrderedDict
+from lsst.utils import getPackageDir
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, magErrorFromSNR, \
                                 BandpassDict
@@ -20,7 +21,7 @@ from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.photUtils import SedList
 
-__all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
+__all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars", "PhotometrySSM"]
 
 
 class PhotometryBase(object):
@@ -629,12 +630,72 @@ class PhotometrySSM(PhotometryBase):
     # SED exactly once, calculate the colors and magnitudes, and then get actual magnitudes by adding
     # an offset based on magNorm.
 
-    def _magnitudeGetter(bandpassDict):
+    def _magnitudeGetter(self, bandpassDict, bandpassTag='lsst'):
+        """
+        Method that actually does the work calculating magnitudes for solar system objects.
 
-        if not hasattr(self, '_ssmSedDict'):
-            _ssmSedDict = {}
-            _ssmMagDict = {}
-            _ssmMagNormDict = {}
+        Because solar system objects have no dust extinction, this method works by loading
+        each unique Sed once, normalizing it, calculating its magnitudes in the desired
+        bandpasses, and then storing the normalizing magnitudes and the bandpass magnitudes
+        in a dict.  Magnitudes for subsequent objects with identical Seds will be calculated
+        by adding an offset to the magnitudes.  The offset is determined by comparing normalizing
+        magnitues.
+
+        @param [in] bandpassDict is an intantiation of BandpassDict representing the bandpasses
+        to be integrated over
+
+        @param [in] bandpassTag (optional) is a string indicating the name of the bandpass system
+        (i.e. 'lsst', 'sdss', etc.).  This is in case the user wants to calculate the magnitudes
+        in multiple systems simultaneously.  In that case, the dict will store magnitudes for each
+        Sed in each magnitude system separately.
+
+        @param [out] a numpy array of magnitudes corresponding to bandpassDict.
+        """
+
+        if not hasattr(self, '_ssmMagDict'):
+            self._ssmMagDict = {}
+            self._ssmMagNormDict = {}
+            self._file_dir = getPackageDir('sims_sed_library')
+            self._spec_map = defaultSpecMap
+            self._normalizing_bandpass = Bandpass()
+            self._normalizing_bandpass.imsimBandpass()
+
+        sedNameList = self.column_by_name('sedFilename')
+        magNormList = self.column_by_name('magNorm')
+
+        if len(sedNameList)==0:
+            # need to return something when InstanceCatalog goes through
+            # it's "dry run" to determine what columns are required from
+            # the database
+            return numpy.zeros((len(bandpassDict.keys()),0))
+
+        magListOut = []
+
+        for sedName, magNorm in zip(sedNameList, magNormList):
+            magTag = bandpassTag+'_'+sedName
+            if sedName not in self._ssmMagNormDict or magTag not in self._ssmMagDict:
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(self._file_dir, self._spec_map[sedName]))
+                fnorm = dummySed.calcFluxNorm(magNorm, self._normalizing_bandpass)
+                dummySed.multiplyFluxNorm(fnorm)
+                magList = bandpassDict.magListForSed(dummySed)
+                self._ssmMagDict[magTag] = magList
+                self._ssmMagNormDict[sedName] = magNorm
+            else:
+                dmag = magNorm - self._ssmMagNormDict[sedName]
+                magList = self._ssmMagDict[magTag] + dmag
+            magListOut.append(magList)
+
+        return numpy.array(magListOut).transpose()
 
 
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_lsst_magnitudes(self):
+        """
+        getter for LSST magnitudes of solar system objects
+        """
 
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        return self._magnitudeGetter(self.lsstBandpassDict)
