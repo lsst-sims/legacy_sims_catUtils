@@ -257,8 +257,8 @@ class cartoonPhotometryStars(PhotometryStars):
 
         idNames = self.column_by_name('id')
         columnNames = [name for name in self.get_magnitudes._colnames]
-        bandpassNames=['u','g','r','i','z']
-        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        bandpassNames = ['u','g','r','i','z']
+        bandpassDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
 
         if not hasattr(self, 'cartoonBandpassDict'):
             self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
@@ -440,8 +440,8 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         Example photometry getter for alternative (i.e. non-LSST) bandpasses
         """
         if not hasattr(self, 'cartoonBandpassDict'):
-            bandpassNames=['u','g','r','i','z']
-            bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+            bandpassNames = ['u','g','r','i','z']
+            bandpassDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
             self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                                                                     bandpassRoot = 'test_bandpass_')
 
