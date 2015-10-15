@@ -184,6 +184,8 @@ class SSMastrometryTest(unittest.TestCase):
             np.testing.assert_array_almost_equal(raObservedControl, testData['raObserved'], 10)
             np.testing.assert_array_almost_equal(decObservedControl, testData['decObserved'], 10)
 
+            if os.path.exists(catName):
+                os.unlink(catName)
 
 
 def suite():
