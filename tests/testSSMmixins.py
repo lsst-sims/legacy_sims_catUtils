@@ -151,7 +151,7 @@ class SSMphotometryTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
-        self.assertTrue("multiple bandpasses" in context.exception.args[0])
+        self.assertTrue("multiple seeing values" in context.exception.args[0])
 
         obs = ObservationMetaData(bandpassName = 'u', seeing=0.7)
         with self.assertRaises(RuntimeError) as context:

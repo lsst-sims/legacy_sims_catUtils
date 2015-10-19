@@ -719,11 +719,14 @@ class PhotometrySSM(PhotometryBase):
                                "Your catalog's ObservationMetaData does not "
                                "specify seeing.")
 
-        if not isinstance(self.obs_metadata.bandpass, str):
-            raise RuntimeError("dmagTrailing/dmagDetection calculation is confused. "
-                               "Your catalog's ObservationMetaData contains multiple "
-                               "bandpasses.  It is unclear what seeing value you mean. "
-                               "Re-create your catalog with only one bandpass.")
+        if len(self.obs_metadata.seeing)>1:
+            valueList = self.obs_metadata.seeing.values()
+            for ix in range(1, len(valueList)):
+                if numpy.abs(valueList[ix]-valueList[0])>0.0001:
+
+                    raise RuntimeError("dmagTrailing/dmagDetection calculation is confused. "
+                                       "Your catalog's ObservationMetaData contains multiple "
+                                       "seeing values.  Re-create your catalog with only one seeing value.")
 
         if not hasattr(self, 'photParams') or self.photParams is None:
             raise RuntimeError("You cannot calculate dmagTrailing/dmagDetection. "
