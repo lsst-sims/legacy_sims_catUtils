@@ -641,7 +641,7 @@ class PhotometrySSM(PhotometryBase):
         by adding an offset to the magnitudes.  The offset is determined by comparing normalizing
         magnitues.
 
-        @param [in] bandpassDict is an intantiation of BandpassDict representing the bandpasses
+        @param [in] bandpassDict is an instantiation of BandpassDict representing the bandpasses
         to be integrated over
 
         @param [in] bandpassTag (optional) is a string indicating the name of the bandpass system
