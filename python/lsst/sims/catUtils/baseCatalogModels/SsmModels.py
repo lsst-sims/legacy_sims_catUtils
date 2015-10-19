@@ -4,11 +4,28 @@ from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.catalogs.generation.db import ChunkIterator, CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["SolarSystemObj"]
+__all__ = ["SolarSystemObj", "CometObj", "NEOObj", "MBAObj", "MiscSolarSystemObj"]
 
 class SolarSystemObj(BaseCatalogObj):
+    """
+    This is the base CatalogDBObject from which all other Solar System CatalogDBObjects
+    derive.  It will query all of the Solar System object tables on fatboy.
+
+    Note: Solar System objects only exist for 50093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
+    """
     objid = 'ssm'
     tableid = ''
+
+    ssmtable = 'fSSMAllBase'
+    # The variable ssmtable specifies which Table Valued Function to call on
+    # fatboy.  Valid values are:
+    # fSSMCometBase -- to query comets
+    # fSSMNEOBase -- to query Near Earth Objects
+    # fSSMMBABase -- to query Main Belt Asteroids
+    # fSSMnonMBABase -- to query objects that are none of the above
+    # fSSMAllBase -- to query the union of all of the above
+
     objectTypeId = 40
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType = 'circle',
@@ -105,10 +122,51 @@ class SolarSystemObj(BaseCatalogObj):
                           "This could be a very bad idea "
                           "if the database is large")
 
-        query = "select %s from [LSST].[dbo].fSSMAllBase("%(mappedcolnames)+\
+        query = "select %s from [LSST].[dbo].%s("%(mappedcolnames, self.ssmtable)+\
                 "%f, '%s')"%(obs_metadata.mjd, regionStr)
 
         if constraint is not None:
             query += "where %s"%(constraint)
 
         return ChunkIterator(self, query, chunk_size)
+
+
+class CometObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queries the table of comets on fatboy
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
+    """
+    ssmtable = 'fSSMCometBase'
+
+
+class NEOObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queries the table of Near Earth Objects on fatboy
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
+    """
+    ssmtable = 'fSSMNEOBase'
+
+
+class MBAObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queries the table of Main Belt Asteroids on fatboy
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
+    """
+    ssmtable = 'fSSMMBABase'
+
+
+class MiscSolarSystemObj(SolarSystemObj):
+    """
+    This CatalogDBObject class queriess the table of Solar Systems objects on fatboy
+    that are not comets, near Earth objects, or main belt asteroids
+
+    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    of that date range, you will get an empty catalog.
+    """
+    ssmtable = 'fSSMnonMBABase'
