@@ -5,7 +5,7 @@ import palpy as pal
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.measures.instance import compound, cached
 from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
                             _galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
@@ -171,3 +171,16 @@ class AstrometrySSM(AstrometryBase):
     @compound('raObserved', 'decObserved')
     def get_observedCoordinates(self):
         return self.observedSSMCoordinates(includeRefraction = True)
+
+    @cached
+    def get_skyVelocity(self):
+        """
+        Gets the skyVelocity in radians per day
+        """
+
+        dradt = self.column_by_name('velRa') # in radians per day (actual sky velocity;
+                                             # i.e., no need to divide by cos(dec))
+
+        ddecdt = self.column_by_name('velDec') # in radians per day
+
+        return numpy.sqrt(numpy.power(dradt,2) + numpy.power(ddecdt,2))

@@ -206,6 +206,13 @@ class SSM_astrometryCat(InstanceCatalog, AstrometrySSM):
 
     default_formats = {'f': '%.13f'}
 
+
+class SSM_velocityCat(InstanceCatalog, AstrometrySSM):
+    column_outputs = ['id', 'skyVelocity']
+
+    default_formats= {'f': '%.13f'}
+
+
 class SSMastrometryTest(unittest.TestCase):
 
     @classmethod
@@ -213,7 +220,8 @@ class SSMastrometryTest(unittest.TestCase):
         cls.dbFile = os.path.join(getPackageDir('sims_catUtils'),
                         'tests', 'testData', 'SSMastrometryCatalog.txt')
 
-        cls.dtype = np.dtype([('id', np.int), ('raJ2000', np.float), ('decJ2000', np.float)])
+        cls.dtype = np.dtype([('id', np.int), ('raJ2000', np.float), ('decJ2000', np.float),
+                              ('velRa', np.float), ('velDec', np.float)])
 
         cls.astDB = fileDBObject(cls.dbFile, runtable='test', dtype=cls.dtype, idColKey='id')
 
@@ -260,6 +268,23 @@ class SSMastrometryTest(unittest.TestCase):
 
             if os.path.exists(catName):
                 os.unlink(catName)
+
+
+    def testSkyVelocity(self):
+        """
+        Test that getter for sky velocity correctly calculates its output
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmVelocityCat.txt')
+
+        controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
+        controlVel = np.sqrt(np.power(controlData['velRa'], 2) + np.power(controlData['velDec'], 2))
+
+        cat = SSM_velocityCat(self.astDB)
+        cat.write_catalog(catName)
+        dtype = np.dtype([('id', np.int), ('vel', np.float)])
+        testData = np.genfromtxt(catName, dtype=dtype)
+
+        np.testing.assert_array_almost_equal(testData['vel'], controlVel, 10)
 
 
 def suite():
