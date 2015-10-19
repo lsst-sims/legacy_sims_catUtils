@@ -5,7 +5,7 @@ import palpy as pal
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.measures.instance import compound, cached
 from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
                             _galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
@@ -16,7 +16,7 @@ from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoord
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
-           "CameraCoords"]
+           "AstrometrySSM", "CameraCoords"]
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
@@ -146,3 +146,41 @@ class AstrometryStars(AstrometryBase):
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
         return self.observedStellarCoordinates()
+
+
+class AstrometrySSM(AstrometryBase):
+    """
+    This mixin will provide getters for astrometric columns customized to Solar System Object tables
+    """
+
+    def observedSSMCoordinates(self, includeRefraction = True):
+        """
+        Reads in ICRS coordinates from the database.  Returns observed coordinates
+        with refraction toggled on or off based on the input boolean includeRefraction
+        """
+        ra = self.column_by_name('raJ2000') # in radians
+        dec = self.column_by_name('decJ2000') # in radians
+
+        return _observedFromICRS(ra, dec, includeRefraction=includeRefraction,
+                                 obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
+
+    @compound('raPhoSim', 'decPhoSim')
+    def get_phoSimCoordinates(self):
+        return self.observedSSMCoordinates(includeRefraction = False)
+
+    @compound('raObserved', 'decObserved')
+    def get_observedCoordinates(self):
+        return self.observedSSMCoordinates(includeRefraction = True)
+
+    @cached
+    def get_skyVelocity(self):
+        """
+        Gets the skyVelocity in radians per day
+        """
+
+        dradt = self.column_by_name('velRa') # in radians per day (actual sky velocity;
+                                             # i.e., no need to divide by cos(dec))
+
+        ddecdt = self.column_by_name('velDec') # in radians per day
+
+        return numpy.sqrt(numpy.power(dradt,2) + numpy.power(ddecdt,2))

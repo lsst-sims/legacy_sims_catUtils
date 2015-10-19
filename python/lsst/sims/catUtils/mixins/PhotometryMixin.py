@@ -13,6 +13,7 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 import os
 import numpy
 from collections import OrderedDict
+from lsst.utils import getPackageDir
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, magErrorFromSNR, \
                                 BandpassDict
@@ -20,7 +21,7 @@ from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.photUtils import SedList
 
-__all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
+__all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars", "PhotometrySSM"]
 
 
 class PhotometryBase(object):
@@ -620,3 +621,136 @@ class PhotometryStars(PhotometryBase):
 
         return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames, indices=indices)
 
+
+class PhotometrySSM(PhotometryBase):
+    """
+    A mixin to calculate photometry for solar system objects.
+    """
+    # Because solar system objects will not have dust extinctions, we should be able to read in every
+    # SED exactly once, calculate the colors and magnitudes, and then get actual magnitudes by adding
+    # an offset based on magNorm.
+
+    def _magnitudeGetter(self, bandpassDict, bandpassTag='lsst'):
+        """
+        Method that actually does the work calculating magnitudes for solar system objects.
+
+        Because solar system objects have no dust extinction, this method works by loading
+        each unique Sed once, normalizing it, calculating its magnitudes in the desired
+        bandpasses, and then storing the normalizing magnitudes and the bandpass magnitudes
+        in a dict.  Magnitudes for subsequent objects with identical Seds will be calculated
+        by adding an offset to the magnitudes.  The offset is determined by comparing normalizing
+        magnitues.
+
+        @param [in] bandpassDict is an instantiation of BandpassDict representing the bandpasses
+        to be integrated over
+
+        @param [in] bandpassTag (optional) is a string indicating the name of the bandpass system
+        (i.e. 'lsst', 'sdss', etc.).  This is in case the user wants to calculate the magnitudes
+        in multiple systems simultaneously.  In that case, the dict will store magnitudes for each
+        Sed in each magnitude system separately.
+
+        @param [out] a numpy array of magnitudes corresponding to bandpassDict.
+        """
+
+        if not hasattr(self, '_ssmMagDict'):
+            self._ssmMagDict = {}
+            self._ssmMagNormDict = {}
+            self._file_dir = getPackageDir('sims_sed_library')
+            self._spec_map = defaultSpecMap
+            self._normalizing_bandpass = Bandpass()
+            self._normalizing_bandpass.imsimBandpass()
+
+        sedNameList = self.column_by_name('sedFilename')
+        magNormList = self.column_by_name('magNorm')
+
+        if len(sedNameList)==0:
+            # need to return something when InstanceCatalog goes through
+            # it's "dry run" to determine what columns are required from
+            # the database
+            return numpy.zeros((len(bandpassDict.keys()),0))
+
+        magListOut = []
+
+        for sedName, magNorm in zip(sedNameList, magNormList):
+            magTag = bandpassTag+'_'+sedName
+            if sedName not in self._ssmMagNormDict or magTag not in self._ssmMagDict:
+                dummySed = Sed()
+                dummySed.readSED_flambda(os.path.join(self._file_dir, self._spec_map[sedName]))
+                fnorm = dummySed.calcFluxNorm(magNorm, self._normalizing_bandpass)
+                dummySed.multiplyFluxNorm(fnorm)
+                magList = bandpassDict.magListForSed(dummySed)
+                self._ssmMagDict[magTag] = magList
+                self._ssmMagNormDict[sedName] = magNorm
+            else:
+                dmag = magNorm - self._ssmMagNormDict[sedName]
+                magList = self._ssmMagDict[magTag] + dmag
+            magListOut.append(magList)
+
+        return numpy.array(magListOut).transpose()
+
+
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_lsst_magnitudes(self):
+        """
+        getter for LSST magnitudes of solar system objects
+        """
+
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        return self._magnitudeGetter(self.lsstBandpassDict)
+
+
+    @compound('dmagTrailing', 'dmagDetection')
+    def get_ssm_dmag(self):
+        """
+        This getter will calculate:
+
+        dmagTrailing: the offset in m5 used to represent the loss in signal to noise
+        resulting from the fact that the object's motion smears out its PSF
+
+        dmagDetection: the offset in m5 used to represent the shift in detection
+        threshold resulting from the fact that the object's motion smears out
+        its PSF
+        """
+
+        if self.obs_metadata.seeing is None:
+            raise RuntimeError("Cannot calculate dmagTraling/dmagDetection. "
+                               "Your catalog's ObservationMetaData does not "
+                               "specify seeing.")
+
+        if len(self.obs_metadata.seeing)>1:
+            valueList = self.obs_metadata.seeing.values()
+            for ix in range(1, len(valueList)):
+                if numpy.abs(valueList[ix]-valueList[0])>0.0001:
+
+                    raise RuntimeError("dmagTrailing/dmagDetection calculation is confused. "
+                                       "Your catalog's ObservationMetaData contains multiple "
+                                       "seeing values.  Re-create your catalog with only one seeing value.")
+
+        if not hasattr(self, 'photParams') or self.photParams is None:
+            raise RuntimeError("You cannot calculate dmagTrailing/dmagDetection. "
+                               "Your catalog does not have an associated PhotometricParameters "
+                               "member variable.  It is impossible to know what the exposure time is.")
+
+        dradt = self.column_by_name('velRa') # in radians per day (actual sky velocity;
+                                             # i.e., no need to divide by cos(dec))
+
+        ddecdt = self.column_by_name('velDec') # in radians per day
+
+        if len(dradt)==0:
+            return numpy.zeros((2,0))
+
+        a_trail = 0.76
+        b_trail = 1.16
+        a_det = 0.42
+        b_det = 0.00
+        seeing = self.obs_metadata.seeing[self.obs_metadata.bandpass] # this will be in arcsec
+        texp = self.photParams.nexp*self.photParams.exptime
+        velocity = numpy.sqrt(numpy.power(numpy.degrees(dradt),2) + numpy.power(numpy.degrees(ddecdt),2))
+        x = velocity*texp/(24.0*seeing)
+        xsq = numpy.power(x,2)
+        dmagTrail = 1.25*numpy.log10(1.0 + a_trail * xsq/(1.0+b_trail*x))
+        dmagDetect = 1.25*numpy.log10(1.0 + a_det * xsq/(1.0 + b_det*x))
+
+        return numpy.array([dmagTrail, dmagDetect])
