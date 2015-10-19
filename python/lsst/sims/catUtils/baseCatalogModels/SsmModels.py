@@ -11,7 +11,7 @@ class SolarSystemObj(BaseCatalogObj):
     This is the base CatalogDBObject from which all other Solar System CatalogDBObjects
     derive.  It will query all of the Solar System object tables on fatboy.
 
-    Note: Solar System objects only exist for 5093.14 < mjd < 51923.0.  If you query outside
+    Note: Solar System objects only exist for 50093.14 < mjd < 51923.0.  If you query outside
     of that date range, you will get an empty catalog.
     """
     objid = 'ssm'
