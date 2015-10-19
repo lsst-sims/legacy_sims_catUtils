@@ -89,15 +89,15 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         #the median and maximum values of all of the quantities
         #in our test opsim database
         bounds = [
-        ('obsHistID',(5973, 11080)),
-        ('fieldRA',(numpy.degrees(1.370916), numpy.degrees(1.5348635))),
-        ('rawSeeing',(0.728562, 1.040495)),
+        ('obsHistID',(5973, 7000)),
+        ('fieldRA',(numpy.degrees(1.370916), numpy.degrees(1.40))),
+        ('rawSeeing',(0.728562, 0.9)),
         ('seeing', (0.7, 0.9)),
-        ('dist2Moon',(numpy.degrees(1.570307), numpy.degrees(2.347868))),
-        ('expMJD',(49367.129396, 49374.1990025)),
-        ('airmass',(1.420459, 2.0048075)),
-        ('m5',(22.815249, 24.0047695)),
-        ('skyBrightness',(19.017605, 20.512553))]
+        ('dist2Moon',(numpy.degrees(1.570307), numpy.degrees(1.9))),
+        ('expMJD',(49367.129396, 49370.0)),
+        ('airmass',(1.420459, 1.6)),
+        ('m5',(22.815249, 23.0)),
+        ('skyBrightness',(19.017605, 19.5))]
 
         #test querying on a single column
         for line in bounds:
