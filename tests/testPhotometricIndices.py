@@ -7,7 +7,7 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import fileDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catUtils.mixins import PhotometryStars
+from lsst.sims.catUtils.mixins import PhotometryStars, PhotometrySSM
 
 class baselineStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs= ['raJ2000', 'decJ2000',
@@ -79,7 +79,7 @@ class IndexTestCaseStars(unittest.TestCase):
 
         cat = baselineStarCatalog(cls.db, obs_metadata=cls.obs)
         cls.catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                   'scratchSpace', 'indicesControlCat.txt')
+                                   'scratchSpace', 'indicesStarsControlCat.txt')
 
         cat.write_catalog(cls.catName)
         cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
@@ -198,10 +198,185 @@ class IndexTestCaseStars(unittest.TestCase):
             os.unlink(catName)
 
 
+class baselineSSMCatalog(InstanceCatalog, PhotometrySSM):
+    column_outputs= ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                    'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+                    'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+
+    default_formats = {'f':'%.13f'}
+
+
+class uSSMCatalog(InstanceCatalog, PhotometrySSM):
+    column_outputs = ['lsst_u', 'sigma_lsst_u']
+
+    default_formats = {'f':'%.13f'}
+
+
+class gzSSMCatalog(InstanceCatalog, PhotometrySSM):
+    column_outputs = ['lsst_g', 'lsst_z',
+                      'sigma_lsst_g', 'sigma_lsst_z']
+
+    default_formats = {'f':'%.13f'}
+
+
+class gzUncertaintySSMCatalog(InstanceCatalog, PhotometrySSM):
+    column_outputs = ['sigma_lsst_g', 'sigma_lsst_z']
+
+    default_formats = {'f':'%.13f'}
+
+
+class IndexTestCaseSSM(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.obs = ObservationMetaData(bandpassName=['u', 'g', 'r', 'i', 'z', 'y'],
+                                      m5 = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
+
+        baselineDtype = np.dtype([
+                                 ('lsst_u', np.float),
+                                 ('lsst_g', np.float),
+                                 ('lsst_r', np.float),
+                                 ('lsst_i', np.float),
+                                 ('lsst_z', np.float),
+                                 ('lsst_y', np.float),
+                                 ('sigma_lsst_u', np.float),
+                                 ('sigma_lsst_g', np.float),
+                                 ('sigma_lsst_r', np.float),
+                                 ('sigma_lsst_i', np.float),
+                                 ('sigma_lsst_z', np.float),
+                                 ('sigma_lsst_y', np.float),
+                                 ])
+
+        dbdtype = np.dtype([
+                           ('id', np.int),
+                           ('sedFilename', str, 100),
+                           ('magNorm', np.float),
+                           ('velRA', np.float),
+                           ('velDec', np.float)
+                           ])
+
+        inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
+        inputFile = os.path.join(inputDir, 'SSMphotometryCatalog.txt')
+
+        cls.db = fileDBObject(inputFile, runtable='test',
+                              idColKey='id', dtype=dbdtype)
+
+        cat = baselineSSMCatalog(cls.db, obs_metadata=cls.obs)
+        cls.catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                                   'scratchSpace', 'indicesSSMControlCat.txt')
+
+        cat.write_catalog(cls.catName)
+        cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
+
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.catName):
+            os.unlink(cls.catName)
+
+
+    def test_u_ssm_catalog(self):
+        """
+        Test that a catalog which only cares about u does not calculate any other magnitudes.
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUssmCat.txt')
+        dtype = np.dtype([
+                          ('lsst_u', np.float),
+                          ('sigma_lsst_u', np.float)
+                         ])
+
+        cat = uSSMCatalog(self.db, obs_metadata=self.obs)
+        cat.write_catalog(catName)
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        np.testing.assert_array_almost_equal(self.controlData['lsst_u'], testData['lsst_u'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_u'], testData['sigma_lsst_u'], 10)
+
+        self.assertTrue('lsst_g' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_g' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_z' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_z' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
+    def test_gz_ssm_catalog(self):
+        """
+        Test that a catalog which only cares about g and z does not calculate any other magnitudes
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmCat.txt')
+        dtype = np.dtype([
+                          ('lsst_g', np.float),
+                          ('lsst_z', np.float),
+                          ('sigma_lsst_g', np.float),
+                          ('sigma_lsst_z', np.float)
+                         ])
+
+        cat = gzSSMCatalog(self.db, obs_metadata=self.obs)
+        cat.write_catalog(catName)
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        np.testing.assert_array_almost_equal(self.controlData['lsst_g'], testData['lsst_g'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['lsst_z'], testData['lsst_z'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
+
+        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
+    def test_gz_uncertainty_ssm_catalog(self):
+        """
+        Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
+        dtype = np.dtype([
+                          ('sigma_lsst_g', np.float),
+                          ('sigma_lsst_z', np.float)
+                         ])
+
+        cat = gzUncertaintySSMCatalog(self.db, obs_metadata=self.obs)
+        cat.write_catalog(catName)
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
+
+        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_g' in cat._actually_calculated_columns)
+        self.assertTrue('lsst_z' in cat._actually_calculated_columns)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(IndexTestCaseStars)
+    suites += unittest.makeSuite(IndexTestCaseSSM)
     return unittest.TestSuite(suites)
 
 def run(shouldExit = False):

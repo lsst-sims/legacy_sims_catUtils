@@ -636,7 +636,7 @@ class PhotometrySSM(PhotometryBase):
     # SED exactly once, calculate the colors and magnitudes, and then get actual magnitudes by adding
     # an offset based on magNorm.
 
-    def _magnitudeGetter(self, bandpassDict, bandpassTag='lsst'):
+    def _magnitudeGetter(self, bandpassDict, bandpassTag='lsst', indices=None):
         """
         Method that actually does the work calculating magnitudes for solar system objects.
 
@@ -654,6 +654,9 @@ class PhotometrySSM(PhotometryBase):
         (i.e. 'lsst', 'sdss', etc.).  This is in case the user wants to calculate the magnitudes
         in multiple systems simultaneously.  In that case, the dict will store magnitudes for each
         Sed in each magnitude system separately.
+
+        @param [in] indices (optional) is a list of ints denoting the indices (in bandpassDict) of
+        the bandpasses for which magnitudes are actually being calculated.
 
         @param [out] a numpy array of magnitudes corresponding to bandpassDict.
         """
@@ -684,7 +687,7 @@ class PhotometrySSM(PhotometryBase):
                 dummySed.readSED_flambda(os.path.join(self._file_dir, self._spec_map[sedName]))
                 fnorm = dummySed.calcFluxNorm(magNorm, self._normalizing_bandpass)
                 dummySed.multiplyFluxNorm(fnorm)
-                magList = bandpassDict.magListForSed(dummySed)
+                magList = bandpassDict.magListForSed(dummySed, indices=indices)
                 self._ssmMagDict[magTag] = magList
                 self._ssmMagNormDict[sedName] = magNorm
             else:
@@ -693,6 +696,31 @@ class PhotometrySSM(PhotometryBase):
             magListOut.append(magList)
 
         return numpy.array(magListOut).transpose()
+
+
+    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
+              'sigma_lsst_z','sigma_lsst_y')
+    def get_lsst_photometric_uncertainties(self):
+        """
+        Getter for photometric uncertainties associated with Solar System Object
+        magnitudes
+        """
+
+        # make sure that the magnitudes associated with any requested
+        # uncertainties actually are calculated
+        num_elements = None
+        for name in self.get_lsst_photometric_uncertainties._colnames:
+            if name in self._actually_calculated_columns:
+                ref = self.column_by_name(name.replace('sigma_',''))
+                if num_elements is None:
+                    num_elements = len(ref)
+
+        magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
+                                  else [numpy.NaN]*num_elements
+                                  for name in ('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')])
+
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
@@ -704,7 +732,13 @@ class PhotometrySSM(PhotometryBase):
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        return self._magnitudeGetter(self.lsstBandpassDict)
+        indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames) \
+                   if name in self._actually_calculated_columns]
+
+        if len(indices) == 6:
+            indices = None
+
+        return self._magnitudeGetter(self.lsstBandpassDict, indices=indices)
 
 
     @compound('dmagTrailing', 'dmagDetection')
