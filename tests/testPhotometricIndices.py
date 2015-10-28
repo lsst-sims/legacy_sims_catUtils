@@ -396,6 +396,17 @@ class uGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     default_formats = {'f':'%.13f'}
 
 
+class gzGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
+    column_outputs = ['gBulge', 'gDisk', 'gAgn', 'lsst_g',
+                      'zBulge', 'zDisk', 'zAgn', 'lsst_z',
+                      'sigma_gBulge', 'sigma_gDisk', 'sigma_gAgn',
+                      'sigma_lsst_g',
+                      'sigma_zBulge', 'sigma_zDisk', 'sigma_zAgn',
+                      'sigma_lsst_z']
+
+    default_formats = {'f':'%.13f'}
+
+
 class IndexTestCaseGalaxies(unittest.TestCase):
 
     @classmethod
@@ -452,8 +463,8 @@ class IndexTestCaseGalaxies(unittest.TestCase):
 
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
 
-        for name in ('uBulge', 'uDisk', 'lsst_u',
-                     'sigma_uBulge', 'sigma_uDisk', 'sigma_lsst_u'):
+        for name in ('uBulge', 'uDisk', 'uAgn', 'lsst_u',
+                     'sigma_uBulge', 'sigma_uDisk', 'sigma_uAgn', 'sigma_lsst_u'):
 
             np.testing.assert_array_almost_equal(testData[name],
                                                  self.controlData[name], 10)
@@ -468,6 +479,11 @@ class IndexTestCaseGalaxies(unittest.TestCase):
         self.assertTrue('iDisk' not in cat._actually_calculated_columns)
         self.assertTrue('zDisk' not in cat._actually_calculated_columns)
         self.assertTrue('yDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('gAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('rAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('iAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('zAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('yAgn' not in cat._actually_calculated_columns)
         self.assertTrue('lsst_g' not in cat._actually_calculated_columns)
         self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
         self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
@@ -483,10 +499,74 @@ class IndexTestCaseGalaxies(unittest.TestCase):
         self.assertTrue('sigma_iDisk' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_zDisk' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_yDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_gAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_rAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_iAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_zAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_yAgn' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_g' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sig_malsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_z' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def test_gz_catalog(self):
+        """
+        Test that a catalog which only requests g and z band magnitudes does not
+        calculate anything it shouldn't
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                               'scratchSpace', 'galPhotIndicesGZTestCat.txt')
+        cat = gzGalaxyCatalog(self.db, obs_metadata=self.obs)
+        dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
+        cat.write_catalog(catName)
+
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+
+        for name in ('gBulge', 'gDisk', 'gAgn', 'lsst_g',
+                     'zBulge', 'zDisk', 'zAgn', 'lsst_z',
+                     'sigma_gBulge', 'sigma_gDisk', 'sigma_gAgn',
+                     'sigma_lsst_g',
+                     'sigma_zBulge', 'sigma_zDisk', 'sigma_zAgn',
+                     'sigma_lsst_z'):
+
+            np.testing.assert_array_almost_equal(testData[name],
+                                                 self.controlData[name], 10)
+
+        self.assertTrue('uBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('rBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('iBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('yBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('uDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('rDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('iDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('yDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('uAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('rAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('iAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('yAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_uBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_rBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_iBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_yBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_uDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_rDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_iDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_yDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_uAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_rAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_iAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_yAgn' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
 
         if os.path.exists(catName):
