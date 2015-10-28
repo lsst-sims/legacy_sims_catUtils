@@ -7,7 +7,8 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import fileDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catUtils.mixins import PhotometryStars, PhotometrySSM
+from lsst.sims.catUtils.mixins import PhotometryStars, PhotometrySSM, \
+                                      PhotometryGalaxies
 
 class baselineStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs= ['raJ2000', 'decJ2000',
@@ -371,12 +372,134 @@ class IndexTestCaseSSM(unittest.TestCase):
             os.unlink(catName)
 
 
+class baselineGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
+    column_outputs = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                      'sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
+                      'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge',
+                      'sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk',
+                      'sigma_iDisk', 'sigma_zDisk', 'sigma_yDisk',
+                      'sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn',
+                      'sigma_iAgn', 'sigma_zAgn', 'sigma_yAgn',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+                      'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+
+    default_formats = {'f':'%.13f'}
+
+class uGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
+    column_outputs = ['uBulge', 'uDisk', 'uAgn', 'lsst_u',
+                      'sigma_uBulge', 'sigma_uDisk', 'sigma_uAgn',
+                      'sigma_lsst_u']
+
+    default_formats = {'f':'%.13f'}
+
+
+class IndexTestCaseGalaxies(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.obs = ObservationMetaData(bandpassName=['u', 'g', 'r', 'i', 'z', 'y'],
+                                      m5=[24.0, 25.0, 26.0, 27.0, 28.0, 29.0])
+
+        dtype = np.dtype([
+                         ('id', np.int),
+                         ('sedFilenameBulge', str, 100),
+                         ('magNormBulge', np.float),
+                         ('sedFilenameDisk', str, 100),
+                         ('magNormDisk', np.float),
+                         ('sedFilenameAgn', str, 100),
+                         ('magNormAgn', np.float),
+                         ('internalAvBulge', np.float),
+                         ('internalAvDisk', np.float),
+                         ('galacticAv', np.float),
+                         ('redshift', np.float)
+                         ])
+
+        inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
+        inputFile = os.path.join(inputDir, 'IndicesTestCatalogGalaxies.txt')
+        cls.db = fileDBObject(inputFile, dtype=dtype, runtable='test',
+                               idColKey='id')
+
+        cls.db.objectTypeId = 44
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                                'scratchSpace', 'galaxyPhotIndicesBaseline.txt')
+
+        cat = baselineGalaxyCatalog(cls.db, obs_metadata=cls.obs)
+        cat.write_catalog(catName)
+
+        dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
+
+        cls.controlData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
+    def test_u_catalog(self):
+        """
+        Test that a catalog which only requests u band magnitudes does not
+        calculate anything it shouldn't
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                               'scratchSpace', 'galPhotIndicesUTestCat.txt')
+        cat = uGalaxyCatalog(self.db, obs_metadata=self.obs)
+        dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
+        cat.write_catalog(catName)
+
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+
+        for name in ('uBulge', 'uDisk', 'lsst_u',
+                     'sigma_uBulge', 'sigma_uDisk', 'sigma_lsst_u'):
+
+            np.testing.assert_array_almost_equal(testData[name],
+                                                 self.controlData[name], 10)
+
+        self.assertTrue('gBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('rBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('iBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('zBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('yBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('gDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('rDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('iDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('zDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('yDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_g' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_z' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_gBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_rBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_iBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_zBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_yBulge' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_gDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_rDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_iDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_zDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_yDisk' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_g' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sig_malsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_z' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
 
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(IndexTestCaseStars)
     suites += unittest.makeSuite(IndexTestCaseSSM)
+    suites += unittest.makeSuite(IndexTestCaseGalaxies)
     return unittest.TestSuite(suites)
 
 def run(shouldExit = False):
