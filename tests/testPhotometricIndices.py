@@ -31,6 +31,12 @@ class gzStarCatalog(InstanceCatalog, PhotometryStars):
     default_formats = {'f':'%.13f'}
 
 
+class gzUncertaintyStarCatalog(InstanceCatalog, PhotometryStars):
+    column_outputs = ['raJ2000', 'decJ2000', 'sigma_lsst_g', 'sigma_lsst_z']
+
+    default_formats = {'f':'%.13f'}
+
+
 class IndexTestCaseStars(unittest.TestCase):
 
     @classmethod
@@ -149,6 +155,39 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
         self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+
+
+    def test_gz_uncertainty_star_catalog(self):
+        """
+        Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUCat.txt')
+        dtype = np.dtype([
+                          ('raJ2000', np.float),
+                          ('decJ2000', np.float),
+                          ('sigma_lsst_g', np.float),
+                          ('sigma_lsst_z', np.float)
+                         ])
+
+        cat = gzUncertaintyStarCatalog(self.db, obs_metadata=self.obs)
+        cat.write_catalog(catName)
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        np.testing.assert_array_almost_equal(self.controlData['raJ2000'], testData['raJ2000'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['decJ2000'], testData['decJ2000'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
+
+        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_g' in cat._actually_calculated_columns)
+        self.assertTrue('lsst_z' in cat._actually_calculated_columns)
+
 
 
 def suite():
