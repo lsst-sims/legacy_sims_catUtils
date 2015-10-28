@@ -66,7 +66,7 @@ class IndexTestCaseStars(unittest.TestCase):
                            ])
 
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
-        inputFile = os.path.join(inputDir, 'IndicesTestCatalog.txt')
+        inputFile = os.path.join(inputDir, 'IndicesTestCatalogStars.txt')
 
         cls.db = fileDBObject(inputFile, runtable='test',
                               idColKey='id', dtype=dbdtype)
