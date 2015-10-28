@@ -594,8 +594,14 @@ class PhotometryStars(PhotometryBase):
         magnitudes
         """
 
-        ra = self.column_by_name('raJ2000')
-        num_elements = len(ra)
+        # make sure that the magnitudes associated with any requested
+        # uncertainties actually are calculated
+        num_elements = None
+        for name in self.get_lsst_photometric_uncertainties._colnames:
+            if name in self._actually_calculated_columns:
+                ref = self.column_by_name(name.replace('sigma_',''))
+                if num_elements is None:
+                    num_elements = len(ref)
 
         magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
                                   else [numpy.NaN]*num_elements
