@@ -594,12 +594,12 @@ class PhotometryStars(PhotometryBase):
         magnitudes
         """
 
-        magnitudes = numpy.array([self.column_by_name('lsst_u'),
-                                  self.column_by_name('lsst_g'),
-                                  self.column_by_name('lsst_r'),
-                                  self.column_by_name('lsst_i'),
-                                  self.column_by_name('lsst_z'),
-                                  self.column_by_name('lsst_y')])
+        ra = self.column_by_name('raJ2000')
+        num_elements = len(ra)
+
+        magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
+                                  else [numpy.NaN]*num_elements
+                                  for name in ('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
                                                   obs_metadata=self.obs_metadata)
