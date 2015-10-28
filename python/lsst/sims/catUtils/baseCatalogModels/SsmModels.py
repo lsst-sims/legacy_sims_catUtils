@@ -148,6 +148,13 @@ class CometObj(SolarSystemObj):
     """
     ssmtable = 'fSSMCometBase'
 
+    # This object needs its own testObservationMetaData.  The
+    # testObservationMetaData defined in SolarSystemObj is too small.
+    # It returns zero objects, which causes an error in testAllObjects.py
+    testObservationMetaData = ObservationMetaData(boundType = 'circle',
+                                                  unrefractedRA = 0.0, unrefractedDec = 0.0,
+                                                  boundLength = 0.5, mjd=51200., bandpassName='r', m5=22.0)
+
 
 class NEOObj(SolarSystemObj):
     """
@@ -157,6 +164,14 @@ class NEOObj(SolarSystemObj):
     of that date range, you will get an empty catalog.
     """
     ssmtable = 'fSSMNEOBase'
+
+    # This object needs its own testObservationMetaData.  The
+    # testObservationMetaData defined in SolarSystemObj is too small.
+    # It returns zero objects, which causes an error in testAllObjects.py
+    testObservationMetaData = ObservationMetaData(boundType = 'circle',
+                                                  unrefractedRA = 0.0, unrefractedDec = 0.0,
+                                                  boundLength = 0.5, mjd=51200., bandpassName='r', m5=22.0)
+
 
 
 class MBAObj(SolarSystemObj):
