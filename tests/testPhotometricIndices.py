@@ -122,12 +122,15 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
 
+        if os.path.exists(catName):
+            os.unlink(catName)
+
 
     def test_gz_star_catalog(self):
         """
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUCat.txt')
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZCat.txt')
         dtype = np.dtype([
                           ('raJ2000', np.float),
                           ('decJ2000', np.float),
@@ -156,12 +159,15 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
 
+        if os.path.exists(catName):
+            os.unlink(catName)
+
 
     def test_gz_uncertainty_star_catalog(self):
         """
         Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUCat.txt')
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
         dtype = np.dtype([
                           ('raJ2000', np.float),
                           ('decJ2000', np.float),
@@ -188,6 +194,8 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertTrue('lsst_g' in cat._actually_calculated_columns)
         self.assertTrue('lsst_z' in cat._actually_calculated_columns)
 
+        if os.path.exists(catName):
+            os.unlink(catName)
 
 
 def suite():
