@@ -96,6 +96,7 @@ class PhotometryBase(object):
 
         return error
 
+
     def _magnitudeUncertaintyGetter(self, column_names, bandpassDict_name):
         """
         Generic getter for magnitude uncertainty columns.
