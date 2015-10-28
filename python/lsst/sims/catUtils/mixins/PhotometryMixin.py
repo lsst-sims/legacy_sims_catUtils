@@ -97,6 +97,32 @@ class PhotometryBase(object):
         return error
 
 
+    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
+              'sigma_lsst_z','sigma_lsst_y')
+    def get_lsst_photometric_uncertainties(self):
+        """
+        Getter for photometric uncertainties associated with lsst bandpasses
+        """
+
+        # make sure that the magnitudes associated with any requested
+        # uncertainties actually are calculated
+        num_elements = None
+        for name in self.get_lsst_photometric_uncertainties._colnames:
+            if name in self._actually_calculated_columns:
+                ref = self.column_by_name(name.replace('sigma_',''))
+                if num_elements is None:
+                    num_elements = len(ref)
+
+        magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
+                                  else [numpy.NaN]*num_elements
+                                  for name in ('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')])
+
+        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
+                                                  obs_metadata=self.obs_metadata)
+
+
+
+
 class PhotometryGalaxies(PhotometryBase):
     """
     This mixin provides the code necessary for calculating the component magnitudes associated with
@@ -343,22 +369,6 @@ class PhotometryGalaxies(PhotometryBase):
         return magnitudes
 
 
-    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r',
-              'sigma_lsst_i','sigma_lsst_z','sigma_lsst_y')
-    def get_photometric_uncertainties_total(self):
-        """
-        Getter for total photometric uncertainties associated with galaxies
-        """
-        magnitudes = numpy.array([self.column_by_name('lsst_u'),
-                                  self.column_by_name('lsst_g'),
-                                  self.column_by_name('lsst_r'),
-                                  self.column_by_name('lsst_i'),
-                                  self.column_by_name('lsst_z'),
-                                  self.column_by_name('lsst_y')])
-
-        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
-                                                  obs_metadata=self.obs_metadata)
-
     @compound('sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
               'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge')
     def get_photometric_uncertainties_bulge(self):
@@ -586,31 +596,6 @@ class PhotometryStars(PhotometryBase):
         return magnitudes
 
 
-    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
-              'sigma_lsst_z','sigma_lsst_y')
-    def get_lsst_photometric_uncertainties(self):
-        """
-        Getter for photometric uncertainties associated with stellar
-        magnitudes
-        """
-
-        # make sure that the magnitudes associated with any requested
-        # uncertainties actually are calculated
-        num_elements = None
-        for name in self.get_lsst_photometric_uncertainties._colnames:
-            if name in self._actually_calculated_columns:
-                ref = self.column_by_name(name.replace('sigma_',''))
-                if num_elements is None:
-                    num_elements = len(ref)
-
-        magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
-                                  else [numpy.NaN]*num_elements
-                                  for name in ('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')])
-
-        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
-                                                  obs_metadata=self.obs_metadata)
-
-
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_lsst_magnitudes(self):
         """
@@ -696,31 +681,6 @@ class PhotometrySSM(PhotometryBase):
             magListOut.append(magList)
 
         return numpy.array(magListOut).transpose()
-
-
-    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
-              'sigma_lsst_z','sigma_lsst_y')
-    def get_lsst_photometric_uncertainties(self):
-        """
-        Getter for photometric uncertainties associated with Solar System Object
-        magnitudes
-        """
-
-        # make sure that the magnitudes associated with any requested
-        # uncertainties actually are calculated
-        num_elements = None
-        for name in self.get_lsst_photometric_uncertainties._colnames:
-            if name in self._actually_calculated_columns:
-                ref = self.column_by_name(name.replace('sigma_',''))
-                if num_elements is None:
-                    num_elements = len(ref)
-
-        magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
-                                  else [numpy.NaN]*num_elements
-                                  for name in ('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')])
-
-        return self.calculateMagnitudeUncertainty(magnitudes, self.lsstBandpassDict,
-                                                  obs_metadata=self.obs_metadata)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
