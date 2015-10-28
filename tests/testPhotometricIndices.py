@@ -116,6 +116,41 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
         self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
 
+
+    def test_gz_star_catalog(self):
+        """
+        Test that a catalog which only cares about g and z does not calculate any other magnitudes
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUCat.txt')
+        dtype = np.dtype([
+                          ('raJ2000', np.float),
+                          ('decJ2000', np.float),
+                          ('lsst_g', np.float),
+                          ('lsst_z', np.float),
+                          ('sigma_lsst_g', np.float),
+                          ('sigma_lsst_z', np.float)
+                         ])
+
+        cat = gzStarCatalog(self.db, obs_metadata=self.obs)
+        cat.write_catalog(catName)
+        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        np.testing.assert_array_almost_equal(self.controlData['raJ2000'], testData['raJ2000'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['decJ2000'], testData['decJ2000'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['lsst_g'], testData['lsst_g'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['lsst_z'], testData['lsst_z'], 10)
+        np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
+
+        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
+        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
+        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+
+
 def suite():
     utilsTests.init()
     suites = []
