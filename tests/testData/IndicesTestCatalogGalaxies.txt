@@ -1,0 +1,5 @@
+# id sedFilenameBulge magNormBulge sedFilenameDisk magNormDisk sedFilenameAgn magNormAgn internalAvBulge internalAvDisk galacticAv redshift
+1 Const.10E07.0005Z.spec 21.0 Inst.80E08.0005Z.spec 23.0 agn.spec 18.0 0.5 0.4 1.1 0.2
+2 Const.25E09.25Z.spec 18.2 Const.80E08.04Z.spec 20.4 agn.spec 22.0 1.1 0.8 0.7 1.2
+3 None None Burst.40E07.25Z.spec 22.4 None None None 0.5 0.7 0.4
+4 Exp.40E07.25Z.spec 23.1 None None agn.spec 21.6 0.9 None 1.1 0.7
