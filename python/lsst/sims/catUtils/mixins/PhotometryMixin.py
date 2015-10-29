@@ -331,8 +331,7 @@ class PhotometryGalaxies(PhotometryBase):
                 return numpy.NaN
 
 
-    def _magnitudeGetter(self, componentName, bandpassDict,
-                         columnNameList, indices=None):
+    def _magnitudeGetter(self, componentName, bandpassDict, columnNameList):
         """
         A generic getter for magnitudes of galaxy components.
 
@@ -344,14 +343,17 @@ class PhotometryGalaxies(PhotometryBase):
         @param [in] columnNameList is a list of the columns corresponding to
         these magnitudes (for purposes of applying variability).
 
-        @param [in] indices is an optional list of ints corresponding to
-        the index in bandpassDict of the magnitudes that will actually
-        be output by the InstanceCatalog
-
         @param [out] magnitudes is a 2-D numpy array of magnitudes in which
         rows correspond to bandpasses and columns correspond to astronomical
         objects.
         """
+
+        # figure out which of these columns we are actually calculating
+        indices = [ii for ii, name in enumerate(columnNameList)
+                   if name in self._actually_calculated_columns]
+
+        if len(indices) == len(columnNameList):
+            indices = None
 
         if componentName == 'bulge':
             self._loadBulgeSedList(bandpassDict.wavelenMatch)
@@ -453,8 +455,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         # actually calculate the magnitudes
         return self._magnitudeGetter('bulge', self.lsstBandpassDict,
-                                     self.get_lsst_bulge_mags._colnames,
-                                     indices=indices)
+                                     self.get_lsst_bulge_mags._colnames)
 
 
 
@@ -479,8 +480,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         # actually calculate the magnitudes
         return self._magnitudeGetter('disk', self.lsstBandpassDict,
-                                     self.get_lsst_disk_mags._colnames,
-                                     indices=indices)
+                                     self.get_lsst_disk_mags._colnames)
 
 
     @compound('uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
@@ -504,8 +504,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         # actually calculate the magnitudes
         return self._magnitudeGetter('agn', self.lsstBandpassDict,
-                                     self.get_lsst_agn_mags._colnames,
-                                     indices=indices)
+                                     self.get_lsst_agn_mags._colnames)
 
 
     @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')
@@ -583,13 +582,18 @@ class PhotometryStars(PhotometryBase):
         being calculated (so that any variability model can determine if a
         'delta_column_name' exists
 
-        @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for
-
         @param [out] magnitudes is a 2-D numpy array of magnitudes in which
         rows correspond to bandpasses in bandpassDict and columns correspond
         to astronomical objects.
         """
+
+        # figure out which of these columns we are actually calculating
+        indices = [ii for ii, name in enumerate(columnNameList)
+                   if name in self._actually_calculated_columns]
+
+        if len(indices) == len(columnNameList):
+            indices = None
+
 
         self._loadSedList(bandpassDict.wavelenMatch)
 
@@ -616,13 +620,7 @@ class PhotometryStars(PhotometryBase):
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames) \
-                   if name in self._actually_calculated_columns]
-
-        if len(indices) == 6:
-            indices = None
-
-        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames, indices=indices)
+        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames)
 
 
 class PhotometrySSM(PhotometryBase):
@@ -633,7 +631,7 @@ class PhotometrySSM(PhotometryBase):
     # SED exactly once, calculate the colors and magnitudes, and then get actual magnitudes by adding
     # an offset based on magNorm.
 
-    def _magnitudeGetter(self, bandpassDict, bandpassTag='lsst', indices=None):
+    def _magnitudeGetter(self, bandpassDict, columnNameList, bandpassTag='lsst'):
         """
         Method that actually does the work calculating magnitudes for solar system objects.
 
@@ -647,16 +645,23 @@ class PhotometrySSM(PhotometryBase):
         @param [in] bandpassDict is an instantiation of BandpassDict representing the bandpasses
         to be integrated over
 
+        @param [in] columnNameList is a list of the names of the columns being calculated
+        by this getter
+
         @param [in] bandpassTag (optional) is a string indicating the name of the bandpass system
         (i.e. 'lsst', 'sdss', etc.).  This is in case the user wants to calculate the magnitudes
         in multiple systems simultaneously.  In that case, the dict will store magnitudes for each
         Sed in each magnitude system separately.
 
-        @param [in] indices (optional) is a list of ints denoting the indices (in bandpassDict) of
-        the bandpasses for which magnitudes are actually being calculated.
-
         @param [out] a numpy array of magnitudes corresponding to bandpassDict.
         """
+
+        # figure out which of these columns we are actually calculating
+        indices = [ii for ii, name in enumerate(columnNameList)
+                   if name in self._actually_calculated_columns]
+
+        if len(indices) == len(columnNameList):
+            indices = None
 
         if not hasattr(self, '_ssmMagDict'):
             self._ssmMagDict = {}
@@ -710,7 +715,7 @@ class PhotometrySSM(PhotometryBase):
         if len(indices) == 6:
             indices = None
 
-        return self._magnitudeGetter(self.lsstBandpassDict, indices=indices)
+        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames)
 
 
     @compound('dmagTrailing', 'dmagDetection')
