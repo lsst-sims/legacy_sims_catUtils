@@ -39,6 +39,11 @@ class gzUncertaintyStarCatalog(InstanceCatalog, PhotometryStars):
 
 
 class IndexTestCaseStars(unittest.TestCase):
+    """
+    This unit test suite will test that the 'indices' framework for making
+    sure that an InstanceCatalog only calculates the magnitudes requested
+    works in the case of stars.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -227,6 +232,11 @@ class gzUncertaintySSMCatalog(InstanceCatalog, PhotometrySSM):
 
 
 class IndexTestCaseSSM(unittest.TestCase):
+    """
+    This unit test suite will test that the 'indices' framework for making
+    sure that an InstanceCatalog only calculates the magnitudes requested
+    works in the case of solar system objects.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -408,6 +418,11 @@ class gzGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
 
 
 class IndexTestCaseGalaxies(unittest.TestCase):
+    """
+    This unit test suite will test that the 'indices' framework for making
+    sure that an InstanceCatalog only calculates the magnitudes requested
+    works in the case of galaxies.
+    """
 
     @classmethod
     def setUpClass(cls):
