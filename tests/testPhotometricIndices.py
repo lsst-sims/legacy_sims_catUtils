@@ -51,22 +51,7 @@ class IndexTestCaseStars(unittest.TestCase):
         cls.obs = ObservationMetaData(bandpassName=['u', 'g', 'r', 'i', 'z', 'y'],
                                       m5 = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
 
-        baselineDtype = np.dtype([
-                                 ('raJ2000', np.float),
-                                 ('decJ2000', np.float),
-                                 ('lsst_u', np.float),
-                                 ('lsst_g', np.float),
-                                 ('lsst_r', np.float),
-                                 ('lsst_i', np.float),
-                                 ('lsst_z', np.float),
-                                 ('lsst_y', np.float),
-                                 ('sigma_lsst_u', np.float),
-                                 ('sigma_lsst_g', np.float),
-                                 ('sigma_lsst_r', np.float),
-                                 ('sigma_lsst_i', np.float),
-                                 ('sigma_lsst_z', np.float),
-                                 ('sigma_lsst_y', np.float),
-                                 ])
+        baselineDtype = np.dtype([(name, np.float) for name in baselineStarCatalog.column_outputs])
 
         dbdtype = np.dtype([
                            ('id', np.int),
@@ -102,12 +87,7 @@ class IndexTestCaseStars(unittest.TestCase):
         Test that a catalog which only cares about u does not calculate any other magnitudes.
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUCat.txt')
-        dtype = np.dtype([
-                          ('raJ2000', np.float),
-                          ('decJ2000', np.float),
-                          ('lsst_u', np.float),
-                          ('sigma_lsst_u', np.float)
-                         ])
+        dtype = np.dtype([(name, np.float) for name in uStarCatalog.column_outputs])
 
         cat = uStarCatalog(self.db, obs_metadata=self.obs)
         cat.write_catalog(catName)
@@ -137,14 +117,7 @@ class IndexTestCaseStars(unittest.TestCase):
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZCat.txt')
-        dtype = np.dtype([
-                          ('raJ2000', np.float),
-                          ('decJ2000', np.float),
-                          ('lsst_g', np.float),
-                          ('lsst_z', np.float),
-                          ('sigma_lsst_g', np.float),
-                          ('sigma_lsst_z', np.float)
-                         ])
+        dtype = np.dtype([(name, np.float) for name in gzStarCatalog.column_outputs])
 
         cat = gzStarCatalog(self.db, obs_metadata=self.obs)
         cat.write_catalog(catName)
@@ -174,12 +147,7 @@ class IndexTestCaseStars(unittest.TestCase):
         Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
-        dtype = np.dtype([
-                          ('raJ2000', np.float),
-                          ('decJ2000', np.float),
-                          ('sigma_lsst_g', np.float),
-                          ('sigma_lsst_z', np.float)
-                         ])
+        dtype = np.dtype([(name, np.float) for name in gzUncertaintyStarCatalog.column_outputs])
 
         cat = gzUncertaintyStarCatalog(self.db, obs_metadata=self.obs)
         cat.write_catalog(catName)
@@ -244,20 +212,7 @@ class IndexTestCaseSSM(unittest.TestCase):
         cls.obs = ObservationMetaData(bandpassName=['u', 'g', 'r', 'i', 'z', 'y'],
                                       m5 = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
 
-        baselineDtype = np.dtype([
-                                 ('lsst_u', np.float),
-                                 ('lsst_g', np.float),
-                                 ('lsst_r', np.float),
-                                 ('lsst_i', np.float),
-                                 ('lsst_z', np.float),
-                                 ('lsst_y', np.float),
-                                 ('sigma_lsst_u', np.float),
-                                 ('sigma_lsst_g', np.float),
-                                 ('sigma_lsst_r', np.float),
-                                 ('sigma_lsst_i', np.float),
-                                 ('sigma_lsst_z', np.float),
-                                 ('sigma_lsst_y', np.float),
-                                 ])
+        baselineDtype = np.dtype([(name, np.float) for name in baselineSSMCatalog.column_outputs])
 
         dbdtype = np.dtype([
                            ('id', np.int),
@@ -292,10 +247,7 @@ class IndexTestCaseSSM(unittest.TestCase):
         Test that a catalog which only cares about u does not calculate any other magnitudes.
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUssmCat.txt')
-        dtype = np.dtype([
-                          ('lsst_u', np.float),
-                          ('sigma_lsst_u', np.float)
-                         ])
+        dtype = np.dtype([(name, np.float) for name in uSSMCatalog.column_outputs])
 
         cat = uSSMCatalog(self.db, obs_metadata=self.obs)
         cat.write_catalog(catName)
@@ -323,12 +275,7 @@ class IndexTestCaseSSM(unittest.TestCase):
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmCat.txt')
-        dtype = np.dtype([
-                          ('lsst_g', np.float),
-                          ('lsst_z', np.float),
-                          ('sigma_lsst_g', np.float),
-                          ('sigma_lsst_z', np.float)
-                         ])
+        dtype = np.dtype([(name, np.float) for name in gzSSMCatalog.column_outputs])
 
         cat = gzSSMCatalog(self.db, obs_metadata=self.obs)
         cat.write_catalog(catName)
@@ -356,10 +303,7 @@ class IndexTestCaseSSM(unittest.TestCase):
         Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
         """
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
-        dtype = np.dtype([
-                          ('sigma_lsst_g', np.float),
-                          ('sigma_lsst_z', np.float)
-                         ])
+        dtype = np.dtype([(name, np.float) for name in gzUncertaintySSMCatalog.column_outputs])
 
         cat = gzUncertaintySSMCatalog(self.db, obs_metadata=self.obs)
         cat.write_catalog(catName)
