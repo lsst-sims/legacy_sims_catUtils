@@ -324,7 +324,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         indices = [ii for ii, name in enumerate(self.get_cartoon_bulge_mags._colnames) \
                    if name in self._actually_calculated_columns]
 
-        if len(indices)==6:
+        if len(indices)==5:
             indices = None
 
         return self._magnitudeGetter('bulge', self.cartoonBandpassDict,
@@ -347,7 +347,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         indices = [ii for ii, name in enumerate(self.get_cartoon_disk_mags._colnames) \
                    if name in self._actually_calculated_columns]
 
-        if len(indices)==6:
+        if len(indices)==5:
             indices = None
 
         return self._magnitudeGetter('disk', self.cartoonBandpassDict,
@@ -370,7 +370,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         indices = [ii for ii, name in enumerate(self.get_cartoon_agn_mags._colnames) \
                    if name in self._actually_calculated_columns]
 
-        if len(indices)==6:
+        if len(indices)==5:
             indices = None
 
         return self._magnitudeGetter('agn', self.cartoonBandpassDict,
