@@ -91,12 +91,6 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        indices = [ii for ii, name in enumerate(self.get_test_bulge_mags._colnames) \
-                   if name in self._actually_calculated_columns]
-
-        if len(indices)==6:
-            indices = None
-
         return self._magnitudeGetter('bulge', self.testBandpassDict,
                                      self.get_test_bulge_mags._colnames)
 
