@@ -37,7 +37,8 @@ class Compound_SSM_photCat(InstanceCatalog, PhotometrySSM):
                                                       )
 
 
-        return self._magnitudeGetter(self.cartoonBandpassDict, bandpassTag='cartoon')
+        return self._magnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames,
+                                     bandpassTag='cartoon')
 
 
 class SSM_dmagCat(InstanceCatalog, PhotometrySSM):
