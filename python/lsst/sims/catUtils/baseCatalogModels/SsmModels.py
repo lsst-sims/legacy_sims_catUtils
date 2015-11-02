@@ -74,7 +74,7 @@ class SolarSystemObj(BaseCatalogObj):
         return None
 
     def getIdColKey(self):
-        return 'ssmid'
+        return 'objid'
 
     def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None):
         """Execute a query
