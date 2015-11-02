@@ -15,7 +15,7 @@ import numpy
 from collections import OrderedDict
 from lsst.utils import getPackageDir
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcMagError_m5, PhotometricParameters, magErrorFromSNR, \
+                                calcMagError_m5, calcSNR_m5, PhotometricParameters, magErrorFromSNR, \
                                 BandpassDict
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
@@ -95,6 +95,24 @@ class PhotometryBase(object):
                                 gamma=self._gammaList, photParams=self.photParams)
 
         return error
+
+
+    def calculateVisibility(self, magFilter, m5, sigma=0.12):
+        """
+        Calculate the probability of detecting a particular source.
+
+        @ param [in] magFilter is the magnitude of the object in the given filter.
+
+        @ param [in] obs_metadata is the observation metadata for a given visit (to determine m5).
+
+        @ param [out] visibility (0/1).
+        """
+        if len(m5) == 0:
+            return numpy.array([])
+        completeness = 1.0 / (1 + numpy.exp((magFilter - m5)/sigma))
+        probability = numpy.random.random_sample(len(magFilter))
+        visibility = numpy.where(probability <= completeness, 1, 0)
+        return visibility
 
 
 class PhotometryGalaxies(PhotometryBase):
@@ -694,12 +712,52 @@ class PhotometrySSM(PhotometryBase):
         """
         getter for LSST magnitudes of solar system objects
         """
-
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         return self._magnitudeGetter(self.lsstBandpassDict)
 
+
+    def get_magFilter(self):
+        """
+        Generate the magnitude in the filter of the observation.
+        """
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        mags = self._magnitudeGetter(self.lsstBandpassDict)
+        mag_keys = self.lsstBandpassDict.keys()
+        magFilter = mags[mag_keys.index(self.obs_metadata.bandpass)]
+        return magFilter
+
+    def get_SNR(self):
+        """
+        Calculate the SNR for the observation, given m5 from obs_metadata and the trailing losses.
+        """
+        magFilter = self.column_by_name('magFilter')
+        bandpass = self.lsstBandpassDict[self.obs_metadata.bandpass]
+        # Get m5 for the visit
+        m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
+        # Adjust m5 for the trailing losses.
+        dmagSNR = self.column_by_name('dmagTrailing')
+        if len(dmagSNR) == 0:
+            return numpy.array([])
+        snr = numpy.zeros(len(self.get_objId()), float)
+        for i, (mFilter, m5) in enumerate(zip(magFilter, (m5+dmagSNR))):
+            snr[i], gamma = calcSNR_m5(numpy.array([mFilter]), [bandpass], [m5], self.photParams)
+        return snr
+
+    def get_visibility(self):
+        """
+        Calculate the probability of detecting this particular source.
+        """
+        if not hasattr(self, '_obs_gamma'):
+            self._obs_gamma = None
+        magFilter = self.column_by_name('magFilter')
+        dmagDetect = self.column_by_name('dmagDetection')
+        m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
+        # Adjusted m5 value, accounting for the fact these are moving objects.
+        visibility = self.calculateVisibility(magFilter, (m5+dmagDetect))
+        return visibility
 
     @compound('dmagTrailing', 'dmagDetection')
     def get_ssm_dmag(self):
