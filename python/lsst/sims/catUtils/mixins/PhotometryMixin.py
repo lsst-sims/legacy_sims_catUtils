@@ -158,7 +158,7 @@ class PhotometryBase(object):
 
         @ param [out] visibility (0/1).
         """
-        if len(m5) == 0:
+        if len(magFilter) == 0:
             return numpy.array([])
         completeness = 1.0 / (1 + numpy.exp((magFilter - m5)/sigma))
         probability = numpy.random.random_sample(len(magFilter))
@@ -733,7 +733,7 @@ class PhotometrySSM(PhotometryBase):
         """
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        mags = self._magnitudeGetter(self.lsstBandpassDict)
+        mags = self._magnitudeGetter(self.lsstBandpassDict, self.lsstBandpassDict.keys())
         mag_keys = self.lsstBandpassDict.keys()
         magFilter = mags[mag_keys.index(self.obs_metadata.bandpass)]
         return magFilter
@@ -748,8 +748,12 @@ class PhotometrySSM(PhotometryBase):
         m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
         # Adjust the magnitude of the source for the trailing losses.
         dmagSNR = self.column_by_name('dmagTrailing')
-        magObj = magFilter - dmagSNR
-        snr, gamma = calcSNR_m5(magObj, [bandpass], [m5], self.photParams)
+        magObj = (magFilter - dmagSNR).reshape((1, len(magFilter)))
+        if len(magObj) == 0:
+            snr = []
+        else:
+            snr, gamma = calcSNR_m5(magObj, [bandpass], [m5], self.photParams)
+            snr = snr.reshape((len(magFilter), 1))
         return snr
 
     def get_visibility(self):
