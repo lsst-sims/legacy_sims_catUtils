@@ -709,12 +709,6 @@ class PhotometrySSM(PhotometryBase):
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames) \
-                   if name in self._actually_calculated_columns]
-
-        if len(indices) == 6:
-            indices = None
-
         return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames)
 
 
