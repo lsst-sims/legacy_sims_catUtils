@@ -148,7 +148,7 @@ class PhotometryBase(object):
                                                  'lsstBandpassDict')
 
 
-    def calculateVisibility(self, magFilter, sigma=0.1, randomSeed=None):
+    def calculateVisibility(self, magFilter, sigma=0.1, randomSeed=None, pre_generate_randoms=False):
         """
         Determine (probabilistically) whether a source was detected or not.
 
@@ -162,7 +162,11 @@ class PhotometryBase(object):
 
         @ param [in] magFilter is the magnitude of the object in the observed filter.
 
-        @ param [in] sigma is the FWHM of the distribution
+        @ param [in] sigma is the FWHM of the distribution (default = 0.1)
+
+        @ param [in] randomSeed is an option to set a random seed (default None)
+        @ param [in] pre_generate_randoms is an option (default False) to pre-generate a series of 20,000,000 random numbers
+           for use throughout the visibility calculation [the random numbers used are randoms[objId]].
 
         @ param [out] visibility (None/1).
         """
@@ -172,8 +176,13 @@ class PhotometryBase(object):
         completeness = 1.0 / (1 + numpy.exp((magFilter - self.obs_metadata.m5[self.obs_metadata.bandpass])/sigma))
         if randomSeed is not None:
             numpy.random.seed(randomSeed)
-        # Generate a random number.
-        probability = numpy.random.random_sample(len(magFilter))
+        if pre_generate_randoms:
+            self.randoms = numpy.random.rand(20000000)
+        if hasattr(self, 'randoms'):
+            # Grab the random numbers from self.randoms.
+            probability = self.randoms[self.column_by_name('objId')]
+        else:
+            probability = numpy.random.random_sample(len(magFilter))
         # Compare the random number to the completeness.
         visibility = numpy.where(probability <= completeness, 1, None)
         return visibility
@@ -747,7 +756,7 @@ class PhotometrySSM(PhotometryBase):
         magFilter = 'lsst_' + self.obs_metadata.bandpass
         return self.column_by_name(magFilter)
 
-    def get_SNR(self):
+    def get_magSNR(self):
         """
         Calculate the SNR for the observation, given m5 from obs_metadata and the trailing losses.
         """
@@ -767,12 +776,15 @@ class PhotometrySSM(PhotometryBase):
     def get_visibility(self):
         """
         Generate a None/1 flag indicating whether the object was detected or not.
+
+        Sets the random seed for 'calculateVisibility' using the obs_metadata.obsHistId
         """
         magFilter = self.column_by_name('magFilter')
         dmagDetect = self.column_by_name('dmagDetection')
         magObj = magFilter - dmagDetect
         # Adjusted m5 value, accounting for the fact these are moving objects.
-        visibility = self.calculateVisibility(magObj)
+        mjdSeed = numpy.int(self.obs_metadata.mjd * 1000000) % 4294967295
+        visibility = self.calculateVisibility(magObj, randomSeed=mjdSeed, pre_generate_randoms=True)
         return visibility
 
 
