@@ -768,6 +768,47 @@ class PhotometrySSM(PhotometryBase):
         visibility = self.calculateVisibility(magFilter, (m5+dmagDetect))
         return visibility
 
+    def get_magFilter(self):
+        """
+        Generate the magnitude in the filter of the observation.
+        """
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        mags = self._magnitudeGetter(self.lsstBandpassDict)
+        mag_keys = self.lsstBandpassDict.keys()
+        magFilter = mags[mag_keys.index(self.obs_metadata.bandpass)]
+        return magFilter
+
+    def get_SNR(self):
+        """
+        Calculate the SNR for the observation, given m5 from obs_metadata and the trailing losses.
+        """
+        magFilter = self.column_by_name('magFilter')
+        bandpass = self.lsstBandpassDict[self.obs_metadata.bandpass]
+        # Get m5 for the visit
+        m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
+        # Adjust m5 for the trailing losses.
+        dmagSNR = self.column_by_name('dmagTrailing')
+        if len(dmagSNR) == 0:
+            return numpy.array([])
+        snr = numpy.zeros(len(self.get_objId()), float)
+        for i, (mFilter, m5) in enumerate(zip(magFilter, (m5+dmagSNR))):
+            snr[i], gamma = calcSNR_m5(numpy.array([mFilter]), [bandpass], [m5], self.photParams)
+        return snr
+
+    def get_visibility(self):
+        """
+        Calculate the probability of detecting this particular source.
+        """
+        if not hasattr(self, '_obs_gamma'):
+            self._obs_gamma = None
+        magFilter = self.column_by_name('magFilter')
+        dmagDetect = self.column_by_name('dmagDetection')
+        m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
+        # Adjusted m5 value, accounting for the fact these are moving objects.
+        visibility = self.calculateVisibility(magFilter, (m5+dmagDetect))
+        return visibility
+
     @compound('dmagTrailing', 'dmagDetection')
     def get_ssm_dmag(self):
         """
