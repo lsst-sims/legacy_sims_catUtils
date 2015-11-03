@@ -733,9 +733,10 @@ class PhotometrySSM(PhotometryBase):
         """
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        mags = self._magnitudeGetter(self.lsstBandpassDict, self.lsstBandpassDict.keys())
-        mag_keys = self.lsstBandpassDict.keys()
-        magFilter = mags[mag_keys.index(self.obs_metadata.bandpass)]
+        colnames = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
+        mags = self._magnitudeGetter(self.lsstBandpassDict, colnames)
+        print mags
+        magFilter = mags[colnames.index('lsst_' + self.obs_metadata.bandpass)]
         return magFilter
 
     def get_SNR(self):
