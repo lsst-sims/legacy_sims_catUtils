@@ -148,21 +148,34 @@ class PhotometryBase(object):
                                                  'lsstBandpassDict')
 
 
-    def calculateVisibility(self, magFilter, m5, sigma=0.12):
+    def calculateVisibility(self, magFilter, sigma=0.1, randomSeed=None):
         """
-        Calculate the probability of detecting a particular source.
+        Determine (probabilistically) whether a source was detected or not.
 
-        @ param [in] magFilter is the magnitude of the object in the given filter.
+        The 'completeness' of source detection at any magnitude is calculated by
+          completeness = (1 + e^^(magFilter-m5)/sigma)^(-1)
+        For each source with a magnitude magFilter, if a uniform random number [0-1)
+          is less than or equal to 'completeness', then it is counted as "detected".
+        See equation 24, figure 8 and table 5 from SDSS completeness analysis in
+        http://iopscience.iop.org/0004-637X/794/2/120/pdf/apj_794_2_120.pdf
+        "THE SLOAN DIGITAL SKY SURVEY COADD: 275 deg2 OF DEEP SLOAN DIGITAL SKY SURVEY IMAGING ON STRIPE 82"
 
-        @ param [in] obs_metadata is the observation metadata for a given visit (to determine m5).
+        @ param [in] magFilter is the magnitude of the object in the observed filter.
 
-        @ param [out] visibility (0/1).
+        @ param [in] sigma is the FWHM of the distribution
+
+        @ param [out] visibility (None/1).
         """
         if len(magFilter) == 0:
             return numpy.array([])
-        completeness = 1.0 / (1 + numpy.exp((magFilter - m5)/sigma))
+        # Calculate the completeness at the magnitude of each object.
+        completeness = 1.0 / (1 + numpy.exp((magFilter - self.obs_metadata.m5[self.obs_metadata.bandpass])/sigma))
+        if randomSeed is not None:
+            numpy.random.seed(randomSeed)
+        # Generate a random number.
         probability = numpy.random.random_sample(len(magFilter))
-        visibility = numpy.where(probability <= completeness, 1, 0)
+        # Compare the random number to the completeness.
+        visibility = numpy.where(probability <= completeness, 1, None)
         return visibility
 
 
@@ -731,13 +744,8 @@ class PhotometrySSM(PhotometryBase):
         """
         Generate the magnitude in the filter of the observation.
         """
-        if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        colnames = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
-        mags = self._magnitudeGetter(self.lsstBandpassDict, colnames)
-        print mags
-        magFilter = mags[colnames.index('lsst_' + self.obs_metadata.bandpass)]
-        return magFilter
+        magFilter = 'lsst_' + self.obs_metadata.bandpass
+        return self.column_by_name(magFilter)
 
     def get_SNR(self):
         """
@@ -754,21 +762,17 @@ class PhotometrySSM(PhotometryBase):
             snr = []
         else:
             snr, gamma = calcSNR_m5(magObj, [bandpass], [m5], self.photParams)
-            snr = snr.reshape((len(magFilter), 1))
-        return snr
+        return snr[0]
 
     def get_visibility(self):
         """
-        Calculate the probability of detecting this particular source.
+        Generate a None/1 flag indicating whether the object was detected or not.
         """
-        if not hasattr(self, '_obs_gamma'):
-            self._obs_gamma = None
         magFilter = self.column_by_name('magFilter')
         dmagDetect = self.column_by_name('dmagDetection')
-        m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
         magObj = magFilter - dmagDetect
         # Adjusted m5 value, accounting for the fact these are moving objects.
-        visibility = self.calculateVisibility(magObj, m5)
+        visibility = self.calculateVisibility(magObj)
         return visibility
 
 
