@@ -19,6 +19,8 @@ from lsst.sims.photUtils.BandpassDict import BandpassDict
 import sncosmo
 
 
+__all__ = ['SNObject']
+
 class SNObject (sncosmo.Model):
     """
     Extension of the SNCosmo `TimeSeriesModel` to include more parameters and

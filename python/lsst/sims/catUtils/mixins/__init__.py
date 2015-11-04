@@ -4,3 +4,6 @@ from .VariabilityMixin import *
 from .EBVmixin import *
 from .CosmologyMixin import *
 from .ObsMetaMixin import *
+from .snUniverseRules  import *
+from .snObject import *
+from .sncat import *
