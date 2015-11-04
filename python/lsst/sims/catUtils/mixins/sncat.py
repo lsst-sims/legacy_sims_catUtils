@@ -17,8 +17,8 @@ import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
 import astropy
 import sncosmo
 
-from snObject import SNObject
-from SNUniverseRules import SNUniverse
+from  .snObject import SNObject
+from .snUniverseRules import SNUniverse
 
 import sqlite3
 
