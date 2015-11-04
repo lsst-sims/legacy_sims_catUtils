@@ -165,7 +165,7 @@ class PhotometryBase(object):
         @ param [in] sigma is the FWHM of the distribution (default = 0.1)
 
         @ param [in] randomSeed is an option to set a random seed (default None)
-        @ param [in] pre_generate_randoms is an option (default False) to pre-generate a series of 20,000,000 random numbers
+        @ param [in] pre_generate_randoms is an option (default False) to pre-generate a series of 12,000,000 random numbers
            for use throughout the visibility calculation [the random numbers used are randoms[objId]].
 
         @ param [out] visibility (None/1).
@@ -177,7 +177,7 @@ class PhotometryBase(object):
         if randomSeed is not None:
             numpy.random.seed(randomSeed)
         if pre_generate_randoms:
-            self.randoms = numpy.random.rand(20000000)
+            self.randoms = numpy.random.rand(12000000)
         if hasattr(self, 'randoms'):
             # Grab the random numbers from self.randoms.
             probability = self.randoms[self.column_by_name('objId')]
