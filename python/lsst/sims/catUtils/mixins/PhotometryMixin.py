@@ -174,13 +174,17 @@ class PhotometryBase(object):
             return numpy.array([])
         # Calculate the completeness at the magnitude of each object.
         completeness = 1.0 / (1 + numpy.exp((magFilter - self.obs_metadata.m5[self.obs_metadata.bandpass])/sigma))
-        if randomSeed is not None:
+        # Seed numpy if desired and not previously done.
+        if (randomSeed is not None) and (not hasattr(self, 'ssm_random_seeded')):
             numpy.random.seed(randomSeed)
-        if pre_generate_randoms:
-            self.randoms = numpy.random.rand(12000000)
-        if hasattr(self, 'randoms'):
+            self.ssm_random_seeded = True
+        # Pre-generate random numbers, if desired and not previously done.
+        if pre_generate_randoms and not hasattr(self, 'ssm_randoms'):
+            self.ssm_randoms = numpy.random.rand(12000000)
+        # Calculate probability values to compare to completeness.
+        if hasattr(self, 'ssm_randoms'):
             # Grab the random numbers from self.randoms.
-            probability = self.randoms[self.column_by_name('objId')]
+            probability = self.ssm_randoms[self.column_by_name('objId')]
         else:
             probability = numpy.random.random_sample(len(magFilter))
         # Compare the random number to the completeness.
