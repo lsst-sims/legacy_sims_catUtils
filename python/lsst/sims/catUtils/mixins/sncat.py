@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from cStringIO import StringIO
+# from cStringIO import StringIO
 import numpy as np
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -13,12 +13,13 @@ from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
+from lsst.sims.photUtils.SignalToNoise import calcSNR_m5
 
 import astropy
 import sncosmo
 
-from  .snObject import SNObject
-from .snUniverseRules import SNUniverse
+from .snObject import SNObject
+from .UniversalRules import SNUniverse
 
 import sqlite3
 
@@ -53,11 +54,15 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
     # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
 
+    # Flux variables are convenient to display in exponential format to avoid
+    # having them cut off
+    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
+    variables += ['flux', 'flux_err', 'mag_err']
+
     override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
-                        'x0': '%8e'}
-    # You can also change the overrides by
-    # 'flux_u': '%8e', 'flux_g': '%8e', 'flux_r': '%8e',
-    # 'flux_i': '%8e', 'flux_z': '%8e', 'flux_y': '%8e'}
+            'x0': '%8e'} #, 'flux': '%8e', 'mag': '%8e', 'flux_err': '%8e'}
+    for var in variables:
+        override_formats[var] = '%8e'
 
     cannot_be_null = ['x0', 'z', 't0']
 
@@ -239,6 +244,83 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
         return sedlist
 
+    def get_time(self):
+        
+        return np.repeat(self.mjdobs, self.numobjs)
+
+    def get_band(self):
+        bandname = self.obs_metadata.bandpass
+        return np.repeat(bandname, self.numobjs)
+
+    def get_fluxerr(self):
+
+        bandname = self.obs_metadata.bandpass
+        bandpass = self.lsstBandpassDict[bandname]
+        vals = np.zeros(self.numobjs)
+        flux = self.column_by_name('flux')
+        mag = self.column_by_name('mag')
+        photParams = PhotometricParameters()
+        m5 = self.obs_metadata.m5[bandname]
+        m5 = np.asarray([[m5]])
+
+        print np.shape(mag)
+        SNR, gamma = calcSNR_m5(magnitudes=[mag],
+                                bandpasses=[bandpass],
+                                m5=m5,
+                                photParams=photParams)
+
+        print np.shape(SNR), np.shape(flux)
+        return flux
+
+    @compound('flux', 'mag', 'flux_err', 'mag_err')
+    def get_snbrightness(self):
+
+        c, x1, x0, t0, _z , _id, ra, dec = self.column_by_name('c'),\
+            self.column_by_name('x1'),\
+            self.column_by_name('x0'),\
+            self.column_by_name('t0'),\
+            self.column_by_name('redshift'),\
+            self.column_by_name('snid'),\
+            self.column_by_name('raJ2000'),\
+            self.column_by_name('decJ2000')
+
+        SNobject = SNObject()
+        bandname = self.obs_metadata.bandpass
+        bandpass = self.lsstBandpassDict[bandname]
+
+        # Initialize return array
+        vals = np.zeros(shape=(self.numobjs, 4))
+
+        # vals = np.zeros(self.numobjs)
+        for i, v in enumerate(vals):
+            arr = [_z[i], c[i], x1[i], t0[i], x0[i]]
+            testnan = lambda x: x is np.nan
+            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
+            SNobject.setCoords(ra=ra[i], dec=dec[i])
+            SNobject.mwEBVfromMaps()
+
+            # Calculate fluxes
+            flux = SNobject.catsimBandFluxes(time=self.mjdobs,
+                                             bandpassobject=bandpass)
+            mag = SNobject.catsimBandMags(time=self.mjdobs,
+                                          bandpassobject=bandpass)
+            vals[i, 0] = flux
+            vals[i, 1] = mag
+            flux_err = SNobject.catsimBandFluxError(time=self.mjdobs,
+                                                     bandpassobject=bandpass,
+                                                     m5=self.obs_metadata.m5[bandname],
+                                                     photParams=None,
+                                                     magnitude=mag)
+            mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
+                                                     bandpassobject=bandpass,
+                                                     m5=self.obs_metadata.m5[bandname],
+                                                     photParams=None,
+                                                     magnitude=mag)
+            vals[i, 2] = flux_err
+            vals[i, 3] = mag_err
+        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
+
+
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
               'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y',
               'adu_u', 'adu_g', 'adu_r', 'adu_i', 'adu_z', 'adu_y')
@@ -265,11 +347,13 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             # Calculate fluxes
             vals[i, :6] = SNobject.catsimManyBandFluxes(time=self.mjdobs,
                                                         bandpassDict=self.lsstBandpassDict,
-                                                        observedBandPassInd=self.observedIndices)
+                                                        observedBandPassInd=None)
+            print (SNobject.summary())
+            print vals[i, :6] 
             # Calculate magnitudes
             vals[i, 6:12] = SNobject.catsimManyBandMags(time=self.mjdobs,
                                                       bandpassDict=self.lsstBandpassDict,
-                                                      observedBandPassInd=self.observedIndices)
+                                                      observedBandPassInd=None)
 
             vals[i, 12:] = SNobject.catsimADU(time=self.obs_metadata,
                                               bandpassDict=self.lsstBandpassDict,
