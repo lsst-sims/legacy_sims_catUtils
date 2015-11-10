@@ -11,15 +11,15 @@ after applying MW extinction:
 
 """
 import numpy as np
-import os
+
 from lsst.sims.photUtils.Photometry import  Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils.BandpassDict import BandpassDict
+from lsst.sims.photUtils.SignalToNoise import calcSNR_m5, calcMagError_m5
+from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 
 import sncosmo
 
-
-__all__ = ['SNObject']
 
 class SNObject (sncosmo.Model):
     """
@@ -491,6 +491,102 @@ class SNObject (sncosmo.Model):
         SEDfromSNcosmo = self.SNObjectSED(time=time,
                                           bandpass=bandpassobject)
         return SEDfromSNcosmo.calcFlux(bandpass=bandpassobject) / 3631.0
+    
+    def catsimBandMagError(self, time, bandpassobject, m5, photParams=None,
+                            magnitude=None):
+        """
+        return the mag uncertainty in the bandpass in units 'maggies' 
+        (the flux the AB magnitude reference spectrum would have in the
+        same band.)
+
+        Parameters
+        ----------
+        time: mandatory, float
+            MJD at which band fluxes are evaluated
+        bandpassobject: mandatory, `lsst.sims.photUtils.BandPass` object
+            A particular bandpass which is an instantiation of one of
+            (u, g, r, i, z, y)
+        m5 : 
+        photParams :
+        magnitude :
+        Returns
+        -------
+        float
+
+        Examples
+        --------
+        .. note: If there is an unphysical value of sed in
+        the wavelength range, it produces a flux of  `np.nan`
+        """
+        SEDfromSNcosmo = self.SNObjectSED(time=time,
+                                          bandpass=bandpassobject)
+
+        if magnitude is None:
+            mag = self.catsimBandMags(time=time, bandpassobject=bandpassobject)
+        else:
+            mag = magnitude
+        flux = self.catsimBandFluxes(time=time, bandpassobject=bandpassobject)
+
+        mag = np.asarray([[mag]])
+        bandpasses = [bandpassobject]
+
+        if photParams is None:
+            photParams = PhotometricParameters()
+
+        m5 = np.asarray([[m5]])
+
+        magerr = calcMagError_m5(magnitudes=mag, bandpasses=bandpasses, m5=m5,
+                                 photParams=photParams)
+        return magerr
+
+
+
+    def catsimBandFluxError(self, time, bandpassobject, m5, photParams=None,
+                            magnitude=None):
+        """
+        return the flux uncertainty in the bandpass in units 'maggies' 
+        (the flux the AB magnitude reference spectrum would have in the
+        same band.)
+
+        Parameters
+        ----------
+        time: mandatory, float
+            MJD at which band fluxes are evaluated
+        bandpassobject: mandatory, `lsst.sims.photUtils.BandPass` object
+            A particular bandpass which is an instantiation of one of
+            (u, g, r, i, z, y)
+        m5 : 
+        photParams :
+        magnitude :
+        Returns
+        -------
+        float
+
+        Examples
+        --------
+        .. note: If there is an unphysical value of sed in
+        the wavelength range, it produces a flux of  `np.nan`
+        """
+        SEDfromSNcosmo = self.SNObjectSED(time=time,
+                                          bandpass=bandpassobject)
+
+        if magnitude is None:
+            mag = self.catsimBandMags(time=time, bandpassobject=bandpassobject)
+        else:
+            mag = magnitude
+        flux = self.catsimBandFluxes(time=time, bandpassobject=bandpassobject)
+
+        mag = np.asarray([[mag]])
+        bandpasses = [bandpassobject]
+
+        if photParams is None:
+            photParams = PhotometricParameters()
+
+        m5 = np.asarray([[m5]])
+        SNR, gamma = calcSNR_m5(magnitudes=mag, bandpasses=bandpasses, m5=m5,
+                                photParams=photParams)
+        return flux / SNR[0, 0]
+
 
     def catsimManyBandFluxes(self, time, bandpassDict,
                              observedBandPassInd=None):
