@@ -95,9 +95,13 @@ class photometryUnitTest(unittest.TestCase):
             os.unlink('PhotometryTestDatabase.db')
 
     def setUp(self):
-        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i',
-                            boundType='circle',pointingRA=200.0,pointingDec=-30.0,
-                            boundLength=1.0, m5 = 25.0)
+        defaults = LSSTdefaults()
+        bandpassName=['u', 'g', 'r', 'i', 'z', 'y']
+        self.obs_metadata = ObservationMetaData(mjd=52000.7,
+                            bandpassName=bandpassName,
+                            m5=[defaults.m5(mm) for mm in bandpassName],
+                            boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundLength=1.0)
 
         self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
         self.star = myTestStars(database='PhotometryTestDatabase.db')
@@ -657,152 +661,18 @@ class UncertaintyMixinTest(unittest.TestCase):
 
     def testUncertaintyExceptions(self):
         """
-        Test the calculateMagnitudeUncertainty raises exceptions when it needs to
+        Test that calcSNR_m5 raises exceptions when it needs to
         """
         phot = PhotometryBase()
         totalDict, hardwareDict = BandpassDict.loadBandpassesFromFiles()
         magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
         shortMagnitudes = numpy.array([22.0])
-        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes, totalDict)
-        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, bandpassName='g', m5=23.0)
-        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, totalDict, \
-                          obs_metadata=obs_metadata)
-
         photParams = PhotometricParameters()
         shortGamma = numpy.array([1.0, 1.0])
         self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), shortMagnitudes, photParams)
         self.assertRaises(RuntimeError, calcSNR_m5, shortMagnitudes, totalDict.values(), magnitudes, photParams)
         self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), magnitudes, photParams, gamma=shortGamma)
         snr, gg = calcSNR_m5(magnitudes, totalDict.values(), magnitudes, photParams)
-
-
-
-
-    def testRawUncertainty(self):
-        """
-        Test that values calculated by calculatePhotometricUncertainty agree
-        with values calculated by calcSNR_sed
-        """
-
-        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        phot = PhotometryBase()
-        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.magListForSed(self.starSED)
-
-        skySeds = []
-
-        for i in range(len(self.bandpasses)):
-            skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
-                                       self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
-                                       photParams=PhotometricParameters())
-
-            skySeds.append(normalizedSkyDummy)
-
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
-        for i in range(len(self.bandpasses)):
-            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
-                              photParams=PhotometricParameters())
-
-            ss = 2.5*numpy.log10(1.0+1.0/snr)
-            ss = numpy.sqrt(ss*ss + numpy.power(phot.photParams.sigmaSys,2))
-            msg = '%e is not %e; failed' % (ss, sigma[i])
-            self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
-
-    def testSystematicUncertainty(self):
-        """
-        Test that systematic uncertainty is added correctly.
-        """
-        sigmaSys = 0.002
-        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        photParams= PhotometricParameters(sigmaSys=sigmaSys)
-
-        phot = PhotometryBase()
-        phot.photParams = photParams
-
-        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.magListForSed(self.starSED)
-
-        skySeds = []
-
-        for i in range(len(self.bandpasses)):
-            skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
-                                                       self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
-                                                       photParams=PhotometricParameters())
-
-            skySeds.append(normalizedSkyDummy)
-
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
-        for i in range(len(self.bandpasses)):
-            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
-                              photParams=PhotometricParameters())
-
-            testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
-                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=0.0))
-
-            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
-                                                               % (snr, testSNR[0]))
-
-            control = numpy.sqrt(numpy.power(magErrorFromSNR(testSNR),2) + numpy.power(sigmaSys,2))
-
-            msg = '%e is not %e; failed' % (sigma[i], control)
-
-            self.assertAlmostEqual(sigma[i], control, 10, msg=msg)
-
-
-    def testNoSystematicUncertainty(self):
-        """
-        Test that systematic uncertainty is handled correctly when set to None.
-        """
-        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        photParams= PhotometricParameters(sigmaSys=0.0)
-
-        phot = PhotometryBase()
-        phot.photParams = photParams
-
-        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.magListForSed(self.starSED)
-
-        skySeds = []
-
-        for i in range(len(self.bandpasses)):
-            skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
-                                                       self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
-                                                       photParams=PhotometricParameters())
-
-            skySeds.append(normalizedSkyDummy)
-
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
-        for i in range(len(self.bandpasses)):
-            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
-                              photParams=PhotometricParameters())
-
-            testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
-                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=0.0))
-
-            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
-                                                               % (snr, testSNR[0]))
-
-            control = magErrorFromSNR(testSNR)
-
-            msg = '%e is not %e; failed' % (sigma[i], control)
-
-            self.assertAlmostEqual(sigma[i], control, 10, msg=msg)
-
 
 
 def suite():

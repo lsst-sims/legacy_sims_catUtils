@@ -295,7 +295,7 @@ class GalaxyBulgeObj(GalaxyTileObj):
     objectTypeId = 26
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=10.0, pointingDec=-45.0,
-                                                  boundLength=0.01, mjd=53000., bandpassName='i', m5=22.0)
+                                                  boundLength=0.01, mjd=53000., bandpassName='r', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -334,7 +334,7 @@ class GalaxyDiskObj(GalaxyTileObj):
     objectTypeId = 27
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=66.0, pointingDec=-80.0,
-                                                  boundLength=0.01, mjd=53730., bandpassName='g', m5=22.0)
+                                                  boundLength=0.01, mjd=53730., bandpassName='r', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -373,7 +373,7 @@ class GalaxyAgnObj(GalaxyTileObj):
     objectTypeId = 28
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=234.0, pointingDec=-15.0,
-                                                  boundLength=0.01, mjd=51000., bandpassName='y', m5=22.0)
+                                                  boundLength=0.01, mjd=51000., bandpassName='r', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
@@ -406,7 +406,7 @@ class ImageAgnObj(BaseCatalogObj):
     objectTypeId = 29
     doRunTest = True
     #all sky since this is a small set.
-    testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='i', m5=22.0)
+    testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='r', m5=22.0)
 
     dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
     #: The following maps column names to database schema.  The tuples
@@ -436,7 +436,7 @@ class LensGalaxyObj(BaseCatalogObj):
     objectTypeId = 30
     doRunTest = True
     #all sky since this is a small set.
-    testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='i', m5=22.0)
+    testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='r', m5=22.0)
 
     dbDefaultValues = {'varsimobjid':-1, 'myid':-1, 'variabilityParameters':None}
     #: The following maps column names to database schema.  The tuples

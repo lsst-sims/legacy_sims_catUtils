@@ -13,11 +13,11 @@ from lsst.sims.photUtils import BandpassDict, Bandpass, Sed, PhotometricParamete
 
 class PhotometryCartoon(object):
 
-    @compound('cartoon_u', 'cartoon_g')
+    @compound('cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z')
     def get_cartoon_mags(self):
         if not hasattr(self, 'cartoonBandpassDict'):
             self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(
-                                                     bandpassNames = ['u', 'g'],
+                                                     bandpassNames = ['u', 'g', 'r', 'i', 'z'],
                                                      bandpassDir = os.path.join(getPackageDir('sims_photUtils'), 'tests',
                                                                                'cartoonSedTestData'),
                                                      bandpassRoot = 'test_bandpass_'
@@ -26,9 +26,11 @@ class PhotometryCartoon(object):
         return self._magnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames)
 
 
-    @compound('sigma_cartoon_u', 'sigma_cartoon_g')
+    @compound('sigma_cartoon_u', 'sigma_cartoon_g', 'sigma_cartoon_r', 'sigma_cartoon_i', 'sigma_cartoon_z')
     def get_cartoon_uncertainty(self):
-        return self._magnitudeUncertaintyGetter(['cartoon_u', 'cartoon_g'], 'cartoonBandpassDict')
+        return self._magnitudeUncertaintyGetter(['cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z'],
+                                                ['u', 'g', 'r', 'i', 'z', 'y'],
+                                                 'cartoonBandpassDict')
 
 
 class CartoonStars(InstanceCatalog, PhotometryStars, PhotometryCartoon):
