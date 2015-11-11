@@ -39,10 +39,10 @@ class SNObject (sncosmo.Model):
 
     Attributes
     ----------
-    ra : float or None
+    _ra : float or None
         ra of the SN in radians
 
-    dec : float or None
+    _dec : float or None
         dec of the SN in radians
 
     skycoord : `np.ndarray' of size 2 or None
@@ -76,7 +76,7 @@ class SNObject (sncosmo.Model):
             dec of the SN in degrees
         """
  
-        dust = sncosmo.CCM89Dust()
+        dust = sncosmo.OD94Dust()
         sncosmo.Model.__init__(self, source=source, effects=[dust, dust],
                                effect_names=['host', 'mw'], 
                                effect_frames=['rest', 'obs'])
@@ -180,7 +180,7 @@ class SNObject (sncosmo.Model):
         
         """
         # Separate into SNCosmo parameters and SNObject parameters
-        dust = sncosmo.CCM89Dust()
+        dust = sncosmo.OD94Dust()
         sncosmoModel = sncosmo.Model(source=snState['ModelSource'],
                                      effects=[dust, dust],
                                      effect_names=['host', 'mw'],
@@ -217,7 +217,7 @@ class SNObject (sncosmo.Model):
         returns an SNCosmo Model which is equivalent to SNObject
         """
         snState = self.SNstate
-        dust = sncosmo.CCM89Dust()
+        dust = sncosmo.OD94Dust()
         sncosmoModel = sncosmo.Model(source=snState['ModelSource'],
                                      effects=[dust, dust],
                                      effect_names=['host', 'mw'],
