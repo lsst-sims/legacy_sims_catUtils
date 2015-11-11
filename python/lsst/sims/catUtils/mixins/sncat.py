@@ -295,7 +295,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
-            print arr, SNobject.ebvofmw
 
             # Calculate fluxes
             flux = SNobject.catsimBandFluxes(time=self.mjdobs,
