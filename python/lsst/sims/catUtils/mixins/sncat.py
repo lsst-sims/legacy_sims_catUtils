@@ -320,7 +320,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
               'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y',
-              'adu_u', 'adu_g', 'adu_r', 'adu_i', 'adu_z', 'adu_y')
+              'adu_u', 'adu_g', 'adu_r', 'adu_i', 'adu_z', 'adu_y', 'mwebv')
     def get_snfluxes(self):
 
         c, x1, x0, t0, _z , _id, ra, dec = self.column_by_name('c'),\
@@ -334,7 +334,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
         SNobject = SNObject()
         # Initialize return array
-        vals = np.zeros(shape=(self.numobjs, 18))
+        vals = np.zeros(shape=(self.numobjs, 19))
         for i, v in enumerate(vals):
             arr = [_z[i], c[i], x1[i], t0[i], x0[i]]
             testnan = lambda x: x is np.nan
@@ -350,11 +350,12 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
                                                       bandpassDict=self.lsstBandpassDict,
                                                       observedBandPassInd=None)
 
-            vals[i, 12:] = SNobject.catsimADU(time=self.obs_metadata,
+            vals[i, 12:18] = SNobject.catsimADU(time=self.obs_metadata,
                                               bandpassDict=self.lsstBandpassDict,
                                               photParams=self.photometricparameters)
+            vals[i, 18] = SNobject.ebvofMW
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3],
                 vals[:, 4], vals[:, 5], vals[:, 6], vals[:, 7],
                 vals[:, 8], vals[:, 9], vals[:, 10], vals[:, 11],
                 vals[:, 12], vals[:, 13], vals[:, 14], vals[:, 15],
-                vals[:, 16], vals[:, 17])
+                vals[:, 16], vals[:, 17], vals[:, 18])
