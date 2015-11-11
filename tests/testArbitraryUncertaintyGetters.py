@@ -11,12 +11,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils import BandpassDict, Bandpass, Sed, PhotometricParameters, calcMagError_m5
 
-class CartoonStars(InstanceCatalog, PhotometryStars):
-    column_outputs = ['cartoon_u', 'cartoon_g',
-                      'sigma_cartoon_u', 'sigma_cartoon_g']
-
-    default_formats = {'f': '%.13f'}
-
+class PhotometryCartoon(object):
 
     @compound('cartoon_u', 'cartoon_g')
     def get_cartoon_mags(self):
@@ -34,6 +29,13 @@ class CartoonStars(InstanceCatalog, PhotometryStars):
     @compound('sigma_cartoon_u', 'sigma_cartoon_g')
     def get_cartoon_uncertainty(self):
         return self._magnitudeUncertaintyGetter(['cartoon_u', 'cartoon_g'], 'cartoonBandpassDict')
+
+
+class CartoonStars(InstanceCatalog, PhotometryStars, PhotometryCartoon):
+    column_outputs = ['cartoon_u', 'cartoon_g',
+                      'sigma_cartoon_u', 'sigma_cartoon_g']
+
+    default_formats = {'f': '%.13f'}
 
 
 class CartoonUncertaintyTestCase(unittest.TestCase):

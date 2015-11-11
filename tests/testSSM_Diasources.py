@@ -50,6 +50,10 @@ def failedOnFatboy(tracebackList):
     return False
 
 
+def reassure():
+    print '\ntestObsCat failed to connect to fatboy'
+    print 'Sometimes that happens.  Do not worry.'
+
 # Build sso instance class
 basic_columns = ['objid', 'expMJD', 'raJ2000', 'decJ2000', 'velRa', 'velDec', 'skyVelocity', 'dist', 'dmagTrailing', 'dmagDetection',
                  'sedFilename', 'magFilter', 'magSNR', 'visibility', 'seeing', 'bandpass', 'visitExpTime', 'm5']
@@ -114,7 +118,18 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
             photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0], nexp=1, bandpass=obs.bandpass)
             mySsmDb.photParams = photParams
 
-            mySsmDb.write_catalog(output_cat, write_header=write_header, write_mode=write_mode)
+            try:
+                mySsmDb.write_catalog(output_cat, write_header=write_header, write_mode=write_mode)
+            except:
+                # This is because the solar system object 'tables'
+                # don't actually connect to tables on fatboy; they just
+                # call methods stored on fatboy.  Therefore, the connection
+                # failure will not be noticed until this part of the test
+                msg = sys.exc_info()[1].args[0]
+                if 'DB-Lib error' in msg:
+                    reassure()
+                    continue
+
             write_mode = 'a'
             write_header = False
 
@@ -130,8 +145,7 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
         if 'Failed to connect' in msg or failedOnFatboy(trace):
             # if the exception was because of a failed connection
             # to fatboy, ignore it.
-            print '\ntestObsCat failed to connect to fatboy'
-            print 'Sometimes that happens.  Do not worry.'
+            reassure()
 
             pass
         else:
