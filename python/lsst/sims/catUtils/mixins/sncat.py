@@ -19,12 +19,11 @@ import astropy
 import sncosmo
 
 from .snObject import SNObject
-from .UniversalRules import SNUniverse
+from .snUniversalRules import SNUniverse
 
 import sqlite3
 
 wavelenstep = 0.1
-
 cosmo = CosmologyMixin()
 
 
@@ -263,13 +262,11 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         m5 = self.obs_metadata.m5[bandname]
         m5 = np.asarray([[m5]])
 
-        print np.shape(mag)
         SNR, gamma = calcSNR_m5(magnitudes=[mag],
                                 bandpasses=[bandpass],
                                 m5=m5,
                                 photParams=photParams)
 
-        print np.shape(SNR), np.shape(flux)
         return flux
 
     @compound('flux', 'mag', 'flux_err', 'mag_err')
@@ -298,6 +295,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
+            print arr, SNobject.ebvofmw
 
             # Calculate fluxes
             flux = SNobject.catsimBandFluxes(time=self.mjdobs,
@@ -348,8 +346,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             vals[i, :6] = SNobject.catsimManyBandFluxes(time=self.mjdobs,
                                                         bandpassDict=self.lsstBandpassDict,
                                                         observedBandPassInd=None)
-            print (SNobject.summary())
-            print vals[i, :6] 
             # Calculate magnitudes
             vals[i, 6:12] = SNobject.catsimManyBandMags(time=self.mjdobs,
                                                       bandpassDict=self.lsstBandpassDict,
