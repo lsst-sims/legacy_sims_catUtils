@@ -61,8 +61,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         m5 = lsstDefaults._m5.values()
 
         cls.obs_metadata = ObservationMetaData(
-                                              unrefractedRA = default_obs_metadata.unrefractedRA,
-                                              unrefractedDec = default_obs_metadata.unrefractedDec,
+                                              pointingRA = default_obs_metadata.pointingRA,
+                                              pointingDec = default_obs_metadata.pointingDec,
                                               rotSkyPos = default_obs_metadata.rotSkyPos,
                                               bandpassName = bandpass,
                                               m5 = m5
