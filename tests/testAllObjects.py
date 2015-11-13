@@ -85,6 +85,9 @@ class basicAccessTest(unittest.TestCase):
                 msg = sys.exc_info()[1].args[0]
                 if 'DB-Lib error' in msg:
                     continue
+                else:
+                    raise RuntimeError(msg)
+
 
             ct_connected += 1
 
