@@ -150,7 +150,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                 testSigma = line[8+i]
                 self.assertAlmostEqual(controlSigma, testSigma, 10)
                 ct += 1
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
     def testGalaxyPhotometricUncertainties(self):
         """
@@ -237,7 +237,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                     self.assertAlmostEqual(testSigma, controlSigma, 10, msg=msg)
                     ct += 1
 
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
 def suite():
     utilsTests.init()
