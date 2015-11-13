@@ -223,7 +223,7 @@ class DwarfGalStarObj(StarBase):
     tableid = 'dwarfGalaxies'
     objectTypeId = 12
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=2.0, pointingDec=-0.3,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=2.58, pointingDec=-0.77,
                                                   boundLength=0.1, mjd=52000., bandpassName='g', m5=22.0)
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified

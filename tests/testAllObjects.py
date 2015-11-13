@@ -127,8 +127,8 @@ class basicAccessTest(unittest.TestCase):
             # To cover the central ~raft
             obs_metadata.boundLength = 0.4
             opsMetadata = {'Opsim_rotskypos':(0., float),
-                           'Unrefracted_RA':(numpy.radians(obs_metadata.unrefractedRA), float),
-                           'Unrefracted_Dec':(numpy.radians(obs_metadata.unrefractedDec), float)}
+                           'pointingRA':(numpy.radians(obs_metadata.pointingRA), float),
+                           'pointingDec':(numpy.radians(obs_metadata.pointingDec), float)}
             obs_metadata.phoSimMetaData = opsMetadata
             cat = dbobj.getCatalog('obs_star_cat', obs_metadata)
             if os.path.exists('testCat.out'):
