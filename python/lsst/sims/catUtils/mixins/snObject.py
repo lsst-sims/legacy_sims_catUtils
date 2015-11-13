@@ -186,7 +186,6 @@ class SNObject (sncosmo.Model):
                                      effect_names=['host', 'mw'],
                                      effect_frames=['rest', 'obs'])
 
-        SNobjectKeys = snState.keys()
         sncosmoParams = cls.sncosmoParamDict(snState, sncosmoModel)
 
         # Now create the class
@@ -518,14 +517,11 @@ class SNObject (sncosmo.Model):
         .. note: If there is an unphysical value of sed in
         the wavelength range, it produces a flux of  `np.nan`
         """
-        SEDfromSNcosmo = self.SNObjectSED(time=time,
-                                          bandpass=bandpassobject)
 
         if magnitude is None:
             mag = self.catsimBandMags(time=time, bandpassobject=bandpassobject)
         else:
             mag = magnitude
-        flux = self.catsimBandFluxes(time=time, bandpassobject=bandpassobject)
 
         mag = np.asarray([[mag]])
         bandpasses = [bandpassobject]
@@ -567,8 +563,8 @@ class SNObject (sncosmo.Model):
         .. note: If there is an unphysical value of sed in
         the wavelength range, it produces a flux of  `np.nan`
         """
-        SEDfromSNcosmo = self.SNObjectSED(time=time,
-                                          bandpass=bandpassobject)
+        # SEDfromSNcosmo = self.SNObjectSED(time=time,
+        #                                 bandpass=bandpassobject)
 
         if magnitude is None:
             mag = self.catsimBandMags(time=time, bandpassobject=bandpassobject)
