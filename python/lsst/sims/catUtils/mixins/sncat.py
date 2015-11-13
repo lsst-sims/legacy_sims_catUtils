@@ -118,36 +118,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         return True
 
     @property
-    def midSurveyTime(self):
-        '''
-        The time at the middle of the survey: ie. at the 5 year period.
-
-
-        .. note: Changing this should not change the statistical
-        properties of the survey, but will change the exact SN we find.
-        '''
-        if not hasattr(self, '_midSurveyTime'):
-            midSurveyTime_default = 570000.0
-            self._midSurveyTime = midSurveyTime_default
-        return self._midSurveyTime
-
-    @midSurveyTime.setter
-    def midSurveyTime(self, mymidSurveyTime):
-        '''
-        set the value of suppressDimSN of the catalog 
-
-        Parameters
-        ----------
-        value : Boolean, mandatory
-            Value to set suppressDimSN to 
-        '''
-        # if suppressDimSN is None:
-        #    self._suppressDimSN = True
-        # else:
-        self._midSurveyTime = mymidSurveyTime
-        return self._midSurveyTime
-
-    @property
     def maxTimeSNVisible(self):
         '''
         The catalog will provide values for SN flux (even if zero according to
@@ -181,7 +151,11 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     def get_snid(self):
         # Not necessarily unique if the same galaxy hosts two SN
-        return self.column_by_name('id')
+        # Use refIdCol to access the relevant id column of the dbobj
+        # Should revert to galTileID for galaxyTiled catalogDBObj and 
+        # id for galaxyObj catalogDBObj
+        # (email from Scott)
+        return self.column_by_name(self.refIdCol)
 
     @property
     def numobjs(self):
