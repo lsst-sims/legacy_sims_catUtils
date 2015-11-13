@@ -4,6 +4,7 @@ import traceback
 import unittest
 import lsst.utils.tests as utilsTests
 
+from lsst.utils import getPackageDir
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catUtils.exampleCatalogDefinitions import ObsStarCatalogBase
@@ -46,8 +47,11 @@ class TestCat(InstanceCatalog):
 class basicAccessTest(unittest.TestCase):
 
     def testObjects(self):
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testObjectsCat.txt')
         ct_connected = 0
         ct_failed_connection = 0
+        list_of_failures = []
 
         for objname, objcls in CatalogDBObject.registry.iteritems():
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
@@ -65,6 +69,7 @@ class basicAccessTest(unittest.TestCase):
                     # to fatboy, ignore it
 
                     ct_failed_connection += 1
+                    list_of_failures.append(objname)
                     continue
                 else:
                     raise
@@ -82,6 +87,7 @@ class basicAccessTest(unittest.TestCase):
                 # failure will not be noticed until this part of the test
 
                 ct_failed_connection += 1
+                list_of_failures.append(objname)
                 msg = sys.exc_info()[1].args[0]
                 if 'DB-Lib error' in msg:
                     continue
@@ -102,13 +108,19 @@ class basicAccessTest(unittest.TestCase):
             else:
                 TestCat.column_outputs = ['raJ2000', 'decJ2000']
             cat = dbobj.getCatalog('unit_test_catalog', obs_metadata)
-            if os.path.exists('testCat.out'):
-                os.unlink('testCat.out')
+            if os.path.exists(catName):
+                os.unlink(catName)
             try:
-                cat.write_catalog('testCat.out')
+                cat.write_catalog(catName)
+                dtypeList = [(name, numpy.float) for name in cat._column_outputs]
+                testData = numpy.genfromtxt(catName, delimiter = ', ',
+                                            dtype=numpy.dtype(dtypeList))
+                self.assertGreater(len(testData), 0)
             finally:
-                if os.path.exists('testCat.out'):
-                    os.unlink('testCat.out')
+                if os.path.exists(catName):
+                    os.unlink(catName)
+
+        self.assertEqual(len(list_of_failures), ct_failed_connection)
 
         print '\n================'
         print 'Do not worry about this message'
@@ -117,9 +129,13 @@ class basicAccessTest(unittest.TestCase):
         print 'This is just a tally so that you know how often that happened.'
         print 'successful connections: ', ct_connected
         print 'failed connections: ', ct_failed_connection
+        if len(list_of_failures)>0:
+            print 'objects that failed to connect: ',list_of_failures
 
     def testObsCat(self):
         objname = 'wdstars'
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testObsCat.txt')
 
         try:
             dbobj = CatalogDBObject.from_objid(objname)
@@ -131,13 +147,17 @@ class basicAccessTest(unittest.TestCase):
                            'pointingDec':(numpy.radians(obs_metadata.pointingDec), float)}
             obs_metadata.phoSimMetaData = opsMetadata
             cat = dbobj.getCatalog('obs_star_cat', obs_metadata)
-            if os.path.exists('testCat.out'):
-                os.unlink('testCat.out')
+            if os.path.exists(catName):
+                os.unlink(catName)
             try:
-                cat.write_catalog('testCat.out')
+                cat.write_catalog(catName)
+                dtypeList = [(name, numpy.float) for name in cat._column_outputs]
+                testData = numpy.genfromtxt(catName, delimiter = ', ',
+                                            dtype=numpy.dtype(dtypeList))
+                self.assertGreater(len(testData), 0)
             finally:
-                if os.path.exists('testCat.out'):
-                    os.unlink('testCat.out')
+                if os.path.exists(catName):
+                    os.unlink(catName)
 
             print '\ntestObsCat successfully connected to fatboy'
 
