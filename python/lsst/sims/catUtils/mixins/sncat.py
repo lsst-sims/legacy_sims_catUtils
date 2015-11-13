@@ -251,24 +251,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
 
-    def get_fluxerr(self):
-
-        bandname = self.obs_metadata.bandpass
-        bandpass = self.lsstBandpassDict[bandname]
-        vals = np.zeros(self.numobjs)
-        flux = self.column_by_name('flux')
-        mag = self.column_by_name('mag')
-        photParams = PhotometricParameters()
-        m5 = self.obs_metadata.m5[bandname]
-        m5 = np.asarray([[m5]])
-
-        SNR, gamma = calcSNR_m5(magnitudes=[mag],
-                                bandpasses=[bandpass],
-                                m5=m5,
-                                photParams=photParams)
-
-        return flux
-
     @compound('flux', 'mag', 'flux_err', 'mag_err')
     def get_snbrightness(self):
 
