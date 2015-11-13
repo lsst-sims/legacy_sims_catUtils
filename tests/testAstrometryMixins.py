@@ -8,9 +8,10 @@ import math
 import palpy as pal
 import lsst.utils.tests as utilsTests
 
+from lsst.utils import getPackageDir
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
-from lsst.sims.coordUtils import _observedFromAppGeo, _pupilCoordsFromRaDec
+from lsst.sims.utils import _observedFromAppGeo, _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, _focalPlaneCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoords, _chipNameFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, _pixelCoordsFromRaDec
@@ -127,11 +128,11 @@ class astrometryUnitTest(unittest.TestCase):
         #these would be set to meaningful values.  Because we are generating
         #an artificial set of inputs that must comport to the baseline SLALIB
         #inputs, these are set arbitrarily by hand
-        self.metadata['Unrefracted_RA'] = (numpy.radians(200.0), float)
-        self.metadata['Unrefracted_Dec'] = (numpy.radians(-30.0), float)
+        self.metadata['pointingRA'] = (numpy.radians(200.0), float)
+        self.metadata['pointingDec'] = (numpy.radians(-30.0), float)
         self.metadata['Opsim_rotskypos'] = (1.0, float)
 
-        self.obs_metadata=ObservationMetaData(mjd=50984.371741,
+        self.obs_metadata=ObservationMetaData(mjd=57388.0,
                                      boundType='circle',
                                      boundLength=0.05,
                                      phoSimMetaData=self.metadata)
@@ -157,17 +158,44 @@ class astrometryUnitTest(unittest.TestCase):
         """
         Try writing a catalog with all possible Astrometric columns
         """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'starWritingTest.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
         stars = testStellarCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
-        stars.write_catalog("starsTestOutput.txt")
-        os.unlink("starsTestOutput.txt")
+
+        stars.write_catalog(catName)
+
+        dtypeList = [(name, numpy.float) for name in stars._column_outputs]
+        testData = numpy.genfromtxt(catName, delimiter=', ', dtype=numpy.dtype(dtypeList))
+
+        self.assertGreater(len(testData), 0)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testWritingOfGalaxies(self):
         """
         Try writing a catalog with all possible Astrometric columns
         """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'galWritingTest.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
         galaxies = testGalaxyCatalog(self.galaxyDBObject, obs_metadata=self.obs_metadata)
-        galaxies.write_catalog("galTestOutput.txt")
-        os.unlink("galTestOutput.txt")
+        galaxies.write_catalog(catName)
+
+        dtypeList = [(name, numpy.float) for name in galaxies._column_outputs]
+        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList))
+
+        self.assertGreater(len(testData), 0)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
 
 
@@ -178,7 +206,13 @@ class astrometryUnitTest(unittest.TestCase):
         that they are consistent.
         """
 
-        self.cat.write_catalog("AstrometryTestCatalog.txt")
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'AstrometryUtilityCatalog.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+        self.cat.write_catalog(catName)
 
         dtype = [('id',int),
                  ('raPhoSim',float), ('decPhoSim',float),
@@ -187,7 +221,9 @@ class astrometryUnitTest(unittest.TestCase):
                  ('xPix',float), ('yPix',float),
                  ('xFocalPlane',float), ('yFocalPlane',float)]
 
-        baselineData = numpy.loadtxt('AstrometryTestCatalog.txt', dtype=dtype, delimiter=';')
+        baselineData = numpy.loadtxt(catName, dtype=dtype, delimiter=';')
+
+        self.assertGreater(len(baselineData), 0)
 
         pupilTest = _pupilCoordsFromRaDec(baselineData['raObserved'],
                                               baselineData['decObserved'],
@@ -254,8 +290,8 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertTrue(ntest is None)
                 self.assertTrue(nra is None)
 
-        if os.path.exists("AstrometryTestCatalog.txt"):
-            os.unlink("AstrometryTestCatalog.txt")
+        if os.path.exists(catName):
+            os.unlink(catName)
 
 
     def testParallax(self):
@@ -270,10 +306,17 @@ class astrometryUnitTest(unittest.TestCase):
         #create and write a catalog that performs astrometric transformations
         #on a cartoon star database
         cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
-        parallaxName = 'parallaxCatalog.sav'
+        parallaxName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                                    'scratchSpace', 'parallaxCatalog.sav')
+
+        if os.path.exists(parallaxName):
+            os.unlink(parallaxName)
+
         cat.write_catalog(parallaxName)
 
         data = numpy.genfromtxt(parallaxName,delimiter=',')
+        self.assertGreater(len(data), 0)
+
         epoch = cat.db_obj.epoch
         mjd = cat.obs_metadata.mjd
         prms = pal.mappa(epoch, mjd)
