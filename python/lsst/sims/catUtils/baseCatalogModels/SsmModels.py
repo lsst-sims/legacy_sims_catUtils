@@ -29,7 +29,7 @@ class SolarSystemObj(BaseCatalogObj):
     objectTypeId = 40
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType = 'circle',
-                                                  unrefractedRA = 0.0, unrefractedDec = 0.0,
+                                                  pointingRA = 0.0, pointingDec = 0.0,
                                                   boundLength = 0.1, mjd=51200., bandpassName='r', m5=22.0)
 
     #Turn off default column mapping since we are querying a dynamic resource
@@ -152,7 +152,7 @@ class CometObj(SolarSystemObj):
     # testObservationMetaData defined in SolarSystemObj is too small.
     # It returns zero objects, which causes an error in testAllObjects.py
     testObservationMetaData = ObservationMetaData(boundType = 'circle',
-                                                  unrefractedRA = 0.0, unrefractedDec = 0.0,
+                                                  pointingRA = 0.0, pointingDec = 0.0,
                                                   boundLength = 0.5, mjd=51200., bandpassName='r', m5=22.0)
 
 
@@ -169,7 +169,7 @@ class NEOObj(SolarSystemObj):
     # testObservationMetaData defined in SolarSystemObj is too small.
     # It returns zero objects, which causes an error in testAllObjects.py
     testObservationMetaData = ObservationMetaData(boundType = 'circle',
-                                                  unrefractedRA = 0.0, unrefractedDec = 0.0,
+                                                  pointingRA = 0.0, pointingDec = 0.0,
                                                   boundLength = 0.5, mjd=51200., bandpassName='r', m5=22.0)
 
 

@@ -10,8 +10,8 @@ from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
                             _galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
 
-from lsst.sims.coordUtils.AstrometryUtils import _appGeoFromICRS, _observedFromAppGeo
-from lsst.sims.coordUtils.AstrometryUtils import _observedFromICRS, _pupilCoordsFromRaDec
+from lsst.sims.utils import _appGeoFromICRS, _observedFromAppGeo
+from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
