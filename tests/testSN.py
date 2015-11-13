@@ -19,7 +19,9 @@ from lsst.sims.photUtils import BandpassDict
 
 # Routines Being Tested
 from lsst.sims.catUtils.mixins import SNObject
+
 # External package
+
 import sncosmo
 import astropy
 
@@ -29,8 +31,6 @@ class SNObject_tests(unittest.TestCase):
     def setUp(self):
         """
         Setup tests
-
-        
         SN_blank: A SNObject with no MW extinction
 
 
@@ -39,7 +39,7 @@ class SNObject_tests(unittest.TestCase):
         # A range of wavelengths in Ang
         self.wave = np.arange(3000., 12000., 50.)
         # Equivalent wavelenths in nm
-        self.wavenm = self.wave/10.
+        self.wavenm = self.wave / 10.
         # Time to be used as Peak
         self.mjdobs = 571190
 
@@ -50,53 +50,69 @@ class SNObject_tests(unittest.TestCase):
         self.SN_blank.set(z=0.96, t0=571181, x1=2.66, c=0.353, x0=1.796e-6)
         self.SN_blank.set_MWebv(0.)
 
-
         self.SN_extincted = SNObject(ra=30., dec=-60.)
         self.SN_extincted.set(z=0.96, t0=571181, x1=2.66, c=0.353,
                               x0=1.796112e-06)
         self.SNCosmoModel = self.SN_extincted.equivalentSNCosmoModel()
-        
+
         self.lsstBandPass = BandpassDict.loadTotalBandpassesFromFiles()
         self.SNCosmoBP = sncosmo.Bandpass(wave=self.lsstBandPass['r'].wavelen,
                                           trans=self.lsstBandPass['r'].sb,
                                           wave_unit=astropy.units.Unit('nm'),
                                           name='lsst_r')
 
-
     def tearDown(self):
-        #if os.path.exists(self.catName):
-        #    os.unlink(self.catName)
-        #del self.catName
         pass
 
-    def test_bandFluxes(self):
+    def test_ComparebandFluxes2photUtils(self):
+        """
+        The SNObject.catsimBandFluxes computation uses the sims.photUtils.sed
+        band flux computation under the hood. This test makes sure that these
+        definitions are in sync
+        """
+
+        snobject_r = self.SN_extincted.catsimBandFluxes(
+            bandpassobject=self.lsstBandPass['r'],
+            time=self.mjdobs)
+
+        # `sims.photUtils.Sed`
+        sed = self.SN_extincted.SNObjectSED(time=self.mjdobs,
+                                            bandpass=self.lsstBandPass['r'])
+        sedflux = sed.calcFlux(bandpass=self.lsstBandPass['r'])
+        np.testing.assert_allclose(snobject_r, sedflux / 3631.0)
+
+    def test_CompareBandFluxes2SNCosmo(self):
         """
         Compare the r band flux at a particular time computed in SNObject and
-        SNCosmo for MW-extincted SEDs
+        SNCosmo for MW-extincted SEDs. While the underlying sed is obtained
+        from SNCosmo the integration with the bandpass is an independent
+        calculation in SNCosmo  and catsim
         """
+
         times = self.mjdobs
         catsim_r = self.SN_extincted.catsimBandFluxes(
-                                        bandpassobject=self.lsstBandPass['r'],
-                                        time=times)
+            bandpassobject=self.lsstBandPass['r'],
+            time=times)
         sncosmo_r = self.SNCosmoModel.bandflux(band=self.SNCosmoBP,
                                                time=times,  zpsys='ab',
                                                zp=0.)
         np.testing.assert_allclose(sncosmo_r, catsim_r)
 
-    def test_bandMags(self):
+    def test_CompareBandMags2SNCosmo(self):
         """
         Compare the r band flux at a particular time computed in SNObject and
-        SNCosmo for MW-extincted SEDs
+        SNCosmo for MW-extincted SEDs. Should work whenever the flux comparison
+        above works.
         """
         times = self.mjdobs
         catsim_r = self.SN_extincted.catsimBandMags(
-                                        bandpassobject=self.lsstBandPass['r'],
-                                        time=times)
+            bandpassobject=self.lsstBandPass['r'],
+            time=times)
         sncosmo_r = self.SNCosmoModel.bandmag(band=self.SNCosmoBP,
-                                               time=times,  magsys='ab')
+                                              time=times,  magsys='ab')
         np.testing.assert_allclose(sncosmo_r, catsim_r)
-        
-    def test_extinctedSED(self):
+
+    def test_CompareExtinctedSED2SNCosmo(self):
         """
         Compare the extincted SEDS in SNCosmo and SNObject. Slightly more
         non-trivial than comparing unextincted SEDS, as the extinction in
@@ -106,20 +122,25 @@ class SNObject_tests(unittest.TestCase):
         SNObjectSED = self.SN_extincted.SNObjectSED(time=self.mjdobs,
                                                     wavelen=self.wavenm)
 
-        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) * 10.
+        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) \
+            * 10.
 
-        np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED, rtol=1.0e-7)
+        np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
+                                   rtol=1.0e-7)
 
-    def test_unextinctedSED(self):
+    def test_CompareUnextinctedSED2SNCosmo(self):
         """
-        Compares the unextincted flux Densities in SNCosmo and SNObject. This is mereley
-        a sanity check as SNObject uses SNCosmo under the hood.
+        Compares the unextincted flux Densities in SNCosmo and SNObject. This
+        is mereley a sanity check as SNObject uses SNCosmo under the hood.
         """
+
         SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave,
                                                 time=self.mjdobs) * 10.
+
         unextincted_sed = self.SN_blank.SNObjectSED(time=self.mjdobs,
                                                     wavelen=self.wavenm)
-        SNObjectFluxDensity = unextincted_sed.flambda 
+
+        SNObjectFluxDensity = unextincted_sed.flambda
         np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
                                    rtol=1.0e-7)
 
@@ -130,9 +151,9 @@ def suite():
     suites += unittest.makeSuite(SNObject_tests)
     return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
 
-if __name__ =='__main__':
+def run(shouldExit=False):
+    utilsTests.run(suite(), shouldExit)
+
+if __name__ == '__main__':
     run(True)
-
