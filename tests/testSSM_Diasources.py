@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import os, sys
 import traceback
 import unittest
@@ -78,80 +79,89 @@ class ssmCatCamera(ssmCat):
 
 class createSSMSourceCatalogsTest(unittest.TestCase):
 
-    t = time.time()
-    # Fake opsim data.
-    database = os.path.join(getPackageDir('SIMS_DATA'), 'OpSimData/opsimblitz1_1133_sqlite.db')
-    generator = ObservationMetaDataGenerator(database=database, driver='sqlite')
+    def test_ssm_catalog_creation(self):
 
-    night = 20
-    query = 'select min(expMJD), max(expMJD) from summary where night=%d' %(night)
-    res = generator.opsimdb.execute_arbitrary(query)
-    expMJD_min = res[0][0]
-    expMJD_max = res[0][1]
+        t = time.time()
+        # Fake opsim data.
+        database = os.path.join(getPackageDir('SIMS_DATA'), 'OpSimData/opsimblitz1_1133_sqlite.db')
+        generator = ObservationMetaDataGenerator(database=database, driver='sqlite')
 
-    obsMetaDataResults = generator.getObservationMetaData(expMJD=(expMJD_min, expMJD_max), limit=3, boundLength=2.2)
+        night = 20
+        query = 'select min(expMJD), max(expMJD) from summary where night=%d' %(night)
+        res = generator.opsimdb.execute_arbitrary(query)
+        expMJD_min = res[0][0]
+        expMJD_max = res[0][1]
 
-    dt, t = dtime(t)
-    print 'To query opsim database: %f seconds' %(dt)
+        obsMetaDataResults = generator.getObservationMetaData(expMJD=(expMJD_min, expMJD_max), limit=3, boundLength=2.2)
 
-    write_header = True
-    write_mode = 'w'
+        dt, t = dtime(t)
+        print 'To query opsim database: %f seconds' %(dt)
 
-    try:
-        #ssmObj = NEOObj()
-        ssmObj = SolarSystemObj()
+        write_header = True
+        write_mode = 'w'
 
-        output_cat = 'catsim_ssm_test'
+        try:
+            #ssmObj = NEOObj()
+            ssmObj = SolarSystemObj()
 
-        for obsMeta in obsMetaDataResults:
-            # But moving objects databases are not currently complete for all years. Push forward to night=747.
-            # (note that we need the phosim dictionary as well)
-            newMJD = obsMeta.mjd + (747 - 20)
-            phoSimMetaDict = {'exptime': [30]}
-            obs = ObservationMetaData(phoSimMetaData = phoSimMetaDict, mjd=newMJD,
-                                      unrefractedRA=obsMeta.unrefractedRA, unrefractedDec=obsMeta.unrefractedDec,
-                                      bandpassName=obsMeta.bandpass, rotSkyPos=obsMeta.rotSkyPos,
-                                        m5=obsMeta.m5[obsMeta.bandpass], seeing=obsMeta.seeing[obsMeta.bandpass],
-                                        boundLength=obsMeta.boundLength, boundType=obsMeta.boundType)
-            mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
-            #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
-            photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0], nexp=1, bandpass=obs.bandpass)
-            mySsmDb.photParams = photParams
+            output_cat = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'catsim_ssm_test')
+            if os.path.exists(output_cat):
+                os.unlink(output_cat)
 
-            try:
-                mySsmDb.write_catalog(output_cat, write_header=write_header, write_mode=write_mode)
-            except:
-                # This is because the solar system object 'tables'
-                # don't actually connect to tables on fatboy; they just
-                # call methods stored on fatboy.  Therefore, the connection
-                # failure will not be noticed until this part of the test
-                msg = sys.exc_info()[1].args[0]
-                if 'DB-Lib error' in msg:
-                    reassure()
-                    continue
+            for obsMeta in obsMetaDataResults:
+                # But moving objects databases are not currently complete for all years. Push forward to night=747.
+                # (note that we need the phosim dictionary as well)
+                newMJD = obsMeta.mjd + (747 - 20)
+                phoSimMetaDict = {'exptime': [30]}
+                obs = ObservationMetaData(phoSimMetaData = phoSimMetaDict, mjd=newMJD,
+                                          pointingRA=obsMeta.pointingRA, pointingDec=obsMeta.pointingDec,
+                                          bandpassName=obsMeta.bandpass, rotSkyPos=obsMeta.rotSkyPos,
+                                          m5=obsMeta.m5[obsMeta.bandpass], seeing=obsMeta.seeing[obsMeta.bandpass],
+                                          boundLength=obsMeta.boundLength, boundType=obsMeta.boundType)
+                mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
+                #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
+                photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0], nexp=1, bandpass=obs.bandpass)
+                mySsmDb.photParams = photParams
 
-            write_mode = 'a'
-            write_header = False
+                try:
+                    mySsmDb.write_catalog(output_cat, write_header=write_header, write_mode=write_mode)
 
-            dt, t = dtime(t)
-            print 'To query solar system objects: %f seconds (obs MJD time %f)' %(dt, obs.mjd)
+                    # verify that we did not write an empty catalog
+                    with open(output_cat, 'r') as input_file:
+                        lines = input_file.readlines()
+                        self.assertGreater(len(lines), 1)
+                except:
+                    # This is because the solar system object 'tables'
+                    # don't actually connect to tables on fatboy; they just
+                    # call methods stored on fatboy.  Therefore, the connection
+                    # failure will not be noticed until this part of the test
+                    msg = sys.exc_info()[1].args[0]
+                    if 'DB-Lib error' in msg:
+                        reassure()
+                        continue
+                    else:
+                        raise
 
-        if os.path.exists(output_cat):
-            os.unlink(output_cat)
+                write_mode = 'a'
+                write_header = False
 
-    except:
-        trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
-        msg = sys.exc_info()[1].args[0]
-        if 'Failed to connect' in msg or failedOnFatboy(trace):
-            # if the exception was because of a failed connection
-            # to fatboy, ignore it.
-            reassure()
+                dt, t = dtime(t)
+                print 'To query solar system objects: %f seconds (obs MJD time %f)' %(dt, obs.mjd)
 
-            pass
-        else:
-            raise
+                if os.path.exists(output_cat):
+                    os.unlink(output_cat)
 
+        except:
+            trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
+            msg = sys.exc_info()[1].args[0]
+            if 'Failed to connect' in msg or failedOnFatboy(trace):
+                # if the exception was because of a failed connection
+                # to fatboy, ignore it.
+                reassure()
 
+                pass
+            else:
+                raise
 
 
 def suite():
