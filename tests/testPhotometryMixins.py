@@ -1,13 +1,14 @@
+from __future__ import with_statement
 import numpy
 
 import os
 import unittest
-import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 
+from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
@@ -107,29 +108,43 @@ class photometryUnitTest(unittest.TestCase):
         del self.obs_metadata
 
     def testStarCatalog(self):
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                               'scratchSpace', 'testPhotMixTestStarCat.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
         test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
-        test_cat.write_catalog("testStarsOutput.txt")
-        cat = open("testStarsOutput.txt")
+        test_cat.write_catalog(catName)
+        cat = open(catName)
         lines = cat.readlines()
         self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
         cat.close()
         results = self.star.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
         self.assertTrue(len(result)>0) #to make sure some results are returned
-        os.unlink("testStarsOutput.txt")
+        if os.path.exists(catName):
+            os.unlink(catName)
 
 
     def testGalaxyCatalog(self):
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                               'scratchSpace', 'testPhotMixTestGalCat.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
         test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
-        test_cat.write_catalog("testGalaxiesOutput.txt")
-        cat = open("testGalaxiesOutput.txt")
+        test_cat.write_catalog(catName)
+        cat = open(catName)
         lines = cat.readlines()
         self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
         cat.close()
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
         self.assertTrue(len(result)>0) #to make sure some results are returned
-        os.unlink("testGalaxiesOutput.txt")
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testSumMagnitudes(self):
         """
@@ -197,7 +212,12 @@ class photometryUnitTest(unittest.TestCase):
         and then calculating the summed magnitude by hand and comparing
         """
 
-        catName = 'galaxiesWithHoles.txt'
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testPhotMixGalaxiesWithHoles.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
         obs_metadata=ObservationMetaData(mjd=50000.0,
                                boundType='circle',pointingRA=0.0,pointingDec=0.0,
                                boundLength=10.0)
@@ -268,14 +288,21 @@ class photometryUnitTest(unittest.TestCase):
         LSST bandpasses.
         """
 
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testPhotMixTestStarsCartoon.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
                                                  boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                                                  boundLength=1.0)
 
         test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testStarsCartoon.txt")
 
-        cartoonDir = os.path.join(lsst.utils.getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
+        test_cat.write_catalog(catName)
+
+        cartoonDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
         testBandPasses = {}
         keys = ['u','g','r','i','z']
 
@@ -303,16 +330,24 @@ class photometryUnitTest(unittest.TestCase):
         self.assertTrue(len(mags)>0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
-        i += 1
 
-        os.unlink("testStarsCartoon.txt")
+        with open(catName, 'r') as input_file:
+            lines = input_file.readlines()
+            self.assertGreater(len(lines), 1)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testAlternateBandpassesGalaxies(self):
         """
         the same as testAlternateBandpassesStars, but for galaxies
         """
 
-        catName = 'testAlternateBandpassesGalaxies.txt'
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testPhotMix_testAlternateBandpassesGalaxies.txt')
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',pointingRA=0.0,pointingDec=0.0,
@@ -358,9 +393,11 @@ class photometryUnitTest(unittest.TestCase):
 
         catData = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
 
-        cartoonDir = lsst.utils.getPackageDir('sims_photUtils')
+        self.assertGreater(len(catData), 0)
+
+        cartoonDir = getPackageDir('sims_photUtils')
         cartoonDir = os.path.join(cartoonDir, 'tests', 'cartoonSedTestData')
-        sedDir = lsst.utils.getPackageDir('sims_sed_library')
+        sedDir = getPackageDir('sims_sed_library')
 
         testBandpasses = {}
         keys = ['u','g','r','i','z']
@@ -462,14 +499,21 @@ class photometryUnitTest(unittest.TestCase):
                                      ('cartoon_r', float), ('cartoon_i', float),
                                      ('cartoon_z', float)])
 
-        baselineCatName = 'stellarBaselineCatalog.txt'
+        baselineCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                      'testPhotMix_testStellarIndices_stellarBaselineCatalog.txt')
+
+        if os.path.exists(baselineCatName):
+            os.unlink(baselineCatName)
 
         testDtype = numpy.dtype([('id',int),
                                  ('raObserved',float), ('decObserved',float),
                                  ('cartoon_i',float)])
 
-        testCatName = 'stellarTestCatalog.txt'
+        testCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                  'testPhotMix_testStellarIndices_stellarTestCatalog.txt')
 
+        if os.path.exists(testCatName):
+            os.unlink(testCatName)
 
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
                                                  boundType='circle',pointingRA=200.0,pointingDec=-30.0,
@@ -478,10 +522,12 @@ class photometryUnitTest(unittest.TestCase):
         baseline_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
         baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+        self.assertGreater(len(baselineData), 0)
 
         test_cat=cartoonStarsOnlyI(self.star, obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(testCatName)
         testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
         ct = 0
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
@@ -496,6 +542,7 @@ class photometryUnitTest(unittest.TestCase):
         test_cat=cartoonStarsIZ(self.star, obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(testCatName)
         testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
         ct = 0
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
@@ -509,7 +556,12 @@ class photometryUnitTest(unittest.TestCase):
             os.unlink(baselineCatName)
 
     def testGalaxyPhotometricIndices(self):
-        baselineCatName = 'galaxyBaselineCatalog.txt'
+        baselineCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                       'testPhotMix_testGalIndices_galaxyBaselineCatalog.txt')
+
+        if os.path.exists(baselineCatName):
+            os.unlink(baselineCatName)
+
         baselineDtype = numpy.dtype([('galid', int),
                                      ('raObserved', float),
                                      ('decObserved', float),
@@ -526,16 +578,24 @@ class photometryUnitTest(unittest.TestCase):
         baseline_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
         baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+        self.assertGreater(len(baselineData), 0)
 
-        testCatName = 'galaxyTestCatalog.txt'
+        testCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                   'testPhotMix_testGalIndices_galaxyTestCatalog.txt')
+
+        if os.path.exists(testCatName):
+            os.unlink(testCatName)
+
         testDtype = numpy.dtype([('galid', int),
                                  ('raObserved', float),
                                  ('decObserved', float),
                                  ('ctotal_i', float),
                                  ('ctotal_g', float)])
+
         test_cat = cartoonGalaxiesIG(self.galaxy, obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(testCatName)
         testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
         ct = 0
         for b,t in zip(baselineData, testData):
             self.assertAlmostEqual(b['ctotal_i'], t['ctotal_i'], 10)
@@ -554,7 +614,7 @@ class photometryUnitTest(unittest.TestCase):
         Use manMagCalc_list with specified indices on an Sed.  Make sure
         that the appropriate magnitudes are or are not Nan
         """
-        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starName = os.path.join(getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
         starPhot = BandpassDict.loadTotalBandpassesFromFiles()
         testSed = Sed()
         testSed.readSED_flambda(starName)
@@ -571,7 +631,7 @@ class photometryUnitTest(unittest.TestCase):
 
 class UncertaintyMixinTest(unittest.TestCase):
     def setUp(self):
-        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starName = os.path.join(getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
         self.starSED = Sed()
         self.starSED.readSED_flambda(starName)
         imsimband = Bandpass()
@@ -586,16 +646,16 @@ class UncertaintyMixinTest(unittest.TestCase):
                          'lens1.dat', 'lens2.dat', 'lens3.dat']
         hardwareComponents = []
         for c in componentList:
-            hardwareComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline',c))
+            hardwareComponents.append(os.path.join(getPackageDir('throughputs'),'baseline',c))
 
         self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
         for b in self.bandpasses:
-            filterName = os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','filter_%s.dat' % b)
+            filterName = os.path.join(getPackageDir('throughputs'),'baseline','filter_%s.dat' % b)
             components = hardwareComponents + [filterName]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.hardwareBandpasses.append(bandpassDummy)
-            components = components + [os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','atmos.dat')]
+            components = components + [os.path.join(getPackageDir('throughputs'),'baseline','atmos.dat')]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.totalBandpasses.append(bandpassDummy)
@@ -640,7 +700,7 @@ class UncertaintyMixinTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
                                        seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -678,7 +738,7 @@ class UncertaintyMixinTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
                                                        seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -723,7 +783,7 @@ class UncertaintyMixinTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
                                                        seeing=LSSTdefaults().seeing(self.bandpasses[i]),
