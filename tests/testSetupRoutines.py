@@ -317,6 +317,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
             baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
+            self.assertGreater(len(baseData), 0)
 
             ct = 0
             for b, t in zip(baseData, testData):
@@ -334,6 +336,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              catalogClass=testCatClass)
             testCat.write_catalog(testName)
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
                 self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12,
@@ -393,6 +396,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
             baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
+            self.assertGreater(len(baseData), 0)
 
             ct = 0
             for b, t in zip(baseData, testData):
@@ -414,6 +419,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              uncertainty=True)
             testCat.write_catalog(testName)
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
                 self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12,
