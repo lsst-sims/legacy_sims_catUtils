@@ -10,7 +10,7 @@ from lsst.sims.catalogs.generation.db import fileDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM
 from lsst.sims.photUtils import BandpassDict, SedList, PhotometricParameters
-from lsst.sims.coordUtils import _observedFromICRS
+from lsst.sims.utils import _observedFromICRS
 
 class LSST_SSM_photCat(InstanceCatalog, PhotometrySSM):
     column_outputs = ['id', 'lsst_u' ,'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
@@ -247,7 +247,7 @@ class SSMastrometryTest(unittest.TestCase):
         decList = (np.random.random_sample(nTests)-0.5)*np.pi
         mjdList = np.random.random_sample(nTests)*5000.0 + 53850.0
         for raPointing, decPointing, mjd in zip(raList, decList, mjdList):
-            obs = ObservationMetaData(unrefractedRA=raPointing, unrefractedDec=decPointing, mjd=mjd)
+            obs = ObservationMetaData(pointingRA=raPointing, pointingDec=decPointing, mjd=mjd)
 
             cat = SSM_astrometryCat(self.astDB, obs_metadata=obs)
             cat.write_catalog(catName)
