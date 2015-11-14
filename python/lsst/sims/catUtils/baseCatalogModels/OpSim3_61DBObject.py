@@ -37,8 +37,8 @@ class OpSim3_61DBObject(DBObject):
     #the name stored in the database
     columnNames = [('Opsim_obshistid','obshistid'),
                ('SIM_SEED','expdate'),
-               ('Unrefracted_RA','fieldra'),
-               ('Unrefracted_Dec','fielddec'),
+               ('pointingRA','fieldra'),
+               ('pointingDec','fielddec'),
                ('Opsim_moonra','moonra'),
                ('Opsim_moondec','moondec'),
                ('Opsim_rotskypos','rotskypos'),
@@ -129,8 +129,8 @@ class OpSim3_61DBObject(DBObject):
 
         result = self.execute_arbitrary(query, dtype=dtype)
 
-        ra = result['Unrefracted_RA'][0]
-        dec = result['Unrefracted_Dec'][0]
+        ra = result['pointingRA'][0]
+        dec = result['pointingDec'][0]
 
         #because makeCircBounds defaults to True, check whether the user is
         #requesting boxBounds before deciding to instantiate

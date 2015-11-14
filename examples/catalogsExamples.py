@@ -18,8 +18,8 @@ def exampleReferenceCatalog():
     The catalog is output to the file test_reference.dat
     """
 
-    obs_metadata = ObservationMetaData(boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
-                       boundLength=0.01)
+    obs_metadata = ObservationMetaData(boundType='circle',pointingRA=0.0,pointingDec=0.0,
+                       boundLength=0.01, mjd=53850.0)
     dbobj = CatalogDBObject.from_objid('galaxyBase')
 
     t = dbobj.getCatalog('ref_catalog_galaxy', obs_metadata=obs_metadata)
@@ -108,8 +108,8 @@ def examplePhoSimNoOpSim():
     azRad = math.radians(220.)
     altRad = math.radians(79.)
     md = makeObsParamsAzAltTel(azRad, altRad, mjd, 'r')
-    raDeg = math.degrees(md['Unrefracted_RA'][0])
-    decDeg = math.degrees(md['Unrefracted_Dec'][0])
+    raDeg = math.degrees(md['pointingRA'][0])
+    decDeg = math.degrees(md['pointingDec'][0])
     obs_metadata_aa = ObservationMetaData(boundType='circle',
                                           boundLength=0.1,
                                           mjd=mjd,
