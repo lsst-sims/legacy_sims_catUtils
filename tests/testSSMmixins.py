@@ -74,8 +74,10 @@ class SSMphotometryTest(unittest.TestCase):
                           ('y', np.float)])
 
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
+        self.assertGreater(len(controlData), 0)
 
         LSSTbandpasses = BandpassDict.loadTotalBandpassesFromFiles()
         controlSedList = SedList(controlData['sedFilename'], controlData['magNorm'],
@@ -109,8 +111,10 @@ class SSMphotometryTest(unittest.TestCase):
                           ('cartoon_z', np.float)])
 
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
+        self.assertGreater(len(controlData), 0)
 
         LSSTbandpasses = BandpassDict.loadTotalBandpassesFromFiles()
         cartoonBandpasses = BandpassDict.loadTotalBandpassesFromFiles(
@@ -182,6 +186,7 @@ class SSMphotometryTest(unittest.TestCase):
 
         dtype = np.dtype([('id', np.int), ('dmagTrail', np.float), ('dmagDetect', np.float)])
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
 
         a_trail = 0.76
         b_trail = 1.16
@@ -253,6 +258,7 @@ class SSMastrometryTest(unittest.TestCase):
             cat.write_catalog(catName)
 
             testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
             raPhoSimControl, decPhoSimControl = _observedFromICRS(controlData['raJ2000'], controlData['decJ2000'],
                                                                   obs_metadata=obs, epoch=2000.0,
                                                                   includeRefraction=False)
@@ -284,6 +290,7 @@ class SSMastrometryTest(unittest.TestCase):
         cat.write_catalog(catName)
         dtype = np.dtype([('id', np.int), ('vel', np.float)])
         testData = np.genfromtxt(catName, dtype=dtype)
+        self.assertGreater(len(testData), 0)
 
         np.testing.assert_array_almost_equal(testData['vel'], controlVel, 10)
 
