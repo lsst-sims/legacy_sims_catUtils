@@ -5,6 +5,7 @@ import numpy
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds
+from lsst.sims.utils import _observedFromICRS
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
@@ -64,6 +65,7 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
+
     def testExceptions(self):
         """
         Make sure that RuntimeErrors get raised when they should
@@ -71,6 +73,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         gen = ObservationMetaDataGenerator()
         self.assertRaises(RuntimeError, gen.getObservationMetaData)
         self.assertRaises(RuntimeError, gen.getObservationMetaData,fieldRA=(1.0, 2.0, 3.0))
+
 
     def testQueryOnRanges(self):
         """
@@ -197,6 +200,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         #ever returned
         self.assertGreater(ct, 0)
 
+
     def testQueryExactValues(self):
         """
         Test that ObservationMetaData returned by a query demanding an exact value do,
@@ -262,6 +266,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     self.assertGreater(ct, 0)
 
 
+
     def testQueryLimit(self):
         """
         Test that, when we specify a limit on the number of ObservationMetaData we want returned,
@@ -272,6 +277,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                                              limit=20)
         self.assertEqual(len(results),20)
 
+
     def testQueryOnFilter(self):
         """
         Test that queries on the filter work.
@@ -280,12 +286,13 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
-            self.assertAlmostEqual(obs_metadata.phoSimMetaData['Unrefracted_RA'][0],1.370916)
+            self.assertAlmostEqual(obs_metadata.phoSimMetaData['pointingRA'][0],1.370916)
             self.assertEqual(obs_metadata.phoSimMetaData['Opsim_filter'][0],'i')
             ct += 1
 
         #Make sure that more than zero ObservationMetaData were returned
         self.assertGreater(ct, 0)
+
 
     def testObsMetaDataBounds(self):
         """
@@ -300,57 +307,82 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ct = 0
         for obs_metadata in results:
             self.assertTrue(isinstance(obs_metadata.bounds,CircleBounds))
-            self.assertAlmostEqual(obs_metadata.bounds.radiusdeg,0.9,10)
-            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetaData['Unrefracted_RA'][0],10)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetaData['Unrefracted_Dec'][0],10)
+
+            # include some wiggle room, in case ObservationMetaData needs to
+            # adjust the boundLength to accommodate the transformation between
+            # ICRS and observed coordinates
+            self.assertGreaterEqual(obs_metadata.bounds.radiusdeg, 0.9)
+            self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
+
+            raObs, decObs = _observedFromICRS(numpy.array([obs_metadata.bounds.RA]),
+                                              numpy.array([obs_metadata.bounds.DEC]),
+                                              obs_metadata=obs_metadata,
+                                              epoch=2000.0)
+
+            self.assertAlmostEqual(raObs[0], obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+            self.assertAlmostEqual(decObs[0], obs_metadata.phoSimMetaData['pointingDec'][0], 5)
             ct += 1
 
         #Make sure that some ObservationMetaData were tested
         self.assertGreater(ct, 0)
 
-        #test a square
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
-                                             boundType='box', boundLength=1.2)
-        ct = 0
-        for obs_metadata in results:
-            RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_RA'][0])
-            DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_Dec'][0])
-            self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
+        boundLengthList = [1.2, (1.2, 0.6)]
+        for boundLength in boundLengthList:
+            results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
+                                                 boundType='box', boundLength=boundLength)
 
-            self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
-            self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg,RAdeg+1.2,10)
-            self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-1.2,10)
-            self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+1.2,10)
+            if hasattr(boundLength, '__len__'):
+                dra = boundLength[0]
+                ddec = boundLength[1]
+            else:
+                dra = boundLength
+                ddec = boundLength
 
-            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetaData['Unrefracted_RA'][0],10)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetaData['Unrefracted_Dec'][0],10)
+            ct = 0
+            for obs_metadata in results:
+                RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingRA'][0])
+                DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingDec'][0])
+                self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
 
-            ct += 1
+                rmn = obs_metadata.bounds.RAminDeg
+                rmx = obs_metadata.bounds.RAmaxDeg
+                dmn = obs_metadata.bounds.DECminDeg
+                dmx = obs_metadata.bounds.DECmaxDeg
 
-        #Make sure that some ObservationMetaData were tested
-        self.assertGreater(ct, 0)
+                ra_list, dec_list = _observedFromICRS(numpy.radians([rmn, rmx, rmn, rmx]),
+                                                      numpy.radians([dmn, dmn, dmx, dmx]),
+                                                      obs_metadata=obs_metadata, epoch=2000.0)
 
-        #test a rectangle
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
-                                             boundType='box', boundLength=(1.2,0.6))
-        ct = 0
-        for obs_metadata in results:
-            RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_RA'][0])
-            DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['Unrefracted_Dec'][0])
-            self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
+                rmnDeg = numpy.degrees(ra_list).min()
+                rmxDeg = numpy.degrees(ra_list).max()
+                dmnDeg = numpy.degrees(dec_list).min()
+                dmxDeg = numpy.degrees(dec_list).max()
 
-            self.assertAlmostEqual(obs_metadata.bounds.RAminDeg,RAdeg-1.2,10)
-            self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg,RAdeg+1.2,10)
-            self.assertAlmostEqual(obs_metadata.bounds.DECminDeg,DECdeg-0.6,10)
-            self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg,DECdeg+0.6,10)
+                self.assertLessEqual(rmnDeg, RAdeg-dra)
+                self.assertGreater(rmnDeg, RAdeg-dra-0.1)
 
-            self.assertAlmostEqual(obs_metadata.bounds.RA,obs_metadata.phoSimMetaData['Unrefracted_RA'][0],10)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC,obs_metadata.phoSimMetaData['Unrefracted_Dec'][0],10)
+                self.assertGreaterEqual(rmxDeg, RAdeg+dra)
+                self.assertLess(rmxDeg, RAdeg+dra+0.1)
 
-            ct += 1
+                self.assertLessEqual(dmnDeg, DECdeg-ddec)
+                self.assertGreater(dmnDeg, DECdeg-ddec-0.1)
 
-        #Make sure that some ObservationMetaData were tested
-        self.assertGreater(ct, 0)
+                self.assertGreaterEqual(dmxDeg, DECdeg+ddec)
+                self.assertLess(dmxDeg, DECdeg+ddec+0.1)
+
+                raObs, decObs = _observedFromICRS(numpy.array([obs_metadata.bounds.RA]),
+                                                  numpy.array([obs_metadata.bounds.DEC]),
+                                                  obs_metadata=obs_metadata,
+                                                  epoch=2000.0)
+
+                self.assertAlmostEqual(raObs[0], obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+                self.assertAlmostEqual(decObs[0], obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+
+                ct += 1
+
+            #Make sure that some ObservationMetaData were tested
+            self.assertGreater(ct, 0)
+
 
     def testCreationOfPhoSimCatalog(self):
         """
@@ -377,7 +409,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             for control in gen.columnMapping:
                 if control[0] != 'm5' and control[0]!='skyBrightness' and control[0]!='seeing':
                     words = lines[ix].split()
-                    self.assertEqual(control[2], words[0])
+                    self.assertEqual(control[2].replace('pointing', 'Unrefracted_'), words[0])
 
                     if control[0] != 'telescopeFilter':
                         if control[4] is not None:

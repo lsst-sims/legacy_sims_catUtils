@@ -13,7 +13,7 @@ class PhosimInputBase(InstanceCatalog):
 
     cannot_be_null = ['sedFilepath']
 
-    headerTransformations = {'Unrefracted_RA':numpy.degrees, 'Unrefracted_Dec':numpy.degrees,
+    headerTransformations = {'pointingRA':numpy.degrees, 'pointingDec':numpy.degrees,
                        'Opsim_moonra':numpy.degrees, 'Opsim_moondec':numpy.degrees,
                        'Opsim_rotskypos':numpy.degrees, 'Opsim_rottelpos':numpy.degrees,
                        'Opsim_sunalt':numpy.degrees, 'Opsim_moonalt':numpy.degrees,
@@ -58,6 +58,7 @@ class PhosimInputBase(InstanceCatalog):
 
 
     def write_header(self, file_handle):
+        header_name_map = {'pointingRA': 'Unrefracted_RA', 'pointingDec': 'Unrefracted_Dec'}
         md = self.obs_metadata.phoSimMetaData
         if md is None:
             raise RuntimeError("Can't write a phoSim catalog without a full phoSimMetaData dictionary")
@@ -73,7 +74,13 @@ class PhosimInputBase(InstanceCatalog):
                 outval = self.headerTransformations[k](md[k][0])
             else:
                 outval = md[k][0]
-            file_handle.write(templ%(k, outval)+"\n")
+
+            if k in header_name_map:
+                k_out = header_name_map[k]
+            else:
+                k_out = k
+
+            file_handle.write(templ%(k_out, outval)+"\n")
 
 class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
     catalog_type = 'phoSim_catalog_POINT'

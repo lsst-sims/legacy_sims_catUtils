@@ -82,8 +82,8 @@ class ObservationMetaDataGenerator(object):
         #
         self.columnMapping = [('obsHistID', 'obsHistID', 'Opsim_obshistid' ,numpy.int64, None),
                               ('expDate', 'expDate', 'SIM_SEED', int, None),
-                              ('fieldRA', 'fieldRA', 'Unrefracted_RA', float, numpy.radians),
-                              ('fieldDec', 'fieldDec', 'Unrefracted_Dec', float, numpy.radians),
+                              ('fieldRA', 'fieldRA', 'pointingRA', float, numpy.radians),
+                              ('fieldDec', 'fieldDec', 'pointingDec', float, numpy.radians),
                               ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
                               ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
                               ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
