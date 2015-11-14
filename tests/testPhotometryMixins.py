@@ -64,7 +64,7 @@ class variabilityUnitTest(unittest.TestCase):
         for row in result:
             mags=galcat.applyVariability(row['varParamStr'])
             ct += 1
-        self.assertTrue(ct>0) #to make sure that the test was actually performed
+        self.assertGreater(ct, 0) #to make sure that the test was actually performed
 
     def testStarVariability(self):
         starcat = testStars(self.star, obs_metadata=self.obs_metadata)
@@ -75,7 +75,7 @@ class variabilityUnitTest(unittest.TestCase):
         for row in result:
             ct += 1
             mags=starcat.applyVariability(row['varParamStr'])
-        self.assertTrue(ct>0) #to make sure that the test was actually performed
+        self.assertGreater(ct, 0) #to make sure that the test was actually performed
 
 class photometryUnitTest(unittest.TestCase):
 
@@ -118,11 +118,11 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog(catName)
         cat = open(catName)
         lines = cat.readlines()
-        self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
+        self.assertGreater(len(lines), 1) #to make sure we did not write an empty catalog
         cat.close()
         results = self.star.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
-        self.assertTrue(len(result)>0) #to make sure some results are returned
+        self.assertGreater(len(result), 0) #to make sure some results are returned
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -137,11 +137,11 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog(catName)
         cat = open(catName)
         lines = cat.readlines()
-        self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
+        self.assertGreater(len(lines), 1) #to make sure we did not write an empty catalog
         cat.close()
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
-        self.assertTrue(len(result)>0) #to make sure some results are returned
+        self.assertGreater(len(result), 0) #to make sure some results are returned
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -199,7 +199,7 @@ class photometryUnitTest(unittest.TestCase):
             test = phot.sum_magnitudes(bulge=bb, disk=dd, agn=aa)
             if ix<7:
                 self.assertAlmostEqual(test, truth, 10)
-                self.assertTrue(not numpy.isnan(test))
+                self.assertFalse(numpy.isnan(test))
             else:
                 self.assertTrue(numpy.isnan(test))
                 self.assertTrue(numpy.isnan(truth))
@@ -240,7 +240,7 @@ class photometryUnitTest(unittest.TestCase):
 
 
         data = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
-        self.assertTrue(len(data)>16)
+        self.assertGreater(len(data), 16)
         phot = PhotometryGalaxies()
 
         test = phot.sum_magnitudes(bulge=data['ub'], disk=data['ud'], agn=data['ua'])
@@ -269,8 +269,8 @@ class photometryUnitTest(unittest.TestCase):
                      data['ua'], data['ga'], data['ra'], data['ia'], data['za'], data['ya']]:
 
             ctNans = len(numpy.where(numpy.isnan(line))[0])
-            self.assertTrue(ctNans>0)
-            self.assertTrue(ctNans<len(line))
+            self.assertGreater(ctNans, 0)
+            self.assertLess(ctNans, len(line))
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -326,8 +326,8 @@ class photometryUnitTest(unittest.TestCase):
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
         mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-        self.assertTrue(len(mags)==len(test_cat.cartoonBandpassDict))
-        self.assertTrue(len(mags)>0)
+        self.assertEqual(len(mags), len(test_cat.cartoonBandpassDict))
+        self.assertGreater(len(mags), 0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
 
@@ -482,7 +482,7 @@ class photometryUnitTest(unittest.TestCase):
                     self.assertAlmostEqual(testMag, line['%sTotal' % bpName],10)
 
 
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -528,11 +528,9 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog(testCatName)
         testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
-        ct = 0
+
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
-            ct+=1
-        self.assertTrue(ct>0)
 
         testDtype = numpy.dtype([('id',int),
                                  ('raObserved',float), ('decObserved',float),
@@ -543,12 +541,10 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog(testCatName)
         testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
-        ct = 0
+
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
             self.assertAlmostEqual(b['cartoon_z'], t['cartoon_z'], 10)
-            ct+=1
-        self.assertTrue(ct>0)
 
         if os.path.exists(testCatName):
             os.unlink(testCatName)
@@ -596,12 +592,10 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog(testCatName)
         testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
-        ct = 0
+
         for b,t in zip(baselineData, testData):
             self.assertAlmostEqual(b['ctotal_i'], t['ctotal_i'], 10)
             self.assertAlmostEqual(b['ctotal_g'], t['ctotal_g'], 10)
-            ct += 1
-        self.assertTrue(ct>0)
 
         if os.path.exists(baselineCatName):
             os.unlink(baselineCatName)
@@ -626,7 +620,7 @@ class photometryUnitTest(unittest.TestCase):
         self.assertFalse(numpy.isnan(mags[3]))
         self.assertTrue(numpy.isnan(mags[4]))
         self.assertTrue(numpy.isnan(mags[5]))
-        self.assertTrue(len(mags)==6)
+        self.assertEqual(len(mags), 6)
 
 
 class UncertaintyMixinTest(unittest.TestCase):
