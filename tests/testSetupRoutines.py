@@ -3,6 +3,7 @@ import numpy
 import os
 import unittest
 import lsst.utils.tests as utilsTests
+from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -119,8 +120,12 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
     def setUp(self):
         self.driver = 'sqlite'
-        self.StarDBName = 'setupTestStars.db'
-        self.GalaxyDBName = 'setupTestGalaxies.db'
+        self.StarDBName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                      'testSetup_setupTestStars.db')
+
+        self.GalaxyDBName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                         'testSetup_setupTestGalaxies.db')
+
         if os.path.exists(self.StarDBName):
             os.unlink(self.StarDBName)
 
@@ -290,8 +295,17 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata))
         baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata))
 
-        testName = 'testSetupCat.txt'
-        baseName = 'baseSetupCat.txt'
+        testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testSetUp_testActual_testSetupCat.txt')
+
+        baseName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'testSetUp_testActual_baseSetupCat.txt')
+
+        if os.path.exists(testName):
+            os.unlink(testName)
+
+        if os.path.exists(baseName):
+            os.unlink(baseName)
 
 
         basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
@@ -370,8 +384,17 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata_compound))
         baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata_compound))
 
-        testName = 'testSetupCatUncertainty.txt'
-        baseName = 'baseSetupCatUncertainty.txt'
+        testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'testSetup_testSetupCatUncertainty.txt')
+
+        baseName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testSetup_baseSetupCatUncertainty.txt')
+
+        if os.path.exists(testName):
+            os.unlink(testName)
+
+        if os.path.exists(baseName):
+            os.unlink(baseName)
 
         basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                  ('lsst_u', numpy.float), ('lsst_g', numpy.float),
