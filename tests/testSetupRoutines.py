@@ -127,31 +127,31 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         if os.path.exists(self.GalaxyDBName):
             os.unlink(self.GalaxyDBName)
 
-        self.unrefractedRA = 50.0
-        self.unrefractedDec = -5.0
+        self.pointingRA = 50.0
+        self.pointingDec = -5.0
         self.radius = 1.0
         makeStarDatabase(filename=self.StarDBName, size=100,
-                         unrefractedRA=self.unrefractedRA,
-                         unrefractedDec=self.unrefractedDec,
+                         pointingRA=self.pointingRA,
+                         pointingDec=self.pointingDec,
                          radius=self.radius)
 
 
         makeGalaxyDatabase(filename=self.GalaxyDBName, size=100,
-                           unrefractedRA=self.unrefractedRA,
-                           unrefractedDec=self.unrefractedDec,
+                           pointingRA=self.pointingRA,
+                           pointingDec=self.pointingDec,
                            radius=self.radius)
 
         self.starDBObj = testStarDBObject(driver=self.driver, database= self.StarDBName)
         self.galaxyDBObj = testGalaxyDBObject(driver=self.driver, database=self.GalaxyDBName)
 
-        self.obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
-                                                unrefractedDec=self.unrefractedDec,
+        self.obs_metadata = ObservationMetaData(pointingRA=self.pointingRA,
+                                                pointingDec=self.pointingDec,
                                                 boundType='circle', boundLength=self.radius,
                                                 bandpassName='g', mjd=57000.0,
                                                 m5=24.5)
 
-        self.obs_metadata_compound = ObservationMetaData(unrefractedRA=self.unrefractedRA,
-                                                         unrefractedDec=self.unrefractedDec,
+        self.obs_metadata_compound = ObservationMetaData(pointingRA=self.pointingRA,
+                                                         pointingDec=self.pointingDec,
                                                          boundType='circle', boundLength=self.radius,
                                                          bandpassName=['g','i'], mjd=57000.0,
                                                          m5=[24.5, 17.5])
@@ -167,8 +167,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         del self.galaxyDBObj
         del self.StarDBName
         del self.GalaxyDBName
-        del self.unrefractedRA
-        del self.unrefractedDec
+        del self.pointingRA
+        del self.pointingDec
         del self.radius
         del self.obs_metadata
 
