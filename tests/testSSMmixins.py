@@ -150,21 +150,21 @@ class SSMphotometryTest(unittest.TestCase):
         obs = ObservationMetaData()
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
-        self.assertTrue("does not specify seeing" in context.exception.args[0])
+        self.assertIn("does not specify seeing", context.exception.args[0])
 
         obs = ObservationMetaData(bandpassName = ['u', 'g'], seeing=[0.6, 0.5])
 
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
-        self.assertTrue("multiple seeing values" in context.exception.args[0])
+        self.assertIn("multiple seeing values", context.exception.args[0])
 
         obs = ObservationMetaData(bandpassName = 'u', seeing=0.7)
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
             cat.photParams = None
             cat.write_catalog(catName)
-        self.assertTrue("does not have an associated PhotometricParameters"
-                        in context.exception.args[0])
+        self.assertIn("does not have an associated PhotometricParameters",
+                       context.exception.args[0])
 
         if os.path.exists(catName):
             os.unlink(catName)
