@@ -40,7 +40,7 @@ class variabilityUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7,
-                            boundType = 'circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundType = 'circle',pointingRA=200.0,pointingDec=-30.0,
                             boundLength=1.0,
                             m5=[23.9, 25.0, 24.7, 24.0, 23.3, 22.1],
                             bandpassName=['u', 'g', 'r', 'i', 'z', 'y'])
@@ -95,7 +95,7 @@ class photometryUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i',
-                            boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                             boundLength=1.0, m5 = 25.0)
 
         self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
@@ -199,7 +199,7 @@ class photometryUnitTest(unittest.TestCase):
 
         catName = 'galaxiesWithHoles.txt'
         obs_metadata=ObservationMetaData(mjd=50000.0,
-                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundType='circle',pointingRA=0.0,pointingDec=0.0,
                                boundLength=10.0)
         test_cat=galaxiesWithHoles(self.galaxy,obs_metadata=obs_metadata)
         test_cat.write_catalog(catName)
@@ -269,7 +269,7 @@ class photometryUnitTest(unittest.TestCase):
         """
 
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
-                                                 boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                                 boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                                                  boundLength=1.0)
 
         test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
@@ -315,7 +315,7 @@ class photometryUnitTest(unittest.TestCase):
         catName = 'testAlternateBandpassesGalaxies.txt'
 
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
-                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundType='circle',pointingRA=0.0,pointingDec=0.0,
                                boundLength=10.0)
 
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
@@ -472,7 +472,7 @@ class photometryUnitTest(unittest.TestCase):
 
 
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
-                                                 boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                                 boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                                                  boundLength=1.0)
 
         baseline_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
@@ -520,7 +520,7 @@ class photometryUnitTest(unittest.TestCase):
                                      ('ctotal_z', float)])
 
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
-                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundType='circle',pointingRA=0.0,pointingDec=0.0,
                                boundLength=10.0)
 
         baseline_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
@@ -610,7 +610,7 @@ class UncertaintyMixinTest(unittest.TestCase):
         magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
         shortMagnitudes = numpy.array([22.0])
         self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes, totalDict)
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, bandpassName='g', m5=23.0)
         self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, totalDict, \
                           obs_metadata=obs_metadata)
 
@@ -633,7 +633,7 @@ class UncertaintyMixinTest(unittest.TestCase):
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         phot = PhotometryBase()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
@@ -671,7 +671,7 @@ class UncertaintyMixinTest(unittest.TestCase):
         phot.photParams = photParams
 
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
@@ -716,7 +716,7 @@ class UncertaintyMixinTest(unittest.TestCase):
         phot.photParams = photParams
 
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
