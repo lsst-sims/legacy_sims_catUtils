@@ -52,7 +52,7 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
 
 #write the catalog directly
 myDB = CatalogDBObject.from_objid('allstars')
-obs_metadata = ObservationMetaData(unrefractedRA=220.0, unrefractedDec=19.0,
+obs_metadata = ObservationMetaData(pointingRA=220.0, pointingDec=19.0,
                                    boundType='circle', boundLength=0.1,
                                    mjd=52000.0)
 
@@ -62,7 +62,7 @@ cat.write_catalog('tutorial_astrometry_photometry.txt')
 
 
 #write the catalog using CatalogDBObject.getCatalog()
-obs_metadata = ObservationMetaData(unrefractedRA=120.0, unrefractedDec=-5.0,
+obs_metadata = ObservationMetaData(pointingRA=120.0, pointingDec=-5.0,
                                    boundType='circle', boundLength=0.1,
                                    mjd=52000.0)
 

@@ -52,8 +52,9 @@ class TutorialCatalog(InstanceCatalog):
         return numpy.array([ra+dec, ra-dec])
 
 myDB = CatalogDBObject.from_objid('allstars')
-obs_metadata = ObservationMetaData(unrefractedRA=220.0, unrefractedDec=19.0,
-                                   boundType='circle', boundLength=0.1)
+obs_metadata = ObservationMetaData(pointingRA=220.0, pointingDec=19.0,
+                                   boundType='circle', boundLength=0.1,
+                                   mjd=57388.0)
 
 cat = TutorialCatalog(myDB, obs_metadata=obs_metadata)
 cat.write_catalog('tutorial_catalog.txt')

@@ -11,8 +11,8 @@ myStarDB = CatalogDBObject.from_objid('allstars')
 
 from lsst.sims.utils import ObservationMetaData
 
-obs_metadata = ObservationMetaData(unrefractedRA = 220.0,
-                                   unrefractedDec = 19.0,
+obs_metadata = ObservationMetaData(pointingRA = 220.0,
+                                   pointingDec = 19.0,
                                    boundType = 'circle',
                                    boundLength = 0.2,
                                    mjd = 52000.0)
@@ -28,8 +28,8 @@ myGalaxyCat = RefCatalogGalaxyBase(myGalaxyDB, obs_metadata=obs_metadata)
 myGalaxyCat.write_catalog('galaxy_example.txt')
 
 
-squareObsMetadata = ObservationMetaData(unrefractedRA = 220.0,
-                                       unrefractedDec = 19.0,
+squareObsMetadata = ObservationMetaData(pointingRA = 220.0,
+                                       pointingDec = 19.0,
                                        boundType = 'box',
                                        boundLength = 0.3,
                                        mjd = 52000.0)
