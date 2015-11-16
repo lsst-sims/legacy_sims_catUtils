@@ -20,6 +20,7 @@ from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 
 import sncosmo
 
+__all__ = ['SNObject']
 
 class SNObject (sncosmo.Model):
     """
