@@ -138,7 +138,7 @@ class sdssStars(InstanceCatalog,PhotometryStars):
 if __name__ == "__main__":
 
     obs_metadata_pointed = ObservationMetaData(mjd=2013.23, boundType='circle',
-                                               unrefractedRA=200.0, unrefractedDec=-30.0, boundLength=1.0)
+                                               pointingRA=200.0, pointingDec=-30.0, boundLength=1.0)
 
     obs_metadata_pointed.metadata = {}
     obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     sdssStars.write_catalog("example_sdss_stars.txt")
 
     obs_metadata_pointed = ObservationMetaData(mjd=50000.0, boundType='circle',
-                             unrefractedRA=0.0, unrefractedDec=0.0, boundLength=0.01)
+                             pointingRA=0.0, pointingDec=0.0, boundLength=0.01)
 
     obs_metadata_pointed.metadata = {}
     obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
