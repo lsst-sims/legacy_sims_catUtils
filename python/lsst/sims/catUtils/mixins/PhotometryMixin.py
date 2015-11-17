@@ -38,66 +38,29 @@ class PhotometryBase(object):
     #defaults to LSST values
     photParams = PhotometricParameters()
 
-    def calculateMagnitudeUncertainty(self, magnitudes, bandpassDict, obs_metadata=None):
+
+    def _cacheGamma(self, m5_names, bandpassDict):
         """
-        Calculate the uncertainty in magnitudes using the model from equation (5) of arXiv:0805.2366
+        Generate or populate the cache of gamma values used by this InstanceCatalog
+        to calculate photometric uncertainties (gamma is defined in equation 5 of
+        the LSST overview paper arXiv:0805.2366)
 
-        @param [in] magnitudes is a numpy array containing the object magnitudes.  Every row corresponds to
-        a bandpass, which is to say that magnitudes[i][j] is the magnitude of the jth object in the
-        bandpass characterized by self.bandpassDict.values()[i]
+        @param [in] m5_names is a list of the names of keys by which m5 values are
+        referred to in the dict self.obs_metadata.m5
 
-        @param [in] bandpassDict is a BandpassDict characterizing the bandpasses being used
-
-        @param [in] obs_metadata is the metadata of this observation (mostly desired because
-        it will contain information about m5, the magnitude at which objects are detected
-        at the 5-sigma limit in each bandpass)
-
-        @param [out] a 1-dimensional numpy array containing the magntiude uncertainty
-        corresponding to the magnitudes passed into this method.
+        @param [in] bandpassDict is the bandpassDict containing the bandpasses
+        corresponding to those m5 values.
         """
 
-        if obs_metadata is None:
-            raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
+        if not hasattr(self, '_gamma_cache'):
+            self._gamma_cache = {}
 
-        if magnitudes.shape[0] != len(bandpassDict):
-            raise RuntimeError("Passed %d magnitudes to " % magnitudes.shape[0] + \
-                                " PhotometryBase.calculatePhotometricUncertainty; " + \
-                                "needed %d " % len(bandpassDict))
-
-        #if we have not run this method before, calculate and cache the m5 and gamma parameter
-        #values (see eqn 5 of arXiv:0805.2366) for future use
-        m5Defaults = None
-
-        if not hasattr(self, '_gammaList') or \
-        len(self._gammaList) != len(bandpassDict):
-
-            mm = []
-            gg = []
-            for b in bandpassDict.keys():
-                if b in obs_metadata.m5:
-                    mm.append(obs_metadata.m5[b])
-                    gg.append(calcGamma(bandpassDict[b], obs_metadata.m5[b],
-                              photParams=self.photParams))
-                else:
-                    if m5Defaults is None:
-                        m5Defaults = LSSTdefaults()
-
-                    try:
-                        mm.append(m5Defaults.m5(b))
-                        gg.append(m5Defaults.gamma(b))
-                    except:
-                        raise RuntimeError("No way to calculate gamma or m5 for filter %s " % b)
-
-            self._m5List = numpy.array(mm)
-            self._gammaList = numpy.array(gg)
-
-        error = calcMagError_m5(magnitudes, bandpassDict.values(), self._m5List,
-                                gamma=self._gammaList, photParams=self.photParams)
-
-        return error
+        for mm, bp in zip(m5_names, bandpassDict.values()):
+            if mm not in self._gamma_cache and mm in self.obs_metadata.m5:
+                self._gamma_cache[mm] = calcGamma(bp, self.obs_metadata.m5[mm], photParams=self.photParams)
 
 
-    def _magnitudeUncertaintyGetter(self, column_names, bandpassDict_name):
+    def _magnitudeUncertaintyGetter(self, column_names, m5_names, bandpassDict_name):
         """
         Generic getter for magnitude uncertainty columns.
 
@@ -107,6 +70,16 @@ class PhotometryBase(object):
         @param [in] column_names is the list of magnitude column names
         associated with the uncertainties calculated by this getter
         (the 'xx' in the 'sigma_xx' above)
+
+        @param [in] m5_names are the keys to the self.obs_metadata.m5 dict
+        corresponding to the bandpasses in column_names (e.g. in the case
+        of galaxies, the magnitude columns
+
+        column_names = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge']
+
+        may correspond to m5 values keyed to
+
+        m5_names = ['u', 'g', 'r', 'i', 'z', 'y'])
 
         @param [in] bandpassDict_name is a string indicating the name of
         the InstanceCatalog member variable containing the BandpassDict
@@ -128,12 +101,30 @@ class PhotometryBase(object):
                 if num_elements is None:
                     num_elements = len(ref)
 
+        bandpassDict = getattr(self, bandpassDict_name)
+
+        self._cacheGamma(m5_names, bandpassDict)
+
         magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
                                   else [numpy.NaN]*num_elements
                                   for name in column_names])
 
-        return self.calculateMagnitudeUncertainty(magnitudes, getattr(self, bandpassDict_name),
-                                                  obs_metadata=self.obs_metadata)
+        try:
+            param_arr = numpy.array(
+                                    [[self.obs_metadata.m5[mname], self._gamma_cache[mname]]
+                                    if name in self._actually_calculated_columns
+                                    else [numpy.NaN, numpy.NaN]
+                                    for mname, name in zip(m5_names, column_names)]
+                                   ).transpose()
+        except KeyError as kk:
+            msg = 'You got the KeyError: %s' % kk.args[0]
+            raise KeyError('%s \n' % msg \
+                           + 'Is it possible your ObservationMetaData does not have the proper\n'
+                           'm5 values defined?')
+
+
+        return calcMagError_m5(magnitudes, bandpassDict.values(), param_arr[0], self.photParams,
+                               gamma=param_arr[1])
 
 
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
@@ -145,6 +136,7 @@ class PhotometryBase(object):
 
         return self._magnitudeUncertaintyGetter(['lsst_u', 'lsst_g', 'lsst_r',
                                                  'lsst_i', 'lsst_z', 'lsst_y'],
+                                                ['u', 'g', 'r', 'i', 'z', 'y'],
                                                  'lsstBandpassDict')
 
 
@@ -449,6 +441,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         return self._magnitudeUncertaintyGetter(['uBulge', 'gBulge', 'rBulge',
                                                 'iBulge', 'zBulge', 'yBulge'],
+                                                ['u', 'g', 'r', 'i', 'z', 'y'],
                                                 'lsstBandpassDict')
 
 
@@ -461,6 +454,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         return self._magnitudeUncertaintyGetter(['uDisk', 'gDisk', 'rDisk',
                                                 'iDisk', 'zDisk', 'yDisk'],
+                                                ['u', 'g', 'r', 'i', 'z', 'y'],
                                                 'lsstBandpassDict')
 
 
@@ -473,6 +467,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         return self._magnitudeUncertaintyGetter(['uAgn', 'gAgn', 'rAgn',
                                                 'iAgn', 'zAgn', 'yAgn'],
+                                                ['u', 'g', 'r', 'i', 'z', 'y'],
                                                 'lsstBandpassDict')
 
 

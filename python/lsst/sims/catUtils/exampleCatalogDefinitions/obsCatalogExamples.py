@@ -11,9 +11,7 @@ class ObsStarCatalogBase(InstanceCatalog, AstrometryStars, PhotometryStars, Came
     comment_char = ''
     camera = loadCamera(lsst.utils.getPackageDir('obs_lsstSim'))
     catalog_type = 'obs_star_cat'
-    column_outputs = ['uniqueId', 'raObserved', 'decObserved', 'lsst_u', 'sigma_lsst_u',
-                      'lsst_g', 'sigma_lsst_g', 'lsst_r', 'sigma_lsst_r', 'lsst_i',
-                      'sigma_lsst_i', 'lsst_z', 'sigma_lsst_z', 'lsst_y', 'sigma_lsst_y',
+    column_outputs = ['uniqueId', 'raObserved', 'decObserved', 'lsst_r', 'sigma_lsst_r',
                       'chipName', 'xPix', 'yPix']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'raObserved':numpy.degrees, 'decObserved':numpy.degrees}

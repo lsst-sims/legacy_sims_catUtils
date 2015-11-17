@@ -24,10 +24,7 @@ class baselineStarCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     """
     Baseline photometry catalog against which to compare testStarCatalog
     """
-    column_outputs = ['raObserved', 'decObserved',
-                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
-                      'sigma_lsst_z', 'sigma_lsst_y']
+    column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f':'%.12e'}
 
 class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies):
@@ -42,10 +39,7 @@ class baselineGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, PhotometryGalax
     """
     Baseline photometry catalog against which to compare testGalaxyCatalog
     """
-    column_outputs = ['raObserved', 'decObserved',
-                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
-                      'sigma_lsst_z', 'sigma_lsst_y']
+    column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f':'%.12e'}
 
 class testStarDBObject(CatalogDBObject):
@@ -292,8 +286,11 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         testCatClasses = [testStarCatalog, testGalaxyCatalog]
         testCatDBs = [self.starDBObj, self.galaxyDBObj]
         baselineCats = []
-        baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata))
-        baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata))
+        baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata_compound,
+                                                column_outputs=['lsst_g', 'sigma_lsst_g', 'lsst_i', 'sigma_lsst_i']))
+
+        baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata_compound,
+                                                  column_outputs=['lsst_g', 'sigma_lsst_g', 'lsst_i', 'sigma_lsst_i']))
 
         testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                'testSetUp_testActual_testSetupCat.txt')
@@ -309,12 +306,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
 
         basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                 ('lsst_u', numpy.float), ('lsst_g', numpy.float),
-                                 ('lsst_r', numpy.float), ('lsst_i', numpy.float),
-                                 ('lsst_z', numpy.float), ('lsst_y', numpy.float),
-                                 ('sigma_lsst_u', numpy.float), ('sigma_lsst_g',numpy.float),
-                                 ('sigma_lsst_r', numpy.float), ('sigma_lsst_i', numpy.float),
-                                 ('sigma_lsst_z', numpy.float), ('sigma_lsst_y', numpy.float)])
+                                 ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float),
+                                 ('lsst_i', numpy.float), ('sigma_lsst_i', numpy.float)])
 
         for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
 
@@ -381,8 +374,11 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         #need to set up the baseline catalogs with the compound obs_metadata so that they get the
         #correct m5 values for both magnitudes (otherwise, they will use LSST defaults, which
         #disagree with our cartoon test case)
-        baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata_compound))
-        baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata_compound))
+        baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata_compound,
+                                                column_outputs=['lsst_g', 'lsst_i', 'sigma_lsst_g', 'sigma_lsst_i']))
+
+        baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata_compound,
+                                                  column_outputs=['lsst_g', 'lsst_i', 'sigma_lsst_g', 'sigma_lsst_i']))
 
         testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                 'testSetup_testSetupCatUncertainty.txt')
@@ -397,12 +393,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             os.unlink(baseName)
 
         basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                 ('lsst_u', numpy.float), ('lsst_g', numpy.float),
-                                 ('lsst_r', numpy.float), ('lsst_i', numpy.float),
-                                 ('lsst_z', numpy.float), ('lsst_y', numpy.float),
-                                 ('sigma_lsst_u', numpy.float), ('sigma_lsst_g',numpy.float),
-                                 ('sigma_lsst_r', numpy.float), ('sigma_lsst_i', numpy.float),
-                                 ('sigma_lsst_z', numpy.float), ('sigma_lsst_y', numpy.float)])
+                                 ('lsst_g', numpy.float), ('lsst_i', numpy.float),
+                                 ('sigma_lsst_g',numpy.float), ('sigma_lsst_i', numpy.float)])
 
         for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
 
