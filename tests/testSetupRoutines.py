@@ -3,6 +3,7 @@ import numpy
 import os
 import unittest
 import lsst.utils.tests as utilsTests
+from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -119,39 +120,43 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
     def setUp(self):
         self.driver = 'sqlite'
-        self.StarDBName = 'setupTestStars.db'
-        self.GalaxyDBName = 'setupTestGalaxies.db'
+        self.StarDBName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                      'testSetup_setupTestStars.db')
+
+        self.GalaxyDBName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                         'testSetup_setupTestGalaxies.db')
+
         if os.path.exists(self.StarDBName):
             os.unlink(self.StarDBName)
 
         if os.path.exists(self.GalaxyDBName):
             os.unlink(self.GalaxyDBName)
 
-        self.unrefractedRA = 50.0
-        self.unrefractedDec = -5.0
+        self.pointingRA = 50.0
+        self.pointingDec = -5.0
         self.radius = 1.0
         makeStarDatabase(filename=self.StarDBName, size=100,
-                         unrefractedRA=self.unrefractedRA,
-                         unrefractedDec=self.unrefractedDec,
+                         pointingRA=self.pointingRA,
+                         pointingDec=self.pointingDec,
                          radius=self.radius)
 
 
         makeGalaxyDatabase(filename=self.GalaxyDBName, size=100,
-                           unrefractedRA=self.unrefractedRA,
-                           unrefractedDec=self.unrefractedDec,
+                           pointingRA=self.pointingRA,
+                           pointingDec=self.pointingDec,
                            radius=self.radius)
 
         self.starDBObj = testStarDBObject(driver=self.driver, database= self.StarDBName)
         self.galaxyDBObj = testGalaxyDBObject(driver=self.driver, database=self.GalaxyDBName)
 
-        self.obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
-                                                unrefractedDec=self.unrefractedDec,
+        self.obs_metadata = ObservationMetaData(pointingRA=self.pointingRA,
+                                                pointingDec=self.pointingDec,
                                                 boundType='circle', boundLength=self.radius,
                                                 bandpassName='g', mjd=57000.0,
                                                 m5=24.5)
 
-        self.obs_metadata_compound = ObservationMetaData(unrefractedRA=self.unrefractedRA,
-                                                         unrefractedDec=self.unrefractedDec,
+        self.obs_metadata_compound = ObservationMetaData(pointingRA=self.pointingRA,
+                                                         pointingDec=self.pointingDec,
                                                          boundType='circle', boundLength=self.radius,
                                                          bandpassName=['g','i'], mjd=57000.0,
                                                          m5=[24.5, 17.5])
@@ -167,8 +172,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         del self.galaxyDBObj
         del self.StarDBName
         del self.GalaxyDBName
-        del self.unrefractedRA
-        del self.unrefractedDec
+        del self.pointingRA
+        del self.pointingDec
         del self.radius
         del self.obs_metadata
 
@@ -290,8 +295,17 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata))
         baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata))
 
-        testName = 'testSetupCat.txt'
-        baseName = 'baseSetupCat.txt'
+        testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testSetUp_testActual_testSetupCat.txt')
+
+        baseName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'testSetUp_testActual_baseSetupCat.txt')
+
+        if os.path.exists(testName):
+            os.unlink(testName)
+
+        if os.path.exists(baseName):
+            os.unlink(baseName)
 
 
         basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
@@ -317,6 +331,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
             baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
+            self.assertGreater(len(baseData), 0)
 
             ct = 0
             for b, t in zip(baseData, testData):
@@ -334,6 +350,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              catalogClass=testCatClass)
             testCat.write_catalog(testName)
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
                 self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12,
@@ -367,8 +384,17 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata_compound))
         baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata_compound))
 
-        testName = 'testSetupCatUncertainty.txt'
-        baseName = 'baseSetupCatUncertainty.txt'
+        testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'testSetup_testSetupCatUncertainty.txt')
+
+        baseName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'testSetup_baseSetupCatUncertainty.txt')
+
+        if os.path.exists(testName):
+            os.unlink(testName)
+
+        if os.path.exists(baseName):
+            os.unlink(baseName)
 
         basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                  ('lsst_u', numpy.float), ('lsst_g', numpy.float),
@@ -393,6 +419,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
             baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
+            self.assertGreater(len(baseData), 0)
 
             ct = 0
             for b, t in zip(baseData, testData):
@@ -414,6 +442,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              uncertainty=True)
             testCat.write_catalog(testName)
             testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
                 self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12,

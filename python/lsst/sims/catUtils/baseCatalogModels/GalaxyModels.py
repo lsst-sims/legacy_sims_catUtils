@@ -29,7 +29,7 @@ class GalaxyObj(BaseCatalogObj):
     objectTypeId = 24
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=0.0, unrefractedDec=0.0,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=0.0, pointingDec=0.0,
                                                   boundLength=0.01, mjd=52000., bandpassName='r', m5 = 22.0)
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
@@ -108,7 +108,7 @@ class GalaxyTileObj(BaseCatalogObj):
     objectTypeId = 25
 
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=173.0, unrefractedDec=-60.0,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=173.0, pointingDec=-60.0,
                                                   boundLength=0.01, mjd=52000., bandpassName='r', m5=22.0)
 
     #: Numpy can't cast a NoneType to an integer.  This works with floats
@@ -294,7 +294,7 @@ class GalaxyBulgeObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 26
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=10.0, unrefractedDec=-45.0,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=10.0, pointingDec=-45.0,
                                                   boundLength=0.01, mjd=53000., bandpassName='i', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -333,7 +333,7 @@ class GalaxyDiskObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 27
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=66.0, unrefractedDec=-80.0,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=66.0, pointingDec=-80.0,
                                                   boundLength=0.01, mjd=53730., bandpassName='g', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -372,7 +372,7 @@ class GalaxyAgnObj(GalaxyTileObj):
     decColName = 'dec'
     objectTypeId = 28
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=234.0, unrefractedDec=-15.0,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=234.0, pointingDec=-15.0,
                                                   boundLength=0.01, mjd=51000., bandpassName='y', m5=22.0)
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name

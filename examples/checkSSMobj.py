@@ -50,7 +50,7 @@ if __name__ == "__main__":
             os.unlink(catName)
 
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-5.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=-5.0,
                                   mjd=mjd, boundType='circle',
                                   boundLength=0.5)
 

@@ -61,8 +61,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         m5 = lsstDefaults._m5.values()
 
         cls.obs_metadata = ObservationMetaData(
-                                              unrefractedRA = default_obs_metadata.unrefractedRA,
-                                              unrefractedDec = default_obs_metadata.unrefractedDec,
+                                              pointingRA = default_obs_metadata.pointingRA,
+                                              pointingDec = default_obs_metadata.pointingDec,
                                               rotSkyPos = default_obs_metadata.rotSkyPos,
                                               bandpassName = bandpass,
                                               m5 = m5
@@ -150,7 +150,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                 testSigma = line[8+i]
                 self.assertAlmostEqual(controlSigma, testSigma, 10)
                 ct += 1
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
     def testGalaxyPhotometricUncertainties(self):
         """
@@ -237,7 +237,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                     self.assertAlmostEqual(testSigma, controlSigma, 10, msg=msg)
                     ct += 1
 
-        self.assertTrue(ct>0)
+        self.assertGreater(ct, 0)
 
 def suite():
     utilsTests.init()

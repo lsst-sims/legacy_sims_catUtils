@@ -10,7 +10,7 @@ from lsst.sims.catalogs.generation.db import fileDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM
 from lsst.sims.photUtils import BandpassDict, SedList, PhotometricParameters
-from lsst.sims.coordUtils import _observedFromICRS
+from lsst.sims.utils import _observedFromICRS
 
 class LSST_SSM_photCat(InstanceCatalog, PhotometrySSM):
     column_outputs = ['id', 'lsst_u' ,'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
@@ -74,8 +74,10 @@ class SSMphotometryTest(unittest.TestCase):
                           ('y', np.float)])
 
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
+        self.assertGreater(len(controlData), 0)
 
         LSSTbandpasses = BandpassDict.loadTotalBandpassesFromFiles()
         controlSedList = SedList(controlData['sedFilename'], controlData['magNorm'],
@@ -109,8 +111,10 @@ class SSMphotometryTest(unittest.TestCase):
                           ('cartoon_z', np.float)])
 
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
+        self.assertGreater(len(controlData), 0)
 
         LSSTbandpasses = BandpassDict.loadTotalBandpassesFromFiles()
         cartoonBandpasses = BandpassDict.loadTotalBandpassesFromFiles(
@@ -146,21 +150,21 @@ class SSMphotometryTest(unittest.TestCase):
         obs = ObservationMetaData()
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
-        self.assertTrue("does not specify seeing" in context.exception.args[0])
+        self.assertIn("does not specify seeing", context.exception.args[0])
 
         obs = ObservationMetaData(bandpassName = ['u', 'g'], seeing=[0.6, 0.5])
 
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
-        self.assertTrue("multiple seeing values" in context.exception.args[0])
+        self.assertIn("multiple seeing values", context.exception.args[0])
 
         obs = ObservationMetaData(bandpassName = 'u', seeing=0.7)
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
             cat.photParams = None
             cat.write_catalog(catName)
-        self.assertTrue("does not have an associated PhotometricParameters"
-                        in context.exception.args[0])
+        self.assertIn("does not have an associated PhotometricParameters",
+                       context.exception.args[0])
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -182,6 +186,7 @@ class SSMphotometryTest(unittest.TestCase):
 
         dtype = np.dtype([('id', np.int), ('dmagTrail', np.float), ('dmagDetect', np.float)])
         testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        self.assertGreater(len(testData), 0)
 
         a_trail = 0.76
         b_trail = 1.16
@@ -247,12 +252,13 @@ class SSMastrometryTest(unittest.TestCase):
         decList = (np.random.random_sample(nTests)-0.5)*np.pi
         mjdList = np.random.random_sample(nTests)*5000.0 + 53850.0
         for raPointing, decPointing, mjd in zip(raList, decList, mjdList):
-            obs = ObservationMetaData(unrefractedRA=raPointing, unrefractedDec=decPointing, mjd=mjd)
+            obs = ObservationMetaData(pointingRA=raPointing, pointingDec=decPointing, mjd=mjd)
 
             cat = SSM_astrometryCat(self.astDB, obs_metadata=obs)
             cat.write_catalog(catName)
 
             testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+            self.assertGreater(len(testData), 0)
             raPhoSimControl, decPhoSimControl = _observedFromICRS(controlData['raJ2000'], controlData['decJ2000'],
                                                                   obs_metadata=obs, epoch=2000.0,
                                                                   includeRefraction=False)
@@ -284,6 +290,7 @@ class SSMastrometryTest(unittest.TestCase):
         cat.write_catalog(catName)
         dtype = np.dtype([('id', np.int), ('vel', np.float)])
         testData = np.genfromtxt(catName, dtype=dtype)
+        self.assertGreater(len(testData), 0)
 
         np.testing.assert_array_almost_equal(testData['vel'], controlVel, 10)
 

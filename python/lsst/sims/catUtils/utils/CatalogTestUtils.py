@@ -25,7 +25,7 @@ __all__ = ["makeStarDatabase", "makeGalaxyDatabase",
 
 
 def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
-                     radius=1.0, unrefractedRA=50.0, unrefractedDec=-10.0):
+                     radius=1.0, pointingRA=50.0, pointingDec=-10.0):
 
     star_seds = ['km20_5750.fits_g40_5790','m2.0Full.dat','bergeron_6500_85.dat_6700']
 
@@ -55,8 +55,8 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
     parallax = 0.00045+numpy.random.sample(size)*0.00001
 
     for i in range(size):
-        raStar = unrefractedRA + rr[i]*numpy.cos(theta[i])
-        decStar = unrefractedDec + rr[i]*numpy.sin(theta[i])
+        raStar = pointingRA + rr[i]*numpy.cos(theta[i])
+        decStar = pointingDec + rr[i]*numpy.sin(theta[i])
 
         cmd = '''INSERT INTO starsALL_forceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
                   (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
@@ -68,7 +68,7 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
     conn.close()
 
 def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
-                       radius=1.0, unrefractedRA=50.0, unrefractedDec=-10.0):
+                       radius=1.0, pointingRA=50.0, pointingDec=-10.0):
 
     galaxy_seds = ['Const.80E07.02Z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
     agn_sed = 'agn.spec'
@@ -105,8 +105,8 @@ def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
     rr = numpy.random.sample(size)*radius
     theta = numpy.random.sample(size)*2.0*numpy.pi
 
-    ra = unrefractedRA + rr*numpy.cos(theta)
-    dec = unrefractedDec + rr*numpy.sin(theta)
+    ra = pointingRA + rr*numpy.cos(theta)
+    dec = pointingDec + rr*numpy.sin(theta)
 
     bra = numpy.radians(ra+numpy.random.sample(size)*0.01*radius)
     bdec = numpy.radians(dec+numpy.random.sample(size)*0.01*radius)
