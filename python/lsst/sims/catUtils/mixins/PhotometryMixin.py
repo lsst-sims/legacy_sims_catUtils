@@ -117,8 +117,9 @@ class PhotometryBase(object):
                                     for mname, name in zip(m5_names, column_names)]
                                    ).transpose()
         except KeyError as kk:
-            print 'You got the KeyError: ',kk.args[0]
-            raise KeyError('Is it possible your ObservationMetaData does not have the proper\n'
+            msg = 'You got the KeyError: %s' % kk.args[0]
+            raise KeyError('%s \n' % msg \
+                           + 'Is it possible your ObservationMetaData does not have the proper\n'
                            'm5 values defined?')
 
 
