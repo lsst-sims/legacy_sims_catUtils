@@ -100,7 +100,7 @@ class photometryUnitTest(unittest.TestCase):
         self.obs_metadata = ObservationMetaData(mjd=52000.7,
                             bandpassName=bandpassName,
                             m5=[defaults.m5(mm) for mm in bandpassName],
-                            boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                             boundLength=1.0)
 
         self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
@@ -157,13 +157,14 @@ class photometryUnitTest(unittest.TestCase):
         uncertainty but do not define the required m5 value
         """
 
-        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                'm5_exception_cat.txt')
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-14.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=-14.0,
                                   boundType='circle', boundLength=0.1,
                                   bandpassName=['u', 'g', 'r', 'z', 'y'],
-                                  m5 = [24.0] * 5)
+                                  m5 = [24.0] * 5,
+                                  mjd=57388.0)
 
         with self.assertRaises(KeyError) as context:
             cat = testStars(self.star, obs_metadata=obs)

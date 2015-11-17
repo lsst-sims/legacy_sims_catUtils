@@ -16,7 +16,7 @@ class StarBase(BaseCatalogObj):
     #Don't run test on base class
     doRunTest = False
     #default observation metadata
-    testObservationMetaData = ObservationMetaData(boundType='circle', unrefractedRA=210.0, unrefractedDec=-30.0,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=210.0, pointingDec=-30.0,
                                                   boundLength=0.3, mjd=52000., bandpassName='r',m5=22.0)
     dbDefaultValues = {'varsimobjid':-1, 'runid':-1, 'ismultiple':-1, 'run':-1,
                        'runobjid':-1}
