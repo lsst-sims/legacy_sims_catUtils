@@ -139,6 +139,31 @@ class SNObject (sncosmo.Model):
 
         return statedict
 
+
+    @staticmethod
+    def equivsncosmoParamDict(SNstate, SNCosmoModel):
+        """
+        return a dictionary that contains the parameters of SNCosmoModel
+        that are contained in SNstate
+
+        Parameters
+        ----------
+        SNstate : `SNObject.SNstate`, mandatory
+            Dictionary defining the state of a SNObject
+        SNCosmoModel : A `sncosmo.Model` instance, mandatory
+
+        Returns
+        -------
+        sncosmoParams: Dictionary of sncosmo parameters
+
+        """
+        sncosmoParams = dict()
+        for param in SNstate.keys():
+            if param in SNCosmoModel.param_names:
+                sncosmoParams[param] = SNstate[param]
+        sncosmoParams['mwebv'] = snState['MWE(B-V)']
+        return sncosmoParams
+
     @staticmethod
     def sncosmoParamDict(SNstate, SNCosmoModel):
         """
