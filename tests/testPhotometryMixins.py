@@ -150,6 +150,40 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+
+    def test_m5_exceptions(self):
+        """
+        Test that the correct exception is raised when you ask for a photometric
+        uncertainty but do not define the required m5 value
+        """
+
+        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'm5_exception_cat.txt')
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-14.0,
+                                  boundType='circle', boundLength=0.1,
+                                  bandpassName=['u', 'g', 'r', 'z', 'y'],
+                                  m5 = [24.0] * 5)
+
+        with self.assertRaises(KeyError) as context:
+            cat = testStars(self.star, obs_metadata=obs)
+            cat.write_catalog(catName)
+
+        self.assertIn('Is it possible your ObservationMetaData does not have the proper\nm5 values defined?',
+                      context.exception.args[0])
+
+
+        with self.assertRaises(KeyError) as context:
+            cat = testGalaxies(self.galaxy, obs_metadata=obs)
+            cat.write_catalog(catName)
+
+        self.assertIn('Is it possible your ObservationMetaData does not have the proper\nm5 values defined?',
+                      context.exception.args[0])
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+
     def testSumMagnitudes(self):
         """
         Test that the method sum_magnitudes in PhotometryGalaxies handles
