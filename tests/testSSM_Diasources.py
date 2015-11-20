@@ -111,7 +111,7 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
             for obsMeta in obsMetaDataResults:
                 # But moving objects databases are not currently complete for all years. Push forward to night=747.
                 # (note that we need the phosim dictionary as well)
-                newMJD = obsMeta.mjd + (747 - 20)
+                newMJD = obsMeta.mjd.TAI + (747 - 20)
                 phoSimMetaDict = {'exptime': [30]}
                 obs = ObservationMetaData(phoSimMetaData = phoSimMetaDict, mjd=newMJD,
                                           pointingRA=obsMeta.pointingRA, pointingDec=obsMeta.pointingDec,
