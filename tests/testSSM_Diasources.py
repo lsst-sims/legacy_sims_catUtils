@@ -146,7 +146,7 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 write_header = False
 
                 dt, t = dtime(t)
-                print 'To query solar system objects: %f seconds (obs MJD time %f)' %(dt, obs.mjd)
+                print 'To query solar system objects: %f seconds (obs MJD time %f)' %(dt, obs.mjd.TAI)
 
                 if os.path.exists(output_cat):
                     os.unlink(output_cat)

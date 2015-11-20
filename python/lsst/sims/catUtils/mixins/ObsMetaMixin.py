@@ -14,7 +14,7 @@ class ObsMetadataBase(object):
         Returns the expMJD from obs_metadata (assumed to be TAI MJD exposure midpoint).
         """
         n_records = self._get_nobj()
-        mjd = [self.obs_metadata.mjd] * n_records
+        mjd = [self.obs_metadata.mjd.TAI] * n_records
         return np.array(mjd)
 
     def get_rotSkyPos(self):
