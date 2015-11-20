@@ -187,10 +187,10 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink(catName)
 
         galaxies = testGalaxyCatalog(self.galaxyDBObject, obs_metadata=self.obs_metadata)
+        galaxies.delimiter = ';'
         galaxies.write_catalog(catName)
 
-        dtypeList = [(name, numpy.float) for name in galaxies._column_outputs]
-        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList))
+        testData = numpy.genfromtxt(catName,delimiter=';')
 
         self.assertGreater(len(testData), 0)
 
@@ -319,7 +319,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         epoch = cat.db_obj.epoch
         mjd = cat.obs_metadata.mjd
-        prms = pal.mappa(epoch, mjd)
+        prms = pal.mappa(epoch, mjd.TDB)
         for vv in data:
             #run the PALPY routines that actuall do astrometry `by hand' and compare
             #the results to the contents of the catalog
