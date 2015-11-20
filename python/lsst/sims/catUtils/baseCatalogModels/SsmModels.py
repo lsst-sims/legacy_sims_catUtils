@@ -131,7 +131,7 @@ class SolarSystemObj(BaseCatalogObj):
                           "if the database is large")
 
         query = "select %s from [LSST].[dbo].%s("%(mappedcolnames, self.ssmtable)+\
-                "%f, '%s')"%(obs_metadata.mjd, regionStr)
+                "%f, '%s')"%(obs_metadata.mjd.TAI, regionStr)
 
         if constraint is not None:
             query += "where %s"%(constraint)
