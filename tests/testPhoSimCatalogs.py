@@ -5,6 +5,7 @@
 #If we end up changing the logic in Astromtetry or Photometry, we will need to
 #re-generate the testData/phoSimControlCatalog.txt to be consistent with the new code.
 
+from __future__ import with_statement
 import os
 import unittest
 import lsst.utils.tests as utilsTests
@@ -28,15 +29,38 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.starDB = testStarsDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        baseLineFileName = lsst.utils.getPackageDir('sims_catUtils')+'/tests/testData/phoSimControlCatalog.txt'
-        self.baseLineFile = open(baseLineFileName,'r')
+        self.control_header = ['Opsim_moondec 29.666667\n',
+                              'Opsim_rottelpos 180\n',
+                              'Unrefracted_Dec -29.666667\n',
+                              'Opsim_moonalt -90\n',
+                              'Opsim_rotskypos 0\n',
+                              'Opsim_moonra 298.825632\n',
+                              'Opsim_sunalt -90\n',
+                              'Opsim_expmjd 52000\n',
+                              'Unrefracted_Azimuth 0\n',
+                              'Unrefracted_RA 118.825632\n',
+                              'Opsim_dist2moon 179.999998\n',
+                              'Opsim_filter 2\n',
+                              'Unrefracted_Altitude 1.57079633\n']
+
 
     def tearDown(self):
 
-        self.baseLineFile.close()
-
         if os.path.exists('PhoSimTestDatabase.db'):
             os.unlink('PhoSimTestDatabase.db')
+
+
+    def verify_catalog(self, file_name):
+        """
+        Verify that the catalog specified by file_name has the expected header and is not empty
+        """
+        with open(file_name, 'r') as input_file:
+            lines = input_file.readlines()
+            for control_line in self.control_header:
+                self.assertIn(control_line, lines)
+
+            self.assertGreater(len(lines), len(self.control_header)+3)
+
 
     def testCatalog(self):
         """
@@ -56,17 +80,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn.write_catalog(catName, write_header=False, write_mode='a')
         testStar.write_catalog(catName, write_header=False, write_mode='a')
 
-        testFile = open(catName,'r')
-        testLines = testFile.readlines()
-        testFile.close()
-        controlLines = self.baseLineFile.readlines()
-        for line in testLines:
-            msg = '%s not in controlLines' % line
-            self.assertTrue(line in controlLines, msg=msg)
-
-        for line in controlLines:
-            msg = '%s not in testLines'
-            self.assertTrue(line in testLines, msg=msg)
+        self.verify_catalog(catName)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -80,6 +94,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         This test uses CompoundInstanceCatalog
         """
 
+<<<<<<< 66d8073050371a8e40ff6afa9622ef75d4d85d6e
         # because the CompoundCatalogDBObject requires that database
         # connection parameters be set in the input CatalogDBObject
         # daughter class definitions, we have to declare dummy
@@ -104,30 +119,36 @@ class PhoSimCatalogTest(unittest.TestCase):
         compoundCatalog = CompoundInstanceCatalog([PhoSimCatalogSersic2D, PhoSimCatalogSersic2D,
                                                    PhoSimCatalogZPoint, PhoSimCatalogPoint],
                                                   [dummyBulgeDB, dummyDiskDB, dummyAgnDB, dummyStarDB],
-                                                   obs_metadata=self.obs_metadata)
+                                                  obs_metadata=self.obs_metadata)
 
         self.assertEqual(len(compoundCatalog._dbObjectGroupList[0]), 3)
 
-        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'phoSimTestCatalog_compound.txt')
+        compound_catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                        'phoSimTestCatalog_compound.txt')
 
-        compoundCatalog.write_catalog(catName)
+        compoundCatalog.write_catalog(compound_catName)
 
-        testFile = open(catName,'r')
-        testLines = testFile.readlines()
-        testFile.close()
-        controlLines = self.baseLineFile.readlines()
-        for line in testLines:
-            msg = '%s not in controlLines' % line
-            self.assertTrue(line in controlLines, msg=msg)
+        # verify that the compound catalog is what we expect
+        self.verify_catalog(compound_catName)
 
-        for line in controlLines:
-            msg = '%s not in testLines'
-            self.assertTrue(line in testLines, msg=msg)
+        # verify that the two catalogs are equivalent
+        with open(single_catName, 'r') as single_file:
+            with open(compound_catName, 'r') as compound_file:
+                single_lines = single_file.readlines()
+                compound_lines = compound_file.readlines()
 
-        if os.path.exists(catName):
-            os.unlink(catName)
+                for line in single_lines:
+                    self.assertIn(line, compound_lines)
 
+                for line in compound_lines:
+                    self.assertIn(line, single_lines)
+
+
+        if os.path.exists(compound_catName):
+            os.unlink(compound_catName)
+
+        if os.path.exists(single_catName):
+            os.unlink(single_catName)
 
 
 def suite():
