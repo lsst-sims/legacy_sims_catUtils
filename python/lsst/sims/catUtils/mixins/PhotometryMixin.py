@@ -72,14 +72,14 @@ class PhotometryBase(object):
         (the 'xx' in the 'sigma_xx' above)
 
         @param [in] m5_names are the keys to the self.obs_metadata.m5 dict
-        corresponding to the bandpasses in column_names (e.g. in the case
-        of galaxies, the magnitude columns
+        corresponding to the bandpasses in column_names.  For example: in
+        the case of galaxies, the magnitude columns
 
         column_names = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge']
 
         may correspond to m5 values keyed to
 
-        m5_names = ['u', 'g', 'r', 'i', 'z', 'y'])
+        m5_names = ['u', 'g', 'r', 'i', 'z', 'y']
 
         @param [in] bandpassDict_name is a string indicating the name of
         the InstanceCatalog member variable containing the BandpassDict
