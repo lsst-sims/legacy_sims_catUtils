@@ -1,10 +1,3 @@
-#One thing to be aware of: If the logic in Astrometry.py or Photometry.py changes,
-#this unittest will fail, even if it is still possible to generate phoSim input
-#catalogs.  This test is based on a simple line-by-line comparison of a phoSim
-#input catalog with a previously generated catalog that should be identical.
-#If we end up changing the logic in Astromtetry or Photometry, we will need to
-#re-generate the testData/phoSimControlCatalog.txt to be consistent with the new code.
-
 from __future__ import with_statement
 import os
 import unittest
