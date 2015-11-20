@@ -92,7 +92,7 @@ class basicAccessTest(unittest.TestCase):
                 if 'DB-Lib error' in msg:
                     continue
                 else:
-                    raise RuntimeError(msg)
+                    raise
 
 
             ct_connected += 1
