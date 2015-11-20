@@ -95,9 +95,10 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
             self.assertAlmostEqual(umag, controlData['cartoon_u'][ix], 10)
             gmag = spectrum.calcMag(self.gband)
             self.assertAlmostEqual(gmag, controlData['cartoon_g'][ix], 10)
-            magError = calcMagError_m5(np.array([umag, gmag]), [self.uband, self.gband], [obs.m5['c_u'], obs.m5['c_g']], PhotometricParameters())
-            self.assertAlmostEqual(magError[0], controlData['sigma_cartoon_u'][ix], 10)
-            self.assertAlmostEqual(magError[1], controlData['sigma_cartoon_g'][ix], 10)
+            umagError, gamma = calcMagError_m5(umag, self.uband, obs.m5['c_u'], PhotometricParameters())
+            gmagError, gamma = calcMagError_m5(gmag, self.gband, obs.m5['c_g'], PhotometricParameters())
+            self.assertAlmostEqual(umagError, controlData['sigma_cartoon_u'][ix], 10)
+            self.assertAlmostEqual(gmagError, controlData['sigma_cartoon_g'][ix], 10)
 
 
     def test_mixed_stars(self):
@@ -159,16 +160,18 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
             self.assertAlmostEqual(lsst_umag, controlData['lsst_u'][ix], 10)
             lsst_gmag = spectrum.calcMag(lsst_g_band)
             self.assertAlmostEqual(lsst_gmag, controlData['lsst_g'][ix], 10)
-            magError = calcMagError_m5(np.array([umag, gmag]), [self.uband, self.gband], [obs.m5['c_u'], obs.m5['c_g']], PhotometricParameters())
-            self.assertAlmostEqual(magError[0], controlData['sigma_cartoon_u'][ix], 10)
-            self.assertAlmostEqual(magError[1], controlData['sigma_cartoon_g'][ix], 10)
-            lsst_magError = calcMagError_m5(np.array([lsst_umag, lsst_gmag]), [lsst_u_band, lsst_g_band],
-                                            [obs.m5['u'], obs.m5['g']], PhotometricParameters())
+            umagError, gamma = calcMagError_m5(umag, self.uband, obs.m5['c_u'], PhotometricParameters())
+            gmagError, gamma = calcMagError_m5(gmag, self.gband, obs.m5['c_g'], PhotometricParameters())
+            self.assertAlmostEqual(umagError, controlData['sigma_cartoon_u'][ix], 10)
+            self.assertAlmostEqual(gmagError, controlData['sigma_cartoon_g'][ix], 10)
 
-            self.assertAlmostEqual(lsst_magError[0], controlData['sigma_lsst_u'][ix], 10)
-            self.assertAlmostEqual(lsst_magError[1], controlData['sigma_lsst_g'][ix], 10)
-            self.assertGreater(np.abs(lsst_magError[0]-magError[0]), 0.01)
-            self.assertGreater(np.abs(lsst_magError[1]-magError[1]), 0.01)
+            lsst_umagError, gamma = calcMagError_m5(lsst_umag, lsst_u_band, obs.m5['u'], PhotometricParameters())
+            lsst_gmagError, gamma = calcMagError_m5(lsst_gmag, lsst_g_band, obs.m5['g'], PhotometricParameters())
+
+            self.assertAlmostEqual(lsst_umagError, controlData['sigma_lsst_u'][ix], 10)
+            self.assertAlmostEqual(lsst_gmagError, controlData['sigma_lsst_g'][ix], 10)
+            self.assertGreater(np.abs(lsst_umagError-umagError), 0.01)
+            self.assertGreater(np.abs(lsst_gmagError-gmagError), 0.01)
 
 
 def suite():

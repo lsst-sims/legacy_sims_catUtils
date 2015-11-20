@@ -60,18 +60,18 @@ class PhotometryBase(object):
                 self._gamma_cache[mm] = calcGamma(bp, self.obs_metadata.m5[mm], photParams=self.photParams)
 
 
-    def _magnitudeUncertaintyGetter(self, column_names, m5_names, bandpassDict_name):
+    def _magnitudeUncertaintyGetter(self, column_name_list, m5_name_list, bandpassDict_name):
         """
         Generic getter for magnitude uncertainty columns.
 
         Columns must be named 'sigma_xx' where 'xx' is the column name of
         the associated magnitude
 
-        @param [in] column_names is the list of magnitude column names
+        @param [in] column_name_list is the list of magnitude column names
         associated with the uncertainties calculated by this getter
         (the 'xx' in the 'sigma_xx' above)
 
-        @param [in] m5_names are the keys to the self.obs_metadata.m5 dict
+        @param [in] m5_name_list are the keys to the self.obs_metadata.m5 dict
         corresponding to the bandpasses in column_names.  For example: in
         the case of galaxies, the magnitude columns
 
@@ -79,7 +79,7 @@ class PhotometryBase(object):
 
         may correspond to m5 values keyed to
 
-        m5_names = ['u', 'g', 'r', 'i', 'z', 'y']
+        m5_name_list = ['u', 'g', 'r', 'i', 'z', 'y']
 
         @param [in] bandpassDict_name is a string indicating the name of
         the InstanceCatalog member variable containing the BandpassDict
@@ -95,36 +95,42 @@ class PhotometryBase(object):
         # make sure that the magnitudes associated with any requested
         # uncertainties actually are calculated
         num_elements = None
-        for name in column_names:
+        mag_dict = {}
+        for name in column_name_list:
             if 'sigma_%s' % name in self._actually_calculated_columns:
-                ref = self.column_by_name(name)
+                mag_dict[name] = self.column_by_name(name)
                 if num_elements is None:
-                    num_elements = len(ref)
+                    num_elements = len(mag_dict[name])
 
+        # These lines must come after the preceding lines;
+        # the bandpassDict will not be loaded until the magnitude
+        # getters are called
         bandpassDict = getattr(self, bandpassDict_name)
-
-        self._cacheGamma(m5_names, bandpassDict)
-
-        magnitudes = numpy.array([self.column_by_name(name) if name in self._actually_calculated_columns
-                                  else [numpy.NaN]*num_elements
-                                  for name in column_names])
-
-        try:
-            param_arr = numpy.array(
-                                    [[self.obs_metadata.m5[mname], self._gamma_cache[mname]]
-                                    if name in self._actually_calculated_columns
-                                    else [numpy.NaN, numpy.NaN]
-                                    for mname, name in zip(m5_names, column_names)]
-                                   ).transpose()
-        except KeyError as kk:
-            msg = 'You got the KeyError: %s' % kk.args[0]
-            raise KeyError('%s \n' % msg \
-                           + 'Is it possible your ObservationMetaData does not have the proper\n'
-                           'm5 values defined?')
+        self._cacheGamma(m5_name_list, bandpassDict)
 
 
-        return calcMagError_m5(magnitudes, bandpassDict.values(), param_arr[0], self.photParams,
-                               gamma=param_arr[1])
+        output = []
+
+        for name, m5_name, bp in zip(column_name_list, m5_name_list, bandpassDict.values()):
+            if 'sigma_%s' % name not in self._actually_calculated_columns:
+                output.append(numpy.ones(num_elements)*numpy.NaN)
+            else:
+                try:
+                    m5 = self.obs_metadata.m5[m5_name]
+                    gamma = self._gamma_cache[m5_name]
+
+                    sigma_list, gamma = calcMagError_m5(mag_dict[name], bp, m5, self.photParams, gamma=gamma)
+
+                    output.append(sigma_list)
+
+                except KeyError as kk:
+                    msg = 'You got the KeyError: %s' % kk.args[0]
+                    raise KeyError('%s \n' % msg \
+                                   + 'Is it possible your ObservationMetaData does not have the proper\n'
+                                   'm5 values defined?')
+
+
+        return numpy.array(output)
 
 
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
@@ -765,12 +771,12 @@ class PhotometrySSM(PhotometryBase):
         m5 = self.obs_metadata.m5[self.obs_metadata.bandpass]
         # Adjust the magnitude of the source for the trailing losses.
         dmagSNR = self.column_by_name('dmagTrailing')
-        magObj = (magFilter - dmagSNR).reshape((1, len(magFilter)))
+        magObj = magFilter - dmagSNR
         if len(magObj) == 0:
             snr = []
         else:
-            snr, gamma = calcSNR_m5(magObj, [bandpass], [m5], self.photParams)
-        return snr[0]
+            snr, gamma = calcSNR_m5(magObj, bandpass, m5, self.photParams)
+        return snr
 
     def get_visibility(self):
         """
