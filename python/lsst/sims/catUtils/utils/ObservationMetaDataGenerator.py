@@ -90,6 +90,7 @@ class ObservationMetaDataGenerator(object):
                               ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
                               ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
                               ('seeing', 'finSeeing', None, float, None),
+                              #('seeing', 'FWHMeff', None, float, None),
                               ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
                               ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
                               ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),

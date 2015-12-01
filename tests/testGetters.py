@@ -100,7 +100,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             sedDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
-                                       seeing=lsstDefaults.seeing(cls.bandpasses[i]),
+                                       FWHMeff=lsstDefaults.FWHMeff(cls.bandpasses[i]),
                                        photParams=PhotometricParameters())
 
             cls.skySeds.append(normalizedSedDummy)
@@ -144,7 +144,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                 controlSigma = calcMagError_sed(starSed, self.totalBandpasses[i],
                                              self.skySeds[i],
                                              self.hardwareBandpasses[i],
-                                             seeing=lsstDefaults.seeing(self.bandpasses[i]),
+                                             FWHMeff=lsstDefaults.FWHMeff(self.bandpasses[i]),
                                              photParams=PhotometricParameters())
 
                 testSigma = line[8+i]
@@ -229,7 +229,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                     controlSigma = calcMagError_sed(spectrum, self.totalBandpasses[j],
                                              self.skySeds[j],
                                              self.hardwareBandpasses[j],
-                                             seeing=lsstDefaults.seeing(b),
+                                             FWHMeff=lsstDefaults.FWHMeff(b),
                                              photParams=PhotometricParameters())
 
                     testSigma = line[26+(i*6)+j]
