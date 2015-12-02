@@ -694,21 +694,6 @@ class UncertaintyMixinTest(unittest.TestCase):
             self.totalBandpasses.append(bandpassDummy)
 
 
-    def testUncertaintyExceptions(self):
-        """
-        Test that calcSNR_m5 raises exceptions when it needs to
-        """
-        phot = PhotometryBase()
-        totalDict, hardwareDict = BandpassDict.loadBandpassesFromFiles()
-        magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
-        shortMagnitudes = numpy.array([22.0])
-        photParams = PhotometricParameters()
-        shortGamma = numpy.array([1.0, 1.0])
-        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), shortMagnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_m5, shortMagnitudes, totalDict.values(), magnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), magnitudes, photParams, gamma=shortGamma)
-        snr, gg = calcSNR_m5(magnitudes, totalDict.values(), magnitudes, photParams)
-
 
 def suite():
     utilsTests.init()
