@@ -16,9 +16,10 @@ A Class containing tests to check crictical functionality for SNIaCatalog
 import os
 import sqlite3
 import numpy as np
+import matplotlib.pyplot as plt
 import unittest
 
-
+# import pdb
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
@@ -44,8 +45,6 @@ class SNObject_tests(unittest.TestCase):
         """
         Setup tests
         SN_blank: A SNObject with no MW extinction
-
-
         """
 
         # A range of wavelengths in Ang
@@ -65,6 +64,7 @@ class SNObject_tests(unittest.TestCase):
         self.SN_extincted = SNObject(ra=30., dec=-60.)
         self.SN_extincted.set(z=0.96, t0=571181, x1=2.66, c=0.353,
                               x0=1.796112e-06)
+
         self.SNCosmoModel = self.SN_extincted.equivalentSNCosmoModel()
 
         self.lsstBandPass = BandpassDict.loadTotalBandpassesFromFiles()
@@ -175,14 +175,16 @@ class SNIaCatalog_tests(unittest.TestCase):
         # Setup a directory in which test data will be made
         if not os.path.exists(cls.scratchDir):
             os.makedirs(cls.scratchDir)
-            self.madeScratchDir = True
+            cls.madeScratchDir = True
 
-        # ObsMetaData instance with spatial window
+        # ObsMetaData instance with spatial window within which we will
+        # put galaxies in a fake galaxy catalog
         cls.obsMetaDataforCat = ObservationMetaData(boundType='circle',
             boundLength=np.degrees(0.25),
             unrefractedRA=np.degrees(0.13),
             unrefractedDec=np.degrees(-1.2),
             bandpassName=['r'], mjd=49350.)
+
 
         # Randomly generate self.size Galaxy positions within the spatial window
         # of obsMetaDataforCat
@@ -195,6 +197,14 @@ class SNIaCatalog_tests(unittest.TestCase):
         # using positions from the samples above and a database name given by
         # self.dbname
         vals = cls._createFakeGalaxyDB()
+        with open('valsFromTest.dat', 'w') as f:
+            for i, v in enumerate(vals[0]):
+                f.write(str(vals[0][i]) + '  ' + str(vals[1][i]) + '\n')
+
+        fig, ax = plt.subplots()
+        ax.plot(vals[0][:1000], vals[1][: 1000], '.')
+        ax.plot([0.13], [-1.2], 'rs', markersize=8)
+        fig.savefig(os.path.join(cls.scratchDir, 'match_galDBPosns.pdf'))
 
         # Read it into a CatalogDBObject galDB
         class MyGalaxyCatalog(CatalogDBObject):
@@ -235,37 +245,73 @@ class SNIaCatalog_tests(unittest.TestCase):
         opsimDB = os.path.join(opsimPath,'opsimblitz1_1133_sqlite.db')
 
         generator = ObservationMetaDataGenerator()
+        #tmpobsMetaDataResults = generator.getObservationMetaData(limit=100,
         cls.obsMetaDataResults = generator.getObservationMetaData(limit=100,
                                                     fieldRA=(5.0, 8.0), 
                                                     fieldDec=(-85.,-60.),
                                                     expMJD=(49300., 49400.),
-                                                    boundLength=0.015,
+                                                    boundLength=0.15,
                                                     boundType='circle')
         # cls.obsMetaDataResults has obsMetaData corresponding to 15 pointings
         # This is tested in test_obsMetaDataGeneration 
 
+        v = zip(*map(cls.coords, cls.obsMetaDataResults))
+
+        fig2, ax2 = plt.subplots()
+        ax2.plot(vals[0][:1000], vals[1][: 1000], '.')
+        ax2.plot(v[0], v[1], 'ko', markersize=8)
+        ax2.axhline(-np.pi, color='k', lw=2)
+        ax2.axhline(np.pi, color='k', lw=2)
+        ax2.axvline(0., color='k', lw=2.)
+        ax2.axvline(2. * np.pi, color='k', lw=2.)
+        fig2.savefig(os.path.join(cls.scratchDir, 'matchPointings.pdf'))
+
+
+
+        #print 'cls.obsMetaDataforCat'
+        #print cls.obsMetaDataforCat.summary
+
+        #print 'obsMetaDataResults'
+
+#         obsMetaDataList = []
+#         for obsMetaData in tmpobsMetaDataResults:
+#             obsMetaDataList.append(ObservationMetaData(boundType='circle',
+#                                    boundLength=np.degrees(0.05),
+#                                    unrefractedRA=np.degrees(0.13),
+#                                    unrefractedDec=np.degrees(-1.2),
+#                                    bandpassName=obsMetaData.bandpass,
+#                                    mjd=obsMetaData.mjd))
+
+        # cls.obsMetaDataResults = tmpobsMetaDataResults# pobsMetaDataList
 
         # self.catalogList = self._writeManySNCatalogs()
-        cls.sncatalog = SNIaCatalog(db_obj=cls.galDB,
-                                     obs_metadata=cls.obsMetaDataResults[0], 
-                                     column_outputs=['t0', 'flux_u', 'flux_g', \
-                                                     'flux_r', 'flux_i', 'flux_z',\
-                                                     'flux_y', 'mag_u', 'mag_g',\
-                                                     'mag_r', 'mag_i', 'mag_z', \
-                                                     'mag_y', 'adu_u', 'adu_g',\
-                                                     'adu_r', 'adu_i', 'adu_z', \
-                                                     'adu_y','mwebv'])
-	cls.sncatalog.suppressDimSN = False
-        cls.sncatalog.midSurveyTime = cls.sncatalog.mjdobs - 20.
-	cls.sncatalog.averageRate = 1.0
-        cls.sncatalog.write_catalog(cls.scratchDir + '/testSNCatalog.dat')
+        sncatalog = SNIaCatalog(db_obj=cls.galDB,
+                                obs_metadata=cls.obsMetaDataResults[0],
+                                # column_outputs=['t0', 'mwebv', 'time', 'band', 'flux'])
+                                #, 'flux_err',\
+                                column_outputs=['t0', 'flux_u', 'flux_g', \
+                                                'flux_r', 'flux_i', 'flux_z',\
+                                                'flux_y', 'mag_u', 'mag_g',\
+                                                'mag_r', 'mag_i', 'mag_z', \
+                                                'mag_y', 'adu_u', 'adu_g',\
+                                                'adu_r', 'adu_i', 'adu_z', \
+                                                'adu_y','mwebv'])
+	sncatalog.suppressDimSN = True
+        sncatalog.midSurveyTime = sncatalog.mjdobs - 20.
+	sncatalog.averageRate = 1.0
+        print ('OBS :', sncatalog.mjdobs)
+        print ('maxTimeSNVisible :', sncatalog.maxTimeSNVisible)
+        sncatalog.write_catalog(cls.scratchDir + '/testSNCatalogTest.dat')
+
+        cls.fnameList = cls._writeManySNCatalogs()
+        print (cls.fnameList)
 
     @classmethod
-    def tearDown(cls):
-        cls.cleanDB(cls.dbname)
+    def tearDownClass(cls):
+        # cls.cleanDB(cls.dbname)
         # If scratch directory was created remove it
         if cls.madeScratchDir:
-            os.rmdir(scratchDir)
+            os.rmdir(cls.scratchDir)
 
     # def test_obsMetaDataGeneration(self):
 
@@ -277,6 +323,13 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         print "ZHello"
         return 
+
+    @staticmethod
+    def coords(x): 
+            return np.radians(x.summary['unrefractedRA']),\
+                np.radians(x.summary['unrefractedDec'])
+
+
     @staticmethod
     def cleanDB(dbname, verbose=True):
         '''
@@ -305,15 +358,19 @@ class SNIaCatalog_tests(unittest.TestCase):
         for obsindex, obsMetaData in enumerate(cls.obsMetaDataResults):
 
             print 'iteration number ', obsindex
-            # cols = ['t0', 'cosmologicalDistanceModulus', 'mwebv', 'time', \
-            #       'band', 'flux', 'flux_err', 'mag', 'mag_err']
-            newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData)
-                                     #column_outputs='id')
+            # pdb.set_trace()
+            bandpass =  obsMetaData.bandpass
+            print obsMetaData.summary
+            print obsMetaData.m5[bandpass]
+            cols = ['t0', 'mwebv', 'time', 'band', 'flux']#, 'flux_err',\
+                    #'mag', 'mag_err'] #'cosmologicalDistanceModulus'
+            newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData,
+                                     column_outputs=cols)
             newCatalog.midSurveyTime= 49350
             newCatalog.averageRate = 1.
             newCatalog.suppressDimSN = False
             s = "{0:d}".format(obsindex)
-            fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s )
+            fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s)
             newCatalog.write_catalog(fname)
             fnameList.append(fname)
             print (obsMetaData.mjd)
@@ -321,7 +378,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
 
     @classmethod
-    def _createFakeGalaxyDB(cls, seed=1):
+    def _createFakeGalaxyDB(cls):
         '''
         Create a local sqlite galaxy database having filename dbname with
 
@@ -340,6 +397,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         curs = conn.cursor()
         curs.execute('CREATE TABLE if not exists gals (id INT, raJ2000 FLOAT, decJ2000 FLOAT, redshift FLOAT)')
     
+        seed = 1
         np.random.seed(seed)
         #samps = .sample_obsmetadata(ObsMetaData, size=size)
     
@@ -383,6 +441,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         tuple of ravals, decvalues
         '''
         mydict = obsmetadata.summary
+        # print mydict
+        # exit()
         phi = np.radians(mydict['unrefractedRA'])
         theta = np.radians(mydict['unrefractedDec'])
         equalrange = np.radians(mydict['boundLength'])
@@ -412,6 +472,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         size: int, mandatory
             number of samples
         """
+        np.random.seed(1)
         u = np.random.uniform(size=size)
         v = np.random.uniform(size=size)
     
