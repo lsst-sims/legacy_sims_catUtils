@@ -164,14 +164,11 @@ class SNIaCatalog_tests(unittest.TestCase):
         print ('-------------------------------')
         print ('Entered SNIaCatalog_tests.Setup')
         print ('-------------------------------')
-        # Generate a set of Observation MetaData Outputs that overlap
-        #     the galaxies in space
-        # Create a SNCatalog based on GalDB, and having times of explosions
-        #     overlapping the times in obsMetaData
 
         # Set directory where scratch work will be done
         cls.madeScratchDir = False
         cls.scratchDir = 'scratchSpace'
+
         # Setup a directory in which test data will be made
         if not os.path.exists(cls.scratchDir):
             os.makedirs(cls.scratchDir)
@@ -201,10 +198,10 @@ class SNIaCatalog_tests(unittest.TestCase):
             for i, v in enumerate(vals[0]):
                 f.write(str(vals[0][i]) + '  ' + str(vals[1][i]) + '\n')
 
-        fig, ax = plt.subplots()
-        ax.plot(vals[0][:1000], vals[1][: 1000], '.')
-        ax.plot([0.13], [-1.2], 'rs', markersize=8)
-        fig.savefig(os.path.join(cls.scratchDir, 'match_galDBPosns.pdf'))
+        # fig, ax = plt.subplots()
+        # ax.plot(vals[0][:1000], vals[1][: 1000], '.')
+        # ax.plot([0.13], [-1.2], 'rs', markersize=8)
+        # fig.savefig(os.path.join(cls.scratchDir, 'match_galDBPosns.pdf'))
 
         # Read it into a CatalogDBObject galDB
         class MyGalaxyCatalog(CatalogDBObject):
@@ -230,41 +227,42 @@ class SNIaCatalog_tests(unittest.TestCase):
                        ('decJ2000','decJ2000 * PI()/ 180.'),
                        ('redshift', 'redshift')]
 
-	class galCopy(InstanceCatalog):
-            column_outputs = ['id', 'raJ2000', 'decJ2000', 'redshift']
-	    override_formats = {'raJ2000': '%8e', 'decJ2000': '%8e'}
+	# class galCopy(InstanceCatalog):
+        #   column_outputs = ['id', 'raJ2000', 'decJ2000', 'redshift']
+	#   override_formats = {'raJ2000': '%8e', 'decJ2000': '%8e'}
 
 	cls.galDB = MyGalaxyCatalog(database=cls.dbname)
-	cls.galphot = galCopy(db_obj=cls.galDB,
-        		       obs_metadata=cls.obsMetaDataforCat)
-	fname = os.path.join(cls.scratchDir, 'gals.dat')
-	cls.galphot.write_catalog(fname)
+	# cls.galphot = galCopy(db_obj=cls.galDB,
+        #  		       obs_metadata=cls.obsMetaDataforCat)
+	# cls.galPhotFname = os.path.join(cls.scratchDir, 'gals.dat')
+	# cls.galphot.write_catalog(cls.galPhotFname)
 
-        # Setup ObsMetaData Results for SN observation
+        # Generate a set of Observation MetaData Outputs that overlap
+        # the galaxies in space
         opsimPath = os.path.join(eups.productDir('sims_data'),'OpSimData')
         opsimDB = os.path.join(opsimPath,'opsimblitz1_1133_sqlite.db')
 
         generator = ObservationMetaDataGenerator()
-        #tmpobsMetaDataResults = generator.getObservationMetaData(limit=100,
         cls.obsMetaDataResults = generator.getObservationMetaData(limit=100,
                                                     fieldRA=(5.0, 8.0), 
                                                     fieldDec=(-85.,-60.),
                                                     expMJD=(49300., 49400.),
                                                     boundLength=0.15,
                                                     boundType='circle')
+
         # cls.obsMetaDataResults has obsMetaData corresponding to 15 pointings
         # This is tested in test_obsMetaDataGeneration 
 
-        v = zip(*map(cls.coords, cls.obsMetaDataResults))
+#        v = zip(*map(cls.coords, cls.obsMetaDataResults))
 
-        fig2, ax2 = plt.subplots()
-        ax2.plot(vals[0][:1000], vals[1][: 1000], '.')
-        ax2.plot(v[0], v[1], 'ko', markersize=8)
-        ax2.axhline(-np.pi, color='k', lw=2)
-        ax2.axhline(np.pi, color='k', lw=2)
-        ax2.axvline(0., color='k', lw=2.)
-        ax2.axvline(2. * np.pi, color='k', lw=2.)
-        fig2.savefig(os.path.join(cls.scratchDir, 'matchPointings.pdf'))
+#        fig2, ax2 = plt.subplots()
+#        ax2.plot(vals[0][:1000], vals[1][: 1000], '.')
+#        ax2.plot(v[0], v[1], 'ko', markersize=8)
+#        ax2.axhline(-np.pi, color='k', lw=2)
+#        ax2.axhline(np.pi, color='k', lw=2)
+#        ax2.axvline(0., color='k', lw=2.)
+#        ax2.axvline(2. * np.pi, color='k', lw=2.)
+#        fig2.savefig(os.path.join(cls.scratchDir, 'matchPointings.pdf'))
 
 
 
@@ -286,7 +284,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         # self.catalogList = self._writeManySNCatalogs()
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
-                                obs_metadata=cls.obsMetaDataResults[0],
+                                obs_metadata=cls.obsMetaDataResults[12],
                                 # column_outputs=['t0', 'mwebv', 'time', 'band', 'flux'])
                                 #, 'flux_err',\
                                 column_outputs=['t0', 'flux_u', 'flux_g', \
@@ -301,14 +299,37 @@ class SNIaCatalog_tests(unittest.TestCase):
 	sncatalog.averageRate = 1.0
         print ('OBS :', sncatalog.mjdobs)
         print ('maxTimeSNVisible :', sncatalog.maxTimeSNVisible)
-        sncatalog.write_catalog(cls.scratchDir + '/testSNCatalogTest.dat')
+        cls.fullCatalog = cls.scratchDir + '/testSNCatalogTest.dat'
+        sncatalog.write_catalog(cls.fullCatalog)
 
+        # Create a SNCatalog based on GalDB, and having times of explosions
+        #     overlapping the times in obsMetaData
         cls.fnameList = cls._writeManySNCatalogs()
         print (cls.fnameList)
 
+    def test_fullCatalog(self):
+        """
+        Check that a full catalog of SN has more than one line
+        """
+
+        with open(self.fullCatalog, 'r') as f:
+            numLines =  sum(1 for _ in f)
+
+        self.assertGreater(numLines, 1)
+
+    def test_reproducibility(self):
+
+
+
+
+            
     @classmethod
     def tearDownClass(cls):
-        # cls.cleanDB(cls.dbname)
+        cls.cleanDB(cls.dbname)
+        # for fname in cls.fnameList:
+        #   os.remove(fname)
+        # os.remove(cls.galPhotFname)
+        # os.remove(cls.fullCatalog)
         # If scratch directory was created remove it
         if cls.madeScratchDir:
             os.rmdir(cls.scratchDir)
