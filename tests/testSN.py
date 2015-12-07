@@ -296,15 +296,15 @@ class SNIaCatalog_tests(unittest.TestCase):
 	sncatalog.suppressDimSN = True
         sncatalog.midSurveyTime = sncatalog.mjdobs - 20.
 	sncatalog.averageRate = 1.0
-        print ('OBS :', sncatalog.mjdobs)
-        print ('maxTimeSNVisible :', sncatalog.maxTimeSNVisible)
+        # print ('OBS :', sncatalog.mjdobs)
+        # print ('maxTimeSNVisible :', sncatalog.maxTimeSNVisible)
         cls.fullCatalog = cls.scratchDir + '/testSNCatalogTest.dat'
         sncatalog.write_catalog(cls.fullCatalog)
 
         # Create a SNCatalog based on GalDB, and having times of explosions
         #     overlapping the times in obsMetaData
         cls.fnameList = cls._writeManySNCatalogs(cls.obsMetaDataResults)
-        print (cls.fnameList)
+        # print (cls.fnameList)
 
     def test_writingfullCatalog(self):
         """
@@ -322,11 +322,37 @@ class SNIaCatalog_tests(unittest.TestCase):
         _ = map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
                 fnamelist)
         all_lcsDumped = pd.concat(dfs)
-        all_lcsDumped['snid'].astype(int)
         all_lcsDumped.rename(columns={'#snid': 'snid'}, inplace=True)
+        all_lcsDumped['snid'] = all_lcsDumped['snid'].astype(int)
         lcs = all_lcsDumped.groupby('snid')
 
         return lcs
+
+    def test_drawReproducibility(self):
+        """
+        Check that when the same SN (ie. with same snid) is observed with
+        different pointings leading to different instance catalogs, the 
+        values of properties remain the same.
+        """
+        lcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
+
+        props = ['snid', 'snra', 'sndec', 'z', 'x0', 'x1', 'c',
+                 'cosmologicalDistanceModulus', 'mwebv']
+        s = "Testing Equality across {0:2d} pointings for reported properties"
+        s += " of SN {1:8d} of the property " 
+        for key in lcs.groups.keys():
+            df = lcs.get_group(key)
+            for prop in props:
+                print(s.format(len(df), df.snid.iloc[0]) + prop)
+                np.testing.assert_equal(len(df[prop].unique()), 1)
+            # np.testing.assert_equal(len(df.x0.unique()), 1)
+            # np.testing.assert_equal(len(df.t0.unique()), 1)
+            # np.testing.assert_equal(len(df.x1.unique()), 1)
+            # np.testing.assert_equal(len(df.c.unique()), 1)
+            # np.testing.assert_equal(len(df.z.unique()), 1)
+            # np.testing.assert_equal(len(df.mwebv.unique()), 1)
+            # np.testing.assert_equal(len(df.snra.unique()), 1)
+            # np.testing.assert_equal(len(df.sndec.unique()), 1)
 
     def test_redrawingCatalog(self): 
         """
@@ -343,6 +369,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         newlcs = self.buildLCfromInstanceCatFilenames(fnameList)
         oldlcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
+
 
         for key in oldlcs.groups.keys():
             df_old = oldlcs.get_group(key)
@@ -365,16 +392,12 @@ class SNIaCatalog_tests(unittest.TestCase):
         if cls.madeScratchDir:
             os.rmdir(cls.scratchDir)
 
-    # def test_obsMetaDataGeneration(self):
+    def test_obsMetaDataGeneration(self):
 
-    #   numObs = len(self.obsMetaDataResults)
-    #    self.assertEqual(numObs, 15)
+        numObs = len(self.obsMetaDataResults)
+        self.assertEqual(numObs, 15)
 
 
-    def test_GalaxyCatalog(self):
-
-        print "ZHello"
-        return 
 
     @staticmethod
     def coords(x): 
@@ -409,11 +432,11 @@ class SNIaCatalog_tests(unittest.TestCase):
         fnameList = []
         for obsindex, obsMetaData in enumerate(obsMetaDataResults):
 
-            print 'iteration number ', obsindex
+            # print 'iteration number ', obsindex
             # pdb.set_trace()
             bandpass =  obsMetaData.bandpass
-            print obsMetaData.summary
-            print obsMetaData.m5[bandpass]
+            # print obsMetaData.summary
+            # print obsMetaData.m5[bandpass]
             cols = ['t0', 'mwebv', 'time', 'band', 'flux', 'flux_err',\
                     'mag', 'mag_err', 'cosmologicalDistanceModulus']
             newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData,
@@ -425,7 +448,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s + suffix)
             newCatalog.write_catalog(fname)
             fnameList.append(fname)
-            print (obsMetaData.mjd)
+            # print (obsMetaData.mjd)
         return fnameList
 
 
