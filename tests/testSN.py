@@ -19,7 +19,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import unittest
 
-# import pdb
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
@@ -35,6 +34,8 @@ from lsst.sims.catUtils.mixins import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
 
 # External packages used
+import pandas as pd
+from pandas.util.testing import assert_frame_equal
 import sncosmo
 import astropy
 
@@ -285,8 +286,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         # self.catalogList = self._writeManySNCatalogs()
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
                                 obs_metadata=cls.obsMetaDataResults[12],
-                                # column_outputs=['t0', 'mwebv', 'time', 'band', 'flux'])
-                                #, 'flux_err',\
                                 column_outputs=['t0', 'flux_u', 'flux_g', \
                                                 'flux_r', 'flux_i', 'flux_z',\
                                                 'flux_y', 'mag_u', 'mag_g',\
@@ -304,10 +303,10 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         # Create a SNCatalog based on GalDB, and having times of explosions
         #     overlapping the times in obsMetaData
-        cls.fnameList = cls._writeManySNCatalogs()
+        cls.fnameList = cls._writeManySNCatalogs(cls.obsMetaDataResults)
         print (cls.fnameList)
 
-    def test_fullCatalog(self):
+    def test_writingfullCatalog(self):
         """
         Check that a full catalog of SN has more than one line
         """
@@ -317,12 +316,44 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         self.assertGreater(numLines, 1)
 
-    def test_reproducibility(self):
+    @staticmethod
+    def buildLCfromInstanceCatFilenames(fnamelist):
+        dfs = []
+        _ = map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
+                fnamelist)
+        all_lcsDumped = pd.concat(dfs)
+        all_lcsDumped['snid'].astype(int)
+        all_lcsDumped.rename(columns={'#snid': 'snid'}, inplace=True)
+        lcs = all_lcsDumped.groupby('snid')
+
+        return lcs
+
+    def test_redrawingCatalog(self): 
+        """
+        test that drawing the same catalog
+        """
+        from random import shuffle
+        import copy
+
+        test_description = 'Compare second draws of catalog to initial draw'
+        obsMetaDataResults = copy.deepcopy(self.obsMetaDataResults)
+        shuffle(obsMetaDataResults)
+        fnameList = self._writeManySNCatalogs(obsMetaDataResults,
+                                              suffix='.v2.dat')
+
+        newlcs = self.buildLCfromInstanceCatFilenames(fnameList)
+        oldlcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
+
+        for key in oldlcs.groups.keys():
+            df_old = oldlcs.get_group(key)
+            df_old.sort(['time', 'band'], inplace=True)
+            df_new = newlcs.get_group(key)
+            df_new.sort(['time', 'band'], inplace=True)
+            s = "Testing equality for SNID {0:8d} with {1:2d} datapoints" 
+            print(s.format(df_new.snid.iloc[0], len(df_old)))
+            assert_frame_equal(df_new, df_old)
 
 
-
-
-            
     @classmethod
     def tearDownClass(cls):
         cls.cleanDB(cls.dbname)
@@ -372,26 +403,26 @@ class SNIaCatalog_tests(unittest.TestCase):
                 print 'database ', dbname, ' does not exist'
 
     @classmethod
-    def _writeManySNCatalogs(cls):
+    def _writeManySNCatalogs(cls, obsMetaDataResults, suffix=''):
 
         
         fnameList = []
-        for obsindex, obsMetaData in enumerate(cls.obsMetaDataResults):
+        for obsindex, obsMetaData in enumerate(obsMetaDataResults):
 
             print 'iteration number ', obsindex
             # pdb.set_trace()
             bandpass =  obsMetaData.bandpass
             print obsMetaData.summary
             print obsMetaData.m5[bandpass]
-            cols = ['t0', 'mwebv', 'time', 'band', 'flux']#, 'flux_err',\
-                    #'mag', 'mag_err'] #'cosmologicalDistanceModulus'
+            cols = ['t0', 'mwebv', 'time', 'band', 'flux', 'flux_err',\
+                    'mag', 'mag_err', 'cosmologicalDistanceModulus']
             newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData,
                                      column_outputs=cols)
             newCatalog.midSurveyTime= 49350
             newCatalog.averageRate = 1.
             newCatalog.suppressDimSN = False
             s = "{0:d}".format(obsindex)
-            fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s)
+            fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s + suffix)
             newCatalog.write_catalog(fname)
             fnameList.append(fname)
             print (obsMetaData.mjd)
