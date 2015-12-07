@@ -12,7 +12,7 @@ after applying MW extinction:
 """
 import numpy as np
 
-from lsst.sims.photUtils.Sed import  Sed
+from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils.BandpassDict import BandpassDict
 from lsst.sims.photUtils.SignalToNoise import calcSNR_m5, calcMagError_m5
@@ -22,7 +22,9 @@ import sncosmo
 
 __all__ = ['SNObject']
 
-class SNObject (sncosmo.Model):
+
+class SNObject(sncosmo.Model):
+
     """
     Extension of the SNCosmo `TimeSeriesModel` to include more parameters and
     use methods in the catsim stack. We constrain ourselves to the use of a
@@ -67,6 +69,7 @@ class SNObject (sncosmo.Model):
     >>> SNObject._dec
     >>> 1.0471975511965976
     """
+
     def __init__(self, ra=None, dec=None, source='salt2-extended'):
         """
         Parameters
@@ -76,10 +79,10 @@ class SNObject (sncosmo.Model):
         dec : float
             dec of the SN in degrees
         """
- 
+
         dust = sncosmo.OD94Dust()
         sncosmo.Model.__init__(self, source=source, effects=[dust, dust],
-                               effect_names=['host', 'mw'], 
+                               effect_names=['host', 'mw'],
                                effect_frames=['rest', 'obs'])
 
         # Current implementation of Model has a default value of mwebv = 0.
@@ -90,13 +93,12 @@ class SNObject (sncosmo.Model):
         self.ModelSource = source
         self.set(mwebv=0.)
 
-
         # ra and dec if passed are assumed to be in degrees and converted into
         # radians.
         self._ra = ra
         self._dec = dec
 
-        # NB: More lines of code to support the possibility that ra, dec are 
+        # NB: More lines of code to support the possibility that ra, dec are
         # not provided at instantiation, and default to None
         self._hascoords = True
         if self._dec is None:
@@ -122,7 +124,7 @@ class SNObject (sncosmo.Model):
         Dictionary summarizing the property of the state. Can be used to
         serialize to disk
 
-        Returns : Dictionary with values of parameters of the model. 
+        Returns : Dictionary with values of parameters of the model.
         """
         statedict = dict()
 
@@ -138,7 +140,6 @@ class SNObject (sncosmo.Model):
         statedict['MWE(B-V)'] = self.ebvofMW
 
         return statedict
-
 
     @staticmethod
     def equivsncosmoParamDict(SNstate, SNCosmoModel):
@@ -161,7 +162,7 @@ class SNObject (sncosmo.Model):
         for param in SNstate.keys():
             if param in SNCosmoModel.param_names:
                 sncosmoParams[param] = SNstate[param]
-        sncosmoParams['mwebv'] = snState['MWE(B-V)']
+        sncosmoParams['mwebv'] = SNstate['MWE(B-V)']
         return sncosmoParams
 
     @staticmethod
@@ -187,7 +188,6 @@ class SNObject (sncosmo.Model):
                 sncosmoParams[param] = SNstate[param]
         return sncosmoParams
 
-
     @classmethod
     def fromSNState(cls, snState):
         """
@@ -203,7 +203,7 @@ class SNObject (sncosmo.Model):
 
         Example
         -------
-        
+
         """
         # Separate into SNCosmo parameters and SNObject parameters
         dust = sncosmo.OD94Dust()
@@ -237,7 +237,7 @@ class SNObject (sncosmo.Model):
 
         return cls
 
-    def equivalentSNCosmoModel(self): 
+    def equivalentSNCosmoModel(self):
         """
         returns an SNCosmo Model which is equivalent to SNObject
         """
@@ -252,7 +252,7 @@ class SNObject (sncosmo.Model):
         sncosmoParams['mwebv'] = snState['MWE(B-V)']
         sncosmoModel.set(**sncosmoParams)
         return sncosmoModel
-        
+
     def summary(self):
         '''
         summarizes the current state of the SNObject class in a returned
@@ -274,17 +274,16 @@ class SNObject (sncosmo.Model):
         state = '  SNObject Summary      \n'
 
         state += 'Model = ' + '\n'
-        state += 'z = '+ str(self.get('z')) + '\n'
-        state += 'c = '+ str(self.get('c')) + '\n'
-        state += 'x1 = '+ str(self.get('x1')) + '\n'
-        state += 'x0 = '+ str(self.get('x0')) + '\n'
-        state += 't0 = '+ str(self.get('t0')) + '\n'
-        state += 'ra = '+ str(self._ra) + ' in radians \n'
-        state += 'dec = '+ str(self._dec) + ' in radians \n'
+        state += 'z = ' + str(self.get('z')) + '\n'
+        state += 'c = ' + str(self.get('c')) + '\n'
+        state += 'x1 = ' + str(self.get('x1')) + '\n'
+        state += 'x0 = ' + str(self.get('x0')) + '\n'
+        state += 't0 = ' + str(self.get('t0')) + '\n'
+        state += 'ra = ' + str(self._ra) + ' in radians \n'
+        state += 'dec = ' + str(self._dec) + ' in radians \n'
         state += 'MW E(B-V) = ' + str(self.ebvofMW) + '\n'
 
         return state
-
 
     def setCoords(self, ra, dec):
         """
@@ -383,7 +382,7 @@ class SNObject (sncosmo.Model):
             raise ValueError('Cannot Calculate EBV from dust maps if ra or dec'
                              'is `None`')
         self.ebvofMW = self.lsstmwebv.calculateEbv(
-                equatorialCoordinates=self.skycoord)[0]
+            equatorialCoordinates=self.skycoord)[0]
         return
 
     def SNObjectSED(self, time, wavelen=None, bandpass=None,
@@ -408,7 +407,7 @@ class SNObject (sncosmo.Model):
             time of observation
         wavelen: `np.ndarray` of floats, optional, defaults to None
             array containing wavelengths in nm
-        bandpass: `lsst.sims.photUtils.Bandpass` object or 
+        bandpass: `lsst.sims.photUtils.Bandpass` object or
             `lsst.sims.photUtils.BandpassDict`, optional, defaults to `None`.
             Using the dict assumes that the wavelength sampling and range
             is the same for all elements of the dict.
@@ -443,7 +442,7 @@ class SNObject (sncosmo.Model):
             else:
                 bp = bandpass
             # remember this is in nm
-            wavelen =  bp.wavelen
+            wavelen = bp.wavelen
 
         flambda = np.zeros(len(wavelen))
 
@@ -453,7 +452,6 @@ class SNObject (sncosmo.Model):
         # Set SED to 0 beyond the model phase range, will change this if
         # SNCosmo includes a more sensible decay later.
         if (time > self.mintime()) & (time < self.maxtime()):
-
 
             # If SNCosmo is requested a SED value beyond the model range
             # it will crash. Try to prevent that by returning np.nan for
@@ -484,9 +482,10 @@ class SNObject (sncosmo.Model):
         ax, bx = SEDfromSNcosmo.setupCCMab()
 
         if self.ebvofMW is None:
-            raise ValueError('ebvofMW attribute cannot be None Type and must be'
-                             'set by hand using set_MWebv before this stage, or'
-                             'by using setcoords followed by mwEBVfromMaps\n')
+            raise ValueError('ebvofMW attribute cannot be None Type and must'
+                             ' be set by hand using set_MWebv before this'
+                             'stage, or by using setcoords followed by'
+                             'mwEBVfromMaps\n')
 
         SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
@@ -516,9 +515,9 @@ class SNObject (sncosmo.Model):
         SEDfromSNcosmo = self.SNObjectSED(time=time,
                                           bandpass=bandpassobject)
         return SEDfromSNcosmo.calcFlux(bandpass=bandpassobject) / 3631.0
-    
+
     def catsimBandMagError(self, time, bandpassobject, m5, photParams=None,
-                            magnitude=None):
+                           magnitude=None):
         """
         return the mag uncertainty in the bandpass
 
@@ -529,7 +528,7 @@ class SNObject (sncosmo.Model):
         bandpassobject: mandatory, `lsst.sims.photUtils.BandPass` object
             A particular bandpass which is an instantiation of one of
             (u, g, r, i, z, y)
-        m5 : 
+        m5 :
         photParams :
         magnitude :
         Returns
@@ -559,12 +558,10 @@ class SNObject (sncosmo.Model):
                                  photParams=photParams)
         return magerr[0]
 
-
-
     def catsimBandFluxError(self, time, bandpassobject, m5, photParams=None,
                             magnitude=None):
         """
-        return the flux uncertainty in the bandpass in units 'maggies' 
+        return the flux uncertainty in the bandpass in units 'maggies'
         (the flux the AB magnitude reference spectrum would have in the
         same band.)
 
@@ -575,7 +572,7 @@ class SNObject (sncosmo.Model):
         bandpassobject: mandatory, `lsst.sims.photUtils.BandPass` object
             A particular bandpass which is an instantiation of one of
             (u, g, r, i, z, y)
-        m5 : 
+        m5 :
         photParams :
         magnitude :
         Returns
@@ -606,7 +603,6 @@ class SNObject (sncosmo.Model):
         SNR, gamma = calcSNR_m5(magnitude=mag, bandpass=bandpass, m5=m5,
                                 photParams=photParams)
         return flux / SNR
-
 
     def catsimManyBandFluxes(self, time, bandpassDict,
                              observedBandPassInd=None):
@@ -686,13 +682,12 @@ class SNObject (sncosmo.Model):
             float
         Examples
         --------
-        
         """
         fluxRatio = self.catsimBandFluxes(bandpassobject=bandpassobject,
                                           time=time)
         return -2.5 * np.log10(fluxRatio)
 
-    def catsimADU(self, time, bandpassDict, 
+    def catsimADU(self, time, bandpassDict,
                   photParams=None,
                   observedBandPassInds=None):
         """
@@ -710,9 +705,9 @@ class SNObject (sncosmo.Model):
         observedBandPassInd: None
             Not used now
         """
-        SEDfromSNcosmo = self.SNObjectSED(time=time, 
+        SEDfromSNcosmo = self.SNObjectSED(time=time,
                                           bandpass=bandpassDict)
-        
+
         bandpassNames = bandpassDict.keys()
         adus = np.zeros(len(bandpassNames))
 

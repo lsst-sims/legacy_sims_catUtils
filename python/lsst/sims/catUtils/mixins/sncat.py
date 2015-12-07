@@ -2,23 +2,17 @@ import numpy as np
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.catalogs.generation.db import CatalogDBObject
-from lsst.sims.utils import ObservationMetaData
 
-from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
-from lsst.sims.photUtils.SignalToNoise import calcSNR_m5
 
 import astropy
-import sncosmo
 
 from .snObject import SNObject
 from .snUniversalRules import SNUniverse
 
-import sqlite3
 
 wavelenstep = 0.1
 cosmo = CosmologyMixin()
@@ -56,7 +50,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     variables += ['flux', 'flux_err', 'mag_err']
 
     override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
-            'x0': '%8e'} #, 'flux': '%8e', 'mag': '%8e', 'flux_err': '%8e'}
+                        'x0': '%8e'}
     for var in variables:
         override_formats[var] = '%8e'
 
@@ -92,12 +86,12 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     @suppressDimSN.setter
     def suppressDimSN(self, suppressDimSN):
         '''
-        set the value of suppressDimSN of the catalog 
+        set the value of suppressDimSN of the catalog
 
         Parameters
         ----------
         value : Boolean, mandatory
-            Value to set suppressDimSN to 
+            Value to set suppressDimSN to
         '''
         # if suppressDimSN is None:
         #    self._suppressDimSN = True
@@ -108,8 +102,8 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     @property
     def suppressHighzSN(self):
         '''
-        Boolean to decide whether to output information corresponding to SN 
-        at redshift above self.maxz 
+        Boolean to decide whether to output information corresponding to SN
+        at redshift above self.maxz
         '''
 
         return True
@@ -118,7 +112,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     def maxTimeSNVisible(self):
         '''
         The catalog will provide values for SN flux (even if zero according to
-        model) for peak \pm maxTimeVisibilityforSN 
+        model) for peak \pm maxTimeVisibilityforSN
         '''
         return 100.
 
@@ -149,7 +143,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     def get_snid(self):
         # Not necessarily unique if the same galaxy hosts two SN
         # Use refIdCol to access the relevant id column of the dbobj
-        # Should revert to galTileID for galaxyTiled catalogDBObj and 
+        # Should revert to galTileID for galaxyTiled catalogDBObj and
         # id for galaxyObj catalogDBObj
         # (email from Scott)
         return self.column_by_name(self.refIdCol)
@@ -168,7 +162,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         `np.ndarray` of coordinara, dec, z, vra, vdec, and vr
 
         '''
-        hostra , hostdec, hostz = self.column_by_name('raJ2000'),\
+        hostra, hostdec, hostz = self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000'),\
             self.column_by_name('redshift')
         snra, sndec, snz, snvra, snvdec, snvr = self.SNCoordinatesFromHost(
@@ -208,14 +202,14 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
             sed = SNobject.SNObjectSED(time=self.obs_metadata.mjd,
-                                       bandpass=lsstBandpassDict,
+                                       bandpass=self.lsstBandpassDict,
                                        applyExitinction=True)
             sedlist.append(sed)
 
         return sedlist
 
     def get_time(self):
-        
+
         return np.repeat(self.mjdobs, self.numobjs)
 
     def get_band(self):
@@ -225,13 +219,11 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     @compound('flux', 'mag', 'flux_err', 'mag_err')
     def get_snbrightness(self):
 
-
-        c, x1, x0, t0, _z , _id, ra, dec = self.column_by_name('c'),\
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
             self.column_by_name('x1'),\
             self.column_by_name('x0'),\
             self.column_by_name('t0'),\
             self.column_by_name('redshift'),\
-            self.column_by_name('snid'),\
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
@@ -242,10 +234,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         # Initialize return array
         vals = np.zeros(shape=(self.numobjs, 4))
 
-        # vals = np.zeros(self.numobjs)
         for i, v in enumerate(vals):
-            arr = [_z[i], c[i], x1[i], t0[i], x0[i]]
-            testnan = lambda x: x is np.nan
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
@@ -258,31 +247,31 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             vals[i, 0] = flux
             vals[i, 1] = mag
             flux_err = SNobject.catsimBandFluxError(time=self.mjdobs,
-                                                     bandpassobject=bandpass,
-                                                     m5=self.obs_metadata.m5[bandname],
-                                                     photParams=None,
-                                                     magnitude=mag)
+                                                    bandpassobject=bandpass,
+                                                    m5=self.obs_metadata.m5[
+                                                        bandname],
+                                                    photParams=None,
+                                                    magnitude=mag)
             mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
-                                                     bandpassobject=bandpass,
-                                                     m5=self.obs_metadata.m5[bandname],
-                                                     photParams=None,
-                                                     magnitude=mag)
+                                                  bandpassobject=bandpass,
+                                                  m5=self.obs_metadata.m5[
+                                                      bandname],
+                                                  photParams=None,
+                                                  magnitude=mag)
             vals[i, 2] = flux_err
             vals[i, 3] = mag_err
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
-
 
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
               'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y',
               'adu_u', 'adu_g', 'adu_r', 'adu_i', 'adu_z', 'adu_y', 'mwebv')
     def get_snfluxes(self):
 
-        c, x1, x0, t0, _z , _id, ra, dec = self.column_by_name('c'),\
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
             self.column_by_name('x1'),\
             self.column_by_name('x0'),\
             self.column_by_name('t0'),\
             self.column_by_name('redshift'),\
-            self.column_by_name('snid'),\
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
@@ -290,8 +279,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         # Initialize return array
         vals = np.zeros(shape=(self.numobjs, 19))
         for i, v in enumerate(vals):
-            arr = [_z[i], c[i], x1[i], t0[i], x0[i]]
-            testnan = lambda x: x is np.nan
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
@@ -301,12 +288,12 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
                                                         observedBandPassInd=None)
             # Calculate magnitudes
             vals[i, 6:12] = SNobject.catsimManyBandMags(time=self.mjdobs,
-                                                      bandpassDict=self.lsstBandpassDict,
-                                                      observedBandPassInd=None)
+                                                        bandpassDict=self.lsstBandpassDict,
+                                                        observedBandPassInd=None)
 
             vals[i, 12:18] = SNobject.catsimADU(time=self.obs_metadata,
-                                              bandpassDict=self.lsstBandpassDict,
-                                              photParams=self.photometricparameters)
+                                                bandpassDict=self.lsstBandpassDict,
+                                                photParams=self.photometricparameters)
             vals[i, 18] = SNobject.ebvofMW
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3],
                 vals[:, 4], vals[:, 5], vals[:, 6], vals[:, 7],
