@@ -79,12 +79,31 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         This test uses CompoundInstanceCatalog
         """
-        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
-        testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
-        testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
-        testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
-        compoundCatalog = CompoundInstanceCatalog([testBulge, testDisk, testAgn, testStar],
+        # because the CompoundCatalogDBObject requires that database
+        # connection parameters be set in the input CatalogDBObject
+        # daughter class definitions, we have to declare dummy
+        # CatalogDBObject daughter classes below
+
+        class dummyDBbase(object):
+            driver = 'sqlite'
+            database = 'PhoSimTestDatabase.db'
+
+        class dummyBulgeDB(dummyDBbase, testGalaxyBulgeDBObj):
+            objid = 'dummy_bulge'
+
+        class dummyDiskDB(dummyDBbase,  testGalaxyDiskDBObj):
+            objid = 'dummy_disk'
+
+        class dummyAgnDB(dummyDBbase, testGalaxyAgnDBObj):
+            objid = 'dummy_agn'
+
+        class dummyStarDB(dummyDBbase, testStarsDBObj):
+            objid = 'dummy_stars'
+
+        compoundCatalog = CompoundInstanceCatalog([PhoSimCatalogSersic2D, PhoSimCatalogSersic2D,
+                                                   PhoSimCatalogZPoint, PhoSimCatalogPoint],
+                                                  [dummyBulgeDB, dummyDiskDB, dummyAgnDB, dummyStarDB],
                                                    obs_metadata=self.obs_metadata)
 
         self.assertEqual(len(compoundCatalog._dbObjectGroupList[0]), 3)
