@@ -162,9 +162,6 @@ class SNIaCatalog_tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        print ('-------------------------------')
-        print ('Entered SNIaCatalog_tests.Setup')
-        print ('-------------------------------')
 
         # Set directory where scratch work will be done
         cls.madeScratchDir = False
@@ -179,8 +176,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         # put galaxies in a fake galaxy catalog
         cls.obsMetaDataforCat = ObservationMetaData(boundType='circle',
             boundLength=np.degrees(0.25),
-            unrefractedRA=np.degrees(0.13),
-            unrefractedDec=np.degrees(-1.2),
+            pointingRA=np.degrees(0.13),
+            pointingDec=np.degrees(-1.2),
             bandpassName=['r'], mjd=49350.)
 
 
@@ -296,15 +293,12 @@ class SNIaCatalog_tests(unittest.TestCase):
 	sncatalog.suppressDimSN = True
         sncatalog.midSurveyTime = sncatalog.mjdobs - 20.
 	sncatalog.averageRate = 1.0
-        # print ('OBS :', sncatalog.mjdobs)
-        # print ('maxTimeSNVisible :', sncatalog.maxTimeSNVisible)
         cls.fullCatalog = cls.scratchDir + '/testSNCatalogTest.dat'
         sncatalog.write_catalog(cls.fullCatalog)
 
         # Create a SNCatalog based on GalDB, and having times of explosions
         #     overlapping the times in obsMetaData
         cls.fnameList = cls._writeManySNCatalogs(cls.obsMetaDataResults)
-        # print (cls.fnameList)
 
     def test_writingfullCatalog(self):
         """
@@ -432,11 +426,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         fnameList = []
         for obsindex, obsMetaData in enumerate(obsMetaDataResults):
 
-            # print 'iteration number ', obsindex
-            # pdb.set_trace()
             bandpass =  obsMetaData.bandpass
-            # print obsMetaData.summary
-            # print obsMetaData.m5[bandpass]
             cols = ['t0', 'mwebv', 'time', 'band', 'flux', 'flux_err',\
                     'mag', 'mag_err', 'cosmologicalDistanceModulus']
             newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData,
@@ -448,7 +438,6 @@ class SNIaCatalog_tests(unittest.TestCase):
             fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s + suffix)
             newCatalog.write_catalog(fname)
             fnameList.append(fname)
-            # print (obsMetaData.mjd)
         return fnameList
 
 
@@ -516,10 +505,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         tuple of ravals, decvalues
         '''
         mydict = obsmetadata.summary
-        # print mydict
-        # exit()
-        phi = np.radians(mydict['unrefractedRA'])
-        theta = np.radians(mydict['unrefractedDec'])
+        phi = np.radians(mydict['pointingRA'])
+        theta = np.radians(mydict['pointingDec'])
         equalrange = np.radians(mydict['boundLength'])
         ravals, thetavals = SNIaCatalog_tests.samplePatchOnSphere(phi=phi,
                                                      theta=theta,

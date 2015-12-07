@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-# from cStringIO import StringIO
 import numpy as np
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -229,7 +226,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     def get_snbrightness(self):
 
 
-        print ('flux calculation')
         c, x1, x0, t0, _z , _id, ra, dec = self.column_by_name('c'),\
             self.column_by_name('x1'),\
             self.column_by_name('x0'),\
@@ -239,7 +235,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
-        print ('x0', 'x1', 'c', 't0')
         SNobject = SNObject()
         bandname = self.obs_metadata.bandpass
         bandpass = self.lsstBandpassDict[bandname]

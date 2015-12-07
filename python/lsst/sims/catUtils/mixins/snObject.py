@@ -520,9 +520,7 @@ class SNObject (sncosmo.Model):
     def catsimBandMagError(self, time, bandpassobject, m5, photParams=None,
                             magnitude=None):
         """
-        return the mag uncertainty in the bandpass in units 'maggies' 
-        (the flux the AB magnitude reference spectrum would have in the
-        same band.)
+        return the mag uncertainty in the bandpass
 
         Parameters
         ----------
@@ -549,17 +547,17 @@ class SNObject (sncosmo.Model):
         else:
             mag = magnitude
 
-        mag = np.asarray([[mag]])
-        bandpasses = [bandpassobject]
+        # mag = np.asarray([[mag]])
+        bandpass = bandpassobject
 
         if photParams is None:
             photParams = PhotometricParameters()
 
-        m5 = np.asarray([[m5]])
+        # m5 = np.asarray([[m5]])
 
-        magerr = calcMagError_m5(magnitudes=mag, bandpasses=bandpasses, m5=m5,
+        magerr = calcMagError_m5(magnitude=mag, bandpass=bandpass, m5=m5,
                                  photParams=photParams)
-        return magerr
+        return magerr[0]
 
 
 
@@ -598,16 +596,16 @@ class SNObject (sncosmo.Model):
             mag = magnitude
         flux = self.catsimBandFluxes(time=time, bandpassobject=bandpassobject)
 
-        mag = np.asarray([[mag]])
-        bandpasses = [bandpassobject]
+        # mag = np.asarray([[mag]])
+        bandpass = bandpassobject
 
         if photParams is None:
             photParams = PhotometricParameters()
 
-        m5 = np.asarray([[m5]])
-        SNR, gamma = calcSNR_m5(magnitudes=mag, bandpasses=bandpasses, m5=m5,
+        # m5 = np.asarray([[m5]])
+        SNR, gamma = calcSNR_m5(magnitude=mag, bandpass=bandpass, m5=m5,
                                 photParams=photParams)
-        return flux / SNR[0, 0]
+        return flux / SNR
 
 
     def catsimManyBandFluxes(self, time, bandpassDict,
