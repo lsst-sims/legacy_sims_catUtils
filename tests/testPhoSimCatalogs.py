@@ -83,8 +83,8 @@ class PhoSimCatalogTest(unittest.TestCase):
         # because the CompoundCatalogDBObject requires that database
         # connection parameters be set in the input CatalogDBObject
         # daughter class definitions, we have to declare dummy
-        # instances of our desired CatalogDBObject daughter classes
-        # below
+        # CatalogDBObject daughter classes below
+
         class dummyDBbase(object):
             driver = 'sqlite'
             database = 'PhoSimTestDatabase.db'
