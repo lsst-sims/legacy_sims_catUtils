@@ -325,6 +325,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         return lcs
 
+    @unittest.skip('depends on pandas')
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
@@ -343,6 +344,7 @@ class SNIaCatalog_tests(unittest.TestCase):
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
                 np.testing.assert_equal(len(df[prop].unique()), 1)
 
+    @unittest.skip('depends on  pandas')
     def test_redrawingCatalog(self): 
         """
         test that drawing the same catalog
