@@ -34,8 +34,8 @@ from lsst.sims.catUtils.mixins import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
 
 # External packages used
-# import pandas as pd
-# from pandas.util.testing import assert_frame_equal
+import pandas as pd
+from pandas.util.testing import assert_frame_equal
 import sncosmo
 import astropy
 
@@ -77,7 +77,6 @@ class SNObject_tests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @unittest.skip('astropy/sncosmo setup')
     def test_ComparebandFluxes2photUtils(self):
         """
         The SNObject.catsimBandFluxes computation uses the sims.photUtils.sed
@@ -95,7 +94,6 @@ class SNObject_tests(unittest.TestCase):
         sedflux = sed.calcFlux(bandpass=self.lsstBandPass['r'])
         np.testing.assert_allclose(snobject_r, sedflux / 3631.0)
 
-    @unittest.skip('astropy/sncosmo setup')
     def test_CompareBandFluxes2SNCosmo(self):
         """
         Compare the r band flux at a particular time computed in SNObject and
@@ -113,7 +111,6 @@ class SNObject_tests(unittest.TestCase):
                                                zp=0.)
         np.testing.assert_allclose(sncosmo_r, catsim_r)
 
-    @unittest.skip('astropy/sncosmo setup')
     def test_CompareBandMags2SNCosmo(self):
         """
         Compare the r band flux at a particular time computed in SNObject and
@@ -128,7 +125,6 @@ class SNObject_tests(unittest.TestCase):
                                               time=times,  magsys='ab')
         np.testing.assert_allclose(sncosmo_r, catsim_r)
 
-    @unittest.skip('astropy/sncosmo setup')
     def test_CompareExtinctedSED2SNCosmo(self):
         """
         Compare the extincted SEDS in SNCosmo and SNObject. Slightly more
@@ -145,7 +141,6 @@ class SNObject_tests(unittest.TestCase):
         np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
                                    rtol=1.0e-7)
 
-    @unittest.skip('astropy/sncosmo setup')
     def test_CompareUnextinctedSED2SNCosmo(self):
         """
         Compares the unextincted flux Densities in SNCosmo and SNObject. This
@@ -305,7 +300,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         #     overlapping the times in obsMetaData
         cls.fnameList = cls._writeManySNCatalogs(cls.obsMetaDataResults)
 
-    @unittest.skip('rb')
     def test_writingfullCatalog(self):
         """
         Check that a full catalog of SN has more than one line
@@ -331,7 +325,6 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         return lcs
 
-    @unittest.skip('rb')
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
@@ -350,7 +343,6 @@ class SNIaCatalog_tests(unittest.TestCase):
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
                 np.testing.assert_equal(len(df[prop].unique()), 1)
 
-    @unittest.skip('rb')
     def test_redrawingCatalog(self): 
         """
         test that drawing the same catalog
@@ -389,7 +381,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         #if cls.madeScratchDir:
         #    os.rmdir(cls.scratchDir)
 
-    @unittest.skip('rb')
     def test_obsMetaDataGeneration(self):
 
         numObs = len(self.obsMetaDataResults)
