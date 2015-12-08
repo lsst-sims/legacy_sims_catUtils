@@ -305,6 +305,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         #     overlapping the times in obsMetaData
         cls.fnameList = cls._writeManySNCatalogs(cls.obsMetaDataResults)
 
+    @unittest.skip('rb')
     def test_writingfullCatalog(self):
         """
         Check that a full catalog of SN has more than one line
@@ -388,6 +389,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         #if cls.madeScratchDir:
         #    os.rmdir(cls.scratchDir)
 
+    @unittest.skip('rb')
     def test_obsMetaDataGeneration(self):
 
         numObs = len(self.obsMetaDataResults)
