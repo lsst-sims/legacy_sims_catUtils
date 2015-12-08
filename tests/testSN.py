@@ -383,8 +383,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         # os.remove(cls.galPhotFname)
         # os.remove(cls.fullCatalog)
         # If scratch directory was created remove it
-        if cls.madeScratchDir:
-            os.rmdir(cls.scratchDir)
+        #if cls.madeScratchDir:
+        #    os.rmdir(cls.scratchDir)
 
     def test_obsMetaDataGeneration(self):
 
