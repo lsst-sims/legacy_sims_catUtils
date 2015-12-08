@@ -34,8 +34,8 @@ from lsst.sims.catUtils.mixins import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
 
 # External packages used
-import pandas as pd
-from pandas.util.testing import assert_frame_equal
+# import pandas as pd
+# from pandas.util.testing import assert_frame_equal
 import sncosmo
 import astropy
 
@@ -312,6 +312,9 @@ class SNIaCatalog_tests(unittest.TestCase):
 
     @staticmethod
     def buildLCfromInstanceCatFilenames(fnamelist):
+        # External packages used
+        import pandas as pd
+        from pandas.util.testing import assert_frame_equal
         dfs = []
         _ = map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
                 fnamelist)
@@ -322,6 +325,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         return lcs
 
+    @unittest.skip('rb')
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
@@ -339,15 +343,8 @@ class SNIaCatalog_tests(unittest.TestCase):
             for prop in props:
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
                 np.testing.assert_equal(len(df[prop].unique()), 1)
-            # np.testing.assert_equal(len(df.x0.unique()), 1)
-            # np.testing.assert_equal(len(df.t0.unique()), 1)
-            # np.testing.assert_equal(len(df.x1.unique()), 1)
-            # np.testing.assert_equal(len(df.c.unique()), 1)
-            # np.testing.assert_equal(len(df.z.unique()), 1)
-            # np.testing.assert_equal(len(df.mwebv.unique()), 1)
-            # np.testing.assert_equal(len(df.snra.unique()), 1)
-            # np.testing.assert_equal(len(df.sndec.unique()), 1)
 
+    @unittest.skip('rb')
     def test_redrawingCatalog(self): 
         """
         test that drawing the same catalog
