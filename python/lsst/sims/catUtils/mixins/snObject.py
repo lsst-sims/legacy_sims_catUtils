@@ -169,7 +169,8 @@ class SNObject(sncosmo.Model):
     def sncosmoParamDict(SNstate, SNCosmoModel):
         """
         return a dictionary that contains the parameters of SNCosmoModel
-        that are contained in SNstate
+        that are contained in SNstate. Note that this does not return the
+        equivalent SNCosmo  model.
 
         Parameters
         ----------
@@ -492,9 +493,8 @@ class SNObject(sncosmo.Model):
 
     def catsimBandFluxes(self, time, bandpassobject):
         """
-        return the flux in the bandpass in units of the flux
-        the AB magnitude reference spectrum would have in the
-        same band.
+        return the flux in the bandpass in units of maggies which is the flux
+        the AB magnitude reference spectrum would have in the same band.
 
         Parameters
         ----------
@@ -519,7 +519,7 @@ class SNObject(sncosmo.Model):
     def catsimBandMagError(self, time, bandpassobject, m5, photParams=None,
                            magnitude=None):
         """
-        return the mag uncertainty in the bandpass
+        return the 68 percent uncertainty on the magnitude in the bandpass
 
         Parameters
         ----------

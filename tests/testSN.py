@@ -48,6 +48,14 @@ class SNObject_tests(unittest.TestCase):
         SN_blank: A SNObject with no MW extinction
         """
 
+        from astropy.config import get_config_dir
+
+        mydir = get_config_dir()
+        print '==============================='
+        print '==============================='
+        print (mydir)
+        print '==============================='
+        print '==============================='
         # A range of wavelengths in Ang
         self.wave = np.arange(3000., 12000., 50.)
         # Equivalent wavelenths in nm
