@@ -45,7 +45,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     to run the astrometry routines for testing purposes
     """
     catalog_type = 'test_stars'
-    column_outputs=['id','raPhoSim','decPhoSim','raObserved','decObserved',
+    column_outputs=['id','raPhoSim','decPhoSim','raICRS','decICRS',
                    'x_pupil','y_pupil',
                    'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
     #Needed to do camera coordinate transforms.
@@ -85,6 +85,8 @@ class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
     column_outputs = ['glon', 'glat',
                       'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
                       'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
+
+    delimiter = '; '
 
 class astrometryUnitTest(unittest.TestCase):
     """
@@ -190,7 +192,9 @@ class astrometryUnitTest(unittest.TestCase):
         galaxies.delimiter = ';'
         galaxies.write_catalog(catName)
 
-        testData = numpy.genfromtxt(catName,delimiter=';')
+
+        dtypeList = [(name, numpy.float) for name in galaxies._column_outputs]
+        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList), delimiter='; ')
 
         self.assertGreater(len(testData), 0)
 
@@ -216,7 +220,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         dtype = [('id',int),
                  ('raPhoSim',float), ('decPhoSim',float),
-                 ('raObserved',float), ('decObserved',float),
+                 ('raICRS',float), ('decICRS',float),
                  ('x_pupil',float), ('y_pupil',float), ('chipName',str,11),
                  ('xPix',float), ('yPix',float),
                  ('xFocalPlane',float), ('yFocalPlane',float)]
@@ -225,8 +229,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertGreater(len(baselineData), 0)
 
-        pupilTest = _pupilCoordsFromRaDec(baselineData['raObserved'],
-                                              baselineData['decObserved'],
+        pupilTest = _pupilCoordsFromRaDec(baselineData['raICRS'],
+                                              baselineData['decICRS'],
                                               obs_metadata=self.obs_metadata,
                                               epoch=2000.0)
 
@@ -237,7 +241,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         focalTest = focalPlaneCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
-        focalRa = _focalPlaneCoordsFromRaDec(baselineData['raObserved'], baselineData['decObserved'],
+        focalRa = _focalPlaneCoordsFromRaDec(baselineData['raICRS'], baselineData['decICRS'],
                                              epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                              camera=self.cat.camera)
 
@@ -252,7 +256,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         pixTest = pixelCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
-        pixTestRaDec = _pixelCoordsFromRaDec(baselineData['raObserved'], baselineData['decObserved'],
+        pixTestRaDec = _pixelCoordsFromRaDec(baselineData['raICRS'], baselineData['decICRS'],
                                              epoch=self.cat.db_obj.epoch,
                                              obs_metadata=self.cat.obs_metadata,
                                              camera=self.cat.camera)
@@ -278,7 +282,7 @@ class astrometryUnitTest(unittest.TestCase):
         nameTest = chipNameFromPupilCoords(pupilTest[0], pupilTest[1],
                                            camera=self.cat.camera)
 
-        nameRA = _chipNameFromRaDec(baselineData['raObserved'], baselineData['decObserved'],
+        nameRA = _chipNameFromRaDec(baselineData['raICRS'], baselineData['decICRS'],
                                     epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                     camera=self.cat.camera)
 
