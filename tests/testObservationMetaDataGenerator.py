@@ -5,7 +5,6 @@ import numpy
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds
-from lsst.sims.utils import _observedFromICRS
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
@@ -314,13 +313,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertGreaterEqual(obs_metadata.bounds.radiusdeg, 0.9)
             self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
 
-            raObs, decObs = _observedFromICRS(numpy.array([obs_metadata.bounds.RA]),
-                                              numpy.array([obs_metadata.bounds.DEC]),
-                                              obs_metadata=obs_metadata,
-                                              epoch=2000.0)
-
-            self.assertAlmostEqual(raObs[0], obs_metadata.phoSimMetaData['pointingRA'][0], 5)
-            self.assertAlmostEqual(decObs[0], obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+            self.assertAlmostEqual(obs_metadata.bounds.RA, obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC, obs_metadata.phoSimMetaData['pointingDec'][0], 5)
             ct += 1
 
         #Make sure that some ObservationMetaData were tested
@@ -344,39 +338,16 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingDec'][0])
                 self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
 
-                rmn = obs_metadata.bounds.RAminDeg
-                rmx = obs_metadata.bounds.RAmaxDeg
-                dmn = obs_metadata.bounds.DECminDeg
-                dmx = obs_metadata.bounds.DECmaxDeg
+                self.assertAlmostEqual(obs_metadata.bounds.RAminDeg, RAdeg-dra, 10)
 
-                ra_list, dec_list = _observedFromICRS(numpy.radians([rmn, rmx, rmn, rmx]),
-                                                      numpy.radians([dmn, dmn, dmx, dmx]),
-                                                      obs_metadata=obs_metadata, epoch=2000.0)
+                self.assertAlmostEqual(obs_metadata.bounds.RAmaxDeg, RAdeg+dra, 10)
 
-                rmnDeg = numpy.degrees(ra_list).min()
-                rmxDeg = numpy.degrees(ra_list).max()
-                dmnDeg = numpy.degrees(dec_list).min()
-                dmxDeg = numpy.degrees(dec_list).max()
+                self.assertAlmostEqual(obs_metadata.bounds.DECminDeg, DECdeg-ddec, 10)
 
-                self.assertLessEqual(rmnDeg, RAdeg-dra)
-                self.assertGreater(rmnDeg, RAdeg-dra-0.1)
+                self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg, DECdeg+ddec, 10)
 
-                self.assertGreaterEqual(rmxDeg, RAdeg+dra)
-                self.assertLess(rmxDeg, RAdeg+dra+0.1)
-
-                self.assertLessEqual(dmnDeg, DECdeg-ddec)
-                self.assertGreater(dmnDeg, DECdeg-ddec-0.1)
-
-                self.assertGreaterEqual(dmxDeg, DECdeg+ddec)
-                self.assertLess(dmxDeg, DECdeg+ddec+0.1)
-
-                raObs, decObs = _observedFromICRS(numpy.array([obs_metadata.bounds.RA]),
-                                                  numpy.array([obs_metadata.bounds.DEC]),
-                                                  obs_metadata=obs_metadata,
-                                                  epoch=2000.0)
-
-                self.assertAlmostEqual(raObs[0], obs_metadata.phoSimMetaData['pointingRA'][0], 5)
-                self.assertAlmostEqual(decObs[0], obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+                self.assertAlmostEqual(obs_metadata.bounds.RA, obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+                self.assertAlmostEqual(obs_metadata.bounds.DEC, obs_metadata.phoSimMetaData['pointingDec'][0], 5)
 
                 ct += 1
 
