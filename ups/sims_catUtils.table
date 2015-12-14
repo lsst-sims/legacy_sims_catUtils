@@ -9,7 +9,6 @@ setupRequired(palpy)
 setupRequired(python)
 setupRequired(pymssql)
 setupRequired(daf_persistence)
-setupRequired(astropy)
 setupRequired(sncosmo)
 
 setupOptional(obs_lsstSim)
