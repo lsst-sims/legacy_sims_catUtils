@@ -43,11 +43,25 @@ import astropy
 
 class astropy_tests(unittest.TestCase):
     def setUp(self):
-        from astropy.config import get_config_dir
+        # from astropy.config import get_config_dir
 
-        print astropy.__version__
-        dir = get_config_dir() 
-        print dir
+        # print astropy.__version__
+        # dir = get_config_dir() 
+        #print dir
+        pass
+    def test_checkHome(self):
+
+        import os
+
+        if 'HOME' in os.environ:
+            pass
+    def test_checHomeNonEmpty(self):
+
+        home = os.environ['HOME']
+        print home
+        a = len(home)
+        self.assertGreater(a,0)
+
 
     def test_config(self):
         pass
