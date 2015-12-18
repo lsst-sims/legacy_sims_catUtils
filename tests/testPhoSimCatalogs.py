@@ -87,7 +87,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         This test uses CompoundInstanceCatalog
         """
 
-<<<<<<< 66d8073050371a8e40ff6afa9622ef75d4d85d6e
         # because the CompoundCatalogDBObject requires that database
         # connection parameters be set in the input CatalogDBObject
         # daughter class definitions, we have to declare dummy
