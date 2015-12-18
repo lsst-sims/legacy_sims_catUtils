@@ -87,6 +87,22 @@ class PhoSimCatalogTest(unittest.TestCase):
         This test uses CompoundInstanceCatalog
         """
 
+        # first, generate the catalog without a CompoundInstanceCatalog
+        single_catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
+                                      'tests','scratchSpace','phoSimTestCatalog_single.txt')
+
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
+        testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
+        testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
+        testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
+
+        testBulge.write_catalog(single_catName)
+        testDisk.write_catalog(single_catName, write_header=False, write_mode='a')
+        testAgn.write_catalog(single_catName, write_header=False, write_mode='a')
+        testStar.write_catalog(single_catName, write_header=False, write_mode='a')
+
+        # now, generate the catalog using CompoundInstanceCatalog
+        #
         # because the CompoundCatalogDBObject requires that database
         # connection parameters be set in the input CatalogDBObject
         # daughter class definitions, we have to declare dummy
@@ -107,6 +123,7 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         class dummyStarDB(dummyDBbase, testStarsDBObj):
             objid = 'dummy_stars'
+
 
         compoundCatalog = CompoundInstanceCatalog([PhoSimCatalogSersic2D, PhoSimCatalogSersic2D,
                                                    PhoSimCatalogZPoint, PhoSimCatalogPoint],
