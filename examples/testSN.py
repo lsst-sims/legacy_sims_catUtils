@@ -90,7 +90,7 @@ class SNObject_tests(unittest.TestCase):
         Check that the state of SNObject, stored in self.SNstate has valid
         entries for all keys and does not contain keys with None type Values.
         """
-        myDict = self.SN_exincted.SNstate.
+        myDict = self.SN_extincted.SNstate
         for key in myDict.keys():
             assert myDict[key] is not None
                 
