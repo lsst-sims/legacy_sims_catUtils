@@ -85,6 +85,15 @@ class SNObject_tests(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_SNstatenotEmpty(self):
+        """
+        Check that the state of SNObject, stored in self.SNstate has valid
+        entries for all keys and does not contain keys with None type Values.
+        """
+        myDict = self.SN_exincted.SNstate.
+        for key in myDict.keys():
+            assert myDict[key] is not None
+                
     def test_ComparebandFluxes2photUtils(self):
         """
         The SNObject.catsimBandFluxes computation uses the sims.photUtils.sed
