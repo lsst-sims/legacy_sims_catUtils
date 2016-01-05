@@ -47,12 +47,12 @@ class SNUniverse(object):
     @midSurveyTime.setter
     def midSurveyTime(self, mymidSurveyTime):
         '''
-        set the value of suppressDimSN of the catalog 
+        set the value of `self.midSurveyTime` of the catalog
 
         Parameters
         ----------
-        value : Boolean, mandatory
-            Value to set suppressDimSN to 
+        mymidSurveyTime : float, mandatory
+            Value to set the midSurveyTime attribute to
         '''
         # if suppressDimSN is None:
         #    self._suppressDimSN = True
