@@ -175,7 +175,7 @@ class SSMphotometryTest(unittest.TestCase):
         Test the calculation of dmagTrailing and dmagDetection
         """
 
-        obs = ObservationMetaData(bandpassName = 'u', seeing=0.6)
+        obs = ObservationMetaData(bandpassName = 'u', seeing=1.48)
         photParams = PhotometricParameters()
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmDmagCat.txt')
 
@@ -199,6 +199,10 @@ class SSMphotometryTest(unittest.TestCase):
 
         dmagTrailControl = 1.25*np.log10(1.0 + a_trail*xsq/(1.0+b_trail*x))
         dmagDetectControl = 1.25*np.log10(1.0 + a_det*xsq/(1.0+b_det*x))
+
+        # Check against precalculated numbers, just to verify units/conversions, etc.
+        self.assertTrue(abs(dmagTrailControl[-1] - 0.0219) < 0.01)
+        self.assertTrue(abs(dmagDetectControl[-1] - 0.01594) < 0.01)
 
         np.testing.assert_array_almost_equal(dmagTrailControl, testData['dmagTrail'], 10)
         np.testing.assert_array_almost_equal(dmagDetectControl, testData['dmagDetect'], 10)
