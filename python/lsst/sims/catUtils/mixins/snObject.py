@@ -93,17 +93,17 @@ class SNObject(sncosmo.Model):
         self.ModelSource = source
         self.set(mwebv=0.)
 
-        # ra and dec if passed are assumed to be in degrees and converted into
-        # radians.
-        self._ra = ra
-        self._dec = dec
+        # self._ra, self._dec is initialized as None for cases where ra, dec
+        # is not provided
+        self._ra = None
+        self._dec = None
 
-        # NB: More lines of code to support the possibility that ra, dec are
-        # not provided at instantiation, and default to None
+        # ra, dec is input in degrees
+        # If provided, set _ra, _dec in radians
         self._hascoords = True
-        if self._dec is None:
+        if dec is None:
             self._hascoords = False
-        if self._ra is None:
+        if ra is None:
             self._hascoords = False
 
         # Satisfied that coordinates provided are floats
