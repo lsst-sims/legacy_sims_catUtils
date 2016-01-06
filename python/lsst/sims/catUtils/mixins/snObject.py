@@ -343,10 +343,6 @@ class SNObject(sncosmo.Model):
         >>> t = SNObject()
         >>> t.set_MWebv(0.)
         >>> 0.
-
-        .. note:: For a large set of SN, one may use fast `np.ndarray` valued
-                  functions to obtain an array of such values, and then set
-                  the values from such an array.
         """
         self.ebvofMW = value
         return
