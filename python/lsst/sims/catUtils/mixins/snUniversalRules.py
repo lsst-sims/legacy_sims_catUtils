@@ -4,17 +4,27 @@ __all__ = ['SNUniverse']
 
 class SNUniverse(object):
     """
-    Mixin Class providing methods for distributing SN model parameters
-    conditioned  on the parameters of the hostgalaxy from catsim Catalogs
+    Mixin Class for `lsst.sims.catalogs.measures.instances.InstanceCatalog` 
+    providing methods for distributing SN model parameters
+    conditioned  on the parameters of the hostgalaxy from catsim Catalogs. 
+    In particular, this is meant to be used to extend another mixin
+    `lsst.sims.catUtils.mixins.sncat.py`
 
     The base class must have the following attributes:
-    numobjs
-    suppressHighzSN
-    badvalues
-    midSurveyTime
-    suppressDimSN
-    mjdobs
-    maxTimeSNVisible
+
+    numobjs : integer, number of objects in the catalog. 
+    badvalues : a value to be reported when calculations fail, typically
+        `np.nan`
+    suppressHighzSN : Bool, if true drop any SN with redshift higher than
+        a threshold `self.maxz`
+    maxz : float, threshold redshift value, so that SN with z > self.maxz are
+        dropped if self.suppressHighzSN is True
+    midSurveyTime : float, MJD at the middle of the survey
+    mjdobs : float, MJD of the date of observation of the instance catalog
+    maxTimeSNVisible : float, units of days, Time beyond which SN is assumed
+        to be invisible. (see definition of suppressDimSN)
+    suppressDimSN : bool, if true drop observations of SN with peak at t0, if
+        abs(mjdobs - t0) > self.maxTimeVisible
 
     """
 
