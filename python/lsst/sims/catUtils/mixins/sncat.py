@@ -77,7 +77,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         Boolean to decide whether to output observations of SN that are too dim
         should be represented in the catalog or not. By default set to True
         '''
-        # self._suppressDimSN = True
         if not hasattr(self, '_suppressDimSN'):
             suppressDimSN_default = True
             self._suppressDimSN = suppressDimSN_default
@@ -93,9 +92,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         value : Boolean, mandatory
             Value to set suppressDimSN to
         '''
-        # if suppressDimSN is None:
-        #    self._suppressDimSN = True
-        # else:
         self._suppressDimSN = suppressDimSN
         return self._suppressDimSN
 

@@ -542,13 +542,10 @@ class SNObject(sncosmo.Model):
         else:
             mag = magnitude
 
-        # mag = np.asarray([[mag]])
         bandpass = bandpassobject
 
         if photParams is None:
             photParams = PhotometricParameters()
-
-        # m5 = np.asarray([[m5]])
 
         magerr = calcMagError_m5(magnitude=mag, bandpass=bandpass, m5=m5,
                                  photParams=photParams)
@@ -580,8 +577,6 @@ class SNObject(sncosmo.Model):
         .. note: If there is an unphysical value of sed in
         the wavelength range, it produces a flux of  `np.nan`
         """
-        # SEDfromSNcosmo = self.SNObjectSED(time=time,
-        #                                 bandpass=bandpassobject)
 
         if magnitude is None:
             mag = self.catsimBandMags(time=time, bandpassobject=bandpassobject)
@@ -589,13 +584,11 @@ class SNObject(sncosmo.Model):
             mag = magnitude
         flux = self.catsimBandFluxes(time=time, bandpassobject=bandpassobject)
 
-        # mag = np.asarray([[mag]])
         bandpass = bandpassobject
 
         if photParams is None:
             photParams = PhotometricParameters()
 
-        # m5 = np.asarray([[m5]])
         SNR, gamma = calcSNR_m5(magnitude=mag, bandpass=bandpass, m5=m5,
                                 photParams=photParams)
         return flux / SNR
