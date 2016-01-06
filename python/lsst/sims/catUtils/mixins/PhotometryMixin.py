@@ -788,7 +788,7 @@ class PhotometrySSM(PhotometryBase):
         dmagDetect = self.column_by_name('dmagDetection')
         magObj = magFilter - dmagDetect
         # Adjusted m5 value, accounting for the fact these are moving objects.
-        mjdSeed = numpy.int(self.obs_metadata.mjd * 1000000) % 4294967295
+        mjdSeed = numpy.int(self.obs_metadata.mjd.TAI * 1000000) % 4294967295
         visibility = self.calculateVisibility(magObj, randomSeed=mjdSeed, pre_generate_randoms=True)
         return visibility
 

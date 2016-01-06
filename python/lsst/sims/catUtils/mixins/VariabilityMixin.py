@@ -68,7 +68,7 @@ class Variability(object):
 
         method = varCmd['varMethodName']
         params = varCmd['pars']
-        expmjd=self.obs_metadata.mjd
+        expmjd=self.obs_metadata.mjd.TAI
         try:
             output = self._methodRegistry[method](self, params,expmjd)
         except KeyError:
