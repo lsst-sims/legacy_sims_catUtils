@@ -18,7 +18,10 @@ class PhosimInputBase(InstanceCatalog):
                        'Opsim_rotskypos':numpy.degrees, 'Opsim_rottelpos':numpy.degrees,
                        'Opsim_sunalt':numpy.degrees, 'Opsim_moonalt':numpy.degrees,
                        'Opsim_dist2moon':numpy.degrees, 'Opsim_altitude':numpy.degrees,
-                       'Opsim_azimuth':numpy.degrees, 'Opsim_filter':filtMap.get}
+                       'Opsim_azimuth':numpy.degrees, 'Opsim_filter':filtMap.get,
+                       'Unrefracted_Altitude':numpy.degrees, 'Unrefracted_Azimuth':numpy.degrees}
+
+
     def get_prefix(self):
         chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
         return numpy.array(['object' for i in chunkiter], dtype=(str, 6))

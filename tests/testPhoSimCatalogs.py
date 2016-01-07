@@ -22,19 +22,20 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.starDB = testStarsDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        self.control_header = ['Opsim_moondec 29.666667\n',
-                              'Opsim_rottelpos 180\n',
-                              'Unrefracted_Dec -29.666667\n',
-                              'Opsim_moonalt -90\n',
-                              'Opsim_rotskypos 0\n',
-                              'Opsim_moonra 298.825632\n',
-                              'Opsim_sunalt -90\n',
-                              'Opsim_expmjd 52000\n',
-                              'Unrefracted_Azimuth 0\n',
-                              'Unrefracted_RA 118.825632\n',
-                              'Opsim_dist2moon 179.999998\n',
-                              'Opsim_filter 2\n',
-                              'Unrefracted_Altitude 1.57079633\n']
+        filter_translation={'u':0,'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+        self.control_header = ['Opsim_moondec %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_moondec'][0]),
+                              'Opsim_rottelpos %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_rottelpos'][0]),
+                              'Unrefracted_Dec %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['pointingDec'][0]),
+                              'Opsim_moonalt %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_moonalt'][0]),
+                              'Opsim_rotskypos %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_rotskypos'][0]),
+                              'Opsim_moonra %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_moonra'][0]),
+                              'Opsim_sunalt %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_sunalt'][0]),
+                              'Opsim_expmjd %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_expmjd'][0],
+                              'Unrefracted_Azimuth %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Unrefracted_Azimuth'][0]),
+                              'Unrefracted_RA %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['pointingRA'][0]),
+                              'Opsim_dist2moon %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Opsim_dist2moon'][0]),
+                              'Opsim_filter %d\n' % filter_translation[self.obs_metadata.phoSimMetaData['Opsim_filter'][0]],
+                              'Unrefracted_Altitude %.9g\n' % numpy.degrees(self.obs_metadata.phoSimMetaData['Unrefracted_Altitude'][0])]
 
 
     def tearDown(self):
