@@ -194,7 +194,7 @@ class astrometryUnitTest(unittest.TestCase):
 
 
         dtypeList = [(name, numpy.float) for name in galaxies._column_outputs]
-        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList), delimiter='; ')
+        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList), delimiter=';')
 
         self.assertGreater(len(testData), 0)
 
