@@ -838,8 +838,8 @@ class PhotometrySSM(PhotometryBase):
         a_det = 0.42
         b_det = 0.00
         seeing = self.obs_metadata.seeing[self.obs_metadata.bandpass] # this will be in arcsec
-        texp = self.photParams.nexp*self.photParams.exptime
-        velocity = numpy.sqrt(numpy.power(numpy.degrees(dradt),2) + numpy.power(numpy.degrees(ddecdt),2))
+        texp = self.photParams.nexp*self.photParams.exptime  # in seconds
+        velocity = numpy.sqrt(numpy.power(numpy.degrees(dradt),2) + numpy.power(numpy.degrees(ddecdt),2)) # in degrees/day
         x = velocity*texp/(24.0*seeing)
         xsq = numpy.power(x,2)
         dmagTrail = 1.25*numpy.log10(1.0 + a_trail * xsq/(1.0+b_trail*x))
