@@ -188,5 +188,5 @@ class SNUniverse(object):
 
             if np.abs(t0val - self.mjdobs) > self.maxTimeSNVisible:
                 t0val = self.badvalues
-      return t0val
+            return t0val
 
