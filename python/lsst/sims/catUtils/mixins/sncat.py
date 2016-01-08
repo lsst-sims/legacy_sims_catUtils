@@ -224,9 +224,9 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             SNobject.mwEBVfromMaps()
 
             # Calculate fluxes
-            flux = SNobject.catsimBandFluxes(time=self.mjdobs,
+            flux = SNobject.catsimBandFlux(time=self.mjdobs,
                                              bandpassobject=bandpass)
-            mag = SNobject.catsimBandMags(time=self.mjdobs,
+            mag = SNobject.catsimBandMag(time=self.mjdobs,
                                           bandpassobject=bandpass)
             vals[i, 0] = flux
             vals[i, 1] = mag

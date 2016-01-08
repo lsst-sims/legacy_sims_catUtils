@@ -96,12 +96,12 @@ class SNObject_tests(unittest.TestCase):
                 
     def test_ComparebandFluxes2photUtils(self):
         """
-        The SNObject.catsimBandFluxes computation uses the sims.photUtils.sed
+        The SNObject.catsimBandFlux computation uses the sims.photUtils.sed
         band flux computation under the hood. This test makes sure that these
         definitions are in sync
         """
 
-        snobject_r = self.SN_extincted.catsimBandFluxes(
+        snobject_r = self.SN_extincted.catsimBandFlux(
             bandpassobject=self.lsstBandPass['r'],
             time=self.mjdobs)
 
@@ -120,7 +120,7 @@ class SNObject_tests(unittest.TestCase):
         """
 
         times = self.mjdobs
-        catsim_r = self.SN_extincted.catsimBandFluxes(
+        catsim_r = self.SN_extincted.catsimBandFlux(
             bandpassobject=self.lsstBandPass['r'],
             time=times)
         sncosmo_r = self.SNCosmoModel.bandflux(band=self.SNCosmoBP,
@@ -135,7 +135,7 @@ class SNObject_tests(unittest.TestCase):
         above works.
         """
         times = self.mjdobs
-        catsim_r = self.SN_extincted.catsimBandMags(
+        catsim_r = self.SN_extincted.catsimBandMag(
             bandpassobject=self.lsstBandPass['r'],
             time=times)
         sncosmo_r = self.SNCosmoModel.bandmag(band=self.SNCosmoBP,
