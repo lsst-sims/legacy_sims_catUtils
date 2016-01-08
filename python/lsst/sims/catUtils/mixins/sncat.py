@@ -211,6 +211,8 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
         SNobject = SNObject()
         bandname = self.obs_metadata.bandpass
+        if isinstance(bandname, list):
+            raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
 
         # Initialize return array
