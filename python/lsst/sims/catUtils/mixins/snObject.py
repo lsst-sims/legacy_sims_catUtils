@@ -665,10 +665,10 @@ class SNObject(sncosmo.Model):
         bandpassobject : mandatory,`sims.photUtils.BandPass` instances
             LSST Catsim bandpass instance for the bandpass
         time : mandatory, float
-              MJD at which this is evaluated
+            MJD at which this is evaluated
         Returns
         -------
-            float
+        float band magnitude
         Examples
         --------
         """
