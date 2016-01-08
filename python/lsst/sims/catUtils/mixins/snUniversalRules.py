@@ -87,6 +87,12 @@ class SNUniverse(object):
         '''
         Distribution of SN coordinates and velocities given a set of host
         coordinates and velocities.
+
+        Parameters
+        ----------
+        hostra : ra of host
+        hostdec : dec of host
+        hostz : redshift of host 
         '''
         numhosts = self.numobjs 
 
@@ -104,9 +110,18 @@ class SNUniverse(object):
         return snra, sndec, snz , snvra, snvdec, snvr 
 
     def SNparamDistFromHost(self, hostz, hostid, hostmu):
-        '''
+        """
         Distribution of SN model parameters given their hosts
-        '''
+
+        Parameters
+        ----------
+        hostz : float, mandatory
+            redshift of host
+        hostid : int, mandatory
+            ID of host
+        hostmu : float, mandatory
+            distance modulus of host in 'magnitudes'
+        """
         vals = np.zeros(shape=(self.numobjs, 4))
 
         for i, v in enumerate(vals):
