@@ -1,8 +1,10 @@
+"""
+Mixin to InstanceCatalog class to give SN catalogs in catsim
+"""
 import numpy as np
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import compound
-
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase
@@ -13,8 +15,6 @@ import astropy
 from .snObject import SNObject
 from .snUniversalRules import SNUniverse
 
-
-wavelenstep = 0.1
 cosmo = CosmologyMixin()
 
 
@@ -26,7 +26,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     Attributes
     ----------
-    column_outputs : 
+    column_outputs :
     suppressHighzSN :
     maxTimeSNVisible :
     maxz :
@@ -35,8 +35,8 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     cannot_be_null :
     mjdobs :
     badvalues position :
-    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats velocity wrt host galaxy in Km/s,
-    the supernova model (eg. SALT2)
+    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats
+        velocity wrt host galaxy in Km/s, the supernova model (eg. SALT2)
     and parameters of the supernova model that predict the SED.
     """
 
@@ -81,22 +81,22 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     @property
     def suppressDimSN(self):
-        '''
+        """
         Boolean to decide whether to output observations of SN that are too dim
         should be represented in the catalog or not. By default set to True
-        '''
+        """
         if not hasattr(self, '_suppressDimSN'):
             suppressDimSN_default = True
             self._suppressDimSN = suppressDimSN_default
-        return self._suppressDimSN 
-    
+        return self._suppressDimSN
+
     @suppressDimSN.setter
     def suppressDimSN(self, suppressDimSN):
-        """ 
+        """
         set the value of suppressDimSN of the catalog Parameters
         Parameters
         ----------
-        supressDimSN : Boolean, mandatory 
+        supressDimSN : Boolean, mandatory
             Value to set suppressDimSN to
         """
         self._suppressDimSN = suppressDimSN
@@ -111,16 +111,16 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     @astropy.utils.lazyproperty
     def lsstBandpassDict(self):
         return BandpassDict.loadTotalBandpassesFromFiles()
-    
+
     @astropy.utils.lazyproperty
     def observedIndices(self):
         bandPassNames = self.obs_metadata.bandpass
         return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
-    @astropy.utils.lazyproperty
-    def lsstpbase(self):
-        pbase = PhotometryBase()
-        return pbase
+    # @astropy.utils.lazyproperty
+    # def lsstpbase(self):
+    #     pbase = PhotometryBase()
+    #     return pbase
 
     def get_snid(self):
         # Not necessarily unique if the same galaxy hosts two SN
@@ -216,7 +216,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         # Initialize return array
         vals = np.zeros(shape=(self.numobjs, 4))
 
-        for i, v in enumerate(vals):
+        for i, _ in enumerate(vals):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
@@ -260,7 +260,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         SNobject = SNObject()
         # Initialize return array
         vals = np.zeros(shape=(self.numobjs, 19))
-        for i, v in enumerate(vals):
+        for i, _ in enumerate(vals):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
