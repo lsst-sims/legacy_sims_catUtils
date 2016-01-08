@@ -150,7 +150,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         snra, sndec, snz, snvra, snvdec, snvr = self.SNCoordinatesFromHost(
             hostra, hostdec, hostz)
 
-        return ([snra, sndec, snz, snvra, sndec, snvr])
+        return ([snra, sndec, snz, snvra, snvdec, snvr])
 
     @compound('c', 'x1', 'x0', 't0')
     def get_snparams(self):
