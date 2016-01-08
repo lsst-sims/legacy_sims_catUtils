@@ -70,7 +70,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         The time of observation for the catalog, which is set to be equal
         to obs_metadata.mjd
         '''
-        return self.obs_metadata.mjd
+        return self.obs_metadata.mjd.TAI
 
     @astropy.utils.lazyproperty
     def badvalues(self):

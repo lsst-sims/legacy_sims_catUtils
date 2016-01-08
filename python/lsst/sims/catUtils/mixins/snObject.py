@@ -126,8 +126,8 @@ class SNObject(sncosmo.Model):
     @property
     def SNstate(self):
         """
-        Dictionary summarizing the property of the state. Can be used to
-        serialize to disk
+        Dictionary summarizing the state of SNObject. Can be used to
+        serialize to disk, and create SNObject from SNstate
 
         Returns : Dictionary with values of parameters of the model.
         """
@@ -145,54 +145,6 @@ class SNObject(sncosmo.Model):
         statedict['MWE(B-V)'] = self.ebvofMW
 
         return statedict
-
-    @staticmethod
-    def equivsncosmoParamDict(SNstate, SNCosmoModel):
-        """
-        return a dictionary that contains the parameters of SNCosmoModel
-        that are contained in SNstate
-
-        Parameters
-        ----------
-        SNstate : `SNObject.SNstate`, mandatory
-            Dictionary defining the state of a SNObject
-        SNCosmoModel : A `sncosmo.Model` instance, mandatory
-
-        Returns
-        -------
-        sncosmoParams: Dictionary of sncosmo parameters
-
-        """
-        sncosmoParams = dict()
-        for param in SNstate.keys():
-            if param in SNCosmoModel.param_names:
-                sncosmoParams[param] = SNstate[param]
-        sncosmoParams['mwebv'] = SNstate['MWE(B-V)']
-        return sncosmoParams
-
-    @staticmethod
-    def sncosmoParamDict(SNstate, SNCosmoModel):
-        """
-        return a dictionary that contains the parameters of SNCosmoModel
-        that are contained in SNstate. Note that this does not return the
-        equivalent SNCosmo  model.
-
-        Parameters
-        ----------
-        SNstate : `SNObject.SNstate`, mandatory
-            Dictionary defining the state of a SNObject
-        SNCosmoModel : A `sncosmo.Model` instance, mandatory
-
-        Returns
-        -------
-        sncosmoParams: Dictionary of sncosmo parameters
-
-        """
-        sncosmoParams = dict()
-        for param in SNstate.keys():
-            if param in SNCosmoModel.param_names:
-                sncosmoParams[param] = SNstate[param]
-        return sncosmoParams
 
     @classmethod
     def fromSNState(cls, snState):
@@ -258,6 +210,55 @@ class SNObject(sncosmo.Model):
         sncosmoParams['mwebv'] = snState['MWE(B-V)']
         sncosmoModel.set(**sncosmoParams)
         return sncosmoModel
+    @staticmethod
+    def equivsncosmoParamDict(SNstate, SNCosmoModel):
+        """
+        return a dictionary that contains the parameters of SNCosmoModel
+        that are contained in SNstate
+
+        Parameters
+        ----------
+        SNstate : `SNObject.SNstate`, mandatory
+            Dictionary defining the state of a SNObject
+        SNCosmoModel : A `sncosmo.Model` instance, mandatory
+
+        Returns
+        -------
+        sncosmoParams: Dictionary of sncosmo parameters
+
+        """
+        sncosmoParams = dict()
+        for param in SNstate.keys():
+            if param in SNCosmoModel.param_names:
+                sncosmoParams[param] = SNstate[param]
+        sncosmoParams['mwebv'] = SNstate['MWE(B-V)']
+        return sncosmoParams
+
+    @staticmethod
+    def sncosmoParamDict(SNstate, SNCosmoModel):
+        """
+        return a dictionary that contains the parameters of SNCosmoModel
+        that are contained in SNstate. Note that this does not return the
+        equivalent SNCosmo  model.
+
+        Parameters
+        ----------
+        SNstate : `SNObject.SNstate`, mandatory
+            Dictionary defining the state of a SNObject
+        SNCosmoModel : A `sncosmo.Model` instance, mandatory
+
+        Returns
+        -------
+        sncosmoParams: Dictionary of sncosmo parameters
+
+        """
+        sncosmoParams = dict()
+        for param in SNstate.keys():
+            if param in SNCosmoModel.param_names:
+                sncosmoParams[param] = SNstate[param]
+        return sncosmoParams
+
+
 
     def summary(self):
         '''
@@ -524,7 +525,7 @@ class SNObject(sncosmo.Model):
                                           bandpass=bandpassobject)
         return SEDfromSNcosmo.calcFlux(bandpass=bandpassobject) / 3631.0
  
-    def catsimBandMag(self, bandpassobject, time):
+    def catsimBandMag(self, bandpassobject, time, fluxinMaggies=None):
         """
         return the magnitude in the bandpass in the AB magnitude system
 
@@ -541,12 +542,15 @@ class SNObject(sncosmo.Model):
         Examples
         --------
         """
-        fluxRatio = self.catsimBandFlux(bandpassobject=bandpassobject,
-                                          time=time)
-        return -2.5 * np.log10(fluxRatio)
+        if fluxinMaggies is None:
+            fluxinMaggies = self.catsimBandFlux(bandpassobject=bandpassobject,
+                                                time=time)
+        return -2.5 * np.log10(fluxinMaggies)
 
     def catsimBandFluxError(self, time, bandpassobject, m5,
-                            photParams=None, magnitude=None):
+                            fluxinMaggies=None,
+                            magnitude=None,
+                            photParams=None):
         """
         return the flux uncertainty in the bandpass in units 'maggies'
         (the flux the AB magnitude reference spectrum would have in the
@@ -571,21 +575,21 @@ class SNObject(sncosmo.Model):
         .. note: If there is an unphysical value of sed in
         the wavelength range, it produces a flux of  `np.nan`
         """
-
+        if fluxinMaggies is None:
+            fluxinMaggies = self.catsimBandFlux(time=time,
+                                                bandpassobject=bandpassobject)
         if magnitude is None:
-            mag = self.catsimBandMag(time=time,
-                                      bandpassobject=bandpassobject)
+            mag = self.catsimBandMag(time=time, fluxinMaggies=fluxinMaggies,
+                                     bandpassobject=bandpassobject)
         else:
             mag = magnitude
-        flux = self.catsimBandFlux(time=time,
-                                   bandpassobject=bandpassobject)
 
         if photParams is None:
             photParams = PhotometricParameters()
 
         SNR, gamma = calcSNR_m5(magnitude=mag, bandpass=bandpassobject,
                                 m5=m5, photParams=photParams)
-        return flux / SNR
+        return fluxinMaggies / SNR
 
     def catsimBandMagError(self, time, bandpassobject, m5, photParams=None,
                            magnitude=None):
