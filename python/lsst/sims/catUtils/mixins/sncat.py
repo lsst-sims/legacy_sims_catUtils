@@ -162,7 +162,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
-    def get_SNsed(self):
+    def load_SNsed(self):
         """
         returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
         the spatio-temporal range specified by obs_metadata
