@@ -26,24 +26,32 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     Attributes
     ----------
-    position : 3-tuple of floats
-              (ra, dec, redshift),
-    velocity : 3 tuple of floats
-              velocity wrt host galaxy in Km/s,
+    column_outputs : 
+    suppressHighzSN :
+    maxTimeSNVisible :
+    maxz :
+    variables :
+    override_formats :
+    cannot_be_null :
+    mjdobs :
+    badvalues position :
+    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats velocity wrt host galaxy in Km/s,
     the supernova model (eg. SALT2)
     and parameters of the supernova model that predict the SED.
     """
 
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
-    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1',
-                      'x0']
+    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
 
     # You can add parameters like fluxes and magnitudes by adding the following
     # variables to the list
     # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
     # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
 
+    suppressHighzSN = True
+    maxTimeSNVisible = 100.
+    maxz = 1.2
     # Flux variables are convenient to display in exponential format to avoid
     # having them cut off
     variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
@@ -80,41 +88,19 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         if not hasattr(self, '_suppressDimSN'):
             suppressDimSN_default = True
             self._suppressDimSN = suppressDimSN_default
-        return self._suppressDimSN
-
+        return self._suppressDimSN 
+    
     @suppressDimSN.setter
     def suppressDimSN(self, suppressDimSN):
-        '''
-        set the value of suppressDimSN of the catalog
-
+        """ 
+        set the value of suppressDimSN of the catalog Parameters
         Parameters
         ----------
-        value : Boolean, mandatory
+        supressDimSN : Boolean, mandatory 
             Value to set suppressDimSN to
-        '''
+        """
         self._suppressDimSN = suppressDimSN
-        return self._suppressDimSN
-
-    @property
-    def suppressHighzSN(self):
-        '''
-        Boolean to decide whether to output information corresponding to SN
-        at redshift above self.maxz
-        '''
-
-        return True
-
-    @property
-    def maxTimeSNVisible(self):
-        '''
-        The catalog will provide values for SN flux (even if zero according to
-        model) for peak \pm maxTimeVisibilityforSN
-        '''
-        return 100.
-
-    @property
-    def maxz(self):
-        return 1.2
+        return self._suppressDimSN 
 
     @astropy.utils.lazyproperty
     def photometricparameters(self, expTime=15., nexp=2):
@@ -125,7 +111,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     @astropy.utils.lazyproperty
     def lsstBandpassDict(self):
         return BandpassDict.loadTotalBandpassesFromFiles()
-
+    
     @astropy.utils.lazyproperty
     def observedIndices(self):
         bandPassNames = self.obs_metadata.bandpass
