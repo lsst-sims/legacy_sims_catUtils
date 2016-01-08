@@ -634,9 +634,8 @@ class SNObject(sncosmo.Model):
     def catsimManyBandFluxes(self, time, bandpassDict,
                              observedBandPassInd=None):
         """
-        return the flux in the bandpass in units of the flux
-        the AB magnitude reference spectrum would have in the
-        same band.
+        return the flux in the multiple bandpasses of a bandpassDict
+        indicated by observedBandPassInd in units of maggies
 
         Parameters
         ----------
@@ -695,7 +694,7 @@ class SNObject(sncosmo.Model):
         return -2.5 * np.log10(f)
 
 
-    def catsimADU(self, time, bandpassDict,
+    def catsimManyBandADUs(self, time, bandpassDict,
                   photParams=None,
                   observedBandPassInds=None):
         """

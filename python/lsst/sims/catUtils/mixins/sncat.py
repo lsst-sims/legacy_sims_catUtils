@@ -275,7 +275,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
                                                         bandpassDict=self.lsstBandpassDict,
                                                         observedBandPassInd=None)
 
-            vals[i, 12:18] = SNobject.catsimADU(time=self.obs_metadata,
+            vals[i, 12:18] = SNobject.catsimManyBandADUs(time=self.mjdobs,
                                                 bandpassDict=self.lsstBandpassDict,
                                                 photParams=self.photometricparameters)
             vals[i, 18] = SNobject.ebvofMW
