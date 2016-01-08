@@ -183,7 +183,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
-            sed = SNobject.SNObjectSED(time=self.obs_metadata.mjd,
+            sed = SNobject.SNObjectSED(time=self.mjdobs,
                                        bandpass=self.lsstBandpassDict,
                                        applyExitinction=True)
             sedlist.append(sed)
