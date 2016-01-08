@@ -103,7 +103,7 @@ class SNUniverse(object):
     
         return snra, sndec, snz , snvra, snvdec, snvr 
 
-    def SNparamDistfromHost(self, hostz, hostid, hostmu):
+    def SNparamDistFromHost(self, hostz, hostid, hostmu):
         '''
         Distribution of SN model parameters given their hosts
         '''
@@ -187,5 +187,6 @@ class SNUniverse(object):
             # is maxTimeSNVisible
 
             if np.abs(t0val - self.mjdobs) > self.maxTimeSNVisible:
+                t0val = self.badvalues
       return t0val
 

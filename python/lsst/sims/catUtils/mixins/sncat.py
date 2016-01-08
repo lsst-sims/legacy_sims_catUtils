@@ -158,7 +158,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
             self.column_by_name('snid'),\
             self.column_by_name('cosmologicalDistanceModulus')
 
-        vals = self.SNparamDistfromHost(hostz, hostid, hostmu)
+        vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
 
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
