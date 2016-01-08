@@ -29,16 +29,27 @@ class SNUniverse(object):
     """
 
     @property
-    def averageRate(self):
-        if not hasattr(self, '_averageRate'):
+    def snFrequency(self):
+        """
+        Frequency with which SN occur in the host galaxy in units of days^{-1}
+        """
+        if not hasattr(self, '_snFrequency'):
             hundredyear = 100. * 365.
-            self._averageRate = hundredyear
-        return self._averageRate
+            self._snFrequency = 1.0 / hundredyear
+        return self._snFrequency
 
-    @averageRate.setter
-    def averageRate(self, value):
-        self._averageRate = value
-        return self._averageRate
+    @snFrequency.setter
+    def snFrequency(self, value):
+        """
+        set the value of snFrequency
+
+        Parameters
+        ----------
+        value : float, mandatory
+            value to which to set snFrequency to (units of 1/days)
+        """
+        self._snFrequency = value
+        return self._snFrequency
             
     @property
     def midSurveyTime(self):
@@ -162,8 +173,8 @@ class SNUniverse(object):
 
         # Will not use hostid for now, but this is there so that 
         # later on one could obtain z, hostmass etc. This is useful to obtain
-        # z and host dependent SN rates
-        hundredyear = self.averageRate
+        # z and host dependent SN Frequency
+        hundredyear = 1.0 / self.snFrequency
         t0val = np.random.uniform(-hundredyear / 2.0 + self.midSurveyTime, 
                            hundredyear / 2.0 + self.midSurveyTime)
 
@@ -176,6 +187,5 @@ class SNUniverse(object):
             # is maxTimeSNVisible
 
             if np.abs(t0val - self.mjdobs) > self.maxTimeSNVisible:
-                t0val = self.badvalues
-        return t0val
+      return t0val
 
