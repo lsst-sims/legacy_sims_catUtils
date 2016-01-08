@@ -309,7 +309,7 @@ class SNIaCatalog_tests(unittest.TestCase):
                                                 'adu_y','mwebv'])
 	sncatalog.suppressDimSN = True
         sncatalog.midSurveyTime = sncatalog.mjdobs - 20.
-	sncatalog.averageRate = 1.0
+	sncatalog.snFrequency = 1.0
         cls.fullCatalog = cls.scratchDir + '/testSNCatalogTest.dat'
         sncatalog.write_catalog(cls.fullCatalog)
 
