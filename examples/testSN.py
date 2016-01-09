@@ -24,6 +24,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.utils import sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
@@ -202,7 +203,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         # of obsMetaDataforCat
         cls.dbname = os.path.join(cls.scratchDir, 'galcat.db')
         cls.size = 1000
-        cls.GalaxyPositionSamps = cls.sample_obsmetadata(
+        cls.GalaxyPositionSamps = sample_obsmetadata(
                 obsmetadata=cls.obsMetaDataforCat, size=cls.size)
 
         # Create a galaxy Table overlapping with the obsMetaData Spatial Bounds
@@ -481,7 +482,6 @@ class SNIaCatalog_tests(unittest.TestCase):
     
         seed = 1
         np.random.seed(seed)
-        #samps = .sample_obsmetadata(ObsMetaData, size=size)
     
         for count in range(size):
             id = 1000000 + count
@@ -500,83 +500,83 @@ class SNIaCatalog_tests(unittest.TestCase):
         return samps
 
 
-    @staticmethod
-    def sample_obsmetadata(obsmetadata, size=1):
-        '''
-        Sample a square patch on the sphere overlapping obsmetadata
-        field of view by picking the area enclosed in
-        obsmetadata.unrefractedRA \pm obsmetadata.boundLength
-        obsmetadata.unrefractedDec \pm obsmetadata.boundLength
-    
-        Parameters
-        ----------
-        obsmetadata: instance of
-            `sims.catalogs.generation.db.ObservationMetaData`
-    
-        size: integer, optional, defaults to 1
-            number of samples
-    
-    
-        Returns
-        -------
-    
-        tuple of ravals, decvalues
-        '''
-        mydict = obsmetadata.summary
-        phi = np.radians(mydict['pointingRA'])
-        theta = np.radians(mydict['pointingDec'])
-        equalrange = np.radians(mydict['boundLength'])
-        ravals, thetavals = SNIaCatalog_tests.samplePatchOnSphere(phi=phi,
-                                                     theta=theta,
-                                                     delta=equalrange,
-                                                     size=size)
-        return ravals, thetavals
-
-
-
-    @staticmethod
-    def samplePatchOnSphere(phi, theta, delta, size):
-        """
-        Samples of corrdinates in spherical coordinates (\phi,\theta)
-        of length size, uniformly distributed in the region 
-        in 
-        Uniformly distributes samples on a spherical patch between 
-        phi \pm delta and theta \pm delta.
-        
-        Parameters
-        ----------
-        phi: float, mandatory, radians
-            center of the spherical patch in ra with range 
-        theta: float, mandatory, radians
-        delta: float, mandatory, radians
-        size: int, mandatory
-            number of samples
-        """
-        np.random.seed(1)
-        u = np.random.uniform(size=size)
-        v = np.random.uniform(size=size)
-    
-        # phivals = delta * (2. * u - 1) + phi
-        phivals = 2. * delta* u + (phi - delta )
-        phivals = np.where ( phivals >= 0., phivals, phivals + 2. * np.pi)
-        
-        # use conventions in spherical coordinates
-        theta = np.pi/2.0 - theta
-        # thetavals = 2. * delta* v + (theta - delta )
-        # thetavals = np.where ( thetavals < np.pi , thetavals, thetavals - np.pi)
-        # thetavals = np.where ( thetavals > - np.pi , thetavals, thetavals + np.pi)
-        
-        
-        thetamax = theta + delta
-        thetamin = theta - delta
-        # CDF is cos(thetamin) - cos(theta) / cos(thetamin) - cos(thetamax)
-        a = np.cos(thetamin) - np.cos(thetamax)
-        thetavals = np.arccos(-v * a + np.cos(thetamin))
-
-        # Get back to -pi/2 to pi/2 range of decs
-        thetavals = np.pi/2.0 - thetavals 
-
-        return phivals, thetavals
+#    @staticmethod
+#    def sample_obsmetadata(obsmetadata, size=1):
+#        '''
+#        Sample a square patch on the sphere overlapping obsmetadata
+#        field of view by picking the area enclosed in
+#        obsmetadata.unrefractedRA \pm obsmetadata.boundLength
+#        obsmetadata.unrefractedDec \pm obsmetadata.boundLength
+#    
+#        Parameters
+#        ----------
+#        obsmetadata: instance of
+#            `sims.catalogs.generation.db.ObservationMetaData`
+#    
+#        size: integer, optional, defaults to 1
+#            number of samples
+#    
+#    
+#        Returns
+#        -------
+#    
+#        tuple of ravals, decvalues
+#        '''
+#        mydict = obsmetadata.summary
+#        phi = np.radians(mydict['pointingRA'])
+#        theta = np.radians(mydict['pointingDec'])
+#        equalrange = np.radians(mydict['boundLength'])
+#        ravals, thetavals = SNIaCatalog_tests.samplePatchOnSphere(phi=phi,
+#                                                     theta=theta,
+#                                                     delta=equalrange,
+#                                                     size=size)
+#        return ravals, thetavals
+#
+#
+#
+#    @staticmethod
+#    def samplePatchOnSphere(phi, theta, delta, size):
+#        """
+#        Samples of corrdinates in spherical coordinates (\phi,\theta)
+#        of length size, uniformly distributed in the region 
+#        in 
+#        Uniformly distributes samples on a spherical patch between 
+#        phi \pm delta and theta \pm delta.
+#        
+#        Parameters
+#        ----------
+#        phi: float, mandatory, radians
+#            center of the spherical patch in ra with range 
+#        theta: float, mandatory, radians
+#        delta: float, mandatory, radians
+#        size: int, mandatory
+#            number of samples
+#        """
+#        np.random.seed(1)
+#        u = np.random.uniform(size=size)
+#        v = np.random.uniform(size=size)
+#    
+#        # phivals = delta * (2. * u - 1) + phi
+#        phivals = 2. * delta* u + (phi - delta )
+#        phivals = np.where ( phivals >= 0., phivals, phivals + 2. * np.pi)
+#        
+#        # use conventions in spherical coordinates
+#        theta = np.pi/2.0 - theta
+#        # thetavals = 2. * delta* v + (theta - delta )
+#        # thetavals = np.where ( thetavals < np.pi , thetavals, thetavals - np.pi)
+#        # thetavals = np.where ( thetavals > - np.pi , thetavals, thetavals + np.pi)
+#        
+#        
+#        thetamax = theta + delta
+#        thetamin = theta - delta
+#        # CDF is cos(thetamin) - cos(theta) / cos(thetamin) - cos(thetamax)
+#        a = np.cos(thetamin) - np.cos(thetamax)
+#        thetavals = np.arccos(-v * a + np.cos(thetamin))
+#
+#        # Get back to -pi/2 to pi/2 range of decs
+#        thetavals = np.pi/2.0 - thetavals 
+#
+#        return phivals, thetavals
 
     @staticmethod
     def cleanDB(dbname, verbose=True):
