@@ -12,9 +12,11 @@ import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
 
 import astropy
 
-from .snObject import SNObject
-from .snUniversalRules import SNUniverse
+from lsst.sims.catUtils.supernovae import SNObject
+from lsst.sims.catUtils.supernovae import SNUniverse
 
+
+__all__ = ['SNIaCatalog']
 cosmo = CosmologyMixin()
 
 

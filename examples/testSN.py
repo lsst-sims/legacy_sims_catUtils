@@ -30,7 +30,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 import eups
 
 # Routines Being Tested
-from lsst.sims.catUtils.mixins import SNObject
+from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
 
 # External packages used
@@ -342,7 +342,9 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         return lcs
 
-    @unittest.skip('depends on pandas')
+    # Skip the following test using the command below if we integrate into
+    # tests before pandas is in
+    #@unittest.skip('depends on pandas')
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
@@ -361,7 +363,9 @@ class SNIaCatalog_tests(unittest.TestCase):
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
                 np.testing.assert_equal(len(df[prop].unique()), 1)
 
-    @unittest.skip('depends on  pandas')
+    # Skip the following test using the command below if we integrate into
+    # tests before pandas is in
+    #@unittest.skip('depends on  pandas')
     def test_redrawingCatalog(self): 
         """
         test that drawing the same catalog
