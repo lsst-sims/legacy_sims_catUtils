@@ -36,7 +36,7 @@ from lsst.sims.catUtils.mixins import SNIaCatalog
 
 # External packages used
 # import pandas as pd
-# from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal
 import sncosmo
 import astropy
 
