@@ -10,7 +10,7 @@ from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
                             _galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
 
-from lsst.sims.utils import _appGeoFromICRS, _observedFromAppGeo
+from lsst.sims.utils import _appGeoFromICRS, _observedFromAppGeo, _applyProperMotion
 from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
@@ -46,8 +46,10 @@ class AstrometryBase(object):
         in the pupil.
         """
 
-        raObj = self.column_by_name('raObserved')
-        decObj = self.column_by_name('decObserved')
+        # these coordinates will be the mean RA, Dec from the catalog
+        # with proper motion applied
+        raObj = self.column_by_name('raICRS')
+        decObj = self.column_by_name('decICRS')
 
         return _pupilCoordsFromRaDec(raObj, decObj, epoch=self.db_obj.epoch,
                                             obs_metadata=self.obs_metadata)
@@ -89,11 +91,28 @@ class CameraCoords(AstrometryBase):
 
 class AstrometryGalaxies(AstrometryBase):
     """
-    This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
+    This mixin contains astrometry getters for objects with zero parallax, proper motion, or radial
+    velocity (i.e. extragalactic sources).
+
+    Available getters are:
+    raICRS, decICRS -- the RA, Dec of the object in the International Celestial Reference System
+
+    raObserved, decObserved -- the result of applying precession, nutation, aberration, and refraction
+    to raICRS, decICRS
+
+    raPhoSim, decPhoSim -- the same as raObserved, decObserved but neglecting refraction
     """
+
+    @compound('raICRS', 'decICRS')
+    def get_icrsCoordinates(self):
+        """Getter for RA, Dec in the International Celestial Reference System with effects
+        due to proper motion and radial velocity applied"""
+        return numpy.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
+
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
+        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
         return _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
@@ -102,10 +121,8 @@ class AstrometryGalaxies(AstrometryBase):
 
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
-        """
-        convert mean coordinates in the International Celestial Reference Frame
-        to observed coordinates
-        """
+        """Getter for observed RA, Dec (i.e. RA and Dec with all effects due to the motion
+        of the Earth and refraction by the atmosphere applied)"""
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
         return _observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
@@ -113,7 +130,17 @@ class AstrometryGalaxies(AstrometryBase):
 
 class AstrometryStars(AstrometryBase):
     """
-    This mixin contains a getter for the corrected RA and dec which takes account of proper motion and parallax
+    This mixin contains getters for objects with non-zero parallax, proper motion, and radial
+    velocities (i.e. sources in the Milky Way).
+
+    Available getters are:
+    raICRS, decICRS -- the RA, Dec of the object in the International Celestial Reference System
+    with proper motion and radial velocity applied
+
+    raObserved, decObserved -- the result of applying precession, nutation, aberration, parallax,
+    and refraction to raICRS, decICRS
+
+    raPhoSim, decPhoSim -- the same as raObserved, decObserved but neglecting refraction
     """
 
     def observedStellarCoordinates(self, includeRefraction = True):
@@ -141,17 +168,39 @@ class AstrometryStars(AstrometryBase):
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
+        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
         return self.observedStellarCoordinates(includeRefraction = False)
 
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
+        """Getter for observed RA, Dec (i.e. RA and Dec with all effects due to the motion
+        of the Earth and refraction by the atmosphere applied)"""
         return self.observedStellarCoordinates()
+
+    @compound('raICRS', 'decICRS')
+    def get_icrsCoordinates(self):
+        """Getter for RA, Dec in the International Celestial Reference System with effects
+        due to proper motion and radial velocity applied"""
+        ra0 = self.column_by_name('raJ2000')
+        dec0 = self.column_by_name('decJ2000')
+        pr = self.column_by_name('properMotionRa') #in radians per year
+        pd = self.column_by_name('properMotionDec') #in radians per year
+        px = self.column_by_name('parallax') #in radians
+        rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
+
+        ra_corr, dec_corr = _applyProperMotion(ra0, dec0, pr, pd, px, rv, mjd=self.obs_metadata.mjd)
+        return numpy.array([ra_corr, dec_corr])
 
 
 class AstrometrySSM(AstrometryBase):
     """
     This mixin will provide getters for astrometric columns customized to Solar System Object tables
     """
+
+    @compound('raICRS', 'decICRS')
+    def get_icrsCoordinates(self):
+        return numpy.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
+
 
     def observedSSMCoordinates(self, includeRefraction = True):
         """
