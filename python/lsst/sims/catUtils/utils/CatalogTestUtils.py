@@ -40,11 +40,11 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
     theta = numpy.random.sample(size)*2.0*numpy.pi
 
     try:
-        c.execute('''CREATE TABLE starsALL_forceseek
+        c.execute('''CREATE TABLE StarAllForceseek
                   (simobjid int, ra real, decl real, magNorm real,
                   mudecl real, mura real, ebv real, vrad real, varParamStar text, sedFilename text, parallax real)''')
     except:
-        raise RuntimeError("Error creating starsALL_forceseek table.")
+        raise RuntimeError("Error creating StarAllForceseek table.")
 
     magnormStar = numpy.random.sample(size)*5.0+17.0
     magnormStar = numpy.random.sample(size)*4.0 + 17.0
@@ -58,7 +58,7 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
         raStar = pointingRA + rr[i]*numpy.cos(theta[i])
         decStar = pointingDec + rr[i]*numpy.sin(theta[i])
 
-        cmd = '''INSERT INTO starsALL_forceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
+        cmd = '''INSERT INTO StarAllForceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
                   (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
                   ebv[i], vrad[i], 'NULL', star_seds[i%len(star_seds)], parallax[i])
 
