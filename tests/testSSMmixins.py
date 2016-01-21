@@ -263,9 +263,11 @@ class SSMastrometryTest(unittest.TestCase):
 
             testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
             self.assertGreater(len(testData), 0)
-            raPhoSimControl, decPhoSimControl = _observedFromICRS(controlData['raJ2000'], controlData['decJ2000'],
-                                                                  obs_metadata=obs, epoch=2000.0,
-                                                                  includeRefraction=False)
+            raPhoSimControl_0, decPhoSimControl_0 = _observedFromICRS(controlData['raJ2000'], controlData['decJ2000'],
+                                                                      obs_metadata=obs, epoch=2000.0,
+                                                                      includeRefraction=False)
+
+            raPhoSimControl, decPhoSimControl = cat._dePrecess(raPhoSimControl_0, decPhoSimControl_0, obs)
 
             np.testing.assert_array_almost_equal(raPhoSimControl, testData['raPhoSim'], 10)
             np.testing.assert_array_almost_equal(decPhoSimControl, testData['decPhoSim'], 10)
