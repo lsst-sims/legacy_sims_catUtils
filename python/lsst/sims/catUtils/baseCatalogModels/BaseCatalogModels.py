@@ -11,7 +11,7 @@ class BaseCatalogConfig(pexConfig.Config):
     host = pexConfig.Field(
         dtype = str,
         doc = "Name of the host",
-        default = "fatboy.npl.washington.edu",
+        default = "fatboy-private.phys.washington.edu",
     )
     port = pexConfig.Field(
         dtype = str,
@@ -21,7 +21,7 @@ class BaseCatalogConfig(pexConfig.Config):
     database = pexConfig.Field(
         dtype = str,
         doc = "Name of database. For 'sqlite', the filename is the database name",
-        default = "LSST",
+        default = "LSSTCATSIM",
     )
     driver = pexConfig.Field(
         dtype = str,

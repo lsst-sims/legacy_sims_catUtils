@@ -130,7 +130,7 @@ class SolarSystemObj(BaseCatalogObj):
                           "This could be a very bad idea "
                           "if the database is large")
 
-        query = "select %s from [LSST].[dbo].%s("%(mappedcolnames, self.ssmtable)+\
+        query = "select %s from [LSSTCATSIM].[dbo].%s("%(mappedcolnames, self.ssmtable)+\
                 "%f, '%s')"%(obs_metadata.mjd.TAI, regionStr)
 
         if constraint is not None:

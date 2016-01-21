@@ -254,7 +254,7 @@ class GalaxyTileObj(BaseCatalogObj):
                           "if the database is large")
 
 
-        query = """EXECUTE [LSST].[dbo].[GalaxySearch2015]
+        query = """EXECUTE [LSSTCATSIM].[dbo].[GalaxySearch2015]
                    @ApertureStr = '%s', @ColumnNames = '%s',
                    @ComponentSubset = '%s' """ % (regionStr, mappedcolnames, self.componentSubset)
 
