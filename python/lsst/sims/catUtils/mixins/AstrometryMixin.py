@@ -51,6 +51,9 @@ class AstrometryBase(object):
         @param [out] dec_out is a numpy array of de-precessed Dec in radians
         """
 
+        if len(ra_in)==0:
+            return numpy.array([[],[]])
+
         xyz_bore = cartesianFromSpherical(numpy.array([obs_metadata._pointingRA]),
                                           numpy.array([obs_metadata._pointingDec]))
 
@@ -170,8 +173,10 @@ class AstrometryGalaxies(AstrometryBase):
         """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
-        return _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
-                                epoch=self.db_obj.epoch)
+        raObs, decObs = _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
+                                          epoch=self.db_obj.epoch)
+
+        return self._dePrecess(raObs, decObs, self.obs_metadata)
 
 
     @compound('raObserved','decObserved')
@@ -224,7 +229,8 @@ class AstrometryStars(AstrometryBase):
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
         """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
-        return self.observedStellarCoordinates(includeRefraction = False)
+        raObs, decObs = self.observedStellarCoordinates(includeRefraction = False)
+        return self._dePrecess(raObs, decObs, self.obs_metadata)
 
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
@@ -270,7 +276,8 @@ class AstrometrySSM(AstrometryBase):
 
     @compound('raPhoSim', 'decPhoSim')
     def get_phoSimCoordinates(self):
-        return self.observedSSMCoordinates(includeRefraction = False)
+        raObs, decObs = self.observedSSMCoordinates(includeRefraction = False)
+        return self._dePrecess(raObs, decObs, self.obs_metadata)
 
     @compound('raObserved', 'decObserved')
     def get_observedCoordinates(self):
