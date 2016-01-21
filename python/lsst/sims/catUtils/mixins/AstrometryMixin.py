@@ -15,11 +15,66 @@ from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
+from lsst.sims.utils import sphericalFromCartesian, cartesianFromSpherical
+from lsst.sims.utils import rotationMatrixFromVectors
+
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "AstrometrySSM", "CameraCoords"]
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
+
+
+    def _dePrecess(self, ra_in, dec_in, obs_metadata):
+        """
+        Calculate the displacement between the boresite and the boresite
+        corrected for precession, nutation, and aberration (not refraction).
+
+        Convert boresite and corrected boresite to Cartesian coordinates.
+
+        Calculate the rotation matrix to go between those Cartesian vectors.
+
+        Convert [ra_in, dec_in] into Cartesian coordinates.
+
+        Apply the rotation vector to those Cartesian coordinates.
+
+        Convert back to ra, dec-like coordinates
+
+        @param [in] ra_in is a numpy array of RA in radians
+
+        @param [in] dec_in is a numpy array of Dec in radians
+
+        @param [in] obs_metadata is an ObservationMetaData
+
+        @param [out] ra_out is a numpy array of de-precessed RA in radians
+
+        @param [out] dec_out is a numpy array of de-precessed Dec in radians
+        """
+
+        xyz_bore = cartesianFromSpherical(numpy.array([obs_metadata._pointingRA]),
+                                          numpy.array([obs_metadata._pointingDec]))
+
+        precessedRA, precessedDec = _observedFromICRS(numpy.array([obs_metadata._pointingRA]),
+                                                      numpy.array([obs_metadata._pointingDec]),
+                                                      obs_metadata=obs_metadata, epoch=2000.0,
+                                                      includeRefraction=False)
+
+        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
+
+        norm = numpy.sqrt(numpy.power(xyz_bore[0],2).sum())
+        xyz_bore = xyz_bore/norm
+
+        norm = numpy.sqrt(numpy.power(xyz_precessed[0],2).sum())
+        xyz_precessed = xyz_precessed/norm
+
+        rotMat = rotationMatrixFromVectors(xyz_precessed[0], xyz_bore[0])
+
+        xyz_list = cartesianFromSpherical(ra_in, dec_in)
+
+        xyz_de_precessed = numpy.array([numpy.dot(rotMat, xx) for xx in xyz_list])
+        ra_deprecessed, dec_deprecessed = sphericalFromCartesian(xyz_de_precessed)
+        return numpy.array([ra_deprecessed, dec_deprecessed])
+
 
     @compound('glon','glat')
     def get_galactic_coords(self):
