@@ -115,7 +115,7 @@ class FileMapTest(unittest.TestCase):
         self.verifyFile('Const.79E06.002Z.spec', 'galaxySED')
         self.verifyFile('Inst.79E06.02Z.spec', 'galaxySED')
         self.verifyFile('Exp.40E08.02Z.spec', 'galaxySED')
-        self.verifyFile('Burst.40E08.002z.spec', 'galaxySED')
+        self.verifyFile('Burst.40E08.002Z.spec', 'galaxySED')
 
 def suite():
     """Returns a suite containing all the test cases in this module."""
