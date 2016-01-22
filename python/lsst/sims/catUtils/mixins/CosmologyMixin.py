@@ -20,8 +20,8 @@ class CosmologyMixin(object):
     NOTE: one should only include this mixin in catalogs whose magNorm is
     normalized to an absolute magnitude of some sort (i.e. the magnitude if
     the galaxy was at redshift=0).  The magNorms for galaxies stored on the
-    University of Washington LSST database do not fit this criterion.
-    magNorms on the University of Washington LSST database include the
+    University of Washington LSSTCATSIM database do not fit this criterion.
+    magNorms on the University of Washington LSSTCATSIM database include the
     effects of cosmological distance modulus.
     """
 

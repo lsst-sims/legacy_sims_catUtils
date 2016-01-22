@@ -39,7 +39,7 @@ class StarBase(BaseCatalogObj):
 
 class StarObj(StarBase):
     objid = 'allstars'
-    tableid = 'starsALL_forceseek'
+    tableid = 'StarAllForceseek'
     objectTypeId = 4
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType = 'circle', pointingRA=210.0, pointingDec=-30.0,
@@ -62,7 +62,7 @@ class StarObj(StarBase):
 
 class MsStarObj(StarBase):
     objid = 'msstars'
-    tableid = 'starsMSRGB_forceseek'
+    tableid = 'StarMSRGBForceseek'
     objectTypeId = 5
     doRunTest = True
     testObservationMetaData = ObservationMetaData(boundType = 'circle', pointingRA=210.0, pointingDec=-30.0,
@@ -85,7 +85,7 @@ class MsStarObj(StarBase):
 
 class WdStarObj(StarBase):
     objid = 'wdstars'
-    tableid = 'starsWD'
+    tableid = 'StarWhiteDwarf'
     objectTypeId = 6
     doRunTest = True
     #These types should be matched to the database.
@@ -106,7 +106,7 @@ class WdStarObj(StarBase):
 
 class RRLyStarObj(StarBase):
     objid = 'rrlystars'
-    tableid = 'starsRRLy'
+    tableid = 'StarRRLy'
     objectTypeId = 7
     doRunTest = True
     #These types should be matched to the database.
@@ -127,7 +127,7 @@ class RRLyStarObj(StarBase):
 
 class BhbStarObj(StarBase):
     objid = 'bhbstars'
-    tableid = 'starsBHB'
+    tableid = 'StarBHB'
     objectTypeId = 8
     doRunTest = True
     #These types should be matched to the database.
@@ -148,7 +148,7 @@ class BhbStarObj(StarBase):
 
 class EbStarObj(StarBase):
     objid = 'ebstars'
-    tableid = 'ebstars'
+    tableid = 'StarEclipsingBinary'
     objectTypeId = 9
     doRunTest = True
     testObservationMetaData = ObservationMetaData(mjd=52000., bandpassName='r', m5=22.0)
@@ -170,7 +170,7 @@ class EbStarObj(StarBase):
 
 class CepheidStarObj(StarBase):
     objid = 'cepheidstars'
-    tableid = 'cepheidstars'
+    tableid = 'StarCepheid'
     objectTypeId = 10
     doRunTest = True
     testObservationMetaData = ObservationMetaData(mjd=52000., bandpassName='r', m5=22.0)
@@ -220,10 +220,10 @@ class EasterEggStarObj(StarBase):
 
 class DwarfGalStarObj(StarBase):
     objid = 'dwarfgalstars'
-    tableid = 'dwarfGalaxies'
+    tableid = 'StarDwarfGalaxy'
     objectTypeId = 12
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=2.58, pointingDec=-0.77,
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=1.37, pointingDec=-0.1,
                                                   boundLength=0.1, mjd=52000., bandpassName='r', m5=22.0)
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified

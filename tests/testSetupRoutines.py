@@ -46,7 +46,7 @@ class testStarDBObject(CatalogDBObject):
     """
     CatalogDBObject to map our test database of stars
     """
-    tableid = 'starsALL_forceseek'
+    tableid = 'StarAllForceseek'
     idColKey = 'id'
     raColName = 'ra'
     decColName = 'decl'

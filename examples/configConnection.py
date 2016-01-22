@@ -32,9 +32,9 @@ def demoGlobalConfig():
     but only before instantiating a DbObject
     """
     CONFIG = BaseCatalogConfig(driver='mssql+pymssql',
-                               port='5555',
+                               port='51433',
                                host='localhost',
-                               database='LSST')
+                               database='LSSTCATSIM')
     #Can pass to the constructor
     starDB = StarObj(**CONFIG.toDict())
 

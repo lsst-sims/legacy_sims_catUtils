@@ -148,7 +148,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
                                              photParams=PhotometricParameters())
 
                 testSigma = line[8+i]
-                self.assertAlmostEqual(controlSigma, testSigma, 10)
+                self.assertAlmostEqual(controlSigma, testSigma, 4)
                 ct += 1
         self.assertGreater(ct, 0)
 
