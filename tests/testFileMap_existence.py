@@ -52,9 +52,9 @@ class FileMapTest(unittest.TestCase):
         # new library.  Once we move sims_sed_library to a git LFS
         # repo, this test should be performed.
         #
-        #full_path = os.path.join(self.root_dir, test_name)
-        #msg = '%s does not exist; it should' % full_path
-        #self.assertTrue(os.path.exists(full_path), msg=msg)
+        full_path = os.path.join(self.root_dir, test_name)
+        msg = '%s does not exist; it should' % full_path
+        self.assertTrue(os.path.exists(full_path), msg=msg)
 
 
     def testMLT(self):
@@ -90,7 +90,7 @@ class FileMapTest(unittest.TestCase):
         """
         Test that defaultSpecMap correctly find the burrows spectra
         """
-        self.verifyFile('burrows+2006c91.21_T1400_g5.5_cf_0.3x', 'starSED/old_mlt')
+        self.verifyFile('burrows+2006c91.21_T1400_g5.5_cf_0.3X', 'starSED/old_mlt')
 
 
     def testBergeron(self):
@@ -112,7 +112,7 @@ class FileMapTest(unittest.TestCase):
         """
         Test that defaultSpecMap correctly locates the galaxy SEDs
         """
-        self.verifyFile('Const.79E06.002z.spec', 'galaxySED')
+        self.verifyFile('Const.79E06.002Z.spec', 'galaxySED')
         self.verifyFile('Inst.79E06.02Z.spec', 'galaxySED')
         self.verifyFile('Exp.40E08.02Z.spec', 'galaxySED')
         self.verifyFile('Burst.40E08.002z.spec', 'galaxySED')
