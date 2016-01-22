@@ -3,6 +3,11 @@ This unit test essentially copies the unit test of the same name that
 exists in sims_utils.  However, in this iteration, the test to verify
 that a mapped filename exists is never skipped.  The idea being that we need
 to make sure that we have loaded the correct version of sims_sed_library.
+
+In the future, we will replace this test with a version requirement on
+sims_sed_library in sims_catUtils' ups table.  Right now, we are keeping
+this test as an extra-paranoid verification that the correct version of
+sims_sed_library was loaded.
 """
 
 import os
@@ -45,13 +50,6 @@ class FileMapTest(unittest.TestCase):
         msg = '%s should map to %s; it actually maps to %s' % (add_gz, control_name, test_name)
         self.assertEqual(test_name, control_name, msg=msg)
 
-        # 12 January 2016
-        # Currently, this test must be commented out because
-        # Jenkins does not re-run eupspkg.cfg.sh every time
-        # it tests a branch, which means that it won't get the
-        # new library.  Once we move sims_sed_library to a git LFS
-        # repo, this test should be performed.
-        #
         full_path = os.path.join(self.root_dir, test_name)
         msg = '%s does not exist; it should' % full_path
         self.assertTrue(os.path.exists(full_path), msg=msg)
