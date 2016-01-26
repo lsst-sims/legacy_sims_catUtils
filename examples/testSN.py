@@ -24,7 +24,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.utils import sample_obsmetadata
+from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
