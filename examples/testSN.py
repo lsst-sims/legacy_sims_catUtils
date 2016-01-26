@@ -212,7 +212,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         vals = cls._createFakeGalaxyDB()
         with open('valsFromTest.dat', 'w') as f:
             for i, v in enumerate(vals[0]):
-                f.write(str(vals[0][i]) + '  ' + str(vals[1][i]) + '\n')
+                f.write(str(np.radians(vals[0][i])) + '  ' + str(np.radians(vals[1][i])) + '\n')
 
         # fig, ax = plt.subplots()
         # ax.plot(vals[0][:1000], vals[1][: 1000], '.')
@@ -487,8 +487,8 @@ class SNIaCatalog_tests(unittest.TestCase):
             id = 1000000 + count
     
             # Main Database should have values in degrees
-            ra = np.degrees(samps[0][count])
-            dec = np.degrees(samps[1][count])
+            ra = samps[0][count]
+            dec = samps[1][count]
             redshift = np.random.uniform()
             row = tuple([id, ra, dec, redshift])
             exec_str = cls.insertfromdata(tablename='gals', records=row,
