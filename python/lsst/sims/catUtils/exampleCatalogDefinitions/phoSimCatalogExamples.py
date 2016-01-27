@@ -81,6 +81,8 @@ class PhosimInputBase(InstanceCatalog, PhoSimAstrometryBase):
 
     cannot_be_null = ['sedFilepath']
 
+    delimiter = " "
+
     headerTransformations = {'pointingRA':numpy.degrees, 'pointingDec':numpy.degrees,
                        'Opsim_moonra':numpy.degrees, 'Opsim_moondec':numpy.degrees,
                        'Opsim_rotskypos':numpy.degrees, 'Opsim_rottelpos':numpy.degrees,
@@ -164,7 +166,7 @@ class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
                        ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
+
     spatialModel = "point"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
@@ -188,7 +190,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
                        ('galacticAv', 0.1, float),
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
+
     spatialModel = "point"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
@@ -217,7 +219,7 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
                        ('internalExtinctionModel', 'CCM', (str,3)), ('internalAv', 0., float),
                        ('internalRv', 3.1, float) ]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
+
     spatialModel = "sersic2d"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees, 'positionAngle':numpy.degrees,
     'majorAxis':arcsecFromRadians, 'minorAxis':arcsecFromRadians}
@@ -244,7 +246,7 @@ class PhoSimCatalogSSM(PhosimInputBase, AstrometrySSM):
                        ('galacticExtinctionModel', 'none', (str,3)),
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
+
     spatialModel = "point"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
