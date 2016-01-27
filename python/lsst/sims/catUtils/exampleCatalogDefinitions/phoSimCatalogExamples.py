@@ -22,6 +22,11 @@ class PhoSimAstrometryBase(object):
 
     def _dePrecess(self, ra_in, dec_in, obs_metadata):
         """
+        Transform a set of RA, Dec pairs by subtracting out a rotation
+        which represents the effects of precession, nutation, and aberration.
+
+        Specifically:
+
         Calculate the displacement between the boresite and the boresite
         corrected for precession, nutation, and aberration (not refraction).
 
@@ -184,7 +189,14 @@ class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
-        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
+        """Getter for RA, Dec coordinates expected by PhoSim.
+
+        These are observed RA, Dec coordinates with the effects of nutation, aberration,
+        and precession subtracted out by the PhosimInputBase._dePrecess() method.
+        This preserves the relative effects of nutation, aberration, and precession while
+        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
+        make sense."""
+
         raObs, decObs = self.observedStellarCoordinates(includeRefraction = False)
         return self._dePrecess(raObs, decObs, self.obs_metadata)
 
@@ -213,7 +225,14 @@ class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
-        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
+        """Getter for RA, Dec coordinates expected by PhoSim.
+
+        These are observed RA, Dec coordinates with the effects of nutation, aberration,
+        and precession subtracted out by the PhosimInputBase._dePrecess() method.
+        This preserves the relative effects of nutation, aberration, and precession while
+        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
+        make sense."""
+
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
         raObs, decObs = _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
@@ -248,7 +267,14 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
-        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
+        """Getter for RA, Dec coordinates expected by PhoSim.
+
+        These are observed RA, Dec coordinates with the effects of nutation, aberration,
+        and precession subtracted out by the PhosimInputBase._dePrecess() method.
+        This preserves the relative effects of nutation, aberration, and precession while
+        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
+        make sense."""
+
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
         raObs, decObs = _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
