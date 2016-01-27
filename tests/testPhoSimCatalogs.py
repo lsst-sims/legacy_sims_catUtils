@@ -7,6 +7,7 @@ import numpy
 import json
 import lsst.utils
 from collections import OrderedDict
+from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound, CompoundInstanceCatalog
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyBulgeDBObj, testGalaxyAgnDBObj
@@ -54,6 +55,27 @@ class PhoSimCatalogTest(unittest.TestCase):
                 self.assertIn(control_line, lines)
 
             self.assertGreater(len(lines), len(self.control_header)+3)
+
+
+    def testSpecFileMap(self):
+        """
+        Test that the PhoSim InstanceCatalog SpecFileMaps map MLT dwarf spectra
+        to the starSED/phoSimMLT/ directory (that is where the MLT spectra which
+        have been clipped to honor PhoSim's 'no more than 24,999 lines per SED
+        file' requirement reside)
+        """
+
+        cat = PhoSimCatalogPoint(self.starDB, obs_metadata=self.obs_metadata)
+        self.assertEqual(cat.specFileMap['lte_123.txt'], 'starSED/phoSimMLT/lte_123.txt.gz')
+        self.assertEqual(cat.specFileMap['lte_123.txt.gz'], 'starSED/phoSimMLT/lte_123.txt.gz')
+        self.assertNotEqual(cat.specFileMap['lte_123.txt'], defaultSpecMap['lte_123.txt'])
+
+        # verify that the usual stellar mappings still apply
+        for test_name in ('kp_123.txt', 'km_123.txt', 'Const_123.txt', 'Exp_123.txt', 'Burst_123.txt',
+                         'bergeron_123.txt', 'burrows_123.txt', 'm1_123.txt', 'L1_123.txt', 'l1_123.txt',
+                         'Inst_123.txt'):
+
+            self.assertEqual(cat.specFileMap[test_name], defaultSpecMap[test_name])
 
 
     def testCatalog(self):

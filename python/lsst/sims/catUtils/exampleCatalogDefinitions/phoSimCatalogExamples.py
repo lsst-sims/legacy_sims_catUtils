@@ -1,15 +1,23 @@
 """Instance Catalog"""
 import numpy
+from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
                                       EBVmixin
 
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
-           "PhoSimCatalogSersic2D"]
+           "PhoSimCatalogSersic2D", "PhoSimSpecMap"]
+
+
+PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
+                        dirDict={'(^lte)':'starSED/phoSimMLT'})
+
 
 class PhosimInputBase(InstanceCatalog):
     filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
+
+    specFileMap = PhoSimSpecMap
 
     cannot_be_null = ['sedFilepath']
 
