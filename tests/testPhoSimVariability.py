@@ -22,24 +22,20 @@ class PhoSimZPointVariable(PhoSimCatalogZPoint, VariabilityStars, TestVariabilit
     pass
 
 
-class ControlCatalog(InstanceCatalog):
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+class AgnControlCatalog(InstanceCatalog, VariabilityGalaxies, TestVariabilityMixin, AstrometryGalaxies):
+    column_outputs = ['magNorm', 'delta_rAgn']
 
 
-class AgnControlCatalog(ControlCatalog, VariabilityGalaxies, TestVariabilityMixin, AstrometryGalaxies):
-    column_outputs = ['raPhoSim', 'decPhoSim', 'magNorm', 'delta_rAgn']
+class BulgeControlCatalog(InstanceCatalog, AstrometryGalaxies):
+    column_outputs = ['magNorm']
 
 
-class BulgeControlCatalog(ControlCatalog, AstrometryGalaxies):
-    column_outputs = ['raPhoSim', 'decPhoSim', 'magNorm']
+class DiskControlCatalog(InstanceCatalog, AstrometryGalaxies):
+    column_outputs = ['magNorm']
 
 
-class DiskControlCatalog(ControlCatalog, AstrometryGalaxies):
-    column_outputs = ['raPhoSim', 'decPhoSim', 'magNorm']
-
-
-class StarControlCatalog(ControlCatalog, AstrometryStars, VariabilityStars, TestVariabilityMixin):
-    column_outputs = ['raPhoSim', 'decPhoSim', 'magNorm', 'delta_lsst_r']
+class StarControlCatalog(InstanceCatalog, AstrometryStars, VariabilityStars, TestVariabilityMixin):
+    column_outputs = ['magNorm', 'delta_lsst_r']
 
 
 class PhoSimVariabilityTest(unittest.TestCase):
@@ -77,12 +73,10 @@ class PhoSimVariabilityTest(unittest.TestCase):
         """
         baseline = AgnControlCatalog(self.agnDB, obs_metadata=self.obs_metadata)
         test = PhoSimZPointVariable(self.agnDB, obs_metadata=self.obs_metadata)
-        
+
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
-            self.assertEqual(tt[2], bb[0])
-            self.assertEqual(tt[3], bb[1])
-            self.assertAlmostEqual(bb[2] + bb[3], tt[4], 10)
-            self.assertTrue(numpy.abs(bb[3]) > 0.0)
+            self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
+            self.assertTrue(numpy.abs(bb[1]) > 0.0)
 
     def testStars(self):
         """
@@ -94,12 +88,10 @@ class PhoSimVariabilityTest(unittest.TestCase):
         """
         baseline = StarControlCatalog(self.starDB, obs_metadata=self.obs_metadata)
         test = PhoSimPointVariable(self.starDB, obs_metadata=self.obs_metadata)
-        
+
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
-            self.assertEqual(tt[2], bb[0])
-            self.assertEqual(tt[3], bb[1])
-            self.assertAlmostEqual(bb[2] + bb[3], tt[4], 10)
-            self.assertTrue(numpy.abs(bb[3]) > 0.0)        
+            self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
+            self.assertTrue(numpy.abs(bb[1]) > 0.0)
 
     def testBulges(self):
         """
@@ -110,9 +102,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
         test = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
-            self.assertEqual(tt[2], bb[0])
-            self.assertEqual(tt[3], bb[1])
-            self.assertAlmostEqual(bb[2], tt[4], 10)
+            self.assertAlmostEqual(bb[0], tt[4], 10)
 
 
     def testDisks(self):
@@ -120,9 +110,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
         test = PhoSimCatalogSersic2D(self.diskDB, obs_metadata=self.obs_metadata)
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
-            self.assertEqual(tt[2], bb[0])
-            self.assertEqual(tt[3], bb[1])
-            self.assertAlmostEqual(bb[2], tt[4], 10)
+            self.assertAlmostEqual(bb[0], tt[4], 10)
 
 
 def suite():

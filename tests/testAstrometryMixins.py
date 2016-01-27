@@ -45,7 +45,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     to run the astrometry routines for testing purposes
     """
     catalog_type = 'test_stars'
-    column_outputs=['id','raPhoSim','decPhoSim','raICRS','decICRS',
+    column_outputs=['id','raICRS','decICRS',
                    'x_pupil','y_pupil',
                    'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
     #Needed to do camera coordinate transforms.
@@ -72,7 +72,7 @@ class testStellarCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
                       'x_pupil', 'y_pupil',
                       'xPix', 'yPix',
                       'xFocalPlane', 'yFocalPlane',
-                      'chipName', 'raPhoSim', 'decPhoSim',
+                      'chipName',
                       'raObserved', 'decObserved']
 
 class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
@@ -84,7 +84,7 @@ class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
 
     column_outputs = ['glon', 'glat',
                       'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
-                      'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
+                      'chipName', 'raObserved', 'decObserved']
 
     delimiter = '; '
 
@@ -219,7 +219,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.cat.write_catalog(catName)
 
         dtype = [('id',int),
-                 ('raPhoSim',float), ('decPhoSim',float),
                  ('raICRS',float), ('decICRS',float),
                  ('x_pupil',float), ('y_pupil',float), ('chipName',str,11),
                  ('xPix',float), ('yPix',float),

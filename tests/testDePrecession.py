@@ -4,7 +4,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.utils import ObservationMetaData, _observedFromICRS
 from lsst.sims.utils import haversine, arcsecFromRadians
-from lsst.sims.catUtils.mixins import AstrometryBase
+from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimAstrometryBase
 
 class DePrecessionTest(unittest.TestCase):
 
@@ -43,7 +43,7 @@ class DePrecessionTest(unittest.TestCase):
         ra_list = np.array(ra_list)
         dec_list = np.array(dec_list)
 
-        raDecTransformed = AstrometryBase()._dePrecess(ra_list, dec_list, obs)
+        raDecTransformed = PhoSimAstrometryBase()._dePrecess(ra_list, dec_list, obs)
         dd = arcsecFromRadians(haversine(np.radians(pra), np.radians(pdec),
                                           raDecTransformed[0][0], raDecTransformed[1][0]))
         self.assertLess(dd, 1.0e-6)
