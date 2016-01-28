@@ -57,6 +57,17 @@ class ObservationMetaDataGenerator(object):
         self.opsimdb = DBObject(driver=self.driver, database=self.database,
                                 host=self.host, port=self.port)
 
+        # 27 January 2016
+        # Detect whether the OpSim db you are connecting to uses 'finSeeing'
+        # as its seeing column (deprecated), or FWHMeff, which is the modern
+        # standard
+        summary_columns = self.opsimdb.get_column_names('Summary')
+
+        if 'FWHMeff' in summary_columns:
+            self._seeing_column = 'FWHMeff'
+        else:
+            self._seeing_column = 'finSeeing'
+
         #27 January 2015
         #self.columnMapping is an list of tuples.  Each tuple corresponds to a column in the opsim
         #database's summary table.
@@ -89,8 +100,7 @@ class ObservationMetaDataGenerator(object):
                               ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
                               ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
                               ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
-                              ('seeing', 'finSeeing', None, float, None),
-                              #('seeing', 'FWHMeff', None, float, None),
+                              ('seeing', self._seeing_column, None, float, None),
                               ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
                               ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
                               ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
@@ -163,7 +173,7 @@ class ObservationMetaDataGenerator(object):
 
         @param [in] airmass
         @param [in] rawSeeing (this is an idealized seeing at zenith at 500nm in arcseconds)
-        @param [in] seeing (this is the OpSim column 'finSeeing' in arcseconds)
+        @param [in] seeing (this is the OpSim column 'FWHMeff' or 'finSeeing' [deprecated] in arcseconds)
 
         @param [in] visitExpTime the exposure time in seconds
         @param [in] obsHistID the integer used by OpSim to label pointings
@@ -224,7 +234,7 @@ class ObservationMetaDataGenerator(object):
         #convert the results into ObservationMetaData instantiations
         obs_output = [ObservationMetaData(m5=pointing['fiveSigmaDepth'], boundType=boundType, boundLength=boundLength,
                                           skyBrightness=pointing['filtSkyBrightness'],
-                                          seeing=pointing['finSeeing'],
+                                          seeing=pointing[self._seeing_column],
                                           phoSimMetaData=OrderedDict([(column[2],
                                                                     (pointing[column[1]], pointing[column[1]].dtype))
                                                                     for column in self.columnMapping if column[2] is not None]))
