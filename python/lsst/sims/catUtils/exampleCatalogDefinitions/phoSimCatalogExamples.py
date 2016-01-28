@@ -63,10 +63,9 @@ class PhosimInputBase(InstanceCatalog):
                     varName = 'delta_lsst_' + self.obs_metadata.bandpass
 
         if varName is not None and varName in self._all_available_columns:
-            magNorm += self.column_by_name(varName)
+            magNorm_out = magNorm + self.column_by_name(varName)
 
-        return magNorm
-
+        return magNorm_out
 
     def write_header(self, file_handle):
         header_name_map = {'pointingRA': 'Unrefracted_RA', 'pointingDec': 'Unrefracted_Dec'}
