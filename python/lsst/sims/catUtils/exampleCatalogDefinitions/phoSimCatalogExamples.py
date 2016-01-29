@@ -63,10 +63,10 @@ class PhosimInputBase(InstanceCatalog):
                     varName = 'delta_lsst_' + self.obs_metadata.bandpass
 
         if varName is not None and varName in self._all_available_columns:
-            magNorm += self.column_by_name(varName)
-
-        return magNorm
-
+            magNorm_out = magNorm + self.column_by_name(varName)
+            return magNorm_out
+        else:
+            return magNorm
 
     def write_header(self, file_handle):
         header_name_map = {'pointingRA': 'Unrefracted_RA', 'pointingDec': 'Unrefracted_Dec'}
@@ -143,4 +143,3 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
     spatialModel = "sersic2d"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees, 'positionAngle':numpy.degrees,
     'majorAxis':arcsecFromRadians, 'minorAxis':arcsecFromRadians}
-
