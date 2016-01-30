@@ -65,8 +65,8 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
     variables += ['flux', 'flux_err', 'mag_err']
 
-    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
-                        'x0': '%8e'}
+    override_formats = {'Ssnra': '%8e', 'Ssndec': '%8e', 'Sc': '%8e',
+                        'Sx0': '%8e'}
     for var in variables:
         override_formats[var] = '%8e'
 
@@ -132,11 +132,11 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         # Should revert to galTileID for galaxyTiled catalogDBObj and
         # id for galaxyObj catalogDBObj
         # (email from Scott)
-        return self.column_by_name('id')
+        return self.column_by_name('Tsnid')
 
     @property
     def numobjs(self):
-        return len(self.column_by_name('id'))
+        return len(self.column_by_name('Tsnid'))
 
     @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
     def get_angularCoordinates(self):
@@ -153,9 +153,9 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 #            self.column_by_name('redshift')
 #        snra, sndec, snz, snvra, snvdec, snvr = self.SNCoordinatesFromHost(
 #            hostra, hostdec, hostz)
-        snra = self.column_by_name('snra')
-        sndec = self.column_by_name('sndec')
-        snz = self.column_by_name('redshift')
+        snra = self.column_by_name('raJ2000')
+        sndec = self.column_by_name('decJ2000')
+        snz = self.column_by_name('Tredshift')
         snvra = np.zeros(self.numobjs)
         snvdec = np.zeros(self.numobjs)
         snvr = np.zeros(self.numobjs)
@@ -168,11 +168,11 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         """
         Obtain the SN model parameters stored in the database
         """
-        snc = self.column_by_name('c')
-        snx1 = self.column_by_name('x1')
-        snx0 = self.column_by_name('x0')
+        snc = self.column_by_name('Tc')
+        snx1 = self.column_by_name('Tx1')
+        snx0 = self.column_by_name('Tx0')
 
-        snt0 = self.column_by_name('t0')
+        snt0 = self.column_by_name('Tt0')
         # Shift t0 by surveyStartDate
         snt0 += self.surveyStartDate
 
