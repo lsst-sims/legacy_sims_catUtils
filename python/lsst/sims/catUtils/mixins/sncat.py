@@ -130,7 +130,7 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         # Should revert to galTileID for galaxyTiled catalogDBObj and
         # id for galaxyObj catalogDBObj
         # (email from Scott)
-        return self.column_by_name(self.refIdCol)
+        return self.column_by_name('galtileid')
 
     @property
     def numobjs(self):
