@@ -44,7 +44,8 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
-    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
+    column_outputs = ['Tsnid', 'snra', 'sndec', 'Tz', 'Tt0', 'Tc', 'Tx1', 'Tx0']
+    #column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
     # The t0 value stored in the database is in terms of MJD - survey start
     # date. survey start date must be stored so that times correspond to
     # ObservationMetaData times
@@ -65,12 +66,12 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
     variables += ['flux', 'flux_err', 'mag_err']
 
-    override_formats = {'Ssnra': '%8e', 'Ssndec': '%8e', 'Sc': '%8e',
-                        'Sx0': '%8e'}
+    override_formats = {'Tsnra': '%8e', 'Tsndec': '%8e', 'Sc': '%8e',
+                        'Tx0': '%8e'}
     for var in variables:
         override_formats[var] = '%8e'
 
-    cannot_be_null = ['x0', 'z', 't0']
+    cannot_be_null = ['Tx0', 'Tz', 'Tt0']
 
     @astropy.utils.lazyproperty
     def mjdobs(self):
@@ -126,7 +127,7 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
 
-    def get_snid(self):
+    def get_Tsnid(self):
         # Not necessarily unique if the same galaxy hosts two SN
         # Use refIdCol to access the relevant id column of the dbobj
         # Should revert to galTileID for galaxyTiled catalogDBObj and
@@ -138,7 +139,7 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     def numobjs(self):
         return len(self.column_by_name('Tsnid'))
 
-    @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
+    @compound('Tsnra', 'Tsndec', 'Tz', 'Tvra', 'Tvdec', 'Tvr')
     def get_angularCoordinates(self):
         '''
         Obtain the coordinates and velocity of the SN from the host galaxy
@@ -163,7 +164,7 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         return ([snra, sndec, snz, snvra, snvdec, snvr])
 
 
-    @compound('c', 'x1', 'x0', 't0')
+    @compound('Tc', 'Tx1', 'Tx0', 'Tt0')
     def get_snparams(self):
         """
         Obtain the SN model parameters stored in the database
@@ -194,11 +195,11 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         the spatio-temporal range specified by obs_metadata
 
         """
-        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
-            self.column_by_name('x1'),\
-            self.column_by_name('x0'),\
-            self.column_by_name('t0'),\
-            self.column_by_name('redshift'),\
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('Tc'),\
+            self.column_by_name('Tx1'),\
+            self.column_by_name('Tx0'),\
+            self.column_by_name('Tt0'),\
+            self.column_by_name('Tredshift'),\
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
@@ -227,11 +228,11 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     @compound('flux', 'mag', 'flux_err', 'mag_err')
     def get_snbrightness(self):
 
-        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
-            self.column_by_name('x1'),\
-            self.column_by_name('x0'),\
-            self.column_by_name('t0'),\
-            self.column_by_name('redshift'),\
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('Tc'),\
+            self.column_by_name('Tx1'),\
+            self.column_by_name('Tx0'),\
+            self.column_by_name('Tt0'),\
+            self.column_by_name('Tredshift'),\
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
@@ -280,11 +281,11 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
               'adu_u', 'adu_g', 'adu_r', 'adu_i', 'adu_z', 'adu_y', 'mwebv')
     def get_snfluxes(self):
 
-        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
-            self.column_by_name('x1'),\
-            self.column_by_name('x0'),\
-            self.column_by_name('t0'),\
-            self.column_by_name('redshift'),\
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('Tc'),\
+            self.column_by_name('Tx1'),\
+            self.column_by_name('Tx0'),\
+            self.column_by_name('Tt0'),\
+            self.column_by_name('Tredshift'),\
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
