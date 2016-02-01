@@ -5,3 +5,4 @@ from .EBVmixin import *
 from .CosmologyMixin import *
 from .ObsMetaMixin import *
 from .sncat import *
+from .twinkles_sncat import *
