@@ -23,12 +23,12 @@ class SNObj(BaseCatalogObj):
                                                   bandpassName='r',
                                                   m5=22.0)
     
-    dbDefaultValues = {'varsimobjid':-1, 'runid':-1, 'ismultiple':-1, 'run':-1,
+    dbDefaultValues = {'runid':-1, 'ismultiple':-1, 'run':-1,
                        'runobjid':-1}
     # These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the
     # column name, None can be specified
-    columns = [#('id', 'simobjid', int),
+    columns = [('id', 'snid', int),
                ('raJ2000', 'snra*PI()/180.'),
                ('decJ2000', 'sndec*PI()/180.'),
                ('Tt0', 't0'),

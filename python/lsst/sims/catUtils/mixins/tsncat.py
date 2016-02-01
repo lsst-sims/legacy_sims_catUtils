@@ -44,7 +44,7 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
-    column_outputs = ['Tsnid', 'snra', 'sndec', 'Tz', 'Tt0', 'Tc', 'Tx1', 'Tx0']
+    column_outputs = ['Tsnid', 'snra', 'sndec', 'Tredshift', 'Tt0', 'Tc', 'Tx1', 'Tx0']
     #column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
     # The t0 value stored in the database is in terms of MJD - survey start
     # date. survey start date must be stored so that times correspond to
@@ -66,12 +66,12 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
     variables += ['flux', 'flux_err', 'mag_err']
 
-    override_formats = {'Tsnra': '%8e', 'Tsndec': '%8e', 'Sc': '%8e',
+    override_formats = {'snra': '%8e', 'sndec': '%8e', 'Sc': '%8e',
                         'Tx0': '%8e'}
     for var in variables:
         override_formats[var] = '%8e'
 
-    cannot_be_null = ['Tx0', 'Tz', 'Tt0']
+    cannot_be_null = ['Tx0', 'Tredshift', 'Tt0']
 
     @astropy.utils.lazyproperty
     def mjdobs(self):
@@ -126,101 +126,74 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
         bandPassNames = self.obs_metadata.bandpass
         return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
-
-    def get_Tsnid(self):
-        # Not necessarily unique if the same galaxy hosts two SN
-        # Use refIdCol to access the relevant id column of the dbobj
-        # Should revert to galTileID for galaxyTiled catalogDBObj and
-        # id for galaxyObj catalogDBObj
-        # (email from Scott)
-        return self.column_by_name('Tsnid')
-
     @property
     def numobjs(self):
-        return len(self.column_by_name('Tsnid'))
-
-    @compound('Tsnra', 'Tsndec', 'Tz', 'Tvra', 'Tvdec', 'Tvr')
-    def get_angularCoordinates(self):
-        '''
-        Obtain the coordinates and velocity of the SN from the host galaxy
-
-        Returns
-        -------
-        `np.ndarray` of coordinara, dec, z, vra, vdec, and vr
-
-        '''
-#        hostra, hostdec, hostz = self.column_by_name('raJ2000'),\
-#            self.column_by_name('decJ2000'),\
-#            self.column_by_name('redshift')
-#        snra, sndec, snz, snvra, snvdec, snvr = self.SNCoordinatesFromHost(
-#            hostra, hostdec, hostz)
-        snra = self.column_by_name('raJ2000')
-        sndec = self.column_by_name('decJ2000')
-        snz = self.column_by_name('Tredshift')
-        snvra = np.zeros(self.numobjs)
-        snvdec = np.zeros(self.numobjs)
-        snvr = np.zeros(self.numobjs)
-
-        return ([snra, sndec, snz, snvra, snvdec, snvr])
-
-
-    @compound('Tc', 'Tx1', 'Tx0', 'Tt0')
+        return len(self.column_by_name('snid'))
+        
+    @compound('TTT0', 'TTx1')
     def get_snparams(self):
-        """
-        Obtain the SN model parameters stored in the database
-        """
-        snc = self.column_by_name('Tc')
-        snx1 = self.column_by_name('Tx1')
-        snx0 = self.column_by_name('Tx0')
+        tt0 = self.column_by_name('Tt0')
+        tt0 += self.surveyStartDate
+        ttx1 = self.column_by_name('Tx1')
 
-        snt0 = self.column_by_name('Tt0')
-        # Shift t0 by surveyStartDate
-        snt0 += self.surveyStartDate
-
-        return ([snc, snx1, snx0, snt0])
-
-#    @compound('c', 'x1', 'x0', 't0')
-#    def get_snparams(self):
-#        hostz, hostid, hostmu = self.column_by_name('redshift'),\
-#            self.column_by_name('snid'),\
-#            self.column_by_name('cosmologicalDistanceModulus')
-
-#        vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
-
-#        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
-
-    def load_SNsed(self):
-        """
-        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
-        the spatio-temporal range specified by obs_metadata
-
-        """
-        c, x1, x0, t0, _z, ra, dec = self.column_by_name('Tc'),\
-            self.column_by_name('Tx1'),\
-            self.column_by_name('Tx0'),\
-            self.column_by_name('Tt0'),\
-            self.column_by_name('Tredshift'),\
-            self.column_by_name('raJ2000'),\
-            self.column_by_name('decJ2000')
-
-        SNobject = SNObject()
-
-        sedlist = []
-        for i in range(self.numobjs):
-            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=ra[i], dec=dec[i])
-            SNobject.mwEBVfromMaps()
-            sed = SNobject.SNObjectSED(time=self.mjdobs,
-                                       bandpass=self.lsstBandpassDict,
-                                       applyExitinction=True)
-            sedlist.append(sed)
-
-        return sedlist
-
-    def get_time(self):
-
-        return np.repeat(self.mjdobs, self.numobjs)
-
+        return(tt0, ttx1) 
+####    @compound('Tc', 'Tx1', 'Tx0', 'Tt0')
+####    def get_snparams(self):
+####        """
+####        Obtain the SN model parameters stored in the database
+####        """
+####        snc = self.column_by_name('Tc')
+####        snx1 = self.column_by_name('Tx1')
+####        snx0 = self.column_by_name('Tx0')
+####
+####        snt0 = self.column_by_name('Tt0')
+####        # Shift t0 by surveyStartDate
+####        snt0 += self.surveyStartDate
+####
+####        return ([snc, snx1, snx0, snt0])
+####
+#####    @compound('c', 'x1', 'x0', 't0')
+#####    def get_snparams(self):
+#####        hostz, hostid, hostmu = self.column_by_name('redshift'),\
+#####            self.column_by_name('snid'),\
+#####            self.column_by_name('cosmologicalDistanceModulus')
+####
+#####        vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
+####
+#####        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
+####
+#    def load_SNsed(self):
+#        """
+#        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
+#        the spatio-temporal range specified by obs_metadata
+#
+#        """
+#        c, x1, x0, t0, _z, ra, dec = self.column_by_name('Tc'),\
+#            self.column_by_name('Tx1'),\
+#            self.column_by_name('Tx0'),\
+#            self.column_by_name('Tt0'),\
+#            self.column_by_name('Tredshift'),\
+#            self.column_by_name('raJ2000'),\
+#            self.column_by_name('decJ2000')
+#
+#        SNobject = SNObject()
+#
+#        sedlist = []
+#        for i in range(self.numobjs):
+#            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
+#            SNobject.setCoords(ra=ra[i], dec=dec[i])
+#            SNobject.mwEBVfromMaps()
+#            sed = SNobject.SNObjectSED(time=self.mjdobs,
+#                                       bandpass=self.lsstBandpassDict,
+#                                       applyExitinction=True)
+#            sedlist.append(sed)
+#
+#        return sedlist
+#
+#    def get_time(self):
+#
+#        return np.repeat(self.mjdobs, self.numobjs)
+#
     def get_band(self):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
@@ -238,6 +211,7 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
         SNobject = SNObject()
         bandname = self.obs_metadata.bandpass
+        print('Printing the value of obs_metadat.bandpass', bandname)
         if isinstance(bandname, list):
             raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
