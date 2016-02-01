@@ -16,7 +16,7 @@ from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.supernovae import SNUniverse
 
 
-__all__ = ['SNIaCatalog']
+__all__ = ['SNIaCatalog', 'SNFunctionality']
 cosmo = CosmologyMixin()
 
 class SNFunctionality(object):
