@@ -19,150 +19,17 @@ from lsst.sims.catUtils.supernovae import SNUniverse
 __all__ = ['SNIaCatalog']
 cosmo = CosmologyMixin()
 
-
-class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
-
+class SNFunctionality(object):
     """
-    `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
-    characterized by the  following attributes
+    SNFunctionality is a mixin that provides functionality of getting fluxes
+    and magnitudes for SN defined by parameters of `~sims_catUtils.SNObject` as
+    defined in `~sims_catUtils/python/lsst/sims/catUtils/supernovae/SNObject`
 
-    Attributes
-    ----------
-    column_outputs :
-    suppressHighzSN :
-    maxTimeSNVisible :
-    maxz :
-    variables :
-    override_formats :
-    cannot_be_null :
-    mjdobs :
-    badvalues position :
-    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats
-        velocity wrt host galaxy in Km/s, the supernova model (eg. SALT2)
-    and parameters of the supernova model that predict the SED.
+
+    This class is not meant to be used by itself, as it does not have any way
+    of obtaining its attributes, but as a mixin to classes like SNIaCatalog
+    which define these attributes.
     """
-
-    # t_0, c, x_1, x_0 are parameters characterizing a SALT
-    # based SN model as defined in sncosmo
-    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
-
-    # You can add parameters like fluxes and magnitudes by adding the following
-    # variables to the list
-    # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
-    # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
-
-    suppressHighzSN = True
-    maxTimeSNVisible = 100.
-    maxz = 1.2
-    # Flux variables are convenient to display in exponential format to avoid
-    # having them cut off
-    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
-    variables += ['flux', 'flux_err', 'mag_err']
-
-    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
-                        'x0': '%8e'}
-    for var in variables:
-        override_formats[var] = '%8e'
-
-    cannot_be_null = ['x0', 'z', 't0']
-
-    @astropy.utils.lazyproperty
-    def mjdobs(self):
-        '''
-        The time of observation for the catalog, which is set to be equal
-        to obs_metadata.mjd
-        '''
-        return self.obs_metadata.mjd.TAI
-
-    @astropy.utils.lazyproperty
-    def badvalues(self):
-        '''
-        The representation of bad values in this catalog is numpy.nan
-        '''
-        return np.nan
-
-    @property
-    def suppressDimSN(self):
-        """
-        Boolean to decide whether to output observations of SN that are too dim
-        should be represented in the catalog or not. By default set to True
-        """
-        if not hasattr(self, '_suppressDimSN'):
-            suppressDimSN_default = True
-            self._suppressDimSN = suppressDimSN_default
-        return self._suppressDimSN
-
-    @suppressDimSN.setter
-    def suppressDimSN(self, suppressDimSN):
-        """
-        set the value of suppressDimSN of the catalog Parameters
-        Parameters
-        ----------
-        supressDimSN : Boolean, mandatory
-            Value to set suppressDimSN to
-        """
-        self._suppressDimSN = suppressDimSN
-        return self._suppressDimSN 
-
-    @astropy.utils.lazyproperty
-    def photometricparameters(self, expTime=15., nexp=2):
-        lsstPhotometricParameters = PhotometricParameters(exptime=expTime,
-                                                          nexp=nexp)
-        return lsstPhotometricParameters
-
-    @astropy.utils.lazyproperty
-    def lsstBandpassDict(self):
-        return BandpassDict.loadTotalBandpassesFromFiles()
-
-    @astropy.utils.lazyproperty
-    def observedIndices(self):
-        bandPassNames = self.obs_metadata.bandpass
-        return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
-
-    # @astropy.utils.lazyproperty
-    # def lsstpbase(self):
-    #     pbase = PhotometryBase()
-    #     return pbase
-
-    def get_snid(self):
-        # Not necessarily unique if the same galaxy hosts two SN
-        # Use refIdCol to access the relevant id column of the dbobj
-        # Should revert to galTileID for galaxyTiled catalogDBObj and
-        # id for galaxyObj catalogDBObj
-        # (email from Scott)
-        return self.column_by_name(self.refIdCol)
-
-    @property
-    def numobjs(self):
-        return len(self.column_by_name('id'))
-
-    @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
-    def get_angularCoordinates(self):
-        '''
-        Obtain the coordinates and velocity of the SN from the host galaxy
-
-        Returns
-        -------
-        `np.ndarray` of coordinara, dec, z, vra, vdec, and vr
-
-        '''
-        hostra, hostdec, hostz = self.column_by_name('raJ2000'),\
-            self.column_by_name('decJ2000'),\
-            self.column_by_name('redshift')
-        snra, sndec, snz, snvra, snvdec, snvr = self.SNCoordinatesFromHost(
-            hostra, hostdec, hostz)
-
-        return ([snra, sndec, snz, snvra, snvdec, snvr])
-
-    @compound('c', 'x1', 'x0', 't0')
-    def get_snparams(self):
-        hostz, hostid, hostmu = self.column_by_name('redshift'),\
-            self.column_by_name('snid'),\
-            self.column_by_name('cosmologicalDistanceModulus')
-
-        vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
-
-        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
     def load_SNsed(self):
         """
@@ -192,13 +59,6 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
 
         return sedlist
 
-    def get_time(self):
-
-        return np.repeat(self.mjdobs, self.numobjs)
-
-    def get_band(self):
-        bandname = self.obs_metadata.bandpass
-        return np.repeat(bandname, self.numobjs)
 
     @compound('flux', 'mag', 'flux_err', 'mag_err')
     def get_snbrightness(self):
@@ -289,3 +149,152 @@ class SNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
                 vals[:, 8], vals[:, 9], vals[:, 10], vals[:, 11],
                 vals[:, 12], vals[:, 13], vals[:, 14], vals[:, 15],
                 vals[:, 16], vals[:, 17], vals[:, 18])
+
+
+
+class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
+
+    """
+    `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
+    characterized by the  following attributes
+
+    Attributes
+    ----------
+    column_outputs :
+    suppressHighzSN :
+    maxTimeSNVisible :
+    maxz :
+    variables :
+    override_formats :
+    cannot_be_null :
+    mjdobs :
+    badvalues position :
+    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats
+        velocity wrt host galaxy in Km/s, the supernova model (eg. SALT2)
+    and parameters of the supernova model that predict the SED.
+    """
+
+    # t_0, c, x_1, x_0 are parameters characterizing a SALT
+    # based SN model as defined in sncosmo
+    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
+
+    suppressHighzSN = True
+    maxTimeSNVisible = 100.
+    maxz = 1.2
+    # Flux variables are convenient to display in exponential format to avoid
+    # having them cut off
+    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
+    variables += ['flux', 'flux_err', 'mag_err']
+
+    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
+                        'x0': '%8e'}
+    for var in variables:
+        override_formats[var] = '%8e'
+    # You can add parameters like fluxes and magnitudes by adding the following
+    # variables to the list
+    # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
+    # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
+    cannot_be_null = ['x0', 'z', 't0']
+
+    @astropy.utils.lazyproperty
+    def mjdobs(self):
+        '''
+        The time of observation for the catalog, which is set to be equal
+        to obs_metadata.mjd
+        '''
+        return self.obs_metadata.mjd.TAI
+
+    @astropy.utils.lazyproperty
+    def badvalues(self):
+        '''
+        The representation of bad values in this catalog is numpy.nan
+        '''
+        return np.nan
+
+    @property
+    def suppressDimSN(self):
+        """
+        Boolean to decide whether to output observations of SN that are too dim
+        should be represented in the catalog or not. By default set to True
+        """
+        if not hasattr(self, '_suppressDimSN'):
+            suppressDimSN_default = True
+            self._suppressDimSN = suppressDimSN_default
+        return self._suppressDimSN
+
+    @suppressDimSN.setter
+    def suppressDimSN(self, suppressDimSN):
+        """
+        set the value of suppressDimSN of the catalog Parameters
+        Parameters
+        ----------
+        supressDimSN : Boolean, mandatory
+            Value to set suppressDimSN to
+        """
+        self._suppressDimSN = suppressDimSN
+        return self._suppressDimSN 
+
+    @astropy.utils.lazyproperty
+    def photometricparameters(self, expTime=15., nexp=2):
+        lsstPhotometricParameters = PhotometricParameters(exptime=expTime,
+                                                          nexp=nexp)
+        return lsstPhotometricParameters
+
+    @astropy.utils.lazyproperty
+    def lsstBandpassDict(self):
+        return BandpassDict.loadTotalBandpassesFromFiles()
+
+    @astropy.utils.lazyproperty
+    def observedIndices(self):
+        bandPassNames = self.obs_metadata.bandpass
+        return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
+
+    def get_snid(self):
+        # Not necessarily unique if the same galaxy hosts two SN
+        # Use refIdCol to access the relevant id column of the dbobj
+        # Should revert to galTileID for galaxyTiled catalogDBObj and
+        # id for galaxyObj catalogDBObj
+        # (email from Scott)
+        return self.column_by_name(self.refIdCol)
+
+    @property
+    def numobjs(self):
+        return len(self.column_by_name('id'))
+
+    @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
+    def get_angularCoordinates(self):
+        '''
+        Obtain the coordinates and velocity of the SN from the host galaxy
+
+        Returns
+        -------
+        `np.ndarray` of coordinara, dec, z, vra, vdec, and vr
+
+        '''
+        hostra, hostdec, hostz = self.column_by_name('raJ2000'),\
+            self.column_by_name('decJ2000'),\
+            self.column_by_name('redshift')
+        snra, sndec, snz, snvra, snvdec, snvr = self.SNCoordinatesFromHost(
+            hostra, hostdec, hostz)
+
+        return ([snra, sndec, snz, snvra, snvdec, snvr])
+
+    @compound('c', 'x1', 'x0', 't0')
+    def get_snparams(self):
+        hostz, hostid, hostmu = self.column_by_name('redshift'),\
+            self.column_by_name('snid'),\
+            self.column_by_name('cosmologicalDistanceModulus')
+
+        vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
+
+        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
+
+
+    def get_time(self):
+
+        return np.repeat(self.mjdobs, self.numobjs)
+
+    def get_band(self):
+        bandname = self.obs_metadata.bandpass
+        return np.repeat(bandname, self.numobjs)
+
