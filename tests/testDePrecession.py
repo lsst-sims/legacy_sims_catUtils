@@ -11,7 +11,7 @@ class DePrecessionTest(unittest.TestCase):
 
     def test_de_precession(self):
         """
-        test de-precession by de-precessing a lit of RA, Dec
+        test de-precession by de-precessing a list of RA, Dec
         and verifying that the distance between the de-precessed
         points is the same as the distance between the input points.
 
