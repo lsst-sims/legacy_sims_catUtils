@@ -2,6 +2,7 @@
 Mixin to InstanceCatalog class to give SN catalogs in catsim
 """
 import numpy as np
+from copy import deepcopy
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import compound
@@ -66,7 +67,7 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
     variables += ['flux', 'flux_err', 'mag_err']
 
-    override_formats = {'snra': '%8e', 'sndec': '%8e', 'Sc': '%8e',
+    override_formats = {'snra': '%8e', 'sndec': '%8e', 'Tc': '%8e',
                         'Tx0': '%8e'}
     for var in variables:
         override_formats[var] = '%8e'
@@ -130,70 +131,17 @@ class TSNIaCatalog (InstanceCatalog, CosmologyMixin, SNUniverse):
     def numobjs(self):
         return len(self.column_by_name('snid'))
         
-    @compound('TTT0', 'TTx1')
+    @compound('Tt0', 'TTx1')
     def get_snparams(self):
-        tt0 = self.column_by_name('Tt0')
+        tt0 = deepcopy(self.column_by_name('Tt0'))
         tt0 += self.surveyStartDate
         ttx1 = self.column_by_name('Tx1')
 
         return(tt0, ttx1) 
-####    @compound('Tc', 'Tx1', 'Tx0', 'Tt0')
-####    def get_snparams(self):
-####        """
-####        Obtain the SN model parameters stored in the database
-####        """
-####        snc = self.column_by_name('Tc')
-####        snx1 = self.column_by_name('Tx1')
-####        snx0 = self.column_by_name('Tx0')
-####
-####        snt0 = self.column_by_name('Tt0')
-####        # Shift t0 by surveyStartDate
-####        snt0 += self.surveyStartDate
-####
-####        return ([snc, snx1, snx0, snt0])
-####
-#####    @compound('c', 'x1', 'x0', 't0')
-#####    def get_snparams(self):
-#####        hostz, hostid, hostmu = self.column_by_name('redshift'),\
-#####            self.column_by_name('snid'),\
-#####            self.column_by_name('cosmologicalDistanceModulus')
-####
-#####        vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
-####
-#####        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
-####
-#    def load_SNsed(self):
-#        """
-#        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
-#        the spatio-temporal range specified by obs_metadata
-#
-#        """
-#        c, x1, x0, t0, _z, ra, dec = self.column_by_name('Tc'),\
-#            self.column_by_name('Tx1'),\
-#            self.column_by_name('Tx0'),\
-#            self.column_by_name('Tt0'),\
-#            self.column_by_name('Tredshift'),\
-#            self.column_by_name('raJ2000'),\
-#            self.column_by_name('decJ2000')
-#
-#        SNobject = SNObject()
-#
-#        sedlist = []
-#        for i in range(self.numobjs):
-#            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-#            SNobject.setCoords(ra=ra[i], dec=dec[i])
-#            SNobject.mwEBVfromMaps()
-#            sed = SNobject.SNObjectSED(time=self.mjdobs,
-#                                       bandpass=self.lsstBandpassDict,
-#                                       applyExitinction=True)
-#            sedlist.append(sed)
-#
-#        return sedlist
-#
-#    def get_time(self):
-#
-#        return np.repeat(self.mjdobs, self.numobjs)
-#
+
+    def get_time(self):
+        return np.repeat(self.mjdobs, self.numobjs)
+
     def get_band(self):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
