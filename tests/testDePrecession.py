@@ -57,7 +57,7 @@ class DePrecessionTest(unittest.TestCase):
                     dd2 = arcsecFromRadians(haversine(raDecTransformed[0][ix], raDecTransformed[1][ix],
                                                       raDecTransformed[0][iy], raDecTransformed[1][iy]))
 
-                    self.assertLess(np.abs(dd1-dd2), 1.0e-6)
+                    self.assertAlmostEqual(dd1, dd2, delta=6)
 
 
 
