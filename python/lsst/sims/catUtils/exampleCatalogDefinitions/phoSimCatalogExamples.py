@@ -64,12 +64,6 @@ class PhoSimAstrometryBase(object):
 
         xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
 
-        norm = numpy.sqrt(numpy.power(xyz_bore[0],2).sum())
-        xyz_bore = xyz_bore/norm
-
-        norm = numpy.sqrt(numpy.power(xyz_precessed[0],2).sum())
-        xyz_precessed = xyz_precessed/norm
-
         rotMat = rotationMatrixFromVectors(xyz_precessed[0], xyz_bore[0])
 
         xyz_list = cartesianFromSpherical(ra_in, dec_in)
