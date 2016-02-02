@@ -31,6 +31,31 @@ class SNFunctionality(object):
     which define these attributes.
     """
 
+    def get_sedFilePath(self):
+        """
+        """
+        # construct the unique filename
+        # method: snid_mjd(to 4 places of decimal)_bandpassname
+        mjd = "_{:0.4f}_".format(self.mjdobs)
+        mjd += self.obs_metadata.bandpass + '.dat'
+        fname = ['specFile_' + str(elem) + mjd for elem in self.column_by_name('snid')]
+
+        c, x1, x0, t0  = self.column_by_name('c'),\
+                         self.column_by_name('x1'),\
+                         self.column_by_name('x0'),\
+                         self.column_by_name('t0')
+
+        SNobject = SNObject()
+        for i, in enumerate(self.column_by_name('snid')):
+            SNObject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i])
+
+            # SED in rest frame
+            sed = SNObject.SNObjectSourceSED
+
+
+        return fname
+
+
     def load_SNsed(self):
         """
         returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
