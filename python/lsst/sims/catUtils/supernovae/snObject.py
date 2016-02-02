@@ -419,6 +419,32 @@ class SNObject(sncosmo.Model):
             equatorialCoordinates=self.skycoord)[0]
         return
 
+    def SNObjectSourceSED(self, time, wavelen=None, bandpass=None):
+        """
+        """
+        phase = (time - self.get('t0')) / (1. + self.get('z'))
+
+        source = self.source
+        if wavelen is None:
+            # use native SALT grid
+            wavelen = source._wave
+        else:
+            # assume wavelen in nm, convert to Ang
+            wavelen *= 10.0
+
+        flux = source.flux(phase, wavelen)
+
+        #convert per Ang to per nm
+        flux *= 10.0
+        sed = Sed(wavelen=wavelen, flambda=flux)
+        # This has the cosmology built in.
+
+        return sed
+
+
+
+
+
     def SNObjectSED(self, time, wavelen=None, bandpass=None,
                     applyExtinction=True):
         '''
