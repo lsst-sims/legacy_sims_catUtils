@@ -107,7 +107,8 @@ class SNObject(sncosmo.Model):
         # SED will be rectified to 0. for negative values of SED if this
         # attribute is set to True
         
-        # self.rectifySED determines if SALT2 seds are allowed to go negative
+        # self.rectifySED determines if timeseries of seds are allowed to
+        # go negative. If True, the negative values are replaced by 0.
         self.rectifySED = rectifySED
 
         # self._ra, self._dec is initialized as None for cases where ra, dec
@@ -436,6 +437,7 @@ class SNObject(sncosmo.Model):
 
         #convert per Ang to per nm
         flux *= 10.0
+        wavelen = wavelen / 10.
         sed = Sed(wavelen=wavelen, flambda=flux)
         # This has the cosmology built in.
 
