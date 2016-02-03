@@ -7,7 +7,7 @@ from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
                                       EBVmixin
 
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
-           "PhoSimCatalogSersic2D", "PhoSimSpecMap"]
+           "PhoSimCatalogSersic2D", "PhoSimSpecMap", "PhoSimCatalogSN"]
 
 
 PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
@@ -108,6 +108,23 @@ class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
     spatialModel = "point"
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
+class PhoSimCatalogSN(PhosimInputBase, EBVmixin):
+    catalog_type = 'phoSim_SNcatalog'
+
+    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
+                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
+                      'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
+                      'internalExtinctionModel']
+    default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
+                       ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
+                       ('galacticExtinctionModel', 'CCM', (str,3)),
+                       ('galacticAv', 0.0, float),
+                       ('internalExtinctionModel', 'none', (str,4))]
+
+    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    delimiter = " "
+    spatialModel = "point"
+    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
     catalog_type = 'phoSim_catalog_ZPOINT'

@@ -405,6 +405,7 @@ class SNObject(sncosmo.Model):
 
         #convert per Ang to per nm
         flux *= 10.0
+        wavelen = wavelen / 10.
         sed = Sed(wavelen=wavelen, flambda=flux)
         # This has the cosmology built in.
 
