@@ -28,7 +28,7 @@ class SNObj(BaseCatalogObj):
     # These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the
     # column name, None can be specified
-    columns = [#('id', 'simobjid', int),
+    columns = [#('id', 'snid', int),
                ('raJ2000', 'snra*PI()/180.'),
                ('decJ2000', 'sndec*PI()/180.'),
                ('Tt0', 't0'),

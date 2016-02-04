@@ -10,6 +10,8 @@ from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
 
+from lsst.sims.catUtils.exampleCatalogDefinitions.phoSimCatalogExamples import\
+        PhoSimCatalogSN
 import astropy
 
 from lsst.sims.catUtils.supernovae import SNObject
@@ -22,7 +24,7 @@ cosmo = CosmologyMixin()
 
 
 
-class TwinkSNCat (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
+class TwinkSNCat ( SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
 
     """
     `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
