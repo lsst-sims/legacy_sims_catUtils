@@ -474,6 +474,17 @@ class VariabilityTest(unittest.TestCase):
     def tearDown(self):
         del self.obs_metadata
 
+
+    def checkNotEmpty(self, catName):
+        """
+        Verify that the catalog specified by catName is not empty
+        (i.e. that it has more than just a header line)
+        """
+        with open(catName, 'r') as input_file:
+            lines = input_file.readlines()
+            self.assertGreater(len(lines), 1)
+
+
     def testHybridVariability(self):
         """
         Test that we can generate a catalog which inherits from multiple variability mixins
@@ -487,6 +498,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('testVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
 
+        self.checkNotEmpty(catName)
+
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -494,6 +507,8 @@ class VariabilityTest(unittest.TestCase):
         catName = os.path.join(self.scratchSpace, 'var_hybridTestCatalog2.dat')
         myCatalog = myDB.getCatalog('otherVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
+
+        self.checkNotEmpty(catName)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -536,6 +551,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
 
+        self.checkNotEmpty(catName)
+
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -545,6 +562,8 @@ class VariabilityTest(unittest.TestCase):
         myDB = CatalogDBObject.from_objid('rrlyTest')
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
+
+        self.checkNotEmpty(catName)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -556,6 +575,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
 
+        self.checkNotEmpty(catName)
+
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -565,6 +586,8 @@ class VariabilityTest(unittest.TestCase):
         myDB = CatalogDBObject.from_objid('ebTest')
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
+
+        self.checkNotEmpty(catName)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -583,6 +606,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
 
+        self.checkNotEmpty(catName)
+
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -599,6 +624,8 @@ class VariabilityTest(unittest.TestCase):
         myDB = CatalogDBObject.from_objid('bhmicrolensTest')
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
+
+        self.checkNotEmpty(catName)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -617,6 +644,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
 
+        self.checkNotEmpty(catName)
+
         if os.path.exists(catName):
             os.unlink(catName)
 
@@ -627,6 +656,8 @@ class VariabilityTest(unittest.TestCase):
         myDB = CatalogDBObject.from_objid('agnTest')
         myCatalog = myDB.getCatalog('galaxyVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(catName, chunk_size=1000)
+
+        self.checkNotEmpty(catName)
 
         if os.path.exists(catName):
             os.unlink(catName)
