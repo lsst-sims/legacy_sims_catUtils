@@ -5,7 +5,8 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
                                       AstrometrySSM, EBVmixin, PhoSimAstrometryStars, \
-                                      PhoSimAstrometryGalaxies, PhoSimAstrometrySSM
+                                      PhoSimAstrometryGalaxies, PhoSimAstrometrySSM,\
+                                      FrozenSNCat
 
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
            "PhoSimCatalogSersic2D", "PhoSimSpecMap", "PhoSimCatalogSN"]
@@ -123,24 +124,6 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
-class PhoSimCatalogSN(PhosimInputBase, EBVmixin):
-    catalog_type = 'phoSim_SNcatalog'
-
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
-                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
-                      'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
-                      'internalExtinctionModel']
-    default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
-                       ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
-                       ('galacticExtinctionModel', 'CCM', (str,3)),
-                       ('galacticAv', 0.0, float),
-                       ('internalExtinctionModel', 'none', (str,4))]
-
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
-    spatialModel = "point"
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
-
 class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
 
     catalog_type = 'phoSim_catalog_ZPOINT'
@@ -155,6 +138,25 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
                        ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
                        ('internalExtinctionModel', 'none', (str,4))]
+
+class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
+    catalog_type = 'phoSim_SNcatalog'
+
+    #column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
+    #                  'redshift','shear1','shear2','kappa','raOffset','decOffset',
+    #                  'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
+    #                  'internalExtinctionModel']
+    #default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
+    #                   ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
+    #                   ('galacticExtinctionModel', 'CCM', (str,3)),
+    #                   ('galacticAv', 0.0, float),
+    #                   ('internalExtinctionModel', 'none', (str,4))]
+
+    def get_sedFilepath(self):
+        return self.column_by_name('TsedFilepath')
+
+    def get_phoSimMagNorm(self):
+        return self.column_by_name('TmagNorm')
 
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
