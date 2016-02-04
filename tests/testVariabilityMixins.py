@@ -18,6 +18,8 @@ def makeMflareTable(size=10, **kwargs):
     Make a test database to serve information to the flare test
     """
 
+    np.random.seed(88)
+
     #a haphazard sample of mdwarf SEDs
     sedFiles = ['m2.0Full.dat', 'm5.1Full.dat', 'm4.9Full.dat']
 
