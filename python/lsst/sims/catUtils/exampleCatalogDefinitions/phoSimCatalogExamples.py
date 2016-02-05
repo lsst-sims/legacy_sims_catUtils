@@ -4,12 +4,10 @@ from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
-                                      AstrometrySSM, EBVmixin
+                                      AstrometrySSM, EBVmixin, PhoSimAstrometryStars, \
+                                      PhoSimAstrometryGalaxies, PhoSimAstrometrySSM
 
-from lsst.sims.utils import sphericalFromCartesian, cartesianFromSpherical
-from lsst.sims.utils import rotationMatrixFromVectors
-
-__all__ = ["PhosimInputBase","PhoSimAstrometryBase",
+__all__ = ["PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
            "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap"]
 
@@ -18,62 +16,8 @@ PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
                         dirDict={'(^lte)':'starSED/phoSimMLT'})
 
 
-class PhoSimAstrometryBase(object):
 
-    def _dePrecess(self, ra_in, dec_in, obs_metadata):
-        """
-        Transform a set of RA, Dec pairs by subtracting out a rotation
-        which represents the effects of precession, nutation, and aberration.
-
-        Specifically:
-
-        Calculate the displacement between the boresite and the boresite
-        corrected for precession, nutation, and aberration (not refraction).
-
-        Convert boresite and corrected boresite to Cartesian coordinates.
-
-        Calculate the rotation matrix to go between those Cartesian vectors.
-
-        Convert [ra_in, dec_in] into Cartesian coordinates.
-
-        Apply the rotation vector to those Cartesian coordinates.
-
-        Convert back to ra, dec-like coordinates
-
-        @param [in] ra_in is a numpy array of RA in radians
-
-        @param [in] dec_in is a numpy array of Dec in radians
-
-        @param [in] obs_metadata is an ObservationMetaData
-
-        @param [out] ra_out is a numpy array of de-precessed RA in radians
-
-        @param [out] dec_out is a numpy array of de-precessed Dec in radians
-        """
-
-        if len(ra_in)==0:
-            return numpy.array([[],[]])
-
-        xyz_bore = cartesianFromSpherical(numpy.array([obs_metadata._pointingRA]),
-                                          numpy.array([obs_metadata._pointingDec]))
-
-        precessedRA, precessedDec = _observedFromICRS(numpy.array([obs_metadata._pointingRA]),
-                                                      numpy.array([obs_metadata._pointingDec]),
-                                                      obs_metadata=obs_metadata, epoch=2000.0,
-                                                      includeRefraction=False)
-
-        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
-
-        rotMat = rotationMatrixFromVectors(xyz_precessed[0], xyz_bore[0])
-
-        xyz_list = cartesianFromSpherical(ra_in, dec_in)
-
-        xyz_de_precessed = numpy.array([numpy.dot(rotMat, xx) for xx in xyz_list])
-        ra_deprecessed, dec_deprecessed = sphericalFromCartesian(xyz_de_precessed)
-        return numpy.array([ra_deprecessed, dec_deprecessed])
-
-
-class PhosimInputBase(InstanceCatalog, PhoSimAstrometryBase):
+class PhosimInputBase(InstanceCatalog):
 
     filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
 
@@ -160,7 +104,7 @@ class PhosimInputBase(InstanceCatalog, PhoSimAstrometryBase):
             file_handle.write(templ%(k_out, outval)+"\n")
 
 
-class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
+class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     catalog_type = 'phoSim_catalog_POINT'
 
@@ -181,21 +125,7 @@ class PhoSimCatalogPoint(PhosimInputBase, AstrometryStars, EBVmixin):
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 
-    @compound('raPhoSim','decPhoSim')
-    def get_phoSimCoordinates(self):
-        """Getter for RA, Dec coordinates expected by PhoSim.
-
-        These are observed RA, Dec coordinates with the effects of nutation, aberration,
-        and precession subtracted out by the PhosimInputBase._dePrecess() method.
-        This preserves the relative effects of nutation, aberration, and precession while
-        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
-        make sense."""
-
-        raObs, decObs = self.observedStellarCoordinates(includeRefraction = False)
-        return self._dePrecess(raObs, decObs, self.obs_metadata)
-
-
-class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
+class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
 
     catalog_type = 'phoSim_catalog_ZPOINT'
 
@@ -216,23 +146,6 @@ class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
 
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
-
-    @compound('raPhoSim','decPhoSim')
-    def get_phoSimCoordinates(self):
-        """Getter for RA, Dec coordinates expected by PhoSim.
-
-        These are observed RA, Dec coordinates with the effects of nutation, aberration,
-        and precession subtracted out by the PhosimInputBase._dePrecess() method.
-        This preserves the relative effects of nutation, aberration, and precession while
-        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
-        make sense."""
-
-        ra = self.column_by_name('raJ2000')
-        dec = self.column_by_name('decJ2000')
-        raObs, decObs = _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
-                                          epoch=self.db_obj.epoch)
-
-        return self._dePrecess(raObs, decObs, self.obs_metadata)
 
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
@@ -277,7 +190,7 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
         return self._dePrecess(raObs, decObs, self.obs_metadata)
 
 
-class PhoSimCatalogSSM(PhosimInputBase, AstrometrySSM):
+class PhoSimCatalogSSM(PhosimInputBase, PhoSimAstrometrySSM):
 
     catalog_type = 'phoSim_catalog_SSM'
 
@@ -295,8 +208,3 @@ class PhoSimCatalogSSM(PhosimInputBase, AstrometrySSM):
     spatialModel = "point"
 
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
-
-    @compound('raPhoSim', 'decPhoSim')
-    def get_phoSimCoordinates(self):
-        raObs, decObs = self.observedSSMCoordinates(includeRefraction = False)
-        return self._dePrecess(raObs, decObs, self.obs_metadata)

@@ -4,7 +4,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.utils import ObservationMetaData, _observedFromICRS
 from lsst.sims.utils import haversine, arcsecFromRadians
-from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimAstrometryBase
+from lsst.sims.catUtils.mixins import PhoSimAstrometryBase
 
 class DePrecessionTest(unittest.TestCase):
 
