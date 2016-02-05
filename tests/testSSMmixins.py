@@ -212,7 +212,7 @@ class SSMphotometryTest(unittest.TestCase):
 
 
 class SSM_astrometryCat(InstanceCatalog, AstrometrySSM):
-    column_outputs = ['id', 'raObserved', 'decObserved', 'raPhoSim', 'decPhoSim']
+    column_outputs = ['id', 'raObserved', 'decObserved']
 
     default_formats = {'f': '%.13f'}
 
@@ -245,8 +245,7 @@ class SSMastrometryTest(unittest.TestCase):
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmAstrometryCat.txt')
 
         dtype = np.dtype([('id', np.int),
-                          ('raObserved', np.float), ('decObserved', np.float),
-                          ('raPhoSim', np.float), ('decPhoSim', np.float)])
+                          ('raObserved', np.float), ('decObserved', np.float)])
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
 
@@ -263,12 +262,6 @@ class SSMastrometryTest(unittest.TestCase):
 
             testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
             self.assertGreater(len(testData), 0)
-            raPhoSimControl, decPhoSimControl = _observedFromICRS(controlData['raJ2000'], controlData['decJ2000'],
-                                                                  obs_metadata=obs, epoch=2000.0,
-                                                                  includeRefraction=False)
-
-            np.testing.assert_array_almost_equal(raPhoSimControl, testData['raPhoSim'], 10)
-            np.testing.assert_array_almost_equal(decPhoSimControl, testData['decPhoSim'], 10)
 
             raObservedControl, decObservedControl = _observedFromICRS(controlData['raJ2000'], controlData['decJ2000'],
                                                                       obs_metadata=obs, epoch=2000.0,

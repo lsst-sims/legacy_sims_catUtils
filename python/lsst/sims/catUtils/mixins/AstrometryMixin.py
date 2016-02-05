@@ -12,11 +12,15 @@ from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
 
 from lsst.sims.utils import _appGeoFromICRS, _observedFromAppGeo, _applyProperMotion
 from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
+from lsst.sims.utils import sphericalFromCartesian, cartesianFromSpherical
+from lsst.sims.utils import rotationMatrixFromVectors
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
-__all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
-           "AstrometrySSM", "CameraCoords"]
+__all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies", "AstrometrySSM",
+           "PhoSimAstrometryBase", "PhoSimAstrometryStars", "PhoSimAstrometryGalaxies",
+           "PhoSimAstrometrySSM",
+           "CameraCoords"]
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
@@ -99,8 +103,6 @@ class AstrometryGalaxies(AstrometryBase):
 
     raObserved, decObserved -- the result of applying precession, nutation, aberration, and refraction
     to raICRS, decICRS
-
-    raPhoSim, decPhoSim -- the same as raObserved, decObserved but neglecting refraction
     """
 
     @compound('raICRS', 'decICRS')
@@ -108,15 +110,6 @@ class AstrometryGalaxies(AstrometryBase):
         """Getter for RA, Dec in the International Celestial Reference System with effects
         due to proper motion and radial velocity applied"""
         return numpy.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
-
-
-    @compound('raPhoSim','decPhoSim')
-    def get_phoSimCoordinates(self):
-        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
-        ra = self.column_by_name('raJ2000')
-        dec = self.column_by_name('decJ2000')
-        return _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
-                                epoch=self.db_obj.epoch)
 
 
     @compound('raObserved','decObserved')
@@ -139,8 +132,6 @@ class AstrometryStars(AstrometryBase):
 
     raObserved, decObserved -- the result of applying precession, nutation, aberration, parallax,
     and refraction to raICRS, decICRS
-
-    raPhoSim, decPhoSim -- the same as raObserved, decObserved but neglecting refraction
     """
 
     def observedStellarCoordinates(self, includeRefraction = True):
@@ -165,11 +156,6 @@ class AstrometryStars(AstrometryBase):
                      includeRefraction = includeRefraction, obs_metadata=self.obs_metadata,
                      epoch=self.db_obj.epoch)
 
-
-    @compound('raPhoSim','decPhoSim')
-    def get_phoSimCoordinates(self):
-        """Getter for unrefracted observed RA, Dec as expected by PhoSim"""
-        return self.observedStellarCoordinates(includeRefraction = False)
 
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
@@ -213,9 +199,6 @@ class AstrometrySSM(AstrometryBase):
         return _observedFromICRS(ra, dec, includeRefraction=includeRefraction,
                                  obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
 
-    @compound('raPhoSim', 'decPhoSim')
-    def get_phoSimCoordinates(self):
-        return self.observedSSMCoordinates(includeRefraction = False)
 
     @compound('raObserved', 'decObserved')
     def get_observedCoordinates(self):
@@ -233,3 +216,121 @@ class AstrometrySSM(AstrometryBase):
         ddecdt = self.column_by_name('velDec') # in radians per day
 
         return numpy.sqrt(numpy.power(dradt,2) + numpy.power(ddecdt,2))
+
+
+class PhoSimAstrometryBase(object):
+    """
+    This mixin contains the _dePrecess method necessary to create PhoSim
+    images that are astrometrically consistent with their input catalogs.
+    """
+
+    def _dePrecess(self, ra_in, dec_in, obs_metadata):
+        """
+        Transform a set of RA, Dec pairs by subtracting out a rotation
+        which represents the effects of precession, nutation, and aberration.
+
+        Specifically:
+
+        Calculate the displacement between the boresite and the boresite
+        corrected for precession, nutation, and aberration (not refraction).
+
+        Convert boresite and corrected boresite to Cartesian coordinates.
+
+        Calculate the rotation matrix to go between those Cartesian vectors.
+
+        Convert [ra_in, dec_in] into Cartesian coordinates.
+
+        Apply the rotation vector to those Cartesian coordinates.
+
+        Convert back to ra, dec-like coordinates
+
+        @param [in] ra_in is a numpy array of RA in radians
+
+        @param [in] dec_in is a numpy array of Dec in radians
+
+        @param [in] obs_metadata is an ObservationMetaData
+
+        @param [out] ra_out is a numpy array of de-precessed RA in radians
+
+        @param [out] dec_out is a numpy array of de-precessed Dec in radians
+        """
+
+        if len(ra_in)==0:
+            return numpy.array([[],[]])
+
+        xyz_bore = cartesianFromSpherical(numpy.array([obs_metadata._pointingRA]),
+                                          numpy.array([obs_metadata._pointingDec]))
+
+        precessedRA, precessedDec = _observedFromICRS(numpy.array([obs_metadata._pointingRA]),
+                                                      numpy.array([obs_metadata._pointingDec]),
+                                                      obs_metadata=obs_metadata, epoch=2000.0,
+                                                      includeRefraction=False)
+
+        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
+
+        rotMat = rotationMatrixFromVectors(xyz_precessed[0], xyz_bore[0])
+
+        xyz_list = cartesianFromSpherical(ra_in, dec_in)
+
+        xyz_de_precessed = numpy.array([numpy.dot(rotMat, xx) for xx in xyz_list])
+        ra_deprecessed, dec_deprecessed = sphericalFromCartesian(xyz_de_precessed)
+        return numpy.array([ra_deprecessed, dec_deprecessed])
+
+
+class PhoSimAstrometryStars(AstrometryStars, PhoSimAstrometryBase):
+    """
+    This mixin contains the getter method that calculates raPhoSim,
+    decPhoSim (the coordinates necessary for a PhoSim-readable
+    InstanceCatalog) in the case of stellar sources.
+    """
+
+    @compound('raPhoSim','decPhoSim')
+    def get_phoSimCoordinates(self):
+        """Getter for RA, Dec coordinates expected by PhoSim.
+
+        These are observed RA, Dec coordinates with the effects of nutation, aberration,
+        and precession subtracted out by the PhosimInputBase._dePrecess() method.
+        This preserves the relative effects of nutation, aberration, and precession while
+        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
+        make sense."""
+
+        raObs, decObs = self.observedStellarCoordinates(includeRefraction = False)
+        return self._dePrecess(raObs, decObs, self.obs_metadata)
+
+
+class PhoSimAstrometryGalaxies(AstrometryGalaxies, PhoSimAstrometryBase):
+    """
+    This mixin contains the getter method that calculates raPhoSim,
+    decPhoSim (the coordinates necessary for a PhoSim-readable
+    InstanceCatalog) in the case of extra-galactic sources.
+    """
+
+    @compound('raPhoSim','decPhoSim')
+    def get_phoSimCoordinates(self):
+        """Getter for RA, Dec coordinates expected by PhoSim.
+
+        These are observed RA, Dec coordinates with the effects of nutation, aberration,
+        and precession subtracted out by the PhosimInputBase._dePrecess() method.
+        This preserves the relative effects of nutation, aberration, and precession while
+        re-aligning the catalog with the boresite RA, Dec so that astrometric solutions
+        make sense."""
+
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
+        raObs, decObs = _observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
+                                          epoch=self.db_obj.epoch)
+
+        return self._dePrecess(raObs, decObs, self.obs_metadata)
+
+
+class PhoSimAstrometrySSM(AstrometrySSM, PhoSimAstrometryBase):
+    """
+    This mixin contains the getter method that calculates raPhoSim,
+    decPhoSim (the coordinates necessary for a PhoSim-readable
+    InstanceCatalog) in the case of solar system sources.
+    """
+
+    @compound('raPhoSim', 'decPhoSim')
+    def get_phoSimCoordinates(self):
+        raObs, decObs = self.observedSSMCoordinates(includeRefraction = False)
+        return self._dePrecess(raObs, decObs, self.obs_metadata)
