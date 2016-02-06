@@ -5,7 +5,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
                                       EBVmixin, FrozenSNCat
-
+from lsst.sims.catalogs.measures.instance import compound
 __all__ = ["PhosimInputBase", "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
            "PhoSimCatalogSersic2D", "PhoSimSpecMap", "PhoSimCatalogSN"]
 
@@ -137,6 +137,26 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
     #                   ('galacticExtinctionModel', 'CCM', (str,3)),
     #                   ('galacticAv', 0.0, float),
     #                   ('internalExtinctionModel', 'none', (str,4))]
+    RVMW = 3.1
+
+#    @compound('MilkyWayRV', 'MWAv')
+#    def get_extinctionParams(self):
+#        Av = self.column_by_name('EBV')
+#        print(Av)
+#        print ('RV value', self.RVMW)
+#        n = len(self.column_by_name('TsedFilepath'))
+#        print ('Len', n)
+#        MWRV =  self.RVMW * numpy.ones(n)
+#        print type(self.RVMW)
+#        print(type(Av))
+#        Av *= self.RVMW
+#        return (MWRV, Av)
+
+    def get_newcol(self):
+        ebvm =  self.column_by_name('EBV')
+        print ('Type of return' , type(ebvm), ebvm.dtype)
+        print ('test ', ebvm * 3.1)
+        return ebvm 
 
     def get_sedFilepath(self):
         return self.column_by_name('TsedFilepath')
@@ -144,6 +164,7 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
     def get_phoSimMagNorm(self):
         return self.column_by_name('TmagNorm')
 
+    # self.column_outputs.append('EBV')
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
     spatialModel = "point"
