@@ -1,5 +1,6 @@
 """Instance Catalog"""
 import numpy
+from copy import deepcopy
 from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.utils import arcsecFromRadians
@@ -117,7 +118,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, AstrometryGalaxies, EBVmixin):
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
                        ('galacticExtinctionModel', 'CCM', (str,3)),
-                       ('galacticAv', 0.1, float),
+                       ('galacticRv', 3.1, float),
                        ('internalExtinctionModel', 'none', (str,4))]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
@@ -152,11 +153,22 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
 #        Av *= self.RVMW
 #        return (MWRV, Av)
 
-    def get_newcol(self):
-        ebvm =  self.column_by_name('EBV')
-        print ('Type of return' , type(ebvm), ebvm.dtype)
-        print ('test ', ebvm * 3.1)
-        return ebvm 
+    #@compound('galacticRv', 'galacticAv')
+    def get_galacticAv(self):
+        Av =  deepcopy(self.column_by_name('EBV'))
+
+        Av.astype(numpy.float)
+        print ('Type of return' , type(Av), Av.dtype)
+        print numpy.shape(Av)
+        try:
+            Av *= self.RVMW
+        except:
+            pass
+        return Av 
+
+    # def get_galacticRv(self):
+    #    numObjs = len(self.column_by_name('TmagNorm'))
+    #   return self.RVMW * numObjs
 
     def get_sedFilepath(self):
         return self.column_by_name('TsedFilepath')
