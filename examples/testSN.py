@@ -95,6 +95,34 @@ class SNObject_tests(unittest.TestCase):
         for key in myDict.keys():
             assert myDict[key] is not None
                 
+    def test_rectifiedSED(self):
+        """
+        Check for an extreme case that the SN seds are being rectified. This is
+        done by setting up an extreme case where there will be negative seds, and
+        checking that this is indeed the case, and checking that they are not
+        negative if rectified.
+        """
+        
+        snobj = SNObject(ra=30., dec=-60., source='salt2')
+        snobj.set(z=0.96, t0=self.mjdobs, x1=-3., x0=1.8e-6)
+        snobj.rectifySED  = False
+        times = np.arange(self.mjdobs - 50., self.mjdobs + 150., 1.)
+        badTimes = []
+        for time in times:
+            sed = snobj.SNObjectSED(time=time,
+                                    bandpass=self.lsstBandPass['r'])
+            if any(sed.flambda < 0.):
+                badTimes.append(time)
+        # Check that there are negative SEDs
+        assert(len(badTimes) > 0)
+        snobj.rectifySED = True
+        for time in badTimes:
+            print(time-self.mjdobs)
+            sed = snobj.SNObjectSED(time=time,
+                                    bandpass=self.lsstBandPass['r'])
+            
+            assert not any(sed.flambda < 0.)
+
     def test_ComparebandFluxes2photUtils(self):
         """
         The SNObject.catsimBandFlux computation uses the sims.photUtils.sed
@@ -386,7 +414,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         for key in oldlcs.groups.keys():
             df_old = oldlcs.get_group(key)
-            df_old.sort(['time', 'band'], inplace=True)
+            df_old.sort_values(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
             df_new.sort(['time', 'band'], inplace=True)
             s = "Testing equality for SNID {0:8d} with {1:2d} datapoints" 
