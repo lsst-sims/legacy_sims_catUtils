@@ -9,7 +9,9 @@ The following functionality is tested:
         implementations of extinction using OD94 model.)
     - Band Flux for extincted SED in r Band
     - Band Mag for extincted SED in r Band
-
+    - rectification of SED: while the SEDs from the model can go negative
+      resulting in negative model fluxes and adus. Test that if rectifySEDs in
+      on such situations are avoided
 SNIaCatalog_tests:
 A Class containing tests to check crictical functionality for SNIaCatalog 
 """
@@ -24,6 +26,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
@@ -78,6 +81,7 @@ class SNObject_tests(unittest.TestCase):
         self.SNCosmoModel = self.SN_extincted.equivalentSNCosmoModel()
 
         self.lsstBandPass = BandpassDict.loadTotalBandpassesFromFiles()
+        self.photParams = PhotometricParameters()
         self.SNCosmoBP = sncosmo.Bandpass(wave=self.lsstBandPass['r'].wavelen,
                                           trans=self.lsstBandPass['r'].sb,
                                           wave_unit=astropy.units.Unit('nm'),
@@ -120,7 +124,8 @@ class SNObject_tests(unittest.TestCase):
             print(time-self.mjdobs)
             sed = snobj.SNObjectSED(time=time,
                                     bandpass=self.lsstBandPass['r'])
-            
+            assert not sed.calcADU(bandpass=self.lsstBandPass['r'],
+                                   photParams=self.photParams) < 0.
             assert not any(sed.flambda < 0.)
 
     def test_ComparebandFluxes2photUtils(self):
