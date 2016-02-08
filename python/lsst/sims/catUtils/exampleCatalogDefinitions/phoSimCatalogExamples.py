@@ -195,7 +195,8 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
                        ('raOffset', 0., float), ('decOffset', 0., float), ('galacticAv', 0.1, float),
                        ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('internalExtinctionModel', 'CCM', (str,3)), ('internalAv', 0., float),
-                       ('internalRv', 3.1, float) ]
+                       ('internalRv', 3.1, float),
+                       ('galacticRv', 3.1, float)]
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
     delimiter = " "
     spatialModel = "sersic2d"
