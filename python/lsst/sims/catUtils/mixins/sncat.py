@@ -32,12 +32,91 @@ class SNFunctionality(object):
     which define these attributes.
     """
 
+    # Write the location of SED file (for example for PhoSim)
     writeSedFile = False
+    # prefix to use for SED File name
     prefix = ''
+
+    # t0, c, x_1, x_0 are parameters characterizing a SALT
+    # based SN model as defined in sncosmo
+    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
+
+    suppressHighzSN = True
+    maxTimeSNVisible = 100.
+    maxz = 1.2
+    # Flux variables are convenient to display in exponential format to avoid
+    # having them cut off
+    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
+    variables += ['flux', 'flux_err', 'mag_err']
+
+    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
+                        'x0': '%8e'}
+    for var in variables:
+        override_formats[var] = '%8e'
+    # You can add parameters like fluxes and magnitudes by adding the following
+    # variables to the list
+    # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
+    # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
+    cannot_be_null = ['x0', 'z', 't0']
+
+    @astropy.utils.lazyproperty
+    def mjdobs(self):
+        '''
+        The time of observation for the catalog, which is set to be equal
+        to obs_metadata.mjd
+        '''
+        return self.obs_metadata.mjd.TAI
+
+    @astropy.utils.lazyproperty
+    def badvalues(self):
+        '''
+        The representation of bad values in this catalog is numpy.nan
+        '''
+        return np.nan
+
+    @property
+    def suppressDimSN(self):
+        """
+        Boolean to decide whether to output observations of SN that are too dim
+        should be represented in the catalog or not. By default set to True
+        """
+        if not hasattr(self, '_suppressDimSN'):
+            suppressDimSN_default = True
+            self._suppressDimSN = suppressDimSN_default
+        return self._suppressDimSN
+
+    @suppressDimSN.setter
+    def suppressDimSN(self, suppressDimSN):
+        """
+        set the value of suppressDimSN of the catalog Parameters
+        Parameters
+        ----------
+        supressDimSN : Boolean, mandatory
+            Value to set suppressDimSN to
+        """
+        self._suppressDimSN = suppressDimSN
+        return self._suppressDimSN 
+
+    @astropy.utils.lazyproperty
+    def photometricparameters(self, expTime=15., nexp=2):
+        lsstPhotometricParameters = PhotometricParameters(exptime=expTime,
+                                                          nexp=nexp)
+        return lsstPhotometricParameters
+
+    @astropy.utils.lazyproperty
+    def lsstBandpassDict(self):
+        return BandpassDict.loadTotalBandpassesFromFiles()
+
+    @astropy.utils.lazyproperty
+    def observedIndices(self):
+        bandPassNames = self.obs_metadata.bandpass
+        return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
     @compound('TsedFilepath', 'TmagNorm')
     def get_phosimVars(self):
         """
+        Obtain variables TsedFilepath to be used to obtain unique filenames
+        for each SED for phoSim and TMagNorm which is also used.
         """
         # construct the unique filename
         # method: snid_mjd(to 4 places of decimal)_bandpassname
@@ -109,6 +188,17 @@ class SNFunctionality(object):
 
         return sedlist
 
+    @property
+    def numobjs(self):
+        return len(self.column_by_name('snid'))
+
+    def get_time(self):
+
+        return np.repeat(self.mjdobs, self.numobjs)
+
+    def get_band(self):
+        bandname = self.obs_metadata.bandpass
+        return np.repeat(bandname, self.numobjs)
 
     @compound('flux', 'mag', 'flux_err', 'mag_err')
     def get_snbrightness(self):
@@ -224,92 +314,89 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
     and parameters of the supernova model that predict the SED.
     """
 
-    # t_0, c, x_1, x_0 are parameters characterizing a SALT
-    # based SN model as defined in sncosmo
-    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
-
-    suppressHighzSN = True
-    maxTimeSNVisible = 100.
-    maxz = 1.2
-    # Flux variables are convenient to display in exponential format to avoid
-    # having them cut off
-    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
-    variables += ['flux', 'flux_err', 'mag_err']
-
-    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
-                        'x0': '%8e'}
-    for var in variables:
-        override_formats[var] = '%8e'
-    # You can add parameters like fluxes and magnitudes by adding the following
-    # variables to the list
-    # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
-    # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
-    cannot_be_null = ['x0', 'z', 't0']
-
-    @astropy.utils.lazyproperty
-    def mjdobs(self):
-        '''
-        The time of observation for the catalog, which is set to be equal
-        to obs_metadata.mjd
-        '''
-        return self.obs_metadata.mjd.TAI
-
-    @astropy.utils.lazyproperty
-    def badvalues(self):
-        '''
-        The representation of bad values in this catalog is numpy.nan
-        '''
-        return np.nan
-
-    @property
-    def suppressDimSN(self):
-        """
-        Boolean to decide whether to output observations of SN that are too dim
-        should be represented in the catalog or not. By default set to True
-        """
-        if not hasattr(self, '_suppressDimSN'):
-            suppressDimSN_default = True
-            self._suppressDimSN = suppressDimSN_default
-        return self._suppressDimSN
-
-    @suppressDimSN.setter
-    def suppressDimSN(self, suppressDimSN):
-        """
-        set the value of suppressDimSN of the catalog Parameters
-        Parameters
-        ----------
-        supressDimSN : Boolean, mandatory
-            Value to set suppressDimSN to
-        """
-        self._suppressDimSN = suppressDimSN
-        return self._suppressDimSN 
-
-    @astropy.utils.lazyproperty
-    def photometricparameters(self, expTime=15., nexp=2):
-        lsstPhotometricParameters = PhotometricParameters(exptime=expTime,
-                                                          nexp=nexp)
-        return lsstPhotometricParameters
-
-    @astropy.utils.lazyproperty
-    def lsstBandpassDict(self):
-        return BandpassDict.loadTotalBandpassesFromFiles()
-
-    @astropy.utils.lazyproperty
-    def observedIndices(self):
-        bandPassNames = self.obs_metadata.bandpass
-        return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
-
+##    # t_0, c, x_1, x_0 are parameters characterizing a SALT
+##    # based SN model as defined in sncosmo
+##    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
+##
+##    suppressHighzSN = True
+##    maxTimeSNVisible = 100.
+##    maxz = 1.2
+##    # Flux variables are convenient to display in exponential format to avoid
+##    # having them cut off
+##    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
+##    variables += ['flux', 'flux_err', 'mag_err']
+##
+##    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
+##                        'x0': '%8e'}
+##    for var in variables:
+##        override_formats[var] = '%8e'
+##    # You can add parameters like fluxes and magnitudes by adding the following
+##    # variables to the list
+##    # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
+##    # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
+##    cannot_be_null = ['x0', 'z', 't0']
+##
+##    @astropy.utils.lazyproperty
+##    def mjdobs(self):
+##        '''
+##        The time of observation for the catalog, which is set to be equal
+##        to obs_metadata.mjd
+##        '''
+##        return self.obs_metadata.mjd.TAI
+##
+##    @astropy.utils.lazyproperty
+##    def badvalues(self):
+##        '''
+##        The representation of bad values in this catalog is numpy.nan
+##        '''
+##        return np.nan
+##
+##    @property
+##    def suppressDimSN(self):
+##        """
+##        Boolean to decide whether to output observations of SN that are too dim
+##        should be represented in the catalog or not. By default set to True
+##        """
+##        if not hasattr(self, '_suppressDimSN'):
+##            suppressDimSN_default = True
+##            self._suppressDimSN = suppressDimSN_default
+##        return self._suppressDimSN
+##
+##    @suppressDimSN.setter
+##    def suppressDimSN(self, suppressDimSN):
+##        """
+##        set the value of suppressDimSN of the catalog Parameters
+##        Parameters
+##        ----------
+##        supressDimSN : Boolean, mandatory
+##            Value to set suppressDimSN to
+##        """
+##        self._suppressDimSN = suppressDimSN
+##        return self._suppressDimSN 
+##
+##    @astropy.utils.lazyproperty
+##    def photometricparameters(self, expTime=15., nexp=2):
+##        lsstPhotometricParameters = PhotometricParameters(exptime=expTime,
+##                                                          nexp=nexp)
+##        return lsstPhotometricParameters
+##
+##    @astropy.utils.lazyproperty
+##    def lsstBandpassDict(self):
+##        return BandpassDict.loadTotalBandpassesFromFiles()
+##
+##    @astropy.utils.lazyproperty
+##    def observedIndices(self):
+##        bandPassNames = self.obs_metadata.bandpass
+##        return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
+##
     def get_snid(self):
         # Not necessarily unique if the same galaxy hosts two SN
         # Use refIdCol to access the relevant id column of the dbobj
         # Should revert to galTileID for galaxyTiled catalogDBObj and
         # id for galaxyObj catalogDBObj
         # (email from Scott)
-        return self.column_by_name(self.refIdCol)
+       return self.column_by_name(self.refIdCol)
 
-    @property
-    def numobjs(self):
-        return len(self.column_by_name('id'))
 
     @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
     def get_angularCoordinates(self):
@@ -340,13 +427,6 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
 
-    def get_time(self):
-
-        return np.repeat(self.mjdobs, self.numobjs)
-
-    def get_band(self):
-        bandname = self.obs_metadata.bandpass
-        return np.repeat(bandname, self.numobjs)
 
 
 class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
@@ -371,93 +451,7 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
     and parameters of the supernova model that predict the SED.
     """
 
-    # t_0, c, x_1, x_0 are parameters characterizing a SALT
-    # based SN model as defined in sncosmo
-    column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
-
     surveyStartDate = 59580. # For Kraken_1042
-    suppressHighzSN = True
-    maxTimeSNVisible = 100.
-    maxz = 1.2
-    # Flux variables are convenient to display in exponential format to avoid
-    # having them cut off
-    variables = ['flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y']
-    variables += ['flux', 'flux_err', 'mag_err']
-
-    override_formats = {'snra': '%8e', 'sndec': '%8e', 'c': '%8e',
-                        'x0': '%8e'}
-    for var in variables:
-        override_formats[var] = '%8e'
-    # You can add parameters like fluxes and magnitudes by adding the following
-    # variables to the list
-    # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
-    # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
-    cannot_be_null = ['x0', 'z', 't0']
-
-    @astropy.utils.lazyproperty
-    def mjdobs(self):
-        '''
-        The time of observation for the catalog, which is set to be equal
-        to obs_metadata.mjd
-        '''
-        return self.obs_metadata.mjd.TAI
-
-    @astropy.utils.lazyproperty
-    def badvalues(self):
-        '''
-        The representation of bad values in this catalog is numpy.nan
-        '''
-        return np.nan
-
-    @property
-    def suppressDimSN(self):
-        """
-        Boolean to decide whether to output observations of SN that are too dim
-        should be represented in the catalog or not. By default set to True
-        """
-        if not hasattr(self, '_suppressDimSN'):
-            suppressDimSN_default = True
-            self._suppressDimSN = suppressDimSN_default
-        return self._suppressDimSN
-
-    @suppressDimSN.setter
-    def suppressDimSN(self, suppressDimSN):
-        """
-        set the value of suppressDimSN of the catalog Parameters
-        Parameters
-        ----------
-        supressDimSN : Boolean, mandatory
-            Value to set suppressDimSN to
-        """
-        self._suppressDimSN = suppressDimSN
-        return self._suppressDimSN 
-
-    @astropy.utils.lazyproperty
-    def photometricparameters(self, expTime=15., nexp=2):
-        lsstPhotometricParameters = PhotometricParameters(exptime=expTime,
-                                                          nexp=nexp)
-        return lsstPhotometricParameters
-
-    @astropy.utils.lazyproperty
-    def lsstBandpassDict(self):
-        return BandpassDict.loadTotalBandpassesFromFiles()
-
-    @astropy.utils.lazyproperty
-    def observedIndices(self):
-        bandPassNames = self.obs_metadata.bandpass
-        return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
-
-    #def get_snid(self):
-        # Not necessarily unique if the same galaxy hosts two SN
-        # Use refIdCol to access the relevant id column of the dbobj
-        # Should revert to galTileID for galaxyTiled catalogDBObj and
-        # id for galaxyObj catalogDBObj
-        # (email from Scott)
-     #    return self.column_by_name('snid')
-
-    @property
-    def numobjs(self):
-        return len(self.column_by_name('snid'))
 
     @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
     def get_angularCoordinates(self):
@@ -495,13 +489,4 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
                       self.badvalues, t0)
 
         return (c, x1, x0, t0)
-
-
-    def get_time(self):
-
-        return np.repeat(self.mjdobs, self.numobjs)
-
-    def get_band(self):
-        bandname = self.obs_metadata.bandpass
-        return np.repeat(bandname, self.numobjs)
 
