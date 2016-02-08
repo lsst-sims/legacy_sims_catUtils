@@ -58,6 +58,7 @@ class SNObject(sncosmo.Model):
         Therefore, the value must be set explicitly to 0. to get unextincted
         quantities.
 
+    rectifySED : Bool, True by Default
     Methods
     -------
 
@@ -121,6 +122,11 @@ class SNObject(sncosmo.Model):
         self.ebvofMW = None
         if self._hascoords:
             self.mwEBVfromMaps()
+
+
+        # SED will be rectified to 0. for negative values of SED if this
+        # attribute is set to True
+        self.rectifySED = True
         return
 
     @property
@@ -475,6 +481,10 @@ class SNObject(sncosmo.Model):
 
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
+
+        # Rectify
+        if self.rectifySED:
+            flambda = np.where(flambda > 0., flambda, 0.)
 
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
