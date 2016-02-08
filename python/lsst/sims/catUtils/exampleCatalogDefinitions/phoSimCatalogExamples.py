@@ -181,8 +181,13 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
                        ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
                        ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('internalExtinctionModel', 'CCM', (str,3)), ('internalAv', 0., float),
+<<<<<<< HEAD
                        ('internalRv', 3.1, float) ]
 
+=======
+                       ('internalRv', 3.1, float),
+                       ('galacticRv', 3.1, float)]
+>>>>>>> Added galacticRV to galaxy phosim catalog in phoSimCatlogExamples.py
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
 
     spatialModel = "sersic2d"
