@@ -14,7 +14,6 @@ class EBVmixin(EBVbase):
     This mixin class contains the getters which a catalog object will use to call
     calculateEbv in the EBVbase class
     """
-
     #and finally, here is the getter
     @cached
     def get_EBV(self):
@@ -34,5 +33,3 @@ class EBVmixin(EBVbase):
         from getter (reading dustmaps) and the RV value from galacticRv
         """
         return self.column_by_name('EBV')*self.column_by_name('galacticRv')
-
-
