@@ -14,27 +14,25 @@ class EBVmixin(EBVbase):
     This mixin class contains the getters which a catalog object will use to call
     calculateEbv in the EBVbase class
     """
-    
-    
+
     #and finally, here is the getter
     @cached
     def get_EBV(self):
         """
         Getter for the InstanceCatalog framework
         """
-        
+
         galacticCoordinates=numpy.array([self.column_by_name('glon'),self.column_by_name('glat')])
-  
+
         EBV_out=numpy.array(self.calculateEbv(galacticCoordinates=galacticCoordinates,interp=True))
         return EBV_out
-    
-    @cached    
-    def get_galacticRv(self):
+
+    @cached
+    def get_galacticAv(self):
         """
-        Returns galactic RV by getting galacticAv and EBV and assuming Rv = Av/EBV"
+        Getter to return galactic(Milky Way) Av based on EBV values
+        from getter (reading dustmaps) and the RV value from galacticRv
         """
-        Av=self.column_by_name('galacticAv')
-        EBV=self.column_by_name('EBV')
-        return numpy.array(Av/EBV)
-    
+        return self.column_by_name('EBV')*self.column_by_name('galacticRv')
+
 

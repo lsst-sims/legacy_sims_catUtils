@@ -402,7 +402,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,VariabilityStars,car
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = 'km30_5250.fits_g00_5370'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
-                       ('glat', 30., float), ('galacticAv', 0.1, float)]
+                       ('glat', 30., float), ('galacticAv', 0.1, float), ('galacticRv', 3.1, float)]
 
 class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityStars, PhotometryStars):
     catalog_type = 'cartoonStarsOnlyI'
@@ -411,7 +411,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = 'km30_5250.fits_g00_5370'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
-                       ('glat', 30., float), ('galacticAv', 0.1, float)]
+                       ('glat', 30., float), ('galacticAv', 0.1, float), ('galacticRv', 3.1, float)]
 
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
     def get_magnitudes(self):
@@ -563,7 +563,7 @@ class testStars(InstanceCatalog, EBVmixin, VariabilityStars, TestVariabilityMixi
     'EBV','varParamStr']
     defSedName = 'sed_flat.txt'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
-                       ('glat', 30., float), ('galacticAv', 0.1, float)]
+                       ('glat', 30., float), ('galacticAv', 0.1, float), ('galacticRv', 3.1, float)]
 
 class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,TestVariabilityMixin,PhotometryGalaxies,testDefaults):
     """
