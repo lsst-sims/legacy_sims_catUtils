@@ -15,6 +15,8 @@ class EBVmixin(EBVbase):
     calculateEbv in the EBVbase class
     """
     
+    # Default value for RV in MW
+    RVMW = 3.1
     
     #and finally, here is the getter
     @cached
@@ -29,12 +31,32 @@ class EBVmixin(EBVbase):
         return EBV_out
     
     @cached    
+    def get_galacticAv(self):
+        """
+        Getter to return galactic(Milky Way) Av based on EBV values
+        from getter (reading dustmaps) and the RV value from galacticRv
+        """
+
+        EBV = self.column_by_name('EBV')
+        av = EBV
+        try:
+            av = numpy.array(EBV/self.RVMW)
+        except:
+            pass
+        return av
+
+    # @cached    
     def get_galacticRv(self):
         """
-        Returns galactic RV by getting galacticAv and EBV and assuming Rv = Av/EBV"
+        Returns galactic RV from self.RVMW which is set to 3.1 by
+        default, but can be modified by the user.
         """
-        Av=self.column_by_name('galacticAv')
+        num = 1
         EBV=self.column_by_name('EBV')
-        return numpy.array(Av/EBV)
+        try:
+            num = len(EBV)
+        except:
+            pass
+        return self.RVMW * numpy.ones(num)
     
 
