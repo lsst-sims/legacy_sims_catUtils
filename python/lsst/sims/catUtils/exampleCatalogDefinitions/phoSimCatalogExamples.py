@@ -115,7 +115,7 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     default_columns = [('redshift', 0., float),('shear1', 0., float), ('shear2', 0., float),
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float),
-                       ('galacticExtinctionModel', 'CCM', (str,3)),
+                       ('galacticExtinctionModel', 'CCM', (str,3)), ('galacticRv', 3.1, float),
                        ('internalExtinctionModel', 'none', (str,4))]
 
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
@@ -137,7 +137,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
                        ('galacticExtinctionModel', 'CCM', (str,3)),
-                       ('galacticAv', 0.1, float),
+                       ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
                        ('internalExtinctionModel', 'none', (str,4))]
 
     default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
@@ -159,7 +159,8 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
                       'internalExtinctionModel','internalAv','internalRv']
 
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
-                       ('raOffset', 0., float), ('decOffset', 0., float), ('galacticAv', 0.1, float),
+                       ('raOffset', 0., float), ('decOffset', 0., float),
+                       ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
                        ('galacticExtinctionModel', 'CCM', (str,3)),
                        ('internalExtinctionModel', 'CCM', (str,3)), ('internalAv', 0., float),
                        ('internalRv', 3.1, float) ]

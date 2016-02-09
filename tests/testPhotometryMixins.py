@@ -368,7 +368,7 @@ class photometryUnitTest(unittest.TestCase):
         self.assertEqual(len(mags), len(test_cat.cartoonBandpassDict))
         self.assertGreater(len(mags), 0)
         for j in range(len(mags)):
-            self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],5)
+            self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],4)
 
         with open(catName, 'r') as input_file:
             lines = input_file.readlines()
