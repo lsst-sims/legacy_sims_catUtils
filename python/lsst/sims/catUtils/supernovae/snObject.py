@@ -394,6 +394,8 @@ class SNObject(sncosmo.Model):
         phase = (time - self.get('t0')) / (1. + self.get('z'))
 
         source = self.source
+
+
         if wavelen is None:
             # use native SALT grid
             wavelen = source._wave
@@ -401,7 +403,14 @@ class SNObject(sncosmo.Model):
             # assume wavelen in nm, convert to Ang
             wavelen *= 10.0
 
-        flux = source.flux(phase, wavelen)
+        if phase < source.minphase()  || phase > source.maxphase():
+            flux = np.zeros(len(wavelen))
+        else:
+            flux = source.flux(phase, wavelen)
+
+        # rectify the flux
+        flux = np.where(flux > 0., flux, 0.)
+
 
         #convert per Ang to per nm
         flux *= 10.0
