@@ -16,7 +16,6 @@ class EBVmixin(EBVbase):
     """
     
     
-    #and finally, here is the getter
     @cached
     def get_EBV(self):
         """
@@ -27,14 +26,14 @@ class EBVmixin(EBVbase):
   
         EBV_out=numpy.array(self.calculateEbv(galacticCoordinates=galacticCoordinates,interp=True))
         return EBV_out
-    
-#    @cached    
-#    def get_galacticRv(self):
-#        """
-#        Returns galactic RV by getting galacticAv and EBV and assuming Rv = Av/EBV"
-#        """
-#        Av=self.column_by_name('galacticAv')
-#        EBV=self.column_by_name('EBV')
-#        return numpy.array(Av/EBV)
-    
+ 
+
+    @cached
+    def get_galacticAv(self):
+        """
+        Getter to return galactic(Milky Way) Av based on EBV values
+        from getter (reading dustmaps) and the RV value from galacticRv
+        """
+        return self.column_by_name('EBV')*self.column_by_name('galacticRv')
+
 

@@ -138,7 +138,7 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
     #                   ('galacticExtinctionModel', 'CCM', (str,3)),
     #                   ('galacticAv', 0.0, float),
     #                   ('internalExtinctionModel', 'none', (str,4))]
-    RVMW = 3.1
+    # RVMW = 3.1
 
 #    @compound('MilkyWayRV', 'MWAv')
 #    def get_extinctionParams(self):
@@ -153,18 +153,18 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
 #        Av *= self.RVMW
 #        return (MWRV, Av)
 
-    #@compound('galacticRv', 'galacticAv')
-    def get_galacticAv(self):
-        Av =  deepcopy(self.column_by_name('EBV'))
-
-        Av.astype(numpy.float)
-        print ('Type of return' , type(Av), Av.dtype)
-        print numpy.shape(Av)
-        try:
-            Av *= self.RVMW
-        except:
-            pass
-        return Av 
+#    @compound('galacticRv', 'galacticAv')
+#    def get_galacticAv(self):
+#        Av =  deepcopy(self.column_by_name('EBV'))
+#
+#        Av.astype(numpy.float)
+#        print ('Type of return' , type(Av), Av.dtype)
+#        print numpy.shape(Av)
+#        try:
+#            Av *= self.RVMW
+#        except:
+#            pass
+#        return Av 
 
     # def get_galacticRv(self):
     #    numObjs = len(self.column_by_name('TmagNorm'))
@@ -177,10 +177,10 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
         return self.column_by_name('TmagNorm')
 
     # self.column_outputs.append('EBV')
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
-    delimiter = " "
-    spatialModel = "point"
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+    #default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    #delimiter = " "
+    #spatialModel = "point"
+    #transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 
 
