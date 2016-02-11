@@ -128,6 +128,22 @@ class SNObject_tests(unittest.TestCase):
                                    photParams=self.photParams) < 0.
             assert not any(sed.flambda < 0.)
 
+    def test_sourceSED(self):
+        
+        snobject =  SNObject()
+
+        # This is the SNCosmo Source
+        SNCosmoSource = sncosmo.get_source(snobject.source.name)
+
+        # Set up a parameter dict
+        params = {'x1': -3.0, 'x0': 1.0, 'c':0.}
+        SNCosmoSource.set(**params)
+        snobject.set(**params)
+
+        rest_wave = np.arange(2000., 9000., 100.)
+        for phase in np.arange(-20., 50., 1.0):
+            if snobject.rectifySED:
+                assert not any(snobject.SNObjectSourceSED(time=phase).flambda < 0.)
     def test_ComparebandFluxes2photUtils(self):
         """
         The SNObject.catsimBandFlux computation uses the sims.photUtils.sed

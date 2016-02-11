@@ -71,7 +71,8 @@ class SNObject(sncosmo.Model):
     >>> 1.0471975511965976
     """
 
-    def __init__(self, ra=None, dec=None, source='salt2-extended'):
+    def __init__(self, ra=None, dec=None, source='salt2-extended',
+            rectifySED=True):
         """
         Instantiate object
 
@@ -89,7 +90,7 @@ class SNObject(sncosmo.Model):
         dust = sncosmo.OD94Dust()
         sncosmo.Model.__init__(self, source=source, effects=[dust, dust],
                                effect_names=['host', 'mw'],
-                               effect_frames=['rest', 'obs'])
+                               effect_frames=['rest', 'obs']) 
 
         # Current implementation of Model has a default value of mwebv = 0.
         # ie. no extinction, but this is not part of the API, so should not
@@ -98,6 +99,9 @@ class SNObject(sncosmo.Model):
 
         self.ModelSource = source
         self.set(mwebv=0.)
+
+        # self.rectifySED determines if SALT2 seds are allowed to go negative
+        self.rectifySED = rectifySED
 
         # self._ra, self._dec is initialized as None for cases where ra, dec
         # is not provided
@@ -502,6 +506,44 @@ class SNObject(sncosmo.Model):
 
         SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
+    
+    
+    
+    def SNObjectSourceSED(self, time, wavelen=None, bandpass=None):
+        """
+        Return the source SED for the object at given time (observer frame) as
+        a `lsst.sims.photUtils.Sed`.
+        """
+        phase = (time - self.get('t0')) / (1. + self.get('z'))
+
+        source = self.source
+
+
+        if wavelen is None:
+            # use native SALT grid
+            wavelen = source._wave
+        else:
+            # assume wavelen in nm, convert to Ang
+            wavelen *= 10.0
+
+        if (phase < source.minphase()) or (phase > source.maxphase()):
+            flux = np.zeros(len(wavelen))
+        else:
+            flux = source.flux(phase, wavelen)
+
+        # rectify the flux
+        if self.rectifySED:
+            flux = np.where(flux > 0., flux, 0.)
+
+
+        #convert per Ang to per nm
+        flux *= 10.0
+        wavelen = wavelen / 10.
+        sed = Sed(wavelen=wavelen, flambda=flux)
+        # This has the cosmology built in.
+
+        return sed
+
 
     def catsimBandFlux(self, time, bandpassobject):
         """
