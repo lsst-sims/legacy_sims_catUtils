@@ -426,7 +426,7 @@ class SNObject(sncosmo.Model):
             # assume wavelen in nm, convert to Ang
             wavelen *= 10.0
 
-        if phase < source.minphase()  || phase > source.maxphase():
+        if (phase < source.minphase()) or (phase > source.maxphase()):
             flux = np.zeros(len(wavelen))
         else:
             flux = source.flux(phase, wavelen)
