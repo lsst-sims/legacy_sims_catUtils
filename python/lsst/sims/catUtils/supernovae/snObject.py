@@ -134,6 +134,7 @@ class SNObject(sncosmo.Model):
         # SED will be rectified to 0. for negative values of SED if this
         # attribute is set to True
         self.rectifySED = True
+
         return
 
     @property
