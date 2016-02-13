@@ -144,17 +144,22 @@ class SNFunctionality(object):
             else:
                 snobject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i])
 
-                # SED in rest frame
-                sed = snobject.SNObjectSourceSED(time=self.mjdobs)
-                try:
-                    magNorms[i] = sed.calcMag(bandpass=bp)
-                except:
-                    # sed.flambda = 1.0e-20 
-                    magNorms[i] = 1000. # sed.calcMag(bandpass=bp)
+                if self.mjdobs < snobject.mintime() or self.mjdobs > snobject.maxtime():
+                    magNorms[i] = np.nan
+                    fnames[i] = None
+                else:
 
-                if self.writeSedFile:
-                    print('writing file to ', fnames[i])
-                    sed.writeSED(self.prefix + fnames[i])
+
+                    # SED in rest frame
+                    sed = snobject.SNObjectSourceSED(time=self.mjdobs)
+                    try:
+                        magNorms[i] = sed.calcMag(bandpass=bp)
+                    except:
+                        # sed.flambda = 1.0e-20 
+                        magNorms[i] = 1000. # sed.calcMag(bandpass=bp)
+
+                    if self.writeSedFile:
+                        sed.writeSED(self.prefix + fnames[i])
 
 
         return (fnames, magNorms)

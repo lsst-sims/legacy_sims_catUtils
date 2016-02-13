@@ -512,6 +512,9 @@ class SNObject(sncosmo.Model):
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
 
+        # rectify
+        flambda = np.where(flambda > 0., flambda, 0.)
+
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
         if not applyExtinction:
