@@ -100,16 +100,7 @@ class SNObject(sncosmo.Model):
         self.ModelSource = source
         self.set(mwebv=0.)
 
-        # self.rectifySED determines if SALT2 seds are allowed to go negative
-        self.rectifySED = rectifySED
 
-        # Behavior of model outside range :
-        # if 'zero' then all fluxes outside are set to 0.
-        self._modelOutSideRange = 'zero'
-        # SED will be rectified to 0. for negative values of SED if this
-        # attribute is set to True
-        # self.rectifySED determines if SALT2 seds are allowed to go negative
-        self.rectifySED = rectifySED
 
         # self._ra, self._dec is initialized as None for cases where ra, dec
         # is not provided
