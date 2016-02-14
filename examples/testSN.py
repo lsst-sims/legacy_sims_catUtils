@@ -99,6 +99,25 @@ class SNObject_tests(unittest.TestCase):
         for key in myDict.keys():
             assert myDict[key] is not None
                 
+    def test_attributeDefaults(self):
+        """
+        Check the defaults and the setter properties for rectifySED and modelOutSideRange
+        """
+        snobj = SNObject(ra=30., dec=-60., source='salt2')
+        assert snobj.rectifySED == True
+        assert snobj.modelOutSideRange == 'zero'
+
+        snobj.rectifySED = False
+        assert snobj.rectifySED == False
+        assert snobj.modelOutSideRange == 'zero'
+        # Should run but do nothing
+        snobj.modelOutSideRange = 'False'
+        assert snobj.modelOutSideRange == 'zero'
+
+
+
+
+
     def test_rectifiedSED(self):
         """
         Check for an extreme case that the SN seds are being rectified. This is
@@ -121,7 +140,6 @@ class SNObject_tests(unittest.TestCase):
         assert(len(badTimes) > 0)
         snobj.rectifySED = True
         for time in badTimes:
-            print(time-self.mjdobs)
             sed = snobj.SNObjectSED(time=time,
                                     bandpass=self.lsstBandPass['r'])
             assert not sed.calcADU(bandpass=self.lsstBandPass['r'],
@@ -437,7 +455,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             df_old = oldlcs.get_group(key)
             df_old.sort_values(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
-            df_new.sort(['time', 'band'], inplace=True)
+            df_new.sort_values(['time', 'band'], inplace=True)
             s = "Testing equality for SNID {0:8d} with {1:2d} datapoints" 
             print(s.format(df_new.snid.iloc[0], len(df_old)))
             assert_frame_equal(df_new, df_old)
