@@ -530,10 +530,24 @@ class SNObject(sncosmo.Model):
     
     
     
-    def SNObjectSourceSED(self, time, wavelen=None, bandpass=None):
+    def SNObjectSourceSED(self, time, wavelen=None):
         """
         Return the source SED for the object at given time (observer frame) as
-        a `lsst.sims.photUtils.Sed`.
+        a `lsst.sims.photUtils.Sed`. This converts the oberver frame time into
+        a rest frame phase, and obtains the SED at the wavelen parameter. The
+        amplitude of the source is determined by the 'x0' parameter of the
+        model so it has cosmology built into it.
+
+        Parameters
+        ----------
+        time : mandatory, float
+            observer frame time in mjd
+        wavelen : optional, `np.ndarray`, defaults to native grid of model
+            wavelength grid in units of nm
+
+        Returns
+        -------
+        `lsst.sims.photUtils.Sed` instance with this sed
         """
         phase = (time - self.get('t0')) / (1. + self.get('z'))
 
