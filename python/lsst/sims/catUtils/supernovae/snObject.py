@@ -477,39 +477,38 @@ class SNObject(sncosmo.Model):
             # remember this is in nm
             wavelen = bp.wavelen
 
-        flambda = np.zeros(len(wavelen))
+        # Convert to Ang
+        wave = wavelen * 10.0
+
+        # If SNCosmo is requested a SED value beyond the model range
+        # it will crash. Try to prevent that by returning np.nan for
+        # such wavelengths. This will still not help band flux calculations
+        # but helps us get past this stage.
+        flambda = np.zeros(len(wavelen)) * np.nan
+
+        # Setup wavelen mask beyond which the values are np.nan
+        mask1 = wave > self.minwave()
+        mask2 = wave < self.maxwave()
+        wavelenmask = mask1 & mask2
+
+        wave = wave[wavelenmask]
 
         # self.mintime() and self.maxtime() are properties describing
         # the ranges of SNCosmo.Model in time.
-
         # Set SED to 0 beyond the model phase range, will change this if
         # SNCosmo includes a more sensible decay later.
         if (time > self.mintime()) & (time < self.maxtime())\
                 & (self.modelOutSideRange=='zero'):
-
-            # If SNCosmo is requested a SED value beyond the model range
-            # it will crash. Try to prevent that by returning np.nan for
-            # such wavelengths. This will still not help band flux calculations
-            # but helps us get past this stage.
-
-            flambda = flambda * np.nan
-
-            # Convert to Ang
-            wave = wavelen * 10.0
-            mask1 = wave > self.minwave()
-            mask2 = wave < self.maxwave()
-            mask = mask1 & mask2
-            wave = wave[mask]
-
             # flux density dE/dlambda returned from SNCosmo in
             # ergs/cm^2/sec/Ang, convert to ergs/cm^2/sec/nm
-
-            flambda[mask] = self.flux(time=time, wave=wave)
-            flambda[mask] = flambda[mask] * 10.0
+            flambda[wavelenmask] = self.flux(time=time, wave=wave)
+            flambda[wavelenmask] = flambda[wavelenmask] * 10.0
+        else:
+            flambda[wavelenmask] = np.zeros(len(wave))
 
         # Rectify
         if self.rectifySED:
-            flambda = np.where(flambda > 0., flambda, 0.)
+            flambda[wavelenmask] = np.where(flambda[wavelenmask] > 0., flambda[wavelenmask], 0.)
 
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
@@ -545,22 +544,30 @@ class SNObject(sncosmo.Model):
             wavelen = source._wave
         else:
             # assume wavelen in nm, convert to Ang
-            wavelen *= 10.0
+            wavelen = 10.0 * wavelen
 
-        if (phase < source.minphase()) or (phase > source.maxphase()):
-            flux = np.zeros(len(wavelen))
+        # Initialize to np.nan
+        flambda = np.zeros(len(wavelen)) * np.nan
+        wavelenmask = (wavelen > source.minwave()) & \
+                      (wavelen < source.maxwave())
+        inTimeRange = (time > self.mintime()) or (time < self.maxtime()) 
+
+        # Implement out of model range behavior
+        if self.modelOutSideRange == 'zero' and inTimeRange:
+            flambda[wavelenmask] = source.flux(phase, wavelen[wavelenmask])
         else:
-            flux = source.flux(phase, wavelen)
-
+            flambda[wavelenmask] = 0.
+            
         # rectify the flux
         if self.rectifySED:
-            flux = np.where(flux > 0., flux, 0.)
+            flambda[wavelenmask] = np.where(flambda[wavelenmask] > 0.,
+                                            flambda[wavelenmask], 0.)
 
 
         #convert per Ang to per nm
-        flux *= 10.0
+        flambda *= 10.0
         wavelen = wavelen / 10.
-        sed = Sed(wavelen=wavelen, flambda=flux)
+        sed = Sed(wavelen=wavelen, flambda=flambda)
         # This has the cosmology built in.
 
         return sed
