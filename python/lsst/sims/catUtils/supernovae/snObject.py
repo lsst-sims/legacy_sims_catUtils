@@ -100,12 +100,15 @@ class SNObject(sncosmo.Model):
         self.ModelSource = source
         self.set(mwebv=0.)
 
+<<<<<<< HEAD
 
         # Behavior of model outside range :
         # if 'zero' then all fluxes outside are set to 0.
         self._modelOutSideRange = 'zero'
         # SED will be rectified to 0. for negative values of SED if this
         # attribute is set to True
+=======
+>>>>>>> 61ef3679ce260d50323f2f4b66f748b194180f2a
         # self.rectifySED determines if SALT2 seds are allowed to go negative
         self.rectifySED = rectifySED
 
@@ -544,6 +547,7 @@ class SNObject(sncosmo.Model):
             wavelen = source._wave
         else:
             # assume wavelen in nm, convert to Ang
+<<<<<<< HEAD
             wavelen = 10.0 * wavelen
 
         # Initialize to np.nan
@@ -568,6 +572,24 @@ class SNObject(sncosmo.Model):
         flambda *= 10.0
         wavelen = wavelen / 10.
         sed = Sed(wavelen=wavelen, flambda=flambda)
+=======
+            wavelen *= 10.0
+
+        if (phase < source.minphase()) or (phase > source.maxphase()):
+            flux = np.zeros(len(wavelen))
+        else:
+            flux = source.flux(phase, wavelen)
+
+        # rectify the flux
+        if self.rectifySED:
+            flux = np.where(flux > 0., flux, 0.)
+
+
+        #convert per Ang to per nm
+        flux *= 10.0
+        wavelen = wavelen / 10.
+        sed = Sed(wavelen=wavelen, flambda=flux)
+>>>>>>> 61ef3679ce260d50323f2f4b66f748b194180f2a
         # This has the cosmology built in.
 
         return sed
