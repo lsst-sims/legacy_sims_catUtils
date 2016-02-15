@@ -200,7 +200,7 @@ class SNFunctionality(object):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
 
-    @compound('flux', 'mag', 'flux_err', 'mag_err')
+    @compound('flux', 'mag', 'flux_err', 'mag_err', 'adu')
     def get_snbrightness(self):
 
         c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
@@ -217,8 +217,9 @@ class SNFunctionality(object):
             raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
 
+        _photParams = PhotometricParameters()
         # Initialize return array
-        vals = np.zeros(shape=(self.numobjs, 4))
+        vals = np.zeros(shape=(self.numobjs, 5))
 
         for i, _ in enumerate(vals):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
@@ -240,16 +241,20 @@ class SNFunctionality(object):
                                                     photParams=None,
                                                     fluxinMaggies=fluxinMaggies,
                                                     magnitude=mag)
-
+            sed = SNobject.SNObjectSED(time=self.mjdobs,
+                                       bandpass=self.lsstBandpassDict,
+                                                                                                  applyExtinction=True)
+            adu = sed.calcADU(bandpass, photParams=_photParams)
             mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
                                                   bandpassobject=bandpass,
                                                   m5=self.obs_metadata.m5[
                                                       bandname],
-                                                  photParams=None,
+                                                  photParams=_photParams,
                                                   magnitude=mag)
             vals[i, 2] = flux_err
             vals[i, 3] = mag_err
-        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
+            vals[i, 4] = adu
+        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3], vals[:, 4])
 
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
               'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y',
