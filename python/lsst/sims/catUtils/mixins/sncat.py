@@ -458,6 +458,11 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
 
     surveyStartDate = 59580. # For Kraken_1042
 
+    #def get_snid(self):
+
+    #    return self.column_by_name('Tsnid')
+
+
     @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
     def get_angularCoordinates(self):
         '''
