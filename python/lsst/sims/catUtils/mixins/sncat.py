@@ -153,7 +153,6 @@ class SNFunctionality(object):
                     magNorms[i] = 1000. # sed.calcMag(bandpass=bp)
 
                 if self.writeSedFile:
-                    print('writing file to ', fnames[i])
                     sed.writeSED(fnames[i])
 
 
@@ -490,10 +489,6 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
                     self.column_by_name('Tx0')
         t0 = self.column_by_name('Tt0') + self.surveyStartDate
         if self.suppressDimSN :
-            print('badvalues ', self.badvalues)
-            print('mjd ', self.mjdobs)
-            print('maxTime', self.maxTimeSNVisible)
-            print('number of cases ',
                     len(t0[np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible]))
             t0 = np.where(np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible,
                       self.badvalues, t0)
