@@ -101,7 +101,6 @@ class SNObject(sncosmo.Model):
         self.set(mwebv=0.)
 
 
-
         # self._ra, self._dec is initialized as None for cases where ra, dec
         # is not provided
         self._ra = None
