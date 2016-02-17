@@ -489,9 +489,8 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
                     self.column_by_name('Tx0')
         t0 = self.column_by_name('Tt0') + self.surveyStartDate
         if self.suppressDimSN :
-                    len(t0[np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible]))
             t0 = np.where(np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible,
-                      self.badvalues, t0)
+                          self.badvalues, t0)
 
         return (c, x1, x0, t0)
 
