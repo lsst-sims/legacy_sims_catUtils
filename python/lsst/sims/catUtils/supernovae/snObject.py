@@ -425,13 +425,28 @@ class SNObject(sncosmo.Model):
             # assume wavelen in nm, convert to Ang
             wavelen *= 10.0
 
-        if (phase < source.minphase()) or (phase > source.maxphase()):
-            flux = np.zeros(len(wavelen))
-        else:
-            flux = source.flux(phase, wavelen)
+        # The np.nan allows us to request wavelengths beyond the model range
+        # (for example due to the bandpass) and circumvent SNCosmo exceptions
+        # for this problem, and lets us decide what to do with this.
+        flambda = np.zeros(len(wavelen)) * np.nan
+
+        # Setup wavelen mask beyond which the values are np.nan
+        mask1 = wavelen < self.minwave()
+        mask2 = wavelen > self.maxwave()
+        wavelenmask = ~(mask1 | mask2)
+
+        print wavelen[wavelenmask]
+        outsidephaserange = (phase > source.maxphase())or(phase < source.minphase())
+        if self.modelOutSideRange == 'zero':
+            if outsidephaserange:
+                flambda[wavelenmask] = 0.# np.zeros(len(wavelen))
+            else:
+                flambda[wavelenmask] = source.flux(phase,
+                                                   wavelen[wavelenmask])
 
         # rectify the flux
-        flux = np.where(flux > 0., flux, 0.)
+        if self.rectifySED:
+            flux = np.where(flambda>0., flambda, 0.)
 
 
         #convert per Ang to per nm
@@ -515,9 +530,9 @@ class SNObject(sncosmo.Model):
         flambda = np.zeros(len(wavelen)) * np.nan
 
         # Setup wavelen mask beyond which the values are np.nan
-        mask1 = wave > self.minwave()
-        mask2 = wave < self.maxwave()
-        wavelenmask = mask1 & mask2
+        mask1 = wave < self.minwave()
+        mask2 = wave > self.maxwave()
+        wavelenmask = ~ (mask1 | mask2)
 
         wave = wave[wavelenmask]
 
@@ -525,14 +540,19 @@ class SNObject(sncosmo.Model):
         # the ranges of SNCosmo.Model in time.
         # Set SED to 0 beyond the model phase range, will change this if
         # SNCosmo includes a more sensible decay later.
-        if (time > self.mintime()) & (time < self.maxtime())\
-                & (self.modelOutSideRange=='zero'):
-            # flux density dE/dlambda returned from SNCosmo in
-            # ergs/cm^2/sec/Ang, convert to ergs/cm^2/sec/nm
-            flambda[wavelenmask] = self.flux(time=time, wave=wave)
-            flambda[wavelenmask] = flambda[wavelenmask] * 10.0
+
+        #if (time > self.mintime()) & (time < self.maxtime())\
+        #        & (self.modelOutSideRange=='zero'):
+        if self.modelOutSideRange == 'zero':
+            if (time < self.mintime()) or (time > self.maxtime()):
+                flambda[wavelenmask] = np.zeros(len(wave))
+            else:
+                # flux density dE/dlambda returned from SNCosmo in
+                # ergs/cm^2/sec/Ang, convert to ergs/cm^2/sec/nm
+                flambda[wavelenmask] = self.flux(time=time, wave=wave)
+                flambda[wavelenmask] = flambda[wavelenmask] * 10.0
         else:
-            flambda[wavelenmask] = np.zeros(len(wave))
+            raise ValueError('self.modelOutSideRange  not implemented')
 
         # Rectify
         if self.rectifySED:
@@ -557,62 +577,64 @@ class SNObject(sncosmo.Model):
     
     
     
-    def SNObjectSourceSED(self, time, wavelen=None):
-        """
-        Return the source SED for the object at given time (observer frame) as
-        a `lsst.sims.photUtils.Sed`. This converts the oberver frame time into
-        a rest frame phase, and obtains the SED at the wavelen parameter. The
-        amplitude of the source is determined by the 'x0' parameter of the
-        model so it has cosmology built into it.
-
-        Parameters
-        ----------
-        time : mandatory, float
-            observer frame time in mjd
-        wavelen : optional, `np.ndarray`, defaults to native grid of model
-            wavelength grid in units of nm
-
-        Returns
-        -------
-        `lsst.sims.photUtils.Sed` instance with this sed
-        """
-        phase = (time - self.get('t0')) / (1. + self.get('z'))
-
-        source = self.source
-
-
-        if wavelen is None:
-            # use native SALT grid
-            wavelen = source._wave
-        else:
-            # assume wavelen in nm, convert to Ang
-            wavelen = 10.0 * wavelen
-
-        # Initialize to np.nan
-        flambda = np.zeros(len(wavelen)) * np.nan
-        wavelenmask = (wavelen > source.minwave()) & \
-                      (wavelen < source.maxwave())
-        inTimeRange = (time > self.mintime()) or (time < self.maxtime()) 
-
-        # Implement out of model range behavior
-        if self.modelOutSideRange == 'zero' and inTimeRange:
-            flambda[wavelenmask] = source.flux(phase, wavelen[wavelenmask])
-        else:
-            flambda[wavelenmask] = 0.
-            
-        # rectify the flux
-        if self.rectifySED:
-            flambda[wavelenmask] = np.where(flambda[wavelenmask] > 0.,
-                                            flambda[wavelenmask], 0.)
-
-
-        #convert per Ang to per nm
-        flambda *= 10.0
-        wavelen = wavelen / 10.
-        sed = Sed(wavelen=wavelen, flambda=flambda)
-        # This has the cosmology built in.
-
-        return sed
+###    def SNObjectSourceSED(self, time, wavelen=None):
+###        """
+###        Return the source SED for the object at given time (observer frame) as
+###        a `lsst.sims.photUtils.Sed`. This converts the oberver frame time into
+###        a rest frame phase, and obtains the SED at the wavelen parameter. The
+###        amplitude of the source is determined by the 'x0' parameter of the
+###        model so it has cosmology built into it.
+###
+###        Parameters
+###        ----------
+###        time : mandatory, float
+###            observer frame time in mjd
+###        wavelen : optional, `np.ndarray`, defaults to native grid of model
+###            wavelength grid in units of nm
+###
+###        Returns
+###        -------
+###        `lsst.sims.photUtils.Sed` instance with this sed
+###        """
+###        phase = (time - self.get('t0')) / (1. + self.get('z'))
+###
+###        source = self.source
+###
+###
+###        if wavelen is None:
+###            # use native SALT grid
+###            wavelen = source._wave
+###        else:
+###            # assume wavelen in nm, convert to Ang
+###            wavelen = 10.0 * wavelen
+###
+###        # Initialize to np.nan
+###        flambda = np.zeros(len(wavelen)) * np.nan
+###        # Setup wavelen mask beyond which the values are np.nan
+###        mask1 = wavelen < self.minwave()
+###        mask1 = wavelen > self.maxwave()
+###        wavelenmask = not(mask1 | mask2)
+###        inTimeRange = (time > self.mintime()) or (time < self.maxtime()) 
+###
+###        # Implement out of model range behavior
+###        if self.modelOutSideRange == 'zero' and inTimeRange:
+###            flambda[wavelenmask] = source.flux(phase, wavelen[wavelenmask])
+###        else:
+###            flambda[wavelenmask] = 0.
+###            
+###        # rectify the flux
+###        if self.rectifySED:
+###            flambda[wavelenmask] = np.where(flambda[wavelenmask] > 0.,
+###                                            flambda[wavelenmask], 0.)
+###
+###
+###        #convert per Ang to per nm
+###        flambda *= 10.0
+###        wavelen = wavelen / 10.
+###        sed = Sed(wavelen=wavelen, flambda=flambda)
+###        # This has the cosmology built in.
+###
+###        return sed
 
 
     def catsimBandFlux(self, time, bandpassobject):

@@ -125,10 +125,11 @@ class SNFunctionality(object):
         fnames = np.array([self.prefix + 'specFile_' + str(int(elem)) + mjd
                   for elem in self.column_by_name('snid')], dtype='str')
 
-        c, x1, x0, t0  = self.column_by_name('c'),\
+        c, x1, x0, t0, z  = self.column_by_name('c'),\
                          self.column_by_name('x1'),\
                          self.column_by_name('x0'),\
-                         self.column_by_name('t0')
+                         self.column_by_name('t0'),\
+                         self.column_by_name('redshift')
 
         bp = Bandpass()
         bp.imsimBandpass()
@@ -142,7 +143,12 @@ class SNFunctionality(object):
                 fnames[i] = None
 
             else:
-                snobject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i])
+                snobject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i],
+                             z=z[i])
+                if snobject.modelOutSideRange == 'zero':
+                    if self.mjdobs > snobject.maxtime() or self.mjdobs < snobject.mintime():
+                        magNorms[i] = np.nan
+                        fnames[i] = None
 
                 # SED in rest frame
                 sed = snobject.SNObjectSourceSED(time=self.mjdobs)
