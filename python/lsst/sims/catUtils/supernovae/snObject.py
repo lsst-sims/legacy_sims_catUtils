@@ -435,7 +435,6 @@ class SNObject(sncosmo.Model):
         mask2 = wavelen > self.maxwave()
         wavelenmask = ~(mask1 | mask2)
 
-        print wavelen[wavelenmask]
         outsidephaserange = (phase > source.maxphase())or(phase < source.minphase())
         if self.modelOutSideRange == 'zero':
             if outsidephaserange:
