@@ -7,7 +7,8 @@ __all__ = ['SNObj']
 
 class SNObj(BaseCatalogObj):
     objid = 'TwinkUnlensedSN'
-    tableid = 'TwinkSN'
+    # From now on the tableid should be specified in instantiating the class
+    # table = 'TwinkSN' or 'TwinkSNKraken'
     idColKey = 'snid'
     raColName = 'snra'
     decColName = 'sndec'
