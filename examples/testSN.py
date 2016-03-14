@@ -10,8 +10,10 @@ The following functionality is tested:
     - Band Flux for extincted SED in r Band
     - Band Mag for extincted SED in r Band
     - rectification of SED: while the SEDs from the model can go negative
-      resulting in negative model fluxes and adus. Test that if rectifySEDs in
-      on such situations are avoided
+      resulting in negative model fluxes and adus, this has to be prevented in
+      SNObject, particularly for image generation software. Test that if
+      rectifySEDs is set to True, such situations are avoided
+
 SNIaCatalog_tests:
 A Class containing tests to check crictical functionality for SNIaCatalog 
 """
