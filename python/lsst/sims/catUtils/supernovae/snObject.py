@@ -481,7 +481,8 @@ class SNObject(sncosmo.Model):
 
         # Set SED to 0 beyond the model phase range, will change this if
         # SNCosmo includes a more sensible decay later.
-        if (time > self.mintime()) & (time < self.maxtime()):
+        if (time > self.mintime()) & (time < self.maxtime())\
+                & (self.modelOutSideRange=='zero'):
 
             # If SNCosmo is requested a SED value beyond the model range
             # it will crash. Try to prevent that by returning np.nan for
