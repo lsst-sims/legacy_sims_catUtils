@@ -10,6 +10,7 @@ setupRequired(python)
 setupRequired(pymssql)
 setupRequired(daf_persistence)
 setupRequired(sncosmo)
+setupRequired(astropy)
 
 setupOptional(obs_lsstSim)
 
