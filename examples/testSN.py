@@ -9,7 +9,9 @@ The following functionality is tested:
         implementations of extinction using OD94 model.)
     - Band Flux for extincted SED in r Band
     - Band Mag for extincted SED in r Band
-
+    - rectification of SED: while the SEDs from the model can go negative
+      resulting in negative model fluxes and adus. Test that if rectifySEDs in
+      on such situations are avoided
 SNIaCatalog_tests:
 A Class containing tests to check crictical functionality for SNIaCatalog 
 """
@@ -24,6 +26,7 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
@@ -78,6 +81,7 @@ class SNObject_tests(unittest.TestCase):
         self.SNCosmoModel = self.SN_extincted.equivalentSNCosmoModel()
 
         self.lsstBandPass = BandpassDict.loadTotalBandpassesFromFiles()
+        self.photParams = PhotometricParameters()
         self.SNCosmoBP = sncosmo.Bandpass(wave=self.lsstBandPass['r'].wavelen,
                                           trans=self.lsstBandPass['r'].sb,
                                           wave_unit=astropy.units.Unit('nm'),
@@ -95,6 +99,69 @@ class SNObject_tests(unittest.TestCase):
         for key in myDict.keys():
             assert myDict[key] is not None
                 
+    def test_attributeDefaults(self):
+        """
+        Check the defaults and the setter properties for rectifySED and modelOutSideRange
+        """
+        snobj = SNObject(ra=30., dec=-60., source='salt2')
+        assert snobj.rectifySED == True
+        assert snobj.modelOutSideRange == 'zero'
+
+        snobj.rectifySED = False
+        assert snobj.rectifySED == False
+        assert snobj.modelOutSideRange == 'zero'
+        # Should run but do nothing
+        snobj.modelOutSideRange = 'False'
+        assert snobj.modelOutSideRange == 'zero'
+
+
+
+
+
+    def test_rectifiedSED(self):
+        """
+        Check for an extreme case that the SN seds are being rectified. This is
+        done by setting up an extreme case where there will be negative seds, and
+        checking that this is indeed the case, and checking that they are not
+        negative if rectified.
+        """
+        
+        snobj = SNObject(ra=30., dec=-60., source='salt2')
+        snobj.set(z=0.96, t0=self.mjdobs, x1=-3., x0=1.8e-6)
+        snobj.rectifySED  = False
+        times = np.arange(self.mjdobs - 50., self.mjdobs + 150., 1.)
+        badTimes = []
+        for time in times:
+            sed = snobj.SNObjectSED(time=time,
+                                    bandpass=self.lsstBandPass['r'])
+            if any(sed.flambda < 0.):
+                badTimes.append(time)
+        # Check that there are negative SEDs
+        assert(len(badTimes) > 0)
+        snobj.rectifySED = True
+        for time in badTimes:
+            sed = snobj.SNObjectSED(time=time,
+                                    bandpass=self.lsstBandPass['r'])
+            assert not sed.calcADU(bandpass=self.lsstBandPass['r'],
+                                   photParams=self.photParams) < 0.
+            assert not any(sed.flambda < 0.)
+
+    def test_sourceSED(self):
+        
+        snobject =  SNObject()
+
+        # This is the SNCosmo Source
+        SNCosmoSource = sncosmo.get_source(snobject.source.name)
+
+        # Set up a parameter dict
+        params = {'x1': -3.0, 'x0': 1.0, 'c':0.}
+        SNCosmoSource.set(**params)
+        snobject.set(**params)
+
+        rest_wave = np.arange(2000., 9000., 100.)
+        for phase in np.arange(-20., 50., 1.0):
+            if snobject.rectifySED:
+                assert not any(snobject.SNObjectSourceSED(time=phase).flambda < 0.)
     def test_ComparebandFluxes2photUtils(self):
         """
         The SNObject.catsimBandFlux computation uses the sims.photUtils.sed
@@ -386,9 +453,9 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         for key in oldlcs.groups.keys():
             df_old = oldlcs.get_group(key)
-            df_old.sort(['time', 'band'], inplace=True)
+            df_old.sort_values(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
-            df_new.sort(['time', 'band'], inplace=True)
+            df_new.sort_values(['time', 'band'], inplace=True)
             s = "Testing equality for SNID {0:8d} with {1:2d} datapoints" 
             print(s.format(df_new.snid.iloc[0], len(df_old)))
             assert_frame_equal(df_new, df_old)
