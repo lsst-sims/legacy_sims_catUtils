@@ -58,6 +58,7 @@ class SNObject(sncosmo.Model):
         Therefore, the value must be set explicitly to 0. to get unextincted
         quantities.
 
+    rectifySED : Bool, True by Default
     Methods
     -------
 
@@ -121,7 +122,31 @@ class SNObject(sncosmo.Model):
         self.ebvofMW = None
         if self._hascoords:
             self.mwEBVfromMaps()
+
+
+        # Behavior of model outside range :
+        # if 'zero' then all fluxes outside the temporal range of the model
+        # are set to 0.
+        self._modelOutSideRange = 'zero'
+
+        # SED will be rectified to 0. for negative values of SED if this
+        # attribute is set to True
+        self.rectifySED = True
         return
+
+    @property
+    def modelOutSideRange(self):
+        """
+        Defines the behavior of the model when sampled at times beyond the
+        model definition.
+        """
+        return self._modelOutSideRange
+
+    @modelOutSideRange.setter
+    def modelOutSideRange(self, value):
+        if value != 'zero':
+            print ('Model not implemented, defaulting to zero method\n')
+        return self._modelOutSideRange
 
     @property
     def SNstate(self):
@@ -210,6 +235,7 @@ class SNObject(sncosmo.Model):
         sncosmoParams['mwebv'] = snState['MWE(B-V)']
         sncosmoModel.set(**sncosmoParams)
         return sncosmoModel
+
     @staticmethod
     def equivsncosmoParamDict(SNstate, SNCosmoModel):
         """
@@ -261,7 +287,7 @@ class SNObject(sncosmo.Model):
 
 
     def summary(self):
-        '''
+        """
         summarizes the current state of the SNObject class in a returned
         string.
 
@@ -277,7 +303,8 @@ class SNObject(sncosmo.Model):
         --------
         >>> t = SNObject()
         >>> print t.summary()
-        '''
+        """
+
         state = '  SNObject Summary      \n'
 
         state += 'Model = ' + '\n'
@@ -390,7 +417,7 @@ class SNObject(sncosmo.Model):
 
     def SNObjectSED(self, time, wavelen=None, bandpass=None,
                     applyExtinction=True):
-        '''
+        """
         return a `lsst.sims.photUtils.sed` object from the SN model at the
         requested time and wavelengths with or without extinction from MW
         according to the SED extinction methods. The wavelengths may be
@@ -431,7 +458,7 @@ class SNObject(sncosmo.Model):
         Examples
         --------
         >>> sed = SN.SNObjectSED(time=0., wavelen=wavenm)
-        '''
+        """
 
         if wavelen is None and bandpass is None:
             raise ValueError('A non None input to either wavelen or\
@@ -475,6 +502,13 @@ class SNObject(sncosmo.Model):
 
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
+
+        if not (self.modelOutSideRange=='zero'):
+            raise ValueError('Other values of modelOutSideRange not\
+                              implemented')
+        # Rectify
+        if self.rectifySED:
+            flambda = np.where(flambda > 0., flambda, 0.)
 
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
