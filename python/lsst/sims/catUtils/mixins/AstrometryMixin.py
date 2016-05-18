@@ -80,10 +80,10 @@ class CameraCoords(AstrometryBase):
         """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
-        chipNames = self.column_by_name('chipName')
+        chipNameList = self.column_by_name('chipName')
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
-        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNames,
+        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList,
                                           camera=self.camera)
 
     @compound('xFocalPlane', 'yFocalPlane')
