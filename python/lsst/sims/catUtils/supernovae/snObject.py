@@ -121,7 +121,15 @@ class SNObject(sncosmo.Model):
         self.ebvofMW = None
         if self._hascoords:
             self.mwEBVfromMaps()
+
+
+        # Behavior of model outside temporal range :
+        # if 'zero' then all fluxes outside the temporal range of the model
+        # are set to 0.
+        self._modelOutSideTemporalRange = 'zero'
+
         return
+
 
     @property
     def SNstate(self):
@@ -194,6 +202,22 @@ class SNObject(sncosmo.Model):
         cls.ebvofMW = snState['MWE(B-V)']
 
         return cls
+
+    @property
+    def modelOutSideTemporalRange(self):
+        """
+        Defines the behavior of the model when sampled at times beyond the model
+        definition.
+        """
+        return self._modelOutSideTemporalRange
+
+    @modelOutSideTemporalRange.setter
+    def modelOutSideTemporalRange(self, value):
+        if value != 'zero':
+            raise ValueError('Model not implemented, defaulting to zero method\n')
+        return self._modelOutSideTemporalRange
+
+
 
     def equivalentSNCosmoModel(self):
         """
@@ -449,15 +473,13 @@ class SNObject(sncosmo.Model):
 
         flambda = np.zeros(len(wavelen))
 
+
         # self.mintime() and self.maxtime() are properties describing
-        # the ranges of SNCosmo.Model in time.
-
-        # Set SED to 0 beyond the model phase range, will change this if
-        # SNCosmo includes a more sensible decay later.
-        if (time > self.mintime()) & (time < self.maxtime()):
-
-            # If SNCosmo is requested a SED value beyond the model range
-            # it will crash. Try to prevent that by returning np.nan for
+        # the ranges of SNCosmo.Model in time. Behavior beyond this is 
+        # determined by self.modelOutSideTemporalRange
+        if (time > self.mintime()) and (time < self.maxtime()):
+            # If SNCosmo is requested a SED value beyond the wavelength range
+            # of model it will crash. Try to prevent that by returning np.nan for
             # such wavelengths. This will still not help band flux calculations
             # but helps us get past this stage.
 
@@ -475,6 +497,14 @@ class SNObject(sncosmo.Model):
 
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
+
+        else:
+            # use prescription for modelOutSideTemporalRange
+            if self.modelOutSideTemporalRange != 'zero':
+                raise ValueError('Model not implemented, change to zero\n')
+                # Else Do nothing as flambda is already 0.
+                # This takes precedence over being outside wavelength range
+                
 
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
@@ -521,6 +551,9 @@ class SNObject(sncosmo.Model):
         .. note: If there is an unphysical value of sed in
         the wavelength range, it produces a flux of  `np.nan`
         """
+        # Speedup for cases outside temporal range of model
+        if time <= self.mintime() or time >= self.maxtime() :
+            return 0.
         SEDfromSNcosmo = self.SNObjectSED(time=time,
                                           bandpass=bandpassobject)
         return SEDfromSNcosmo.calcFlux(bandpass=bandpassobject) / 3631.0
