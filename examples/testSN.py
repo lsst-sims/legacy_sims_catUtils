@@ -11,12 +11,11 @@ The following functionality is tested:
     - Band Mag for extincted SED in r Band
 
 SNIaCatalog_tests:
-A Class containing tests to check crictical functionality for SNIaCatalog 
+A Class containing tests to check crictical functionality for SNIaCatalog
 """
 import os
 import sqlite3
 import numpy as np
-import matplotlib.pyplot as plt
 import unittest
 
 # Lsst Sims Dependencies
@@ -27,7 +26,7 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+# from lsst.sims.catalogs.measures.instance import InstanceCatalog
 import eups
 
 # Routines Being Tested
