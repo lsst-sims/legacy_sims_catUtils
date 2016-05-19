@@ -57,6 +57,10 @@ class SNObject(sncosmo.Model):
         will be None, leading to exceptions in extinction calculation.
         Therefore, the value must be set explicitly to 0. to get unextincted
         quantities.
+    rectifySED : Bool, True by Default
+        if the SED is negative at the requested time and wavelength, return 0.
+        instead of the negative value.
+
 
     Methods
     -------
@@ -127,7 +131,10 @@ class SNObject(sncosmo.Model):
         # if 'zero' then all fluxes outside the temporal range of the model
         # are set to 0.
         self._modelOutSideTemporalRange = 'zero'
-
+        
+        # SED will be rectified to 0. for negative values of SED if this
+        # attribute is set to True
+        self.rectifySED = True
         return
 
 
@@ -505,6 +512,9 @@ class SNObject(sncosmo.Model):
                 # Else Do nothing as flambda is already 0.
                 # This takes precedence over being outside wavelength range
                 
+        # SED will be rectified to 0. for negative values of SED if this
+        # attribute is set to True
+        self.rectifySED = True
 
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
