@@ -225,7 +225,6 @@ class SNObject(sncosmo.Model):
         return self._modelOutSideTemporalRange
 
 
-
     def equivalentSNCosmoModel(self):
         """
         returns an SNCosmo Model which is equivalent to SNObject
@@ -241,6 +240,8 @@ class SNObject(sncosmo.Model):
         sncosmoParams['mwebv'] = snState['MWE(B-V)']
         sncosmoModel.set(**sncosmoParams)
         return sncosmoModel
+
+
     @staticmethod
     def equivsncosmoParamDict(SNstate, SNCosmoModel):
         """
@@ -504,7 +505,6 @@ class SNObject(sncosmo.Model):
 
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
-
         else:
             # use prescription for modelOutSideTemporalRange
             if self.modelOutSideTemporalRange != 'zero':
@@ -512,10 +512,8 @@ class SNObject(sncosmo.Model):
                 # Else Do nothing as flambda is already 0.
                 # This takes precedence over being outside wavelength range
                 
-        # SED will be rectified to 0. for negative values of SED if this
-        # attribute is set to True
-        self.rectifySED = True
-
+        if self.rectifySED:
+            flambda = np.where(flambda > 0., flambda, 0.)
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
         if not applyExtinction:
