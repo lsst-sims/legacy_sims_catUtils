@@ -110,7 +110,11 @@ class SNObject_tests(unittest.TestCase):
         assert snobj.modelOutSideTemporalRange == 'zero'
 
     def test_raisingerror_forunimplementedmodelOutSideRange(self):
-
+        """
+        check that correct error is raised if the user tries to assign an
+        un-implemented model value to
+        `sims.catUtils.supernovae.SNObject.modelOutSideTemporalRange`
+        """
         snobj = SNObject(ra=30., dec=-60., source='salt2')
         assert snobj.modelOutSideTemporalRange == 'zero'
         with self.assertRaises(ValueError) as context:
