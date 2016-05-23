@@ -21,13 +21,11 @@ import unittest
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
-# from lsst.sims.photUtils import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject
-# from lsst.sims.catalogs.measures.instance import InstanceCatalog
 import eups
 
 # Routines Being Tested
@@ -146,9 +144,9 @@ class SNObject_tests(unittest.TestCase):
         for time in badTimes:
             sed = snobj.SNObjectSED(time=time,
                                     bandpass=self.lsstBandPass['r'])
-            assert not sed.calcADU(bandpass=self.lsstBandPass['r'],
-                                   photParams=self.rectify_photParams) < 0.
-            assert not any(sed.flambda < 0.)
+            self.assertGreaterEqual(sed.calcADU(bandpass=self.lsstBandPass['r'],
+                                    photParams=self.rectify_photParams), 0.)
+            self.assertFalse(any(sed.flambda < 0.))
 
     def test_ComparebandFluxes2photUtils(self):
         """
