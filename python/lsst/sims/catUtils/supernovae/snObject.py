@@ -57,6 +57,10 @@ class SNObject(sncosmo.Model):
         will be None, leading to exceptions in extinction calculation.
         Therefore, the value must be set explicitly to 0. to get unextincted
         quantities.
+    rectifySED : Bool, True by Default
+        if the SED is negative at the requested time and wavelength, return 0.
+        instead of the negative value.
+
 
     Methods
     -------
@@ -121,7 +125,18 @@ class SNObject(sncosmo.Model):
         self.ebvofMW = None
         if self._hascoords:
             self.mwEBVfromMaps()
+
+
+        # Behavior of model outside temporal range :
+        # if 'zero' then all fluxes outside the temporal range of the model
+        # are set to 0.
+        self._modelOutSideTemporalRange = 'zero'
+        
+        # SED will be rectified to 0. for negative values of SED if this
+        # attribute is set to True
+        self.rectifySED = True
         return
+
 
     @property
     def SNstate(self):
@@ -195,6 +210,21 @@ class SNObject(sncosmo.Model):
 
         return cls
 
+    @property
+    def modelOutSideTemporalRange(self):
+        """
+        Defines the behavior of the model when sampled at times beyond the model
+        definition.
+        """
+        return self._modelOutSideTemporalRange
+
+    @modelOutSideTemporalRange.setter
+    def modelOutSideTemporalRange(self, value):
+        if value != 'zero':
+            raise ValueError('Model not implemented, defaulting to zero method\n')
+        return self._modelOutSideTemporalRange
+
+
     def equivalentSNCosmoModel(self):
         """
         returns an SNCosmo Model which is equivalent to SNObject
@@ -210,6 +240,8 @@ class SNObject(sncosmo.Model):
         sncosmoParams['mwebv'] = snState['MWE(B-V)']
         sncosmoModel.set(**sncosmoParams)
         return sncosmoModel
+
+
     @staticmethod
     def equivsncosmoParamDict(SNstate, SNCosmoModel):
         """
@@ -449,15 +481,13 @@ class SNObject(sncosmo.Model):
 
         flambda = np.zeros(len(wavelen))
 
+
         # self.mintime() and self.maxtime() are properties describing
-        # the ranges of SNCosmo.Model in time.
-
-        # Set SED to 0 beyond the model phase range, will change this if
-        # SNCosmo includes a more sensible decay later.
-        if (time > self.mintime()) & (time < self.maxtime()):
-
-            # If SNCosmo is requested a SED value beyond the model range
-            # it will crash. Try to prevent that by returning np.nan for
+        # the ranges of SNCosmo.Model in time. Behavior beyond this is 
+        # determined by self.modelOutSideTemporalRange
+        if (time > self.mintime()) and (time < self.maxtime()):
+            # If SNCosmo is requested a SED value beyond the wavelength range
+            # of model it will crash. Try to prevent that by returning np.nan for
             # such wavelengths. This will still not help band flux calculations
             # but helps us get past this stage.
 
@@ -475,7 +505,15 @@ class SNObject(sncosmo.Model):
 
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
-
+        else:
+            # use prescription for modelOutSideTemporalRange
+            if self.modelOutSideTemporalRange != 'zero':
+                raise ValueError('Model not implemented, change to zero\n')
+                # Else Do nothing as flambda is already 0.
+                # This takes precedence over being outside wavelength range
+                
+        if self.rectifySED:
+            flambda = np.where(flambda > 0., flambda, 0.)
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
         if not applyExtinction:
@@ -521,6 +559,9 @@ class SNObject(sncosmo.Model):
         .. note: If there is an unphysical value of sed in
         the wavelength range, it produces a flux of  `np.nan`
         """
+        # Speedup for cases outside temporal range of model
+        if time <= self.mintime() or time >= self.maxtime() :
+            return 0.
         SEDfromSNcosmo = self.SNObjectSED(time=time,
                                           bandpass=bandpassobject)
         return SEDfromSNcosmo.calcFlux(bandpass=bandpassobject) / 3631.0
