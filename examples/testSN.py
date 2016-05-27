@@ -81,6 +81,10 @@ class SNObject_tests(unittest.TestCase):
                                           wave_unit=astropy.units.Unit('nm'),
                                           name='lsst_r')
 
+    def test_SNObject_SourceSED(self):
+        """
+        """
+        pass
     def tearDown(self):
         pass
 
@@ -93,19 +97,18 @@ class SNObject_tests(unittest.TestCase):
         for key in myDict.keys():
             assert myDict[key] is not None
 
-
     def test_attributeDefaults(self):
         """
         Check the defaults and the setter properties for rectifySED and
         modelOutSideRange
         """
         snobj = SNObject(ra=30., dec=-60., source='salt2')
-        assert snobj.rectifySED == True
-        assert snobj.modelOutSideTemporalRange == 'zero'
+        self.assertTrue(snobj.rectifySED)
+        self.assertEqual(snobj.modelOutSideTemporalRange, 'zero')
 
         snobj.rectifySED = False
-        assert snobj.rectifySED == False
-        assert snobj.modelOutSideTemporalRange == 'zero'
+        self.assertFalse(snobj.rectifySED)
+        self.assertEqual(snobj.modelOutSideTemporalRange, 'zero')
 
     def test_raisingerror_forunimplementedmodelOutSideRange(self):
         """

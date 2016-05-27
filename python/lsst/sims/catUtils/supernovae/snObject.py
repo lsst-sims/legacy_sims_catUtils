@@ -138,6 +138,7 @@ class SNObject(sncosmo.Model):
         return
 
 
+
     @property
     def SNstate(self):
         """
@@ -530,6 +531,39 @@ class SNObject(sncosmo.Model):
 
         SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
+
+    def SNObjectSourceSED(self, time, wavelen=None, bandpass=None,
+                          applyExtinction=False):
+        """
+        Return the source SED for the object at given time (observer frame) as
+        a `lsst.sims.photUtils.Sed`. This converts the oberver frame time into
+        a rest frame phase, and obtains the SED at the wavelen parameter. The
+        amplitude of the source is determined by the 'x0' parameter of the
+        model so it has cosmology built into it.
+        Parameters
+        ----------
+        time : mandatory, float
+            observer frame time in mjd
+        wavelen : optional, `np.ndarray`, defaults to native grid of model
+            wavelength grid in units of nm
+        Returns
+        -------
+        `lsst.sims.photUtils.Sed` instance with this sed
+        """
+        if wavelen is None:
+            # Get the native wavelengths of the SALT2 model
+            restwave = self.source._wave
+            
+        z = self.get('z')
+        a = 1.0 / (1.0 + z)
+        wavelen = restwave / a
+        sed = self.SNObjectSED(time, wavelen=wavelen, bandpass=bandpass,
+                               applyExtinction=applyExtinction)
+
+        sourceSED = SED(wave=restwave, flambda=sed.flambda)
+        return sourceSED 
+
+
 
     def catsimBandFlux(self, time, bandpassobject):
         """
