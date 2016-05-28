@@ -126,18 +126,15 @@ class SNObject(sncosmo.Model):
         if self._hascoords:
             self.mwEBVfromMaps()
 
-
         # Behavior of model outside temporal range :
         # if 'zero' then all fluxes outside the temporal range of the model
         # are set to 0.
         self._modelOutSideTemporalRange = 'zero'
-        
+
         # SED will be rectified to 0. for negative values of SED if this
         # attribute is set to True
         self.rectifySED = True
         return
-
-
 
     @property
     def SNstate(self):
@@ -214,8 +211,8 @@ class SNObject(sncosmo.Model):
     @property
     def modelOutSideTemporalRange(self):
         """
-        Defines the behavior of the model when sampled at times beyond the model
-        definition.
+        Defines the behavior of the model when sampled at times beyond the
+        model definition.
         """
         return self._modelOutSideTemporalRange
 
@@ -224,7 +221,6 @@ class SNObject(sncosmo.Model):
         if value != 'zero':
             raise ValueError('Model not implemented, defaulting to zero method\n')
         return self._modelOutSideTemporalRange
-
 
     def equivalentSNCosmoModel(self):
         """
@@ -290,8 +286,6 @@ class SNObject(sncosmo.Model):
             if param in SNCosmoModel.param_names:
                 sncosmoParams[param] = SNstate[param]
         return sncosmoParams
-
-
 
     def summary(self):
         '''
@@ -532,8 +526,7 @@ class SNObject(sncosmo.Model):
         SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
 
-    def SNObjectSourceSED(self, time, wavelen=None, bandpass=None,
-                          applyExtinction=False):
+    def SNObjectSourceSED(self, time, wavelen=None):
         """
         Return the source SED for the object at given time (observer frame) as
         a `lsst.sims.photUtils.Sed`. This converts the oberver frame time into
@@ -544,26 +537,28 @@ class SNObject(sncosmo.Model):
         ----------
         time : mandatory, float
             observer frame time in mjd
-        wavelen : optional, `np.ndarray`, defaults to native grid of model
-            wavelength grid in units of nm
+        wavelen : optional, `np.ndarray`, defaults to SALT2 native wavelengths
+            observer frame wavelengths in nm corresponding to the rest frame
+            wavelengths desired.
         Returns
         -------
-        `lsst.sims.photUtils.Sed` instance with this sed
+        `lsst.sims.photUtils.Sed` instance with this sed with wavelen given by
+        restframe wavelengths (nm) and flambda given by the observer frame flux.
+        ..note : This should be the source  SED desired by phosim.
         """
-        if wavelen is None:
-            # Get the native wavelengths of the SALT2 model
-            restwave = self.source._wave
-            
         z = self.get('z')
         a = 1.0 / (1.0 + z)
-        wavelen = restwave / a
-        sed = self.SNObjectSED(time, wavelen=wavelen, bandpass=bandpass,
-                               applyExtinction=applyExtinction)
 
-        sourceSED = SED(wave=restwave, flambda=sed.flambda)
-        return sourceSED 
+        if wavelen is None:
+            # Get the native wavelengths of the SALT2 model in nm
+            restwave = self.source._wave / 10.
+            # observer frame wavelength in nm
+            wavelen = restwave / a
 
+        sed = self.SNObjectSED(time, wavelen=wavelen)
 
+        sourceSED = Sed(wavelen=restwave, flambda=sed.flambda)
+        return sourceSED
 
     def catsimBandFlux(self, time, bandpassobject):
         """

@@ -83,8 +83,43 @@ class SNObject_tests(unittest.TestCase):
 
     def test_SNObject_SourceSED(self):
         """
+        We need the source SED for SN_blank (no extinction):
+        Expectations are depend on whether the queried time and wavelengths of
+        observation are within model ranges or not, whether the SEDs were bein
+        rectified correctly or not.
+        -
         """
-        pass
+
+        timeatpeak = self.SN_blank.get('t0')
+        z = self.SN_blank.get('z')
+        mintime = self.SN_blank.mintime()
+        maxtime = self.SN_blank.maxtime()
+        times = np.arange(mintime - 10., maxtime + 10., 5.)
+        self.assertTrue(self.SN_blank.rectifySED)
+        modelinTemporalRange = (times <= maxtime) & (times > mintime)
+        outsidemodeDefinedTimes = times[~modelinTemporalRange]
+
+        for time in outsidemodeDefinedTimes:
+            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
+            for val in sourceSED.flambda:
+                self.assertEqual(val, 0.)
+
+        insideModelDefinedTimes = times[modelinTemporalRange]
+
+        # Should match SNCosmo source to some factors
+        sncosmoModel = self.SN_blank.equivalentSNCosmoModel()
+        sncosmoSource = sncosmoModel.source
+        for time in insideModelDefinedTimes:
+            phase = (time - timeatpeak) / (1.0 + z)
+            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
+            restwaveinAng = sourceSED.wavelen * 10.
+            flambdaRestFrame = sourceSED.flambda / 10. * (1. + z) 
+            print('awvelens', restwaveinAng, phase)
+            sncosmoFlux = sncosmoSource.flux(phase=phase, wave=restwaveinAng) 
+            for val in flambdaRestFrame - sncosmoFlux:
+                self.assertEqual(flambdaRestFrame, sncosmoFlux)
+
+
     def tearDown(self):
         pass
 
@@ -130,10 +165,9 @@ class SNObject_tests(unittest.TestCase):
         checking that this is indeed the case, and checking that they are not
         negative if rectified.
         """
-        
         snobj = SNObject(ra=30., dec=-60., source='salt2')
         snobj.set(z=0.96, t0=self.mjdobs, x1=-3., x0=1.8e-6)
-        snobj.rectifySED  = False
+        snobj.rectifySED = False
         times = np.arange(self.mjdobs - 50., self.mjdobs + 150., 1.)
         badTimes = []
         for time in times:
