@@ -94,10 +94,12 @@ class SNObject_tests(unittest.TestCase):
         z = self.SN_blank.get('z')
         mintime = self.SN_blank.mintime()
         maxtime = self.SN_blank.maxtime()
-        times = np.arange(mintime - 10., maxtime + 10., 5.)
+        times = np.arange(mintime + 25., maxtime - 10., 5.)
         self.assertTrue(self.SN_blank.rectifySED)
         modelinTemporalRange = (times <= maxtime) & (times > mintime)
         outsidemodeDefinedTimes = times[~modelinTemporalRange]
+
+        self.SN_blank.rectifySED = False
 
         for time in outsidemodeDefinedTimes:
             sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
@@ -109,16 +111,33 @@ class SNObject_tests(unittest.TestCase):
         # Should match SNCosmo source to some factors
         sncosmoModel = self.SN_blank.equivalentSNCosmoModel()
         sncosmoSource = sncosmoModel.source
+        print(self.SN_blank.SNstate)
         for time in insideModelDefinedTimes:
             phase = (time - timeatpeak) / (1.0 + z)
             sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
-            restwaveinAng = sourceSED.wavelen * 10.
-            flambdaRestFrame = sourceSED.flambda / 10. * (1. + z) 
-            print('awvelens', restwaveinAng, phase)
-            sncosmoFlux = sncosmoSource.flux(phase=phase, wave=restwaveinAng) 
-            for val in flambdaRestFrame - sncosmoFlux:
-                self.assertEqual(flambdaRestFrame, sncosmoFlux)
 
+            # some of these wavelengths will be in the range defined
+            # by the model, others will be outside the range and will
+            # have values of np.nan in SNObject
+            nanVals = np.isnan(sourceSED.flambda)
+            nanrestWaves = sourceSED.wavelen[nanVals]
+            print('check restwaves',  nanrestWaves)
+            toolow = nanrestWaves <= self.SN_blank.source.minwave() / 10.
+            toohigh = nanrestWaves >= self.SN_blank.source.maxwave() / 10.
+            badwaves = toolow | toohigh
+            self.assertFalse(badwaves.all())
+
+            restwaveinAng = sourceSED.wavelen[~nanVals] * 10.
+            flambdaRestFrame = sourceSED.flambda[~nanVals] / 10. * (1. + z)
+            print ('tryagain', time, sourceSED.wavelen, sourceSED.flambda)
+            print('awvelens', restwaveinAng, phase, time)
+            sncosmoFlux = sncosmoSource.flux(phase=phase, wave=restwaveinAng)
+            # print(np.shape(sncosmoFlux), np.shape(flambdaRestFrame))
+            # self.assertSequenceEqual(flambdaRestFrame, sncosmoFlux)
+            ratio = sncosmoFlux / flambdaRestFrame
+            self.assertEqual(ratio.all(), 1.0)
+            #    print("Try Elsewhere", time, sncosmoFlux, flambdaRestFrame)
+            #    self.assertAlmostEqual(val, 1., places=2)
 
     def tearDown(self):
         pass
