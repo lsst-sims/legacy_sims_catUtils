@@ -200,9 +200,12 @@ class SNObject_tests(unittest.TestCase):
         for time in badTimes:
             sed = snobj.SNObjectSED(time=time,
                                     bandpass=self.lsstBandPass['r'])
-            self.assertGreaterEqual(sed.calcADU(bandpass=self.lsstBandPass['r'],
-                                    photParams=self.rectify_photParams), 0.)
-            self.assertFalse(any(sed.flambda < 0.))
+            adu = sed.calcADU(bandpass=self.lsstBandPass['r'],
+                              photParams=self.rectify_photParams)
+            if not np.isnan(adu):
+                self.assertGreaterEqual(adu, 0.)
+            mask = ~np.isnan(sed.flambda)
+            self.assertGreaterEqual(sed.flambda[mask].any(), 0.)
 
     def test_ComparebandFluxes2photUtils(self):
         """
@@ -251,6 +254,53 @@ class SNObject_tests(unittest.TestCase):
         sncosmo_r = self.SNCosmoModel.bandmag(band=self.SNCosmoBP,
                                               time=times,  magsys='ab')
         np.testing.assert_allclose(sncosmo_r, catsim_r)
+
+    def test_wavelengthranges_forSED(self):
+        """
+        The SNObjectSED should have the following behavior:
+        1. 0. for all wavelengths when time is outside the temporal range of
+            the model is `self.modelOutSideTemporalRange` is 'zero' 
+        2. np.nan for all wavelengths outside the wavelength range of the model
+            if time is inside the range of the model definition. 
+        """
+        # temporal range of model
+        timeMin = self.SN_extincted.mintime()
+        timeMax = self.SN_extincted.maxtime()
+        waveMaxnm = self.SN_extincted.maxwave() / 10.
+        waveMinnm = self.SN_extincted.minwave() / 10.
+        waveranges = np.arange(10., 50000., 50.)
+
+        # Check that we have wavelengths outside the wavelength range of the
+        # model
+        self.assertGreater(waveranges.max(), waveMaxnm)
+        self.assertLess(waveranges.min(), waveMinnm)
+        times = np.arange(timeMin - 20., timeMax + 20., 2.)
+        self.rectifySED = False
+        for time in times:
+            SNObjectSED = self.SN_extincted.SNObjectSED(time,
+                                                        wavelen=waveranges)
+            if (time >= timeMax) or (time <= timeMin):
+                # Test 1.
+                # If outside the temporal range of the model, and we are using
+                # the implementation that Self.ModelOutSideTemporalRange is
+                # 'zero', then flambda should be np.zero() irrespective of
+                # wavelength.
+                if self.SN_extincted.modelOutSideTemporalRange == 'zero':
+                    self.assertEqual(SNObjectSED.flambda.all(), 0.)
+                else:
+                    raise ValueError('Method not implemented\n')
+            else:
+                # Test 2.
+                # within the temporal model range, the flambda values must be
+                # np.nan iff outside the wavelength range of the model
+                tooHigh = SNObjectSED.wavelen > waveMaxnm
+                tooLow = SNObjectSED.wavelen < waveMinnm
+                shouldbeNan = tooHigh | tooLow
+                for i, val in enumerate(SNObjectSED.wavelen[shouldbeNan]):
+                    wval = SNObjectSED.wavelen[np.isnan(SNObjectSED.flambda)]
+                    self.assertEqual(val, wval[i])
+
+
 
     def test_CompareExtinctedSED2SNCosmo(self):
         """

@@ -474,19 +474,18 @@ class SNObject(sncosmo.Model):
             # remember this is in nm
             wavelen = bp.wavelen
 
-        flambda = np.zeros(len(wavelen))
+        # If SNCosmo is requested a SED value beyond the wavelength range
+        # of model it will crash. Try to prevent that by returning np.nan for
+        # such wavelengths. This will still not help band flux calculations
+        # but helps us get past this stage.
+        flambda = np.zeros(len(wavelen)) * np.nan
 
 
         # self.mintime() and self.maxtime() are properties describing
         # the ranges of SNCosmo.Model in time. Behavior beyond this is 
         # determined by self.modelOutSideTemporalRange
         if (time > self.mintime()) and (time < self.maxtime()):
-            # If SNCosmo is requested a SED value beyond the wavelength range
-            # of model it will crash. Try to prevent that by returning np.nan for
-            # such wavelengths. This will still not help band flux calculations
-            # but helps us get past this stage.
 
-            flambda = flambda * np.nan
 
             # Convert to Ang
             wave = wavelen * 10.0
@@ -500,15 +499,17 @@ class SNObject(sncosmo.Model):
 
             flambda[mask] = self.flux(time=time, wave=wave)
             flambda[mask] = flambda[mask] * 10.0
+            if self.rectifySED:
+                flambda[mask] = np.where(flambda[mask] > 0., flambda[mask], 0.)
         else:
             # use prescription for modelOutSideTemporalRange
             if self.modelOutSideTemporalRange != 'zero':
                 raise ValueError('Model not implemented, change to zero\n')
                 # Else Do nothing as flambda is already 0.
                 # This takes precedence over being outside wavelength range
+            else:
+                flambda = np.zeros(len(flambda))
                 
-        if self.rectifySED:
-            flambda = np.where(flambda > 0., flambda, 0.)
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
         if not applyExtinction:
