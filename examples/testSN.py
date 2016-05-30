@@ -81,75 +81,8 @@ class SNObject_tests(unittest.TestCase):
                                           wave_unit=astropy.units.Unit('nm'),
                                           name='lsst_r')
 
-    def test_SNObject_SourceSED(self):
-        """
-        We need the source SED for SN_blank (no extinction):
-        Expectations are depend on whether the queried time and wavelengths of
-        observation are within model ranges or not, whether the SEDs were bein
-        rectified correctly or not.
-        -
-        """
-
-        timeatpeak = self.SN_blank.get('t0')
-        z = self.SN_blank.get('z')
-        mintime = self.SN_blank.mintime()
-        maxtime = self.SN_blank.maxtime()
-        times = np.arange(mintime + 25., maxtime - 10., 5.)
-        self.assertTrue(self.SN_blank.rectifySED)
-        modelinTemporalRange = (times <= maxtime) & (times > mintime)
-        outsidemodeDefinedTimes = times[~modelinTemporalRange]
-
-        self.SN_blank.rectifySED = False
-
-        for time in outsidemodeDefinedTimes:
-            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
-            for val in sourceSED.flambda:
-                self.assertEqual(val, 0.)
-
-        insideModelDefinedTimes = times[modelinTemporalRange]
-
-        # Should match SNCosmo source to some factors
-        sncosmoModel = self.SN_blank.equivalentSNCosmoModel()
-        sncosmoSource = sncosmoModel.source
-        print(self.SN_blank.SNstate)
-        for time in insideModelDefinedTimes:
-            phase = (time - timeatpeak) / (1.0 + z)
-            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
-
-            # some of these wavelengths will be in the range defined
-            # by the model, others will be outside the range and will
-            # have values of np.nan in SNObject
-            nanVals = np.isnan(sourceSED.flambda)
-            nanrestWaves = sourceSED.wavelen[nanVals]
-            print('check restwaves',  nanrestWaves)
-            toolow = nanrestWaves <= self.SN_blank.source.minwave() / 10.
-            toohigh = nanrestWaves >= self.SN_blank.source.maxwave() / 10.
-            badwaves = toolow | toohigh
-            self.assertFalse(badwaves.all())
-
-            restwaveinAng = sourceSED.wavelen[~nanVals] * 10.
-            flambdaRestFrame = sourceSED.flambda[~nanVals] / 10. * (1. + z)
-            print ('tryagain', time, sourceSED.wavelen, sourceSED.flambda)
-            print('awvelens', restwaveinAng, phase, time)
-            sncosmoFlux = sncosmoSource.flux(phase=phase, wave=restwaveinAng)
-            # print(np.shape(sncosmoFlux), np.shape(flambdaRestFrame))
-            # self.assertSequenceEqual(flambdaRestFrame, sncosmoFlux)
-            ratio = sncosmoFlux / flambdaRestFrame
-            self.assertEqual(ratio.all(), 1.0)
-            #    print("Try Elsewhere", time, sncosmoFlux, flambdaRestFrame)
-            #    self.assertAlmostEqual(val, 1., places=2)
-
     def tearDown(self):
         pass
-
-    def test_SNstatenotEmpty(self):
-        """
-        Check that the state of SNObject, stored in self.SNstate has valid
-        entries for all keys and does not contain keys with None type Values.
-        """
-        myDict = self.SN_extincted.SNstate
-        for key in myDict.keys():
-            assert myDict[key] is not None
 
     def test_attributeDefaults(self):
         """
@@ -176,6 +109,92 @@ class SNObject_tests(unittest.TestCase):
             snobj.modelOutSideTemporalRange = 'False'
         self.assertEqual('Model not implemented, defaulting to zero method\n',
                          context.exception.message)
+
+    def test_SNstatenotEmpty(self):
+        """
+        Check that the state of SNObject, stored in self.SNstate has valid
+        entries for all keys and does not contain keys with None type Values.
+        """
+        myDict = self.SN_extincted.SNstate
+        for key in myDict.keys():
+            assert myDict[key] is not None
+
+    def test_wavelengthranges_forSED(self):
+        """
+        The SNObjectSED should have the following behavior:
+        1. 0. for all wavelengths when time is outside the temporal range of
+            the model is `self.modelOutSideTemporalRange` is 'zero' 
+        2. np.nan for all wavelengths outside the wavelength range of the model
+            if time is inside the range of the model definition. 
+        """
+        # temporal range of model
+        timeMin = self.SN_extincted.mintime()
+        timeMax = self.SN_extincted.maxtime()
+        waveMaxnm = self.SN_extincted.maxwave() / 10.
+        waveMinnm = self.SN_extincted.minwave() / 10.
+        waveranges = np.arange(10., 50000., 50.)
+
+        # Check that we have wavelengths outside the wavelength range of the
+        # model
+        self.assertGreater(waveranges.max(), waveMaxnm)
+        self.assertLess(waveranges.min(), waveMinnm)
+        times = np.arange(timeMin - 20., timeMax + 20., 2.)
+        self.rectifySED = False
+        for time in times:
+            SNObjectSED = self.SN_extincted.SNObjectSED(time,
+                                                        wavelen=waveranges)
+            if (time >= timeMax) or (time <= timeMin):
+                # Test 1.
+                # If outside the temporal range of the model, and we are using
+                # the implementation that Self.ModelOutSideTemporalRange is
+                # 'zero', then flambda should be np.zero() irrespective of
+                # wavelength.
+                if self.SN_extincted.modelOutSideTemporalRange == 'zero':
+                    self.assertEqual(SNObjectSED.flambda.all(), 0.)
+                else:
+                    raise ValueError('Method not implemented\n')
+            else:
+                # Test 2.
+                # within the temporal model range, the flambda values must be
+                # np.nan iff outside the wavelength range of the model
+                tooHigh = SNObjectSED.wavelen > waveMaxnm
+                tooLow = SNObjectSED.wavelen < waveMinnm
+                shouldbeNan = tooHigh | tooLow
+                for i, val in enumerate(SNObjectSED.wavelen[shouldbeNan]):
+                    wval = SNObjectSED.wavelen[np.isnan(SNObjectSED.flambda)]
+                    self.assertEqual(val, wval[i])
+
+    def test_CompareUnextinctedSED2SNCosmo(self):
+        """
+        Compares the unextincted flux Densities in SNCosmo and SNObject. This
+        is mereley a sanity check as SNObject uses SNCosmo under the hood.
+        """
+
+        SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave,
+                                                time=self.mjdobs) * 10.
+
+        unextincted_sed = self.SN_blank.SNObjectSED(time=self.mjdobs,
+                                                    wavelen=self.wavenm)
+
+        SNObjectFluxDensity = unextincted_sed.flambda
+        np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
+                                   rtol=1.0e-7)
+
+    def test_CompareExtinctedSED2SNCosmo(self):
+        """
+        Compare the extincted SEDS in SNCosmo and SNObject. Slightly more
+        non-trivial than comparing unextincted SEDS, as the extinction in
+        SNObject uses different code from SNCosmo. However, this is still
+        using the same values of MWEBV, rather than reading it off a map.
+        """
+        SNObjectSED = self.SN_extincted.SNObjectSED(time=self.mjdobs,
+                                                    wavelen=self.wavenm)
+
+        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) \
+            * 10.
+
+        np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
+                                   rtol=1.0e-7)
 
     def test_rectifiedSED(self):
         """
@@ -255,84 +274,65 @@ class SNObject_tests(unittest.TestCase):
                                               time=times,  magsys='ab')
         np.testing.assert_allclose(sncosmo_r, catsim_r)
 
-    def test_wavelengthranges_forSED(self):
+    def test_SNObject_SourceSED(self):
         """
-        The SNObjectSED should have the following behavior:
-        1. 0. for all wavelengths when time is outside the temporal range of
-            the model is `self.modelOutSideTemporalRange` is 'zero' 
-        2. np.nan for all wavelengths outside the wavelength range of the model
-            if time is inside the range of the model definition. 
-        """
-        # temporal range of model
-        timeMin = self.SN_extincted.mintime()
-        timeMax = self.SN_extincted.maxtime()
-        waveMaxnm = self.SN_extincted.maxwave() / 10.
-        waveMinnm = self.SN_extincted.minwave() / 10.
-        waveranges = np.arange(10., 50000., 50.)
-
-        # Check that we have wavelengths outside the wavelength range of the
-        # model
-        self.assertGreater(waveranges.max(), waveMaxnm)
-        self.assertLess(waveranges.min(), waveMinnm)
-        times = np.arange(timeMin - 20., timeMax + 20., 2.)
-        self.rectifySED = False
-        for time in times:
-            SNObjectSED = self.SN_extincted.SNObjectSED(time,
-                                                        wavelen=waveranges)
-            if (time >= timeMax) or (time <= timeMin):
-                # Test 1.
-                # If outside the temporal range of the model, and we are using
-                # the implementation that Self.ModelOutSideTemporalRange is
-                # 'zero', then flambda should be np.zero() irrespective of
-                # wavelength.
-                if self.SN_extincted.modelOutSideTemporalRange == 'zero':
-                    self.assertEqual(SNObjectSED.flambda.all(), 0.)
-                else:
-                    raise ValueError('Method not implemented\n')
-            else:
-                # Test 2.
-                # within the temporal model range, the flambda values must be
-                # np.nan iff outside the wavelength range of the model
-                tooHigh = SNObjectSED.wavelen > waveMaxnm
-                tooLow = SNObjectSED.wavelen < waveMinnm
-                shouldbeNan = tooHigh | tooLow
-                for i, val in enumerate(SNObjectSED.wavelen[shouldbeNan]):
-                    wval = SNObjectSED.wavelen[np.isnan(SNObjectSED.flambda)]
-                    self.assertEqual(val, wval[i])
-
-
-
-    def test_CompareExtinctedSED2SNCosmo(self):
-        """
-        Compare the extincted SEDS in SNCosmo and SNObject. Slightly more
-        non-trivial than comparing unextincted SEDS, as the extinction in
-        SNObject uses different code from SNCosmo. However, this is still
-        using the same values of MWEBV, rather than reading it off a map.
-        """
-        SNObjectSED = self.SN_extincted.SNObjectSED(time=self.mjdobs,
-                                                    wavelen=self.wavenm)
-
-        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) \
-            * 10.
-
-        np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
-                                   rtol=1.0e-7)
-
-    def test_CompareUnextinctedSED2SNCosmo(self):
-        """
-        Compares the unextincted flux Densities in SNCosmo and SNObject. This
-        is mereley a sanity check as SNObject uses SNCosmo under the hood.
+        We need the source SED for SN_blank (no extinction):
+        Expectations are depend on whether the queried time and wavelengths of
+        observation are within model ranges or not, whether the SEDs were bein
+        rectified correctly or not.
+        -
         """
 
-        SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave,
-                                                time=self.mjdobs) * 10.
+        timeatpeak = self.SN_blank.get('t0')
+        z = self.SN_blank.get('z')
+        mintime = self.SN_blank.mintime()
+        maxtime = self.SN_blank.maxtime()
+        times = np.arange(mintime + 25., maxtime - 10., 5.)
+        self.assertTrue(self.SN_blank.rectifySED)
+        modelinTemporalRange = (times <= maxtime) & (times > mintime)
+        outsidemodeDefinedTimes = times[~modelinTemporalRange]
 
-        unextincted_sed = self.SN_blank.SNObjectSED(time=self.mjdobs,
-                                                    wavelen=self.wavenm)
+        self.SN_blank.rectifySED = False
 
-        SNObjectFluxDensity = unextincted_sed.flambda
-        np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
-                                   rtol=1.0e-7)
+        for time in outsidemodeDefinedTimes:
+            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
+            for val in sourceSED.flambda:
+                self.assertEqual(val, 0.)
+
+        insideModelDefinedTimes = times[modelinTemporalRange]
+
+        # Should match SNCosmo source to some factors
+        sncosmoModel = self.SN_blank.equivalentSNCosmoModel()
+        sncosmoSource = sncosmoModel.source
+        print(self.SN_blank.SNstate)
+        for time in insideModelDefinedTimes:
+            phase = (time - timeatpeak) / (1.0 + z)
+            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
+
+            # some of these wavelengths will be in the range defined
+            # by the model, others will be outside the range and will
+            # have values of np.nan in SNObject
+            nanVals = np.isnan(sourceSED.flambda)
+            nanrestWaves = sourceSED.wavelen[nanVals]
+            print('check restwaves',  nanrestWaves)
+            toolow = nanrestWaves <= self.SN_blank.source.minwave() / 10.
+            toohigh = nanrestWaves >= self.SN_blank.source.maxwave() / 10.
+            badwaves = toolow | toohigh
+            self.assertFalse(badwaves.all())
+
+            restwaveinAng = sourceSED.wavelen[~nanVals] * 10.
+            flambdaRestFrame = sourceSED.flambda[~nanVals] / 10. * (1. + z)
+            print ('tryagain', time, sourceSED.wavelen, sourceSED.flambda)
+            print('awvelens', restwaveinAng, phase, time)
+            sncosmoFlux = sncosmoSource.flux(phase=phase, wave=restwaveinAng)
+            # print(np.shape(sncosmoFlux), np.shape(flambdaRestFrame))
+            # self.assertSequenceEqual(flambdaRestFrame, sncosmoFlux)
+            ratio = sncosmoFlux / flambdaRestFrame
+            self.assertEqual(ratio.all(), 1.0)
+            #    print("Try Elsewhere", time, sncosmoFlux, flambdaRestFrame)
+            #    self.assertAlmostEqual(val, 1., places=2)
+
+
 
 class SNIaCatalog_tests(unittest.TestCase):
 
