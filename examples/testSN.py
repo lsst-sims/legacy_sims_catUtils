@@ -289,6 +289,8 @@ class SNObject_tests(unittest.TestCase):
             outside the range of definition.
         - 3. Test that in the range where the model is defined, the
             source SED matches the SED from SNCosmo (unextincted)
+        - 4. Test that in this range the source SED for both extincted and
+            unextincted SN with the same other parameters match
         """
         timeatpeak = self.SN_blank.get('t0')
         z = self.SN_blank.get('z')
@@ -332,6 +334,7 @@ class SNObject_tests(unittest.TestCase):
 
             # Test 2: Test that all the nan values come for wavelengths that
             # are too high or too low for the model to be well defined.
+
             # Note: 
             # Since the model includes dust extinction, the wavelength range
             # over which the model is defined is the overlap of the SN model
@@ -359,6 +362,17 @@ class SNObject_tests(unittest.TestCase):
             # Test 3: Test that in the range where the model is defined, the
             # source SED matches the SED from SNCosmo (unextincted)
             self.assertEqual(ratio.all(), 1.0)
+
+            # Test 4: Test that the sourceSED values are the same irrespective
+            # of whether the SN are extincted or not, where the model is defined
+            extinctedsourceSEDFull = \
+                    self.SN_extincted.SNObjectSourceSED(time=time,
+                                                        wavelen=waveranges)
+            extincedflambdaRestFrame = \
+                    extinctedsourceSEDFull.flambda[~nanValsFull] / 10. / a
+            ratio = extincedflambdaRestFrame / flambdaRestFrame
+            self.assertEqual(ratio.all(), 1.)
+
 
 
 class SNIaCatalog_tests(unittest.TestCase):
