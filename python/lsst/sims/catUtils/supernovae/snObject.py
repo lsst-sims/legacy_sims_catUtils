@@ -489,8 +489,8 @@ class SNObject(sncosmo.Model):
 
             # Convert to Ang
             wave = wavelen * 10.0
-            mask1 = wave > self.minwave()
-            mask2 = wave < self.maxwave()
+            mask1 = wave >= self.minwave()
+            mask2 = wave <= self.maxwave()
             mask = mask1 & mask2
             wave = wave[mask]
 
@@ -555,6 +555,9 @@ class SNObject(sncosmo.Model):
             restwave = self.source._wave / 10.
             # observer frame wavelength in nm
             wavelen = restwave / a
+        else:
+            # wavelen parameter is in nm
+            restwave = wavelen * a
 
         sed = self.SNObjectSED(time, wavelen=wavelen)
 

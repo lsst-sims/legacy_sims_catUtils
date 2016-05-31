@@ -199,20 +199,22 @@ class SNObject_tests(unittest.TestCase):
     def test_rectifiedSED(self):
         """
         Check for an extreme case that the SN seds are being rectified. This is
-        done by setting up an extreme case where there will be negative seds, and
-        checking that this is indeed the case, and checking that they are not
-        negative if rectified.
+        done by setting up an extreme case where there will be negative seds,
+        and checking that this is indeed the case, and checking that they are
+        not negative if rectified.
         """
         snobj = SNObject(ra=30., dec=-60., source='salt2')
         snobj.set(z=0.96, t0=self.mjdobs, x1=-3., x0=1.8e-6)
         snobj.rectifySED = False
         times = np.arange(self.mjdobs - 50., self.mjdobs + 150., 1.)
+
         badTimes = []
         for time in times:
             sed = snobj.SNObjectSED(time=time,
                                     bandpass=self.lsstBandPass['r'])
             if any(sed.flambda < 0.):
                 badTimes.append(time)
+
         # Check that there are negative SEDs
         assert(len(badTimes) > 0)
         snobj.rectifySED = True
@@ -276,69 +278,93 @@ class SNObject_tests(unittest.TestCase):
 
     def test_SNObject_SourceSED(self):
         """
-        We need the source SED for SN_blank (no extinction):
+        We need the source SED for SN_blank (no extinction) for phosim:
         Expectations are depend on whether the queried time and wavelengths of
         observation are within model ranges or not, whether the SEDs were bein
         rectified correctly or not.
-        -
+        - 1. Outside the temporal range over which the model is defined, the
+            SED should be 0. for all wavelengths
+        - 2. Inside the temporal range, there will be np.nan values for the
+            `sourceSED.flambda` which should correspond to wavelength ranges
+            outside the range of definition.
+        - 3. Test that in the range where the model is defined, the
+            source SED matches the SED from SNCosmo (unextincted)
         """
-
         timeatpeak = self.SN_blank.get('t0')
         z = self.SN_blank.get('z')
+        a = 1.0 / (1.0 + z)
         mintime = self.SN_blank.mintime()
         maxtime = self.SN_blank.maxtime()
-        times = np.arange(mintime + 25., maxtime - 10., 5.)
+        times = np.arange(mintime - 25., maxtime + 25., 5.)
+        waveranges = np.arange(10., 50000., 50.) * (1.0 + z)
         self.assertTrue(self.SN_blank.rectifySED)
         modelinTemporalRange = (times <= maxtime) & (times > mintime)
         outsidemodeDefinedTimes = times[~modelinTemporalRange]
 
-        self.SN_blank.rectifySED = False
+        # self.SN_blank.rectifySED = False
+        # Check that there are times outside the temporal range of
+        # model, so that the test is non-trivial
+        self.assertGreater(len(outsidemodeDefinedTimes), 0)
 
+        # Test 1. : outsideTemporalModelRange, SED is 0.
         for time in outsidemodeDefinedTimes:
             sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
-            for val in sourceSED.flambda:
-                self.assertEqual(val, 0.)
+            self.assertEqual(sourceSED.flambda.all(), 0.)
 
         insideModelDefinedTimes = times[modelinTemporalRange]
 
-        # Should match SNCosmo source to some factors
+        # Should match SNCosmo source to some factors or be nan
         sncosmoModel = self.SN_blank.equivalentSNCosmoModel()
         sncosmoSource = sncosmoModel.source
-        print(self.SN_blank.SNstate)
         for time in insideModelDefinedTimes:
             phase = (time - timeatpeak) / (1.0 + z)
-            sourceSED = self.SN_blank.SNObjectSourceSED(time=time)
+            sourceSEDWellDefined = self.SN_blank.SNObjectSourceSED(time=time)
+            sourceSEDFull = self.SN_blank.SNObjectSourceSED(time=time,
+                                                            wavelen=waveranges)
 
             # some of these wavelengths will be in the range defined
             # by the model, others will be outside the range and will
             # have values of np.nan in SNObject
-            nanVals = np.isnan(sourceSED.flambda)
-            nanrestWaves = sourceSED.wavelen[nanVals]
-            print('check restwaves',  nanrestWaves)
-            toolow = nanrestWaves <= self.SN_blank.source.minwave() / 10.
-            toohigh = nanrestWaves >= self.SN_blank.source.maxwave() / 10.
+
+            # For the well defined source (ie. with default wavelen parameter
+            nanVals = np.isnan(sourceSEDWellDefined.flambda)
+            self.assertFalse(nanVals.all())
+
+            # Test 2: Test that all the nan values come for wavelengths that
+            # are too high or too low for the model to be well defined.
+            # Note: 
+            # Since the model includes dust extinction, the wavelength range
+            # over which the model is defined is the overlap of the SN model
+            # and the dust model. This can be obtained from the model.Sed
+            # (observed), but will be incorrect for the source Sed. This
+            # motivates the method of checking if the wavelength ranges
+            # producing nan values are either too high or too low. The method 
+            # using SN_blank.source.minwave() will fail for this reason
+            nanValsFull = np.isnan(sourceSEDFull.flambda)
+            self.assertTrue(nanValsFull.any())
+            nanrestWaves = sourceSEDFull.wavelen[nanValsFull]
+            toolow = nanrestWaves <= self.SN_blank.minwave() / 10. / (1.0 + z)
+            toohigh = nanrestWaves >= self.SN_blank.maxwave() / 10. / (1.0 + z)
             badwaves = toolow | toohigh
-            self.assertFalse(badwaves.all())
+            self.assertTrue(badwaves.all())
 
-            restwaveinAng = sourceSED.wavelen[~nanVals] * 10.
-            flambdaRestFrame = sourceSED.flambda[~nanVals] / 10. * (1. + z)
-            print ('tryagain', time, sourceSED.wavelen, sourceSED.flambda)
-            print('awvelens', restwaveinAng, phase, time)
+            restwaveinAng = sourceSEDFull.wavelen[~nanValsFull] * 10.
+            flambdaRestFrame = sourceSEDFull.flambda[~nanValsFull] / 10. / a
             sncosmoFlux = sncosmoSource.flux(phase=phase, wave=restwaveinAng)
-            # print(np.shape(sncosmoFlux), np.shape(flambdaRestFrame))
-            # self.assertSequenceEqual(flambdaRestFrame, sncosmoFlux)
             ratio = sncosmoFlux / flambdaRestFrame
-            self.assertEqual(ratio.all(), 1.0)
-            #    print("Try Elsewhere", time, sncosmoFlux, flambdaRestFrame)
-            #    self.assertAlmostEqual(val, 1., places=2)
+            # Check that the ratio has non-zero length to make the next test
+            # non-Trivial
+            self.assertGreater(len(ratio), 0)
 
+            # Test 3: Test that in the range where the model is defined, the
+            # source SED matches the SED from SNCosmo (unextincted)
+            self.assertEqual(ratio.all(), 1.0)
 
 
 class SNIaCatalog_tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
 
         # Set directory where scratch work will be done
         cls.madeScratchDir = False
