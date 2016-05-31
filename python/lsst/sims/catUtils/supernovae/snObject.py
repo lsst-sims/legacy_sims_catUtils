@@ -559,7 +559,7 @@ class SNObject(sncosmo.Model):
             # wavelen parameter is in nm
             restwave = wavelen * a
 
-        sed = self.SNObjectSED(time, wavelen=wavelen)
+        sed = self.SNObjectSED(time, wavelen=wavelen, applyExtinction=False)
 
         sourceSED = Sed(wavelen=restwave, flambda=sed.flambda)
         return sourceSED
