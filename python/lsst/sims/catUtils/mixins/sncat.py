@@ -6,8 +6,9 @@ import numpy as np
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.photUtils import BandpassDict
+from lsst.sims.photUtils import Bandpass
 from lsst.sims.catUtils.mixins import CosmologyMixin
-from lsst.sims.catUtils.mixins import PhotometryBase
+# from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
 
 import astropy
@@ -16,7 +17,7 @@ from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.supernovae import SNUniverse
 
 
-__all__ = ['SNIaCatalog', 'SNFunctionality']
+__all__ = ['SNIaCatalog', 'SNFunctionality', 'FrozenSNCat']
 cosmo = CosmologyMixin()
 
 class SNFunctionality(object):
@@ -24,13 +25,35 @@ class SNFunctionality(object):
     SNFunctionality is a mixin that provides functionality of getting fluxes
     and magnitudes for SN defined by parameters of `~sims_catUtils.SNObject` as
     defined in `~sims_catUtils/python/lsst/sims/catUtils/supernovae/SNObject`
-
-
     This class is not meant to be used by itself, as it does not have any way
     of obtaining its attributes, but as a mixin to classes like SNIaCatalog
     which define these attributes.
+
+    Attributes
+    ----------
+    writeSedFile : Bool, optional, defaults to False
+        Whether the Sed File is written to disk or not
+    prefix: string, optional, defaults to ''
+        prefix to file name for SN source Sed written to file for phosim,
+        which can be used to specify a directory to which the SEDs can be
+        written to.
+    column_outputs: list of strings, defaults to
+        ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
+    suppressHighzSN: Bool, optional, defaults to True
+        SN in catalog with redshift above `self.maxz` will not be included
+        in InstanceCatalogs
+    maxTimeSNVisible: `numpy.float`, optional, defaults to 100.
+        Maximum time in observer frame for which a SN stays visible
+    maxz: `numpy.float`, optional, 1.2
+        max redshift value beyond which SN in the catalog will not be written
+        to instance catalog, if `self.suppressHighzSN` is True.
+
     """
 
+    # Write the location of SED file (for example for PhoSim)
+    writeSedFile = False
+    # prefix to use for SED File name
+    prefix = ''
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
     column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
@@ -52,6 +75,7 @@ class SNFunctionality(object):
     # 'flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y' ,
     # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
     cannot_be_null = ['x0', 'z', 't0']
+
 
     @astropy.utils.lazyproperty
     def mjdobs(self):
@@ -89,7 +113,7 @@ class SNFunctionality(object):
             Value to set suppressDimSN to
         """
         self._suppressDimSN = suppressDimSN
-        return self._suppressDimSN 
+        return self._suppressDimSN
 
     @astropy.utils.lazyproperty
     def photometricparameters(self, expTime=15., nexp=2):
@@ -126,36 +150,7 @@ class SNFunctionality(object):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
 
-    def load_SNsed(self):
-        """
-        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
-        the spatio-temporal range specified by obs_metadata
-
-        """
-        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
-            self.column_by_name('x1'),\
-            self.column_by_name('x0'),\
-            self.column_by_name('t0'),\
-            self.column_by_name('redshift'),\
-            self.column_by_name('raJ2000'),\
-            self.column_by_name('decJ2000')
-
-        SNobject = SNObject()
-
-        sedlist = []
-        for i in range(self.numobjs):
-            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=ra[i], dec=dec[i])
-            SNobject.mwEBVfromMaps()
-            sed = SNobject.SNObjectSED(time=self.mjdobs,
-                                       bandpass=self.lsstBandpassDict,
-                                       applyExitinction=True)
-            sedlist.append(sed)
-
-        return sedlist
-
-
-    @compound('flux', 'mag', 'flux_err', 'mag_err')
+    @compound('flux', 'mag', 'flux_err', 'mag_err', 'adu')
     def get_snbrightness(self):
 
         c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
@@ -172,8 +167,9 @@ class SNFunctionality(object):
             raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
 
+        _photParams = PhotometricParameters()
         # Initialize return array
-        vals = np.zeros(shape=(self.numobjs, 4))
+        vals = np.zeros(shape=(self.numobjs, 5))
 
         for i, _ in enumerate(vals):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
@@ -195,16 +191,21 @@ class SNFunctionality(object):
                                                     photParams=None,
                                                     fluxinMaggies=fluxinMaggies,
                                                     magnitude=mag)
-
+            sed = SNobject.SNObjectSED(time=self.mjdobs,
+                                       bandpass=self.lsstBandpassDict,
+                                       applyExtinction=True)
+            adu = sed.calcADU(bandpass, photParams=_photParams)
             mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
                                                   bandpassobject=bandpass,
                                                   m5=self.obs_metadata.m5[
                                                       bandname],
-                                                  photParams=None,
+                                                  photParams=_photParams,
                                                   magnitude=mag)
             vals[i, 2] = flux_err
             vals[i, 3] = mag_err
-        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
+            vals[i, 4] = adu
+        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3], vals[:, 4])
+
 
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
               'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y',
@@ -245,8 +246,156 @@ class SNFunctionality(object):
                 vals[:, 12], vals[:, 13], vals[:, 14], vals[:, 15],
                 vals[:, 16], vals[:, 17], vals[:, 18])
 
+    @compound('TsedFilepath', 'TmagNorm')
+    def get_phosimVars(self):
+        """
+        Obtain variables TsedFilepath to be used to obtain unique filenames
+        for each SED for phoSim and TMagNorm which is also used. If
+        `self.writeSED` is True, then the source SED gets written to the path
+        specified by TsedFilepath for a SN. For cases wher ethe SN is dim, the
+        t0 parameters are reset to None, which means that the SN_Sed will not
+        be written to the disk.
+
+        Parameters
+        ----------
+        Returns
+        -------
+        fnames, magNorm.
+        fname is constructed as a
+            prefix_mjd_bandpassName.dat
+                where prefix is specified by self.prefix
+                where mjd is specified as a string to 4 places in decimal
+                where obs_metadata.bandpass is a string name which is usually a
+                single character
+        magNorm is the magnitude required by phosim
+        """
+        # construct the unique filename
+        # method: snid_mjd(to 4 places of decimal)_bandpassname
+        mjd = "_{:0.4f}_".format(self.mjdobs)
+        mjd += self.obs_metadata.bandpass + '.dat'
+        fnames = np.array([self.prefix + 'specFile_' + str(int(elem)) + mjd
+                 for elem in self.column_by_name('snid')], dtype='str')
+
+        c, x1, x0, t0, z = self.column_by_name('c'),\
+                         self.column_by_name('x1'),\
+                         self.column_by_name('x0'),\
+                         self.column_by_name('t0'),\
+                         self.column_by_name('redshift')
+
+        bp = Bandpass()
+        bp.imsimBandpass()
+
+        magNorms = np.zeros(len(fnames))
+
+        snobject = SNObject()
+        for i in range(len(self.column_by_name('snid'))):
+            if np.isnan(t0[i]):
+                magNorms[i] = np.nan
+                fnames[i] = None
+
+            else:
+                snobject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i],
+                             z=z[i])
+                if snobject.modelOutSideRange == 'zero':
+                    if self.mjdobs > snobject.maxtime() or self.mjdobs < snobject.mintime():
+                        magNorms[i] = np.nan
+                        fnames[i] = None
+
+                # SED in rest frame
+                sed = snobject.SNObjectSourceSED(time=self.mjdobs)
+                try:
+                    magNorms[i] = sed.calcMag(bandpass=bp)
+                except:
+                    # Since phoSim has a problem with magnorm nan
+                    # This will ensure such effects are not seen in
+                    # the image. We could also use this value to
+                    # investigate objects that have a problem
+                    magNorms[i] = 1000. # sed.calcMag(bandpass=bp)
+
+                if self.writeSedFile:
+                    sed.writeSED(fnames[i])
 
 
+        return (fnames, magNorms)
+
+    def load_SNsed(self):
+        """
+        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
+        the spatio-temporal range specified by obs_metadata
+
+        """
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
+            self.column_by_name('x1'),\
+            self.column_by_name('x0'),\
+            self.column_by_name('t0'),\
+            self.column_by_name('redshift'),\
+            self.column_by_name('raJ2000'),\
+            self.column_by_name('decJ2000')
+
+        SNobject = SNObject()
+
+        sedlist = []
+        for i in range(self.numobjs):
+            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
+            SNobject.setCoords(ra=ra[i], dec=dec[i])
+            SNobject.mwEBVfromMaps()
+            sed = SNobject.SNObjectSED(time=self.mjdobs,
+                                       bandpass=self.lsstBandpassDict,
+                                       applyExitinction=True)
+            sedlist.append(sed)
+
+        return sedlist
+
+#    @compound('flux', 'mag', 'flux_err', 'mag_err')
+#    def get_snbrightness(self):
+#
+#        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
+#            self.column_by_name('x1'),\
+#            self.column_by_name('x0'),\
+#            self.column_by_name('t0'),\
+#            self.column_by_name('redshift'),\
+#            self.column_by_name('raJ2000'),\
+#            self.column_by_name('decJ2000')
+#
+#        SNobject = SNObject()
+#        bandname = self.obs_metadata.bandpass
+#        if isinstance(bandname, list):
+#            raise ValueError('bandname expected to be string, but is list\n')
+#        bandpass = self.lsstBandpassDict[bandname]
+#
+#        # Initialize return array
+#        vals = np.zeros(shape=(self.numobjs, 4))
+#
+#        for i, _ in enumerate(vals):
+#            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
+#            SNobject.setCoords(ra=ra[i], dec=dec[i])
+#            SNobject.mwEBVfromMaps()
+#
+#            # Calculate fluxes
+#            fluxinMaggies = SNobject.catsimBandFlux(time=self.mjdobs,
+#                                                    bandpassobject=bandpass)
+#            mag = SNobject.catsimBandMag(time=self.mjdobs,
+#                                         fluxinMaggies=fluxinMaggies,
+#                                         bandpassobject=bandpass)
+#            vals[i, 0] = fluxinMaggies
+#            vals[i, 1] = mag
+#            flux_err = SNobject.catsimBandFluxError(time=self.mjdobs,
+#                                                    bandpassobject=bandpass,
+#                                                    m5=self.obs_metadata.m5[
+#                                                        bandname],
+#                                                    photParams=None,
+#                                                    fluxinMaggies=fluxinMaggies,
+#                                                    magnitude=mag)
+#
+#            mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
+#                                                  bandpassobject=bandpass,
+#                                                  m5=self.obs_metadata.m5[
+#                                                      bandname],
+#                                                  photParams=None,
+#                                                  magnitude=mag)
+#            vals[i, 2] = flux_err
+#            vals[i, 3] = mag_err
+#        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 ###class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
 ###
 ###    """
@@ -499,4 +648,64 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
 
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
+class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
+
+    """
+    `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
+    characterized by the  following attributes
+
+    Attributes
+    ----------
+    column_outputs :
+    suppressHighzSN :
+    maxTimeSNVisible :
+    maxz :
+    variables :
+    override_formats :
+    cannot_be_null :
+    mjdobs :
+    badvalues position :
+    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats
+        velocity wrt host galaxy in Km/s, the supernova model (eg. SALT2)
+    and parameters of the supernova model that predict the SED.
+    """
+
+    surveyStartDate = 59580. # For Kraken_1042
+
+    #def get_snid(self):
+
+    #    return self.column_by_name('Tsnid')
+
+
+    @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
+    def get_angularCoordinates(self):
+        '''
+        Obtain the coordinates and velocity of the SN from the host galaxy
+
+        Returns
+        -------
+        `np.ndarray` of coordinara, dec, z, vra, vdec, and vr
+
+        '''
+        snra, sndec, snz = self.column_by_name('raJ2000'),\
+            self.column_by_name('decJ2000'),\
+            self.column_by_name('Tredshift')
+        snvra = np.zeros(self.numobjs)
+        snvdec = np.zeros(self.numobjs)
+        snvr = np.zeros(self.numobjs)
+
+        return (snra, sndec, snz, snvra, snvdec, snvr)
+
+    @compound('c', 'x1', 'x0', 't0')
+    def get_snparams(self):
+
+        c, x1, x0 = self.column_by_name('Tc'), \
+                    self.column_by_name('Tx1'),\
+                    self.column_by_name('Tx0')
+        t0 = self.column_by_name('Tt0') + self.surveyStartDate
+        if self.suppressDimSN :
+            t0 = np.where(np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible,
+                          self.badvalues, t0)
+
+        return (c, x1, x0, t0)
 

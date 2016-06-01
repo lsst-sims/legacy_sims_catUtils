@@ -538,9 +538,11 @@ class SNObject(sncosmo.Model):
         ----------
         time : mandatory, float
             observer frame time in mjd
-        wavelen : optional, `np.ndarray`, defaults to SALT2 native wavelengths
+        wavelen : optional, `np.ndarray`, defaults to LSSTBandPass['r'].wavelen
             observer frame wavelengths in nm corresponding to the rest frame
-            wavelengths desired.
+            wavelengths desired. If not supplied, the restframe wavelengths are
+            taken to be the wavelengths at which the LSST Bandpass in 'r' band
+            is sampled by default.
         Returns
         -------
         `lsst.sims.photUtils.Sed` instance with this sed with wavelen given by
@@ -551,8 +553,10 @@ class SNObject(sncosmo.Model):
         a = 1.0 / (1.0 + z)
 
         if wavelen is None:
+            LSST_BandPass = BandpassDict.loadTotalBandpassesFromFiles()
+            restwave = LSST_BandPass['r'].wavelen
             # Get the native wavelengths of the SALT2 model in nm
-            restwave = self.source._wave / 10.
+            # restwave = self.source._wave / 10.
             # observer frame wavelength in nm
             wavelen = restwave / a
         else:
