@@ -5,10 +5,11 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
                                       AstrometrySSM, EBVmixin, PhoSimAstrometryStars, \
-                                      PhoSimAstrometryGalaxies, PhoSimAstrometrySSM
+                                      PhoSimAstrometryGalaxies, PhoSimAstrometrySSM\
+                                      FrozenSNCat
 
 __all__ = ["PhosimInputBase",
-           "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
+           "PhoSimCatalogPoint", "PhoSimCatalogZPoint", "PhoSimCatalogSN",
            "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap"]
 
 
@@ -124,7 +125,6 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
-
 class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
 
     catalog_type = 'phoSim_catalog_ZPOINT'
@@ -145,6 +145,23 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
     spatialModel = "point"
 
     transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+
+class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
+    """
+    Mixin for including variables required by phosim provided by FrozenSNCat 
+
+    """
+    spatialModel = "point"
+    transformations = {'raPhoSim': numpy.degrees, 'decPhoSim': numpy.degrees}
+    default_formats = {'S': '%s', 'f': '%.9g', 'i': '%i'}
+    catalog_type = 'phoSim_SNcatalog'
+
+    def get_sedFilepath(self):
+        return self.column_by_name('TsedFilepath')
+
+    def get_phoSimMagNorm(self):
+        return self.column_by_name('TmagNorm')
+
 
 
 
