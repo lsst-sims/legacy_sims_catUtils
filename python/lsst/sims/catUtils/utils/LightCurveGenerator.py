@@ -154,10 +154,10 @@ class StellarLightCurveGenerator(object):
         bandpass is a char (i.e. 'u', 'g', 'r', etc.) indicating which filter
         you want the light curves in.
 
-        chunk_size (optional; default=10000) is an int specifying how many objects
-        to pull in from the database at a time.  Note: the larger this is, the
-        faster the LightCurveGenerator will run, because it will be handling
-        more objects in memory at once.
+        chunk_size (optional; default=10000) is an int specifying how many
+        objects to pull in from the database at a time.  Note: the larger
+        this is, the faster the LightCurveGenerator will run, because it
+        will be handling more objects in memory at once.
 
         Output:
         -------
