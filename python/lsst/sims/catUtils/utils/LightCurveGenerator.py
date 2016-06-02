@@ -72,26 +72,6 @@ class _lightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
         return np.array([mag, sigma])
 
 
-class _chunkIterWrapper(object):
-
-    def __init__(self, data):
-        self._data = data
-        self._ix = 0
-
-    def __len__(self):
-        return len(self._data)
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self._ix < len(self._data):
-            self._ix += 1
-            return self._data[self._ix-1]
-        else:
-            raise StopIteration
-
-
 class LightCurveGenerator(object):
 
     def __init__(self, catalogdb, opsimdb, opsimdriver="sqlite"):
@@ -154,11 +134,10 @@ class LightCurveGenerator(object):
                     for chunk in query_result:
                        dataCache.append(chunk)
 
-                query_result = _chunkIterWrapper(dataCache)
                 cat.obs_metadata = obs
                 cat._gamma_cache = {}
 
-                for star_obj in cat.iter_catalog(query_cache=query_result, sed_cache=sedCache):
+                for star_obj in cat.iter_catalog(query_cache=dataCache, sed_cache=sedCache):
                     if star_obj[0] not in output_dict:
                         output_dict[star_obj[0]] = []
 
@@ -168,8 +147,7 @@ class LightCurveGenerator(object):
 
 
                 if cat._sedList_cache is not None:
-                    sedCache = _chunkIterWrapper(cat._sedList_cache)
-
+                    sedCache = cat._sedList_cache
 
             cat._sedList_cache = None
             cat._sedList_to_use = None
