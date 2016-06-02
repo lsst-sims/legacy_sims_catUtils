@@ -8,7 +8,7 @@ from lsst.sims.utils import haversine
 
 import time
 
-class _lightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
+class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000",
                       "lightCurveMag", "sigma_lightCurveMag"]
@@ -57,7 +57,7 @@ class _lightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
     @compound("lightCurveMag", "sigma_lightCurveMag")
     def get_lightCurvePhotometry(self):
         if len(self.obs_metadata.bandpass) != 1:
-            raise RuntimeError("_lightCurveCatalog cannot handle bandpass "
+            raise RuntimeError("_stellarLightCurveCatalog cannot handle bandpass "
                                "%s" % str(self.obs_metadata.bandpass))
 
         mag = self.column_by_name("lsst_%s" % self.obs_metadata.bandpass)
@@ -122,7 +122,7 @@ class LightCurveGenerator(object):
             for ix in grp:
                 obs = obs_list[ix]
                 if cat is None:
-                    cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
+                    cat = _stellarLightCurveCatalog(self._catalogdb, obs_metadata=obs)
                     db_required_columns = cat.db_required_columns()
 
                 if dataCache is None:
