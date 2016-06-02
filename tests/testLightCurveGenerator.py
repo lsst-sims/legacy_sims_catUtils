@@ -122,6 +122,15 @@ class StellarLightCurveTest(unittest.TestCase):
             # np.diff run on the magnitudes reutrns something non-zero
             self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
 
+        # Now test that specifying a small chunk_size does not change the output
+        # light curves
+        chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass, chunk_size=1)
+
+        for unique_id in test_light_curves:
+            self.assertEqual(len(test_light_curves[unique_id][0]), len(chunk_light_curves[unique_id][0]))
+            np.testing.assert_array_equal(test_light_curves[unique_id][0], chunk_light_curves[unique_id][0])
+            np.testing.assert_array_equal(test_light_curves[unique_id][1], chunk_light_curves[unique_id][1])
+            np.testing.assert_array_equal(test_light_curves[unique_id][2], chunk_light_curves[unique_id][2])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
