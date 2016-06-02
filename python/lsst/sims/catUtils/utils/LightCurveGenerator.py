@@ -115,7 +115,7 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
         return np.array([mag, sigma])
 
 
-class LightCurveGenerator(object):
+class StellarLightCurveGenerator(object):
     """
     This class will find all of the OpSim pointings in a particular region
     of the sky in a particular filter and then return light curves for all
