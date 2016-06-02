@@ -156,8 +156,9 @@ class StellarLightCurveGenerator(object):
         Output:
         -------
         A dict keyed on the object's uniqeId (an int).  Each entry in the dict
-        is a list of tuples.  Each tuple contains the (MJD, magnitude, uncertainty)
-        in an observation.
+        is a 2-D numpy array.  The first row is a numpy array of MJDs.  The
+        second row is a numpy array of magnitudes.  The third row is a numpy
+        array of magnitude uncertainties.
         """
 
         # First get the list of ObservationMetaData objects corresponding
@@ -168,7 +169,9 @@ class StellarLightCurveGenerator(object):
                                      telescopeFilter=bandpass,
                                      boundLength=1.75)
 
-        output_dict = {}
+        mjd_dict = {}
+        mag_dict = {}
+        sig_dict = {}
 
         if len(obs_list) == 0:
             print("No observations found matching your criterion")
@@ -237,12 +240,14 @@ class StellarLightCurveGenerator(object):
                 for star_obj in \
                 cat.iter_catalog(chunk_size=10000,query_cache=dataCache, sed_cache=sedCache):
 
-                    if star_obj[0] not in output_dict:
-                        output_dict[star_obj[0]] = []
+                    if star_obj[0] not in mjd_dict:
+                        mjd_dict[star_obj[0]] = []
+                        mag_dict[star_obj[0]] = []
+                        sig_dict[star_obj[0]] = []
 
-                    output_dict[star_obj[0]].append((obs.mjd.TAI,
-                                                     star_obj[3],
-                                                     star_obj[4]))
+                    mjd_dict[star_obj[0]].append(obs.mjd.TAI)
+                    mag_dict[star_obj[0]].append(star_obj[3])
+                    sig_dict[star_obj[0]].append(star_obj[4])
 
 
                 # If the _stellarLightCurveCatalog produced a cache of SedLists, copy that
@@ -254,6 +259,12 @@ class StellarLightCurveGenerator(object):
             # accidentally use the wrong SEDs on the wrong patch of sky
             cat._sedList_cache = None
             cat._sedList_to_use = None
+
+        output_dict = {}
+        for unique_id in mjd_dict:
+            output_dict[unique_id] = np.array([mjd_dict[unique_id],
+                                               mag_dict[unique_id],
+                                               sig_dict[unique_id]])
 
         print('that took %e; grps %d' % (time.clock()-t_start, len(obs_groups)))
         print('len obs_list %d' % len(obs_list))
