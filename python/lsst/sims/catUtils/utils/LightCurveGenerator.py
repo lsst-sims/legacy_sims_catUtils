@@ -37,6 +37,15 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
     _sedList_to_use = None # this will be filled in by an SedList instantiation to be used by
                            # the getter
 
+    def _reset_sed_cache(self):
+        """
+        Reset the caches used to store SEDs across iterations on the same
+        patch of sky.
+        """
+        self._sedList_cache = None
+        self._sedList_to_use = None
+
+
     def _loadSedList(self, wavelen_match):
         """
         Wraps the PhotometryStars._loadSedList method.
@@ -116,7 +125,7 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
         return np.array([mag, sigma])
 
 
-class StellarLightCurveGenerator(object):
+class LightCurveGenerator(object):
     """
     This class will find all of the OpSim pointings in a particular region
     of the sky in a particular filter and then return light curves for all
@@ -132,6 +141,8 @@ class StellarLightCurveGenerator(object):
     opsimdriver (optional; default 'sqlite') indicates the database driver to
     be used when connecting to opsimdb.
     """
+
+    _lightCurveCatalogClass = None
 
     def __init__(self, catalogdb, opsimdb, opsimdriver="sqlite"):
         self._generator = ObservationMetaDataGenerator(database=opsimdb,
@@ -226,7 +237,7 @@ class StellarLightCurveGenerator(object):
             for ix in grp:
                 obs = obs_list[ix]
                 if cat is None:
-                    cat = _stellarLightCurveCatalog(self._catalogdb, obs_metadata=obs)
+                    cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs)
                     db_required_columns = cat.db_required_columns()
 
                 # query the database, caching the results.
@@ -264,8 +275,7 @@ class StellarLightCurveGenerator(object):
 
             # clear the SedList caches in the _stellarLightCurveCatalog so that you don't
             # accidentally use the wrong SEDs on the wrong patch of sky
-            cat._sedList_cache = None
-            cat._sedList_to_use = None
+            cat._reset_sed_cache()
 
         output_dict = {}
         for unique_id in mjd_dict:
@@ -276,3 +286,10 @@ class StellarLightCurveGenerator(object):
         print('that took %e; grps %d' % (time.clock()-t_start, len(obs_groups)))
         print('len obs_list %d' % len(obs_list))
         return output_dict
+
+
+class StellarLightCurveGenerator(LightCurveGenerator):
+
+    def __init__(self, *args, **kwargs):
+        self._lightCurveCatalogClass = _stellarLightCurveCatalog
+        super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
