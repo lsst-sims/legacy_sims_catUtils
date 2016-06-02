@@ -223,7 +223,7 @@ class LightCurveGenerator(object):
                     query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                             obs_metadata=obs,
                                                             constraint=cat.constraint,
-                                                            chunk_size=10)
+                                                            chunk_size=10000)
                     dataCache = []
                     for chunk in query_result:
                        dataCache.append(chunk)
@@ -232,7 +232,9 @@ class LightCurveGenerator(object):
                 cat.obs_metadata = obs
                 cat._gamma_cache = {}
 
-                for star_obj in cat.iter_catalog(query_cache=dataCache, sed_cache=sedCache):
+                for star_obj in \
+                cat.iter_catalog(chunk_size=10000,query_cache=dataCache, sed_cache=sedCache):
+
                     if star_obj[0] not in output_dict:
                         output_dict[star_obj[0]] = []
 
