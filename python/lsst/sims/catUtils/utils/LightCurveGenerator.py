@@ -8,6 +8,8 @@ from lsst.sims.utils import haversine
 
 import time
 
+__all__ = ["StellarLightCurveGenerator"]
+
 class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
     """
     This class wraps a basic stellar variability InstanceCatalog.  It provides its
