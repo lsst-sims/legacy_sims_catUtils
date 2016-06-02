@@ -83,10 +83,17 @@ class LightCurveGenerator(object):
             else:
                 obs_groups[group_dex].append(iobs)
 
+        cat = None
+
         for grp in obs_groups:
             if len(grp) == 1:
                 obs = obs_list[grp[0]]
-                cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
+                if cat is None:
+                    cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
+                else:
+                    cat.obs_metadata = obs
+                    cat._gamma_cache = {}
+
                 for star_obj in cat.iter_catalog():
                     if star_obj[0] not in output_dict:
                         output_dict[star_obj[0]] = []
@@ -97,13 +104,13 @@ class LightCurveGenerator(object):
 
             else:
                 dataCache = None
-                cat = None
                 for ix in grp:
                     obs = obs_list[ix]
                     if cat is None:
                         cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
-                    if dataCache is None:
                         db_required_columns = cat.db_required_columns()
+
+                    if dataCache is None:
                         query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                                obs_metadata=obs,
                                                                constraint=cat.constraint,
