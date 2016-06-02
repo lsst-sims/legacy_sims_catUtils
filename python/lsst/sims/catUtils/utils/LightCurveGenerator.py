@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import copy
 
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from  lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
@@ -110,7 +111,7 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
             self._sedList_cache = []
 
         if self._sedList_to_use is None and len(mag)>0:
-            self._sedList_cache.append(self._sedList)
+            self._sedList_cache.append(copy.copy(self._sedList))
 
         return np.array([mag, sigma])
 
