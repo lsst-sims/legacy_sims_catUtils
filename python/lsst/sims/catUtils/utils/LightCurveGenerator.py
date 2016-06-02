@@ -97,9 +97,11 @@ class LightCurveGenerator(object):
 
             else:
                 dataCache = None
+                cat = None
                 for ix in grp:
                     obs = obs_list[ix]
-                    cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
+                    if cat is None:
+                        cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
                     if dataCache is None:
                         db_required_columns = cat.db_required_columns()
                         query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
@@ -111,6 +113,8 @@ class LightCurveGenerator(object):
                            dataCache.append(chunk)
 
                     query_result = _chunkIterWrapper(dataCache)
+                    cat.obs_metadata = obs
+                    cat._gamma_cache = {}
 
                     for star_obj in cat.iter_catalog(query_result=query_result):
                         if star_obj[0] not in output_dict:
