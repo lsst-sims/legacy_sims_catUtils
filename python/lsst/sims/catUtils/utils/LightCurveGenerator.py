@@ -140,7 +140,7 @@ class StellarLightCurveGenerator(object):
         self._catalogdb = catalogdb
 
 
-    def generate_light_curves(self, ra, dec, bandpass):
+    def generate_light_curves(self, ra, dec, bandpass, chunk_size=10000):
         """
         Generate light curves for all of the objects in a particular region
         of sky in a particular bandpass.
@@ -153,6 +153,9 @@ class StellarLightCurveGenerator(object):
 
         bandpass is a char (i.e. 'u', 'g', 'r', etc.) indicating which filter
         you want the light curves in.
+
+        chunk_size (optional; default=10000) is an int specifying how many rows
+        to pull in from the database at a time.
 
         Output:
         -------
@@ -229,7 +232,7 @@ class StellarLightCurveGenerator(object):
                     query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                             obs_metadata=obs,
                                                             constraint=cat.constraint,
-                                                            chunk_size=10000)
+                                                            chunk_size=chunk_size)
                     dataCache = []
                     for chunk in query_result:
                        dataCache.append(chunk)
@@ -238,8 +241,9 @@ class StellarLightCurveGenerator(object):
                 cat.obs_metadata = obs
                 cat._gamma_cache = {}
 
+                ct = 0
                 for star_obj in \
-                cat.iter_catalog(chunk_size=10000,query_cache=dataCache, sed_cache=sedCache):
+                cat.iter_catalog(chunk_size=chunk_size, query_cache=dataCache, sed_cache=sedCache):
 
                     if star_obj[0] not in mjd_dict:
                         mjd_dict[star_obj[0]] = []
