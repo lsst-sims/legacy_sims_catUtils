@@ -115,4 +115,5 @@ class LightCurveGenerator(object):
                                                      star_obj[4]))
 
         print('that took %e; grps %d' % (time.clock()-t_start, len(obs_groups)))
+        print('len obs_list %d' % len(obs_list))
         return output_dict
