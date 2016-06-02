@@ -86,50 +86,33 @@ class LightCurveGenerator(object):
         cat = None
 
         for grp in obs_groups:
-            if len(grp) == 1:
-                obs = obs_list[grp[0]]
+            dataCache = None
+            for ix in grp:
+                obs = obs_list[ix]
                 if cat is None:
                     cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
-                else:
-                    cat.obs_metadata = obs
-                    cat._gamma_cache = {}
+                    db_required_columns = cat.db_required_columns()
 
-                for star_obj in cat.iter_catalog():
+                if dataCache is None:
+                    query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
+                                                            obs_metadata=obs,
+                                                            constraint=cat.constraint,
+                                                            chunk_size=100000)
+                    dataCache = []
+                    for chunk in query_result:
+                       dataCache.append(chunk)
+
+                query_result = _chunkIterWrapper(dataCache)
+                cat.obs_metadata = obs
+                cat._gamma_cache = {}
+
+                for star_obj in cat.iter_catalog(query_result=query_result):
                     if star_obj[0] not in output_dict:
                         output_dict[star_obj[0]] = []
 
                     output_dict[star_obj[0]].append((obs.mjd.TAI,
                                                      star_obj[3],
                                                      star_obj[4]))
-
-            else:
-                dataCache = None
-                for ix in grp:
-                    obs = obs_list[ix]
-                    if cat is None:
-                        cat = _lightCurveCatalog(self._catalogdb, obs_metadata=obs)
-                        db_required_columns = cat.db_required_columns()
-
-                    if dataCache is None:
-                        query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
-                                                               obs_metadata=obs,
-                                                               constraint=cat.constraint,
-                                                               chunk_size=100000)
-                        dataCache = []
-                        for chunk in query_result:
-                           dataCache.append(chunk)
-
-                    query_result = _chunkIterWrapper(dataCache)
-                    cat.obs_metadata = obs
-                    cat._gamma_cache = {}
-
-                    for star_obj in cat.iter_catalog(query_result=query_result):
-                        if star_obj[0] not in output_dict:
-                            output_dict[star_obj[0]] = []
-
-                        output_dict[star_obj[0]].append((obs.mjd.TAI,
-                                                         star_obj[3],
-                                                         star_obj[4]))
 
         print('that took %e' % (time.clock()-t_start))
         return output_dict
