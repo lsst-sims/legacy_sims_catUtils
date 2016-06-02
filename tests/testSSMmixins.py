@@ -291,6 +291,9 @@ class SSMastrometryTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(testData['vel'], controlVel, 10)
 
+        if os.path.exists(catName):
+            os.unlink(catName)
+
 
 def suite():
     utilsTests.init()
