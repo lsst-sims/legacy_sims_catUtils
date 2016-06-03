@@ -71,10 +71,11 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
         """
         Wraps the PhotometryStars._loadSedList method.
 
-        If self._sedList_to_use is None, this will call the base method.
-        defined in PhotometryStars.
+        If current chunk of objects is not represetned in the global
+        _sed_cache, this will call the base method defined in
+        PhotometryStars.
 
-        Otherwise, it will set self._sedList=self._sedList_to_use.
+        Otherwise, it will read self._sedList from teh cache.
         That way, the photometry getters defined in PhotometryStars will
         not read in SEDs that have already been cached.
         """
