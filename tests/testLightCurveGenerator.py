@@ -163,10 +163,10 @@ class StellarLightCurveTest(unittest.TestCase):
         Run test_stellar_light_curves, this time specifying a range in MJD.
         """
 
-        raRange = (78.0, 85.0)
-        decRange = (-69.0, -65.0)
+        raRange = (0.0, 110.0)
+        decRange = (-90.0, -50.0)
         bandpass = 'g'
-        mjdRange = (49356.14, 49356.27)
+        mjdRange = (49356.0, 49357.0)
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         test_light_curves = lc_gen.generate_light_curves(raRange, decRange,
