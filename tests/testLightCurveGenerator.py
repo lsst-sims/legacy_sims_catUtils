@@ -117,10 +117,13 @@ class StellarLightCurveTest(unittest.TestCase):
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         test_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass)
 
+        self.assertGreater(len(test_light_curves), 0) # make sure we got some light curves
+
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
             self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id][0]), 0)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
@@ -145,7 +148,6 @@ class StellarLightCurveTest(unittest.TestCase):
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
 
-
         for obs in obs_list:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
@@ -157,6 +159,68 @@ class StellarLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc[1][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc[2][dex]-star_obj[4]), 1.0e-7)
 
+
+    def test_date_range(self):
+        """
+        Run test_stellar_light_curves, this time specifying a range in MJD.
+        """
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'g'
+        mjdRange = (49356.14, 49356.27)
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+        test_light_curves = lc_gen.generate_light_curves(raRange, decRange,
+                                                         bandpass,
+                                                         expMJD=mjdRange)
+
+        self.assertGreater(len(test_light_curves), 0)
+
+        for unique_id in test_light_curves:
+            # verify that the sources returned all do vary by making sure that the
+            # np.diff run on the magnitudes reutrns something non-zero
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id][0]), 0)
+            self.assertGreater(test_light_curves[unique_id][0].min(), mjdRange[0]-1.0e-12)
+            self.assertLess(test_light_curves[unique_id][0].max(), mjdRange[1]+1.0e-12)
+
+        # Now test that specifying a small chunk_size does not change the output
+        # light curves
+        chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass,
+                                                          expMJD=mjdRange, chunk_size=1)
+
+        for unique_id in test_light_curves:
+            self.assertEqual(len(test_light_curves[unique_id][0]), len(chunk_light_curves[unique_id][0]))
+            np.testing.assert_array_equal(test_light_curves[unique_id][0], chunk_light_curves[unique_id][0])
+            np.testing.assert_array_equal(test_light_curves[unique_id][1], chunk_light_curves[unique_id][1])
+            np.testing.assert_array_equal(test_light_curves[unique_id][2], chunk_light_curves[unique_id][2])
+
+        # Now find all of the ObservationMetaData that were included in our
+        # light curves, generate InstanceCatalogs from them separately,
+        # and verify that the contents of the InstanceCatalogs agree with
+        # the contents of the light curves.
+
+        gen = ObservationMetaDataGenerator(database=self.opsimDb,
+                                           driver='sqlite')
+
+        obs_list = gen.getObservationMetaData(fieldRA=raRange,
+                                              fieldDec=decRange,
+                                              telescopeFilter=bandpass,
+                                              expMJD=mjdRange,
+                                              boundLength=1.75)
+
+
+        for obs in obs_list:
+            cat = stellarControlCatalog(self.stellar_db,
+                                        obs_metadata=obs)
+
+            for star_obj in cat.iter_catalog():
+                lc = test_light_curves[star_obj[0]]
+                dex = np.argmin(np.abs(lc[0]-obs.mjd.TAI))
+                self.assertLess(np.abs(lc[0][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc[1][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc[2][dex]-star_obj[4]), 1.0e-7)
 
 
 def suite():

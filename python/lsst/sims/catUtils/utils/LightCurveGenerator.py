@@ -140,7 +140,7 @@ class LightCurveGenerator(object):
         self._catalogdb = catalogdb
 
 
-    def generate_light_curves(self, ra, dec, bandpass, chunk_size=10000):
+    def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=10000):
         """
         Generate light curves for all of the objects in a particular region
         of sky in a particular bandpass.
@@ -153,6 +153,10 @@ class LightCurveGenerator(object):
 
         bandpass is a char (i.e. 'u', 'g', 'r', etc.) indicating which filter
         you want the light curves in.
+
+        expMJD is an optional tuple indicating a (min, max) range in MJD.
+        Defaults to None, in which case, the light curves over the entire
+        10 year survey are returned.
 
         chunk_size (optional; default=10000) is an int specifying how many
         objects to pull in from the database at a time.  Note: the larger
@@ -175,6 +179,7 @@ class LightCurveGenerator(object):
                                      fieldRA=ra,
                                      fieldDec=dec,
                                      telescopeFilter=bandpass,
+                                     expMJD=expMJD,
                                      boundLength=1.75)
 
         mjd_dict = {}
