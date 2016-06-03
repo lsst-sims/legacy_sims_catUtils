@@ -85,7 +85,7 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
         object_names = self.column_by_name("uniqueId")
 
         if len(object_names)>0:
-            cache_name = "%s_%s" % (object_names[0], object_names[-1])
+            cache_name = "stellar_%s_%s" % (object_names[0], object_names[-1])
         else:
             cache_name = None
 
