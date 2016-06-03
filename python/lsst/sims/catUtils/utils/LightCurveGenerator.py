@@ -13,7 +13,39 @@ __all__ = ["StellarLightCurveGenerator"]
 
 _sed_cache = {} # a global cache to store SedLists loaded by the light curve catalogs
 
-class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
+
+class _baseLightCurveCatalog(InstanceCatalog):
+
+    def iter_catalog(self, chunk_size=None, query_cache=None):
+        """
+        chunk_size (optional) is an int specifying the number of rows to return
+        from the database at a time
+
+        query_cache (optional) is the result of calling db_obj.query_columns().
+        DO NOT use this unless you know what you are doing.  It is an optional
+        input for those who want to repeatedly examine the same patch of sky
+        without actually querying the database over and over again.  If it is set
+        to 'None' (default), this method will handle the database query.
+
+        Returns an iterator over rows of the catalog.
+        """
+
+        if query_cache is None:
+            yield InstanceCatalog.iter_catalog(self)
+
+        for chunk in query_cache:
+            self._set_current_chunk(chunk)
+            chunk_cols = [self.transformations[col](self.column_by_name(col))
+                          if col in self.transformations.keys() else
+                          self.column_by_name(col)
+                          for col in self.iter_column_names()]
+            for line in zip(*chunk_cols):
+                yield line
+
+
+
+
+class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, PhotometryStars):
     """
     This class wraps a basic stellar variability InstanceCatalog.  It provides its
     own photometry getter that
@@ -62,33 +94,6 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
                 _sed_cache[cache_name] = copy.copy(self._sedList)
         else:
             self._sedList = _sed_cache[cache_name]
-
-
-    def iter_catalog(self, chunk_size=None, query_cache=None):
-        """
-        chunk_size (optional) is an int specifying the number of rows to return
-        from the database at a time
-
-        query_cache (optional) is the result of calling db_obj.query_columns().
-        DO NOT use this unless you know what you are doing.  It is an optional
-        input for those who want to repeatedly examine the same patch of sky
-        without actually querying the database over and over again.  If it is set
-        to 'None' (default), this method will handle the database query.
-
-        Returns an iterator over rows of the catalog.
-        """
-
-        if query_cache is None:
-            yield InstanceCatalog.iter_catalog(self)
-
-        for chunk in query_cache:
-            self._set_current_chunk(chunk)
-            chunk_cols = [self.transformations[col](self.column_by_name(col))
-                          if col in self.transformations.keys() else
-                          self.column_by_name(col)
-                          for col in self.iter_column_names()]
-            for line in zip(*chunk_cols):
-                yield line
 
 
     @compound("lightCurveMag", "sigma_lightCurveMag")
