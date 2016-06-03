@@ -31,16 +31,17 @@ class _baseLightCurveCatalog(InstanceCatalog):
         """
 
         if query_cache is None:
-            yield InstanceCatalog.iter_catalog(self)
-
-        for chunk in query_cache:
-            self._set_current_chunk(chunk)
-            chunk_cols = [self.transformations[col](self.column_by_name(col))
-                          if col in self.transformations.keys() else
-                          self.column_by_name(col)
-                          for col in self.iter_column_names()]
-            for line in zip(*chunk_cols):
+            for line in InstanceCatalog.iter_catalog(self, chunk_size=chunk_size):
                 yield line
+        else:
+            for chunk in query_cache:
+                self._set_current_chunk(chunk)
+                chunk_cols = [self.transformations[col](self.column_by_name(col))
+                              if col in self.transformations.keys() else
+                              self.column_by_name(col)
+                              for col in self.iter_column_names()]
+                for line in zip(*chunk_cols):
+                    yield line
 
 
 
