@@ -16,6 +16,9 @@ _sed_cache = {} # a global cache to store SedLists loaded by the light curve cat
 
 class _baseLightCurveCatalog(InstanceCatalog):
 
+    column_outputs = ["uniqueId", "raJ2000", "decJ2000",
+                      "lightCurveMag", "sigma_lightCurveMag"]
+
     def iter_catalog(self, chunk_size=None, query_cache=None):
         """
         chunk_size (optional) is an int specifying the number of rows to return
@@ -63,9 +66,6 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
 
     It should only be used in the context of the LightCurveGenerator class.
     """
-
-    column_outputs = ["uniqueId", "raJ2000", "decJ2000",
-                      "lightCurveMag", "sigma_lightCurveMag"]
 
     def _loadSedList(self, wavelen_match):
         """
