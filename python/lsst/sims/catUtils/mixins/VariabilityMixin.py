@@ -2,6 +2,7 @@ import numpy
 import linecache
 import math
 import os
+import copy
 import json as json
 from lsst.sims.catalogs.measures.instance import register_class, register_method, compound
 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -223,9 +224,13 @@ class Variability(object):
         dMags['y'] = dmag
         return dMags
 
+    _agn_cache = None
 
     @register_method('applyAgn')
     def applyAgn(self, params, expmjd_in):
+        if self._agn_cache is None:
+            self._agn_cache = {}
+
         dMags = {}
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         toff = numpy.float(params['t0_mjd'])
@@ -238,32 +243,87 @@ class Variability(object):
         sfint['z'] = params['agn_sfz']
         sfint['y'] = params['agn_sfy']
         tau = params['agn_tau']
-        epochs = expmjd - toff
+
+        # A string made up of this AGNs variability parameters that ought
+        # to uniquely identify it.
+        #
+        cache_name = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
+        %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
+          sfint['y'], tau, toff)
+
+        resumption = False
+
+        # Check to see if this AGN has already been simulated.
+        # If it has, select the previously simulated MJD that is
+        # closest to the current MJD without going over and use
+        # that as the starting point for our random walk. That way
+        # we minimize the number of time steps we have to calculate
+        # more than once in the case where we want to simulate the
+        # same AGN over and over again at different MJD values.
+        #
+        if cache_name not in self._agn_cache:
+            self._agn_cache[cache_name] = {}
+            self._agn_cache[cache_name]['mjd'] = []
+            self._agn_cache[cache_name]['rng'] = []
+            self._agn_cache[cache_name]['dx'] = []
+        elif len(self._agn_cache[cache_name]['mjd'])>0:
+            cache = self._agn_cache[cache_name]
+            if hasattr(expmjd, '__len__'):
+                first_date = expmjd.min()
+            else:
+                first_date = expmjd
+            start_dex = numpy.argmin(numpy.array([first_date-mm if mm<first_date else 10000.0 \
+                                            for mm in cache['mjd']]))
+
+            if self._agn_cache[cache_name]['mjd'][start_dex] <first_date:
+                resumption = True
+
+        if resumption:
+            rng = copy.deepcopy(self._agn_cache[cache_name]['rng'][start_dex])
+            start_date = self._agn_cache[cache_name]['mjd'][start_dex]
+            dx_0 = self._agn_cache[cache_name]['dx'][start_dex]
+        else:
+            start_date = toff
+            rng = numpy.random.RandomState(seed)
+            dx_0 = {}
+            for k in sfint:
+                dx_0[k]=0.0
+
+        epochs = expmjd - start_date
+        endepoch = epochs.max()
+
         if epochs.min() < 0:
             raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
                                "Not applying variability. "+
                                "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
                                "in applyAgn variability method")
 
-        endepoch = epochs.max()
-
         dt = tau/100.
         nbins = int(math.ceil(endepoch/dt))
-        dt = (endepoch/nbins)/tau
+        dt = dt/tau
         sdt = math.sqrt(dt)
-        numpy.random.seed(seed=seed)
-        es = numpy.random.normal(0., 1., nbins)
+
+        es = rng.normal(0., 1., nbins)
+        dx_cached = {}
+
         for k in sfint.keys():
             dx = numpy.zeros(nbins+1)
-            dx[0] = 0.
+            dx[0] = dx_0[k]
             for i in range(nbins):
                 #The second term differs from Zeljko's equation by sqrt(2.)
                 #because he assumes stdev = sfint/sqrt(2)
                 dx[i+1] = -dx[i]*dt + sfint[k]*es[i]*sdt + dx[i]
+
+            dx_cached[k] = dx[nbins]
             x = numpy.linspace(0, endepoch, nbins+1)
             intdx = interp1d(x, dx)
             magoff = intdx(epochs)
             dMags[k] = magoff
+
+        self._agn_cache[cache_name]['mjd'].append(start_date+nbins*dt*tau)
+        self._agn_cache[cache_name]['rng'].append(copy.deepcopy(rng))
+        self._agn_cache[cache_name]['dx'].append(dx_cached)
+
         return dMags
 
     @register_method('applyAmcvn')
