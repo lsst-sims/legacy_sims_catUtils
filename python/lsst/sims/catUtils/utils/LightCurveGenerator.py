@@ -75,7 +75,7 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
         _sed_cache, this will call the base method defined in
         PhotometryStars.
 
-        Otherwise, it will read self._sedList from teh cache.
+        Otherwise, it will read self._sedList from the cache.
         That way, the photometry getters defined in PhotometryStars will
         not read in SEDs that have already been cached.
         """
