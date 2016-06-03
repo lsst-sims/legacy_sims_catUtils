@@ -4,12 +4,13 @@ import copy
 
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from  lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
+from lsst.sims.catUtils.mixins  import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import haversine
 
 import time
 
-__all__ = ["StellarLightCurveGenerator"]
+__all__ = ["StellarLightCurveGenerator", "AgnLightCurveGenerator"]
 
 _sed_cache = {} # a global cache to store SedLists loaded by the light curve catalogs
 
@@ -114,6 +115,58 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
 
         return np.array([self.column_by_name("lsst_%s" % self.obs_metadata.bandpass),
                          self.column_by_name("sigma_lsst_%s" % self.obs_metadata.bandpass)])
+
+
+class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, PhotometryGalaxies):
+
+
+    def _loadAgnSedList(self, wavelen_match):
+        """
+        Wraps the PhotometryGalaxies._loadAgnSedList method.
+
+        If current chunk of objects is not represetned in the global
+        _sed_cache, this will call the base method defined in
+        PhotometryGalaxies.
+
+        Otherwise, it will read self._sedList from the cache.
+        That way, the photometry getters defined in PhotometryStars will
+        not read in SEDs that have already been cached.
+        """
+
+        global _sed_cache
+
+        object_names = self.column_by_name("uniqueId")
+
+        if len(object_names)>0:
+            cache_name = "agn_%s_%s" % (object_names[0], object_names[-1])
+        else:
+            cache_name = None
+
+        if cache_name not in _sed_cache:
+            PhotometryGalaxies._loadAgnSedList(self, wavelen_match)
+
+            if cache_name is not None:
+                _sed_cache[cache_name] = copy.copy(self._agnSedList)
+        else:
+            self._agnSedList = _sed_cache[cache_name]
+
+
+    @compound("lightCurveMag", "sigma_lightCurveMag")
+    def get_lightCurvePhotometry(self):
+        """
+        A getter which returns the magnitudes and uncertainties in magnitudes
+        in the bandpass specified by self.obs_metdata.
+
+        As it runs, this method will cache the SedLists it reads in so that
+        they can be used later.
+        """
+
+        if len(self.obs_metadata.bandpass) != 1:
+            raise RuntimeError("_agnLightCurveCatalog cannot handle bandpass "
+                               "%s" % str(self.obs_metadata.bandpass))
+
+        return np.array([self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
+                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)])
 
 
 class LightCurveGenerator(object):
@@ -225,12 +278,14 @@ class LightCurveGenerator(object):
 
         # Loop over the list of groups ObservationMetaData objects,
         # querying the database and generating light curves.
+        print('number of groups ',len(obs_groups))
         for grp in obs_groups:
 
             dataCache = None # a cache for the results of database queries
 
             # loop over the group of like-pointed ObservationMetaDatas, generating
             # the light curves
+            print('    length of group ',len(grp))
             for ix in grp:
                 obs = obs_list[ix]
                 if cat is None:
@@ -282,3 +337,10 @@ class StellarLightCurveGenerator(LightCurveGenerator):
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _stellarLightCurveCatalog
         super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
+
+
+class AgnLightCurveGenerator(LightCurveGenerator):
+
+    def __init__(self, *args, **kwargs):
+        self._lightCurveCatalogClass = _agnLightCurveCatalog
+        super(AgnLightCurveGenerator, self).__init__(*args, **kwargs)

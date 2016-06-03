@@ -9,10 +9,14 @@ from lsst.utils import getPackageDir
 from lsst.sims.catalogs.generation.db import fileDBObject
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
-from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
-
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
+
+from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
 from lsst.sims.catUtils.utils import StellarLightCurveGenerator
+
+from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
+from lsst.sims.catUtils.utils import AgnLightCurveGenerator
+
 
 class stellarControlCatalog(InstanceCatalog,
                             PhotometryStars, VariabilityStars):
@@ -24,6 +28,19 @@ class stellarControlCatalog(InstanceCatalog,
         mm = self.column_by_name("lsst_%s" % self.obs_metadata.bandpass)
         sig = self.column_by_name("sigma_lsst_%s" % self.obs_metadata.bandpass)
         return np.array([mm, sig])
+
+
+class agnControlCatalog(InstanceCatalog,
+                        PhotometryGalaxies, VariabilityGalaxies):
+
+    column_outputs = ["uniqueId", "raJ2000", "decJ2000", "mag", "sigma_mag"]
+
+    @compound("mag", "sigma_mag")
+    def get_phot(self):
+        return np.array([
+                         self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
+                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)
+                       ])
 
 
 class StellarLightCurveTest(unittest.TestCase):
@@ -219,10 +236,174 @@ class StellarLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc[2][dex]-star_obj[4]), 1.0e-7)
 
 
+class AgnLightCurveTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        rng = np.random.RandomState(119)
+
+        cls.txt_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
+        cls.txt_cat_name = os.path.join(cls.txt_cat_name, "scratchSpace", "agn_lc_cat.txt")
+
+        n_galaxies = 20
+
+        sed_dir = os.path.join(getPackageDir("sims_sed_library"), "galaxySED")
+        list_of_seds = os.listdir(sed_dir)
+        disk_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+        bulge_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+
+        avBulge = rng.random_sample(n_galaxies)*0.3+0.1
+        avDisk = rng.random_sample(n_galaxies)*0.3+0.1
+
+        mjdList = rng.random_sample(n_galaxies)*10.0+49330.0
+        redshiftList = rng.random_sample(n_galaxies)*1.5+0.01
+
+        tauList = rng.random_sample(n_galaxies)*1.0+1.0
+        sfuList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfgList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfrList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfiList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfzList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfyList = rng.random_sample(n_galaxies)*2.0+1.0
+
+        raList = rng.random_sample(n_galaxies)*7.0+78.0
+        decList = rng.random_sample(n_galaxies)*4.0-69.0
+
+        normDisk = rng.random_sample(n_galaxies)*5.0+20.0
+        normBulge = rng.random_sample(n_galaxies)*5.0+20.0
+        normAgn = rng.random_sample(n_galaxies)*5.0+20.0
+
+        with open(cls.txt_cat_name, "w") as output_file:
+            for ix in range(n_galaxies):
+                varParam = {'varMethodName':'applyAgn',
+                            'pars':{'agn_tau':tauList[ix], 'agn_sfu':sfuList[ix],
+                                    'agn_sfg':sfgList[ix], 'agn_sfr':sfrList[ix],
+                                    'agn_sfi':sfiList[ix], 'agn_sfz':sfzList[ix],
+                                    'agn_sfy':sfyList[ix], 't0_mjd':mjdList[ix],
+                                    'seed':rng.randint(0,200000)
+                                    }}
+
+                paramStr = json.dumps(varParam)
+
+                output_file.write("%d;%f;%f;" % (ix, raList[ix], decList[ix])
+                                  + "%f;%f;" % (np.radians(raList[ix]), np.radians(decList[ix]))
+                                  + "%f;" % (redshiftList[ix])
+                                  + "%s;%f;%f;" % (list_of_seds[disk_sed_dexes[ix]], avDisk[ix], normDisk[ix])
+                                  + "%s;%f;%f;" % (list_of_seds[bulge_sed_dexes[ix]], avBulge[ix], normBulge[ix])
+                                  + "agn.spec;%s;%f\n" % (paramStr, normAgn[ix]))
+
+        dtype = np.dtype([
+                         ('galid', np.int),
+                         ('raDeg', np.float), ('decDeg', np.float),
+                         ('raJ2000', np.float), ('decJ2000', np.float),
+                         ('redshift', np.float),
+                         ('sedFilenameDisk', str, 300), ('internalAvDisk', np.float),
+                         ('magNormDisk', np.float),
+                         ('sedFilenameBulge', str, 300), ('internalAvBulge', np.float),
+                         ('magNormBulge', np.float),
+                         ('sedFilenameAgn', str, 300), ('varParamStr', str, 600),
+                         ('magNormAgn', np.float)
+                         ])
+
+        cls.agn_db = fileDBObject(cls.txt_cat_name, delimiter=';',
+                                  runtable='test', dtype=dtype,
+                                  idColKey='galid')
+
+        cls.agn_db.raColName='raDeg'
+        cls.agn_db.decColName='decDeg'
+        cls.agn_db.objectTypeId=112
+
+        ### what follows is a hack to deal with the fact thar
+        ### our varParamStr values are longer than 256 characters
+        ### which is the default maximum length that a
+        ### CatalogDBObject expects a string to be
+        ###
+        cls.agn_db.dbTypeMap['STRING'] = (str, 600)
+        cls.agn_db.columns = None
+        cls.agn_db._make_default_columns()
+        cls.agn_db._make_column_map()
+        cls.agn_db._make_type_map()
+
+        cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
+        cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
+
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.txt_cat_name):
+            os.unlink(cls.txt_cat_name)
+
+
+
+    def test_agn_light_curves(self):
+        """
+        Test the AgnLightCurveGenerator by generating some AGN light
+        curves and comparing them to the results obtained by generating a
+        series of InstanceCatalogs containing the same objects at the same
+        MJDs
+        """
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'g'
+
+
+        lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
+        test_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass)
+
+        self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
+
+        for unique_id in test_light_curves:
+            # verify that the sources returned all do vary by making sure that the
+            # np.diff run on the magnitudes reutrns something non-zero
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id][0]), 0)
+
+        # Now test that specifying a small chunk_size does not change the output
+        # light curves
+        chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass, chunk_size=1)
+
+        for unique_id in test_light_curves:
+            self.assertEqual(len(test_light_curves[unique_id][0]), len(chunk_light_curves[unique_id][0]))
+            np.testing.assert_array_equal(test_light_curves[unique_id][0], chunk_light_curves[unique_id][0])
+            np.testing.assert_array_equal(test_light_curves[unique_id][1], chunk_light_curves[unique_id][1])
+            np.testing.assert_array_equal(test_light_curves[unique_id][2], chunk_light_curves[unique_id][2])
+
+        # Now find all of the ObservationMetaData that were included in our
+        # light curves, generate InstanceCatalogs from them separately,
+        # and verify that the contents of the InstanceCatalogs agree with
+        # the contents of the light curves.
+
+        gen = ObservationMetaDataGenerator(database=self.opsimDb,
+                                           driver='sqlite')
+
+        obs_list = gen.getObservationMetaData(fieldRA=raRange,
+                                              fieldDec=decRange,
+                                              telescopeFilter=bandpass,
+                                              boundLength=1.75)
+
+        agn_cache = None
+        for obs in obs_list:
+            cat = agnControlCatalog(self.agn_db,
+                                        obs_metadata=obs)
+
+            cat._agn_cache = agn_cache
+
+            for agn_obj in cat.iter_catalog():
+                lc = test_light_curves[agn_obj[0]]
+                dex = np.argmin(np.abs(lc[0]-obs.mjd.TAI))
+                self.assertLess(np.abs(lc[0][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc[1][dex]-agn_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc[2][dex]-agn_obj[4]), 1.0e-7)
+
+            agn_cache = cat._agn_cache
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(StellarLightCurveTest)
+    suites += unittest.makeSuite(AgnLightCurveTest)
 
     return unittest.TestSuite(suites)
 
