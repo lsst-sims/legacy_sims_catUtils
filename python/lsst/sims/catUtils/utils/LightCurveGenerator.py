@@ -244,7 +244,6 @@ class LightCurveGenerator(object):
                 cat.obs_metadata = obs
                 cat._gamma_cache = {}
 
-                ct = 0
                 for star_obj in \
                 cat.iter_catalog(chunk_size=chunk_size, query_cache=dataCache):
 
