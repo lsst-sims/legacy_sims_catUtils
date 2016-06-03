@@ -19,8 +19,6 @@ class stellarControlCatalog(InstanceCatalog,
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000", "mag", "sigma_mag"]
 
-    default_formats = {'S':'%s'}
-
     @compound("mag", "sigma_mag")
     def get_phot(self):
         mm = self.column_by_name("lsst_%s" % self.obs_metadata.bandpass)
