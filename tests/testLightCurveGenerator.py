@@ -39,7 +39,7 @@ class StellarLightCurveTest(unittest.TestCase):
         cls.scratchDir = os.path.join(cls.scratchDir, "tests", "scratchSpace")
 
         rng = np.random.RandomState(88)
-        n_stars = 20
+        n_stars = 10000
         sed_dir = os.path.join(getPackageDir("sims_sed_library"))
         sed_dir = os.path.join(sed_dir, "starSED", "kurucz")
         list_of_seds = os.listdir(sed_dir)
@@ -61,13 +61,11 @@ class StellarLightCurveTest(unittest.TestCase):
         # write the catalog as a text file to be ingested with fileDBObject
         cls.txt_name = os.path.join(cls.scratchDir, "stellar_lc_catalog.txt")
         with open(cls.txt_name, "w") as output_file:
-            sed_dex = rng.random_integers(0, len(list_of_seds), size=n_stars)
-            lc_dex = rng.random_integers(0, len(list_of_lc), size=n_stars)
+            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=n_stars)
+            lc_dex = rng.random_integers(0, len(list_of_lc)-1, size=n_stars)
             mjd0 = rng.random_sample(n_stars)*10000.0+40000.0
-            raList = rng.random_sample(n_stars/2)-0.5+85.0
-            raList = np.append(raList, rng.random_sample(n_stars/2)-0.5+80.0)
-            decList = rng.random_sample(n_stars/2)-0.5-68.0
-            decList = np.append(decList, rng.random_sample(n_stars/2)-0.5-66.0)
+            raList = rng.random_sample(n_stars)*360.0
+            decList = -90.0 + rng.random_sample(n_stars)*120.0
             magNormList = rng.random_sample(n_stars)*3.0+14.0
             AvList = rng.random_sample(n_stars)*0.2+0.1
             for ix in range(n_stars):
@@ -117,7 +115,7 @@ class StellarLightCurveTest(unittest.TestCase):
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         test_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass)
 
-        self.assertGreater(len(test_light_curves), 0) # make sure we got some light curves
+        self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
 
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
@@ -175,7 +173,7 @@ class StellarLightCurveTest(unittest.TestCase):
                                                          bandpass,
                                                          expMJD=mjdRange)
 
-        self.assertGreater(len(test_light_curves), 0)
+        self.assertGreater(len(test_light_curves), 2)
 
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
