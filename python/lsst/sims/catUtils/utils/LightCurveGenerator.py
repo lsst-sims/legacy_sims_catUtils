@@ -11,6 +11,8 @@ import time
 
 __all__ = ["StellarLightCurveGenerator"]
 
+_sed_cache = {} # a global cache to store SedLists loaded by the light curve catalogs
+
 class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometryStars):
     """
     This class wraps a basic stellar variability InstanceCatalog.  It provides its
@@ -32,20 +34,6 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
     column_outputs = ["uniqueId", "raJ2000", "decJ2000",
                       "lightCurveMag", "sigma_lightCurveMag"]
 
-    _sedList_cache = None # this will become a list of the SedList objects read in by the getter
-
-    _sedList_to_use = None # this will be filled in by an SedList instantiation to be used by
-                           # the getter
-
-    def _reset_sed_cache(self):
-        """
-        Reset the caches used to store SEDs across iterations on the same
-        patch of sky.
-        """
-        self._sedList_cache = None
-        self._sedList_to_use = None
-
-
     def _loadSedList(self, wavelen_match):
         """
         Wraps the PhotometryStars._loadSedList method.
@@ -57,13 +45,26 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
         That way, the photometry getters defined in PhotometryStars will
         not read in SEDs that have already been cached.
         """
-        if self._sedList_to_use is None:
-            PhotometryStars._loadSedList(self, wavelen_match)
+
+        global _sed_cache
+
+        object_names = self.column_by_name("uniqueId")
+
+        if len(object_names)>0:
+            cache_name = "%s_%s" % (object_names[0], object_names[-1])
         else:
-            self._sedList = self._sedList_to_use
+            cache_name = None
+
+        if cache_name not in _sed_cache:
+            PhotometryStars._loadSedList(self, wavelen_match)
+
+            if cache_name is not None:
+                _sed_cache[cache_name] = copy.copy(self._sedList)
+        else:
+            self._sedList = _sed_cache[cache_name]
 
 
-    def iter_catalog(self, chunk_size=None, query_cache=None, sed_cache=None):
+    def iter_catalog(self, chunk_size=None, query_cache=None):
         """
         chunk_size (optional) is an int specifying the number of rows to return
         from the database at a time
@@ -74,23 +75,14 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
         without actually querying the database over and over again.  If it is set
         to 'None' (default), this method will handle the database query.
 
-        sed_cache (optional) is a list of SedLists corresponding to the data
-        chunks in query_cache.  Passing this in will cause the photometry
-        getters in this InstanceCatalog class to use the cached SedLists, rather
-        than reading in new ones when calculating magnitudes and uncertainties.
-
         Returns an iterator over rows of the catalog.
         """
 
         if query_cache is None:
             yield InstanceCatalog.iter_catalog(self)
 
-        if sed_cache is None:
-            sed_cache = [None]*len(query_cache)
-
-        for chunk, sed_list in zip(query_cache, sed_cache):
+        for chunk in query_cache:
             self._set_current_chunk(chunk)
-            self._sedList_to_use = sed_list
             chunk_cols = [self.transformations[col](self.column_by_name(col))
                           if col in self.transformations.keys() else
                           self.column_by_name(col)
@@ -113,16 +105,8 @@ class _stellarLightCurveCatalog(InstanceCatalog, VariabilityStars, PhotometrySta
             raise RuntimeError("_stellarLightCurveCatalog cannot handle bandpass "
                                "%s" % str(self.obs_metadata.bandpass))
 
-        mag = self.column_by_name("lsst_%s" % self.obs_metadata.bandpass)
-        sigma = self.column_by_name("sigma_lsst_%s" % self.obs_metadata.bandpass)
-
-        if self._sedList_cache is None and len(mag)>0:
-            self._sedList_cache = []
-
-        if self._sedList_to_use is None and len(mag)>0:
-            self._sedList_cache.append(copy.copy(self._sedList))
-
-        return np.array([mag, sigma])
+        return np.array([self.column_by_name("lsst_%s" % self.obs_metadata.bandpass),
+                         self.column_by_name("sigma_lsst_%s" % self.obs_metadata.bandpass)])
 
 
 class LightCurveGenerator(object):
@@ -178,6 +162,8 @@ class LightCurveGenerator(object):
         array of magnitude uncertainties.
         """
 
+        global _sed_cache
+
         # First get the list of ObservationMetaData objects corresponding
         # to the OpSim pointings in the region and bandpass of interest
         obs_list = self._generator.getObservationMetaData(
@@ -230,7 +216,6 @@ class LightCurveGenerator(object):
         for grp in obs_groups:
 
             dataCache = None # a cache for the results of database queries
-            sedCache = None # a cache for SedList objects loaded by the photometry code
 
             # loop over the group of like-pointed ObservationMetaDatas, generating
             # the light curves
@@ -256,7 +241,7 @@ class LightCurveGenerator(object):
 
                 ct = 0
                 for star_obj in \
-                cat.iter_catalog(chunk_size=chunk_size, query_cache=dataCache, sed_cache=sedCache):
+                cat.iter_catalog(chunk_size=chunk_size, query_cache=dataCache):
 
                     if star_obj[0] not in mjd_dict:
                         mjd_dict[star_obj[0]] = []
@@ -267,15 +252,8 @@ class LightCurveGenerator(object):
                     mag_dict[star_obj[0]].append(star_obj[3])
                     sig_dict[star_obj[0]].append(star_obj[4])
 
-
-                # If the _stellarLightCurveCatalog produced a cache of SedLists, copy that
-                # into SedCache so that you don't have to load them again.
-                if cat._sedList_cache is not None:
-                    sedCache = cat._sedList_cache
-
-            # clear the SedList caches in the _stellarLightCurveCatalog so that you don't
-            # accidentally use the wrong SEDs on the wrong patch of sky
-            cat._reset_sed_cache()
+            _sed_cache = {} # reset sed cache before moving onto the next group of
+                            # ObservationMetaData
 
         output_dict = {}
         for unique_id in mjd_dict:
