@@ -258,6 +258,10 @@ class LightCurveGenerator(object):
                         # in obs_list.  All of the ObservationMetaData in
                         # obs_list[i] will point to the same point on the sky.
 
+        mjd_groups = [] # a list of lists of the MJDs of the ObservationMetaDatas
+                        # so that they can be sorted into chronological order before
+                        # light curves are calculated
+
         for iobs, obs in enumerate(obs_list):
             group_dex = -1
 
@@ -270,8 +274,18 @@ class LightCurveGenerator(object):
 
             if group_dex == -1:
                 obs_groups.append([iobs])
+                mjd_groups.append([obs_list[iobs].mjd.TAI])
             else:
                 obs_groups[group_dex].append(iobs)
+                mjd_groups[group_dex].append(obs_list[iobs].mjd.TAI)
+
+        # rearrange each group of ObservationMetaDatas so that they
+        # appear in chronological order by MJD
+        for ix, (grp, mjd) in enumerate(zip(obs_groups, mjd_groups)):
+            oo = np.array(grp)
+            mm = np.array(grp)
+            dexes = np.argsort(mm)
+            obs_groups[ix] = oo[dexes]
 
 
         cat = None # a placeholder for the _stellarLightCurveCatalog
