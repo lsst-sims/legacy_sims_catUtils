@@ -268,12 +268,7 @@ class Variability(object):
         # use that previous simulation as the starting point.
         #
         if cache_name in _agn_lc_cache:
-            if hasattr(expmjd, '__len__'):
-                first_date = expmjd.min()
-            else:
-                first_date = expmjd
-
-            if _agn_lc_cache[cache_name]['mjd'] <first_date:
+            if _agn_lc_cache[cache_name]['mjd'] <expmjd:
                 resumption = True
 
         if resumption:
@@ -287,10 +282,9 @@ class Variability(object):
             for k in sfint:
                 dx_0[k]=0.0
 
-        epochs = expmjd - start_date
-        endepoch = epochs.max()
+        endepoch = expmjd - start_date
 
-        if epochs.min() < 0:
+        if endepoch < 0:
             raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
                                "Not applying variability. "+
                                "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
@@ -298,25 +292,24 @@ class Variability(object):
 
         dt = tau/100.
         nbins = int(math.ceil(endepoch/dt))
-        dt = dt/tau
-        sdt = math.sqrt(dt)
 
-        es = rng.normal(0., 1., nbins)
+        x1 = (nbins-1)*dt
+        x2 = (nbins)*dt
+
+        dt = dt/tau
+        es = rng.normal(0., 1., nbins)*math.sqrt(dt)
         dx_cached = {}
 
         for k in sfint.keys():
-            dx = numpy.zeros(nbins+1)
-            dx[0] = dx_0[k]
+            dx2 = dx_0[k]
             for i in range(nbins):
                 #The second term differs from Zeljko's equation by sqrt(2.)
                 #because he assumes stdev = sfint/sqrt(2)
-                dx[i+1] = -dx[i]*dt + sfint[k]*es[i]*sdt + dx[i]
+                dx1 = dx2
+                dx2 = -dx1*dt + sfint[k]*es[i] + dx1
 
-            dx_cached[k] = dx[nbins]
-            x = numpy.linspace(0, endepoch, nbins+1)
-            intdx = interp1d(x, dx)
-            magoff = intdx(epochs)
-            dMags[k] = magoff
+            dx_cached[k] = dx2
+            dMags[k] = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
 
         if len(_agn_lc_cache)>1000000:
             _agn_lc_cache = {}
@@ -324,7 +317,7 @@ class Variability(object):
         if cache_name not in _agn_lc_cache:
             _agn_lc_cache[cache_name] = {}
 
-        _agn_lc_cache[cache_name]['mjd'] = start_date+nbins*dt*tau
+        _agn_lc_cache[cache_name]['mjd'] = start_date+x2
         _agn_lc_cache[cache_name]['rng'] = copy.deepcopy(rng)
         _agn_lc_cache[cache_name]['dx'] = dx_cached
 
