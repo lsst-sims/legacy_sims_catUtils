@@ -287,58 +287,52 @@ class LightCurveGenerator(object):
             dexes = np.argsort(mm)
             obs_groups[ix] = oo[dexes]
 
-
-        cat = None # a placeholder for the _stellarLightCurveCatalog
-
         # Loop over the list of groups ObservationMetaData objects,
         # querying the database and generating light curves.
         print('number of groups ',len(obs_groups))
         for grp in obs_groups:
 
-            dataCache = None # a cache for the results of database queries
-
-            # loop over the group of like-pointed ObservationMetaDatas, generating
-            # the light curves
             print('    length of group ',len(grp))
             t_starting_group = time.clock()
-            for ix in grp:
-                obs = obs_list[ix]
-                if cat is None:
-                    cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs,
-                                                       constraint='varParamStr IS NOT NULL')
-                    db_required_columns = cat.db_required_columns()
 
-                # query the database, caching the results.
-                if dataCache is None:
-                    t_before_query = time.clock()
-                    query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
-                                                            obs_metadata=obs,
-                                                            constraint=cat.constraint,
-                                                            chunk_size=chunk_size)
-                    dataCache = []
-                    for chunk in query_result:
-                       dataCache.append(chunk)
-                    print('    built dataCache in ',time.clock()-t_before_query)
+            cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs_list[grp[0]],
+                                              constraint='varParamStr IS NOT NULL')
 
-                # reset global variables to reflect the specific observing conditions
-                cat.obs_metadata = obs
-                cat._gamma_cache = {}
+            local_gamma_cache = {}
 
-                for star_obj in \
-                cat.iter_catalog(chunk_size=chunk_size, query_cache=dataCache):
+            db_required_columns = cat.db_required_columns()
+            query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
+                                                    obs_metadata=cat.obs_metadata,
+                                                    constraint=cat.constraint,
+                                                    chunk_size=chunk_size)
 
-                    if star_obj[0] not in mjd_dict:
-                        mjd_dict[star_obj[0]] = []
-                        mag_dict[star_obj[0]] = []
-                        sig_dict[star_obj[0]] = []
+            for chunk in query_result:
+                for ix in grp:
+                    cat.obs_metadata = obs_list[ix]
+                    if ix in local_gamma_cache:
+                        cat._gamma_cache = local_gamma_cache[ix]
+                    else:
+                        cat._gamma_cache = {}
 
-                    mjd_dict[star_obj[0]].append(obs.mjd.TAI)
-                    mag_dict[star_obj[0]].append(star_obj[3])
-                    sig_dict[star_obj[0]].append(star_obj[4])
+                    for star_obj in \
+                    cat.iter_catalog(chunk_size=chunk_size, query_cache=[chunk]):
+
+                        if star_obj[0] not in mjd_dict:
+                            mjd_dict[star_obj[0]] = []
+                            mag_dict[star_obj[0]] = []
+                            sig_dict[star_obj[0]] = []
+
+                        mjd_dict[star_obj[0]].append(cat.obs_metadata.mjd.TAI)
+                        mag_dict[star_obj[0]].append(star_obj[3])
+                        sig_dict[star_obj[0]].append(star_obj[4])
+
+                    if ix not in local_gamma_cache:
+                        local_gamma_cache[ix] = cat._gamma_cache
+
+                _sed_cache = {} # before moving on to the next chunk of objects
 
             print('    group took ',time.clock()-t_starting_group)
-            _sed_cache = {} # reset sed cache before moving onto the next group of
-                            # ObservationMetaData
+
 
         output_dict = {}
         for unique_id in mjd_dict:
