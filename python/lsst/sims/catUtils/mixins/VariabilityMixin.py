@@ -3,16 +3,23 @@ import linecache
 import math
 import os
 import copy
-import sys
 import json as json
 from lsst.sims.catalogs.measures.instance import register_class, register_method, compound
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-__all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies"]
+__all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
+           "reset_agn_lc_cache"]
 
 _agn_lc_cache = {} # a global cache of agn light curve calculations
+
+
+def reset_agn_lc_cache():
+    global _agn_lc_cache
+    _agn_lc_cache = {}
+    return None
+
 
 @register_class
 class Variability(object):
@@ -256,34 +263,23 @@ class Variability(object):
         resumption = False
 
         # Check to see if this AGN has already been simulated.
-        # If it has, select the previously simulated MJD that is
-        # closest to the current MJD without going over and use
-        # that as the starting point for our random walk. That way
-        # we minimize the number of time steps we have to calculate
-        # more than once in the case where we want to simulate the
-        # same AGN over and over again at different MJD values.
+        # If it has, see if the previously simulated MJD is
+        # earlier than the first requested MJD.  If so,
+        # use that previous simulation as the starting point.
         #
-        if cache_name not in _agn_lc_cache:
-            _agn_lc_cache[cache_name] = {}
-            _agn_lc_cache[cache_name]['mjd'] = []
-            _agn_lc_cache[cache_name]['rng'] = []
-            _agn_lc_cache[cache_name]['dx'] = []
-        elif len(_agn_lc_cache[cache_name]['mjd'])>0:
-            cache = _agn_lc_cache[cache_name]
+        if cache_name in _agn_lc_cache:
             if hasattr(expmjd, '__len__'):
                 first_date = expmjd.min()
             else:
                 first_date = expmjd
-            start_dex = numpy.argmin(numpy.array([first_date-mm if mm<first_date else 10000.0 \
-                                            for mm in cache['mjd']]))
 
-            if _agn_lc_cache[cache_name]['mjd'][start_dex] <first_date:
+            if _agn_lc_cache[cache_name]['mjd'] <first_date:
                 resumption = True
 
         if resumption:
-            rng = copy.deepcopy(_agn_lc_cache[cache_name]['rng'][start_dex])
-            start_date = _agn_lc_cache[cache_name]['mjd'][start_dex]
-            dx_0 = _agn_lc_cache[cache_name]['dx'][start_dex]
+            rng = copy.deepcopy(_agn_lc_cache[cache_name]['rng'])
+            start_date = _agn_lc_cache[cache_name]['mjd']
+            dx_0 = _agn_lc_cache[cache_name]['dx']
         else:
             start_date = toff
             rng = numpy.random.RandomState(seed)
@@ -322,12 +318,15 @@ class Variability(object):
             magoff = intdx(epochs)
             dMags[k] = magoff
 
-        _agn_lc_cache[cache_name]['mjd'].append(start_date+nbins*dt*tau)
-        _agn_lc_cache[cache_name]['rng'].append(copy.deepcopy(rng))
-        _agn_lc_cache[cache_name]['dx'].append(dx_cached)
-
-        if sys.getsizeof(_agn_lc_cache) > 2000000000:
+        if len(_agn_lc_cache)>1000000:
             _agn_lc_cache = {}
+
+        if cache_name not in _agn_lc_cache:
+            _agn_lc_cache[cache_name] = {}
+
+        _agn_lc_cache[cache_name]['mjd'] = start_date+nbins*dt*tau
+        _agn_lc_cache[cache_name]['rng'] = copy.deepcopy(rng)
+        _agn_lc_cache[cache_name]['dx'] = dx_cached
 
         return dMags
 
