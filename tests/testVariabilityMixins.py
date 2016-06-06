@@ -642,7 +642,7 @@ class AgnCacheTest(unittest.TestCase):
         sfr_list = rng.random_sample(nn)*2.0
         sfi_list = rng.random_sample(nn)*2.0
         sfy_list = rng.random_sample(nn)*2.0
-        tau_list = rng.random_sample(nn)*100.0+100.0
+        tau_list = rng.random_sample(nn)*20.0+20.0
 
         param_list = []
         for ix in range(nn):
@@ -672,7 +672,7 @@ class AgnCacheTest(unittest.TestCase):
                 for kk in dd:
                     uncached_output.append(dd[kk])
 
-        numpy.testing.assert_array_equal(numpy.array(caching_output), numpy.array(uncached_output))
+        numpy.testing.assert_array_almost_equal(numpy.array(caching_output), numpy.array(uncached_output), decimal=10)
 
 
 def suite():
