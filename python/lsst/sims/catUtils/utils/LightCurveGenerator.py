@@ -304,7 +304,8 @@ class LightCurveGenerator(object):
             for ix in grp:
                 obs = obs_list[ix]
                 if cat is None:
-                    cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs)
+                    cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs,
+                                                       constraint='varParamStr IS NOT NULL')
                     db_required_columns = cat.db_required_columns()
 
                 # query the database, caching the results.
