@@ -12,7 +12,7 @@ from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 
-from lsst.sims.catUtils.mixins import Variability
+from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
 
 def makeMflareTable(size=10, **kwargs):
     """
@@ -654,6 +654,7 @@ class AgnCacheTest(unittest.TestCase):
             param_list.append(params)
 
         mjd_list = rng.random_sample(100)*10000.0+50000.0
+        mjd_list = numpy.sort(mjd_list)
 
         caching_output = []
 
@@ -666,7 +667,7 @@ class AgnCacheTest(unittest.TestCase):
         uncached_output = []
         for mjd in mjd_list:
             for pp in param_list:
-                var._agn_cache = None
+                reset_agn_lc_cache()
                 dd = var.applyAgn(pp, mjd)
                 for kk in dd:
                     uncached_output.append(dd[kk])
