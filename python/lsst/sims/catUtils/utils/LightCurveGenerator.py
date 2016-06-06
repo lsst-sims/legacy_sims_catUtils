@@ -300,6 +300,7 @@ class LightCurveGenerator(object):
             # loop over the group of like-pointed ObservationMetaDatas, generating
             # the light curves
             print('    length of group ',len(grp))
+            t_starting_group = time.clock()
             for ix in grp:
                 obs = obs_list[ix]
                 if cat is None:
@@ -308,6 +309,7 @@ class LightCurveGenerator(object):
 
                 # query the database, caching the results.
                 if dataCache is None:
+                    t_before_query = time.clock()
                     query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                             obs_metadata=obs,
                                                             constraint=cat.constraint,
@@ -315,6 +317,7 @@ class LightCurveGenerator(object):
                     dataCache = []
                     for chunk in query_result:
                        dataCache.append(chunk)
+                    print('    built dataCache in ',time.clock()-t_before_query)
 
                 # reset global variables to reflect the specific observing conditions
                 cat.obs_metadata = obs
@@ -332,6 +335,7 @@ class LightCurveGenerator(object):
                     mag_dict[star_obj[0]].append(star_obj[3])
                     sig_dict[star_obj[0]].append(star_obj[4])
 
+            print('    group took ',time.clock()-t_starting_group)
             _sed_cache = {} # reset sed cache before moving onto the next group of
                             # ObservationMetaData
 
