@@ -245,7 +245,7 @@ class LightCurveGenerator(object):
             print("No observations found matching your criterion")
             return None
 
-        t_start = time.clock()
+        t_start = time.time()
         print('starting light curve generation')
 
         # Group the OpSim pointings so that all of the pointings centered on the same
@@ -293,7 +293,7 @@ class LightCurveGenerator(object):
         for grp in obs_groups:
 
             print('    length of group ',len(grp))
-            t_starting_group = time.clock()
+            t_starting_group = time.time()
 
             cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs_list[grp[0]],
                                               constraint='varParamStr IS NOT NULL')
@@ -331,7 +331,7 @@ class LightCurveGenerator(object):
 
                 _sed_cache = {} # before moving on to the next chunk of objects
 
-            print('    group took ',time.clock()-t_starting_group)
+            print('    group took ',time.time()-t_starting_group)
 
 
         output_dict = {}
@@ -340,7 +340,7 @@ class LightCurveGenerator(object):
                                                mag_dict[unique_id],
                                                sig_dict[unique_id]])
 
-        print('that took %e; grps %d' % (time.clock()-t_start, len(obs_groups)))
+        print('that took %e; grps %d' % (time.time()-t_start, len(obs_groups)))
         print('len obs_list %d' % len(obs_list))
         return output_dict
 
