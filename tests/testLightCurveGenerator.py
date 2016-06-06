@@ -382,12 +382,9 @@ class AgnLightCurveTest(unittest.TestCase):
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
 
-        agn_cache = None
         for obs in obs_list:
             cat = agnControlCatalog(self.agn_db,
                                         obs_metadata=obs)
-
-            cat._agn_cache = agn_cache
 
             for agn_obj in cat.iter_catalog():
                 lc = test_light_curves[agn_obj[0]]
@@ -395,8 +392,6 @@ class AgnLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc[0][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc[1][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc[2][dex]-agn_obj[4]), 1.0e-7)
-
-            agn_cache = cat._agn_cache
 
 
 def suite():
