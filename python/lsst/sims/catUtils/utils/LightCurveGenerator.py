@@ -301,13 +301,19 @@ class LightCurveGenerator(object):
             local_gamma_cache = {}
 
             db_required_columns = cat.db_required_columns()
+            t_before_query = time.time()
+            print('starting query')
             query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                     obs_metadata=cat.obs_metadata,
                                                     constraint=cat.constraint,
                                                     chunk_size=chunk_size)
 
+            print('query took ',time.time()-t_before_query)
+
             for chunk in query_result:
+                print('    chunk ',len(chunk))
                 for ix in grp:
+                    print('        ix ',ix,time.time()-t_start)
                     cat.obs_metadata = obs_list[ix]
                     if ix in local_gamma_cache:
                         cat._gamma_cache = local_gamma_cache[ix]
