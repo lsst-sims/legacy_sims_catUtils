@@ -61,7 +61,7 @@ class SNUniverse(object):
         properties of the survey, but will change the exact SN we find.
         '''
         if not hasattr(self, '_midSurveyTime'):
-            midSurveyTime_default = 570000.0
+            midSurveyTime_default = 61406.5
             self._midSurveyTime = midSurveyTime_default
         return self._midSurveyTime
 
