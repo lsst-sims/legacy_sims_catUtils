@@ -292,6 +292,21 @@ class LightCurveGenerator(object):
         return obs_groups_out
 
 
+    def _get_query_from_group(self, grp, chunk_size):
+
+        cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
+
+        db_required_columns = cat.db_required_columns()
+        t_before_query = time.time()
+
+        query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
+                                                obs_metadata=cat.obs_metadata,
+                                                constraint=cat.constraint,
+                                                chunk_size=chunk_size)
+
+        return cat, query_result
+
+
     def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=100000):
         """
         Generate light curves for all of the objects in a particular region
@@ -348,20 +363,14 @@ class LightCurveGenerator(object):
             self._mjd_min = grp[0].mjd.TAI
             self._mjd_max = grp[-1].mjd.TAI
 
-            print('    length of group ',len(grp))
-            t_starting_group = time.time()
-
-            cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
-
             local_gamma_cache = {}
 
-            db_required_columns = cat.db_required_columns()
-            t_before_query = time.time()
+            print('    length of group ',len(grp))
+            t_starting_group = time.time()
             print('starting query')
-            query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
-                                                obs_metadata=cat.obs_metadata,
-                                                constraint=cat.constraint,
-                                                chunk_size=chunk_size)
+
+            t_before_query=time.time()
+            cat, query_result = self._get_query_from_group(grp, chunk_size)
 
             print('query took ',time.time()-t_before_query)
 
