@@ -56,6 +56,8 @@ class SNFunctionality(object):
     # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
     cannot_be_null = ['x0', 'z', 't0']
 
+    _sn_object_cache = None
+
     @property
     def mjdobs(self):
         '''
@@ -170,6 +172,9 @@ class SNFunctionality(object):
     @compound('flux', 'mag', 'flux_err', 'mag_err')
     def get_snbrightness(self):
 
+        if self._sn_object_cache is None or len(self._sn_object_cache)>1000000:
+            self._sn_object_cache = {}
+
         c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
             self.column_by_name('x1'),\
             self.column_by_name('x0'),\
@@ -182,8 +187,8 @@ class SNFunctionality(object):
         decDeg = np.degrees(dec)
 
         ebv = self.column_by_name('EBV')
+        id_list = self.column_by_name('snid')
 
-        SNobject = SNObject()
         bandname = self.obs_metadata.bandpass
         if isinstance(bandname, list):
             raise ValueError('bandname expected to be string, but is list\n')
@@ -195,10 +200,17 @@ class SNFunctionality(object):
                         [np.nan]*len(t0), [np.inf]*len(t0)]).transpose()
 
         for i in np.where(np.logical_and(np.isfinite(t0), np.abs(self.mjdobs-t0)<self.maxTimeSNVisible))[0]:
-            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
+
+            if id_list[i] in self._sn_object_cache:
+                SNobject = self._sn_object_cache[id_list[i]]
+            else:
+                SNobject = SNObject()
+                SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
                 SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
                 SNobject.set_MWebv(ebv[i])
+                self._sn_object_cache[id_list[i]] = SNobject
+
+            if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
 
                 # Calculate fluxes
                 fluxinMaggies = SNobject.catsimBandFlux(time=self.mjdobs,
