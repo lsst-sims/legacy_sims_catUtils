@@ -9,6 +9,7 @@ from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
+from lsst.sims.photUtils import EBVbase
 
 import astropy
 
@@ -34,6 +35,8 @@ class SNFunctionality(object):
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
     column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
+
+    lsstmwebv = EBVbase()
 
     suppressHighzSN = True
     maxTimeSNVisible = 100.
@@ -118,6 +121,12 @@ class SNFunctionality(object):
     def numobjs(self):
         return len(self.column_by_name('id'))
 
+
+    def get_EBV(self):
+        return np.array(self.lsstmwebv.calculateEbv(equatorialCoordinates=
+                                                    np.array([self.column_by_name('raJ2000'),
+                                                              self.column_by_name('decJ2000')])))
+
     def get_time(self):
 
         return np.repeat(self.mjdobs, self.numobjs)
@@ -172,6 +181,8 @@ class SNFunctionality(object):
         raDeg = np.degrees(ra)
         decDeg = np.degrees(dec)
 
+        ebv = self.column_by_name('EBV')
+
         SNobject = SNObject()
         bandname = self.obs_metadata.bandpass
         if isinstance(bandname, list):
@@ -187,7 +198,7 @@ class SNFunctionality(object):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
                 SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
-                SNobject.mwEBVfromMaps()
+                SNobject.set_MWebv(ebv[i])
 
                 # Calculate fluxes
                 fluxinMaggies = SNobject.catsimBandFlux(time=self.mjdobs,
