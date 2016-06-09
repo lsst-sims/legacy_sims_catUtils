@@ -53,7 +53,7 @@ class SNFunctionality(object):
     # 'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y']
     cannot_be_null = ['x0', 'z', 't0']
 
-    @astropy.utils.lazyproperty
+    @property
     def mjdobs(self):
         '''
         The time of observation for the catalog, which is set to be equal
