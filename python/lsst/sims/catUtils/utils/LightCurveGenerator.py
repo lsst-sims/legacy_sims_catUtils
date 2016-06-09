@@ -235,6 +235,63 @@ class LightCurveGenerator(object):
         return chunk
 
 
+    def _get_observation_meta_data_groups(self, ra, dec, bandpass, expMJD=None):
+
+        obs_list = self._generator.getObservationMetaData(
+                                     fieldRA=ra,
+                                     fieldDec=dec,
+                                     telescopeFilter=bandpass,
+                                     expMJD=expMJD,
+                                     boundLength=1.75)
+
+
+        if len(obs_list) == 0:
+            print("No observations found matching your criterion")
+            return None
+
+        # Group the OpSim pointings so that all of the pointings centered on the same
+        # point in the sky are in a list together (this will allow us to generate the
+        # light curves one pointing at a time without having to query the database for
+        # the same results more than once.
+        tol = 1.0e-12
+
+        obs_groups = [] # a list of list of the indices of the ObservationMetaDatas
+                        # in obs_list.  All of the ObservationMetaData in
+                        # obs_list[i] will point to the same point on the sky.
+
+        mjd_groups = [] # a list of lists of the MJDs of the ObservationMetaDatas
+                        # so that they can be sorted into chronological order before
+                        # light curves are calculated
+
+        for iobs, obs in enumerate(obs_list):
+            group_dex = -1
+
+            for ix, obs_g in enumerate(obs_groups):
+                dd = haversine(obs._pointingRA, obs._pointingDec,
+                               obs_list[obs_g[0]]._pointingRA, obs_list[obs_g[0]]._pointingDec)
+                if dd<tol:
+                    group_dex = ix
+                    break
+
+            if group_dex == -1:
+                obs_groups.append([iobs])
+                mjd_groups.append([obs_list[iobs].mjd.TAI])
+            else:
+                obs_groups[group_dex].append(iobs)
+                mjd_groups[group_dex].append(obs_list[iobs].mjd.TAI)
+
+        # rearrange each group of ObservationMetaDatas so that they
+        # appear in chronological order by MJD
+        obs_groups_out = []
+        for ix, (grp, mjd) in enumerate(zip(obs_groups, mjd_groups)):
+            oo = np.array(grp)
+            mm = np.array(grp)
+            dexes = np.argsort(mm)
+            obs_groups_out.append([obs_list [ii] for ii in oo[dexes]])
+
+        return obs_groups_out
+
+
     def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=100000):
         """
         Generate light curves for all of the objects in a particular region
@@ -270,75 +327,31 @@ class LightCurveGenerator(object):
 
         # First get the list of ObservationMetaData objects corresponding
         # to the OpSim pointings in the region and bandpass of interest
-        obs_list = self._generator.getObservationMetaData(
-                                     fieldRA=ra,
-                                     fieldDec=dec,
-                                     telescopeFilter=bandpass,
-                                     expMJD=expMJD,
-                                     boundLength=1.75)
+
 
         mjd_dict = {}
         mag_dict = {}
         sig_dict = {}
 
-        if len(obs_list) == 0:
-            print("No observations found matching your criterion")
+        obs_groups = self._get_observation_meta_data_groups(ra, dec, bandpass, expMJD=expMJD)
+        if obs_groups is None:
             return None
 
         t_start = time.time()
         print('starting light curve generation')
-
-        # Group the OpSim pointings so that all of the pointings centered on the same
-        # point in the sky are in a list together (this will allow us to generate the
-        # light curves one pointing at a time without having to query the database for
-        # the same results more than once.
-        tol = 1.0e-12
-
-        obs_groups = [] # a list of list of the indices of the ObservationMetaDatas
-                        # in obs_list.  All of the ObservationMetaData in
-                        # obs_list[i] will point to the same point on the sky.
-
-        mjd_groups = [] # a list of lists of the MJDs of the ObservationMetaDatas
-                        # so that they can be sorted into chronological order before
-                        # light curves are calculated
-
-        for iobs, obs in enumerate(obs_list):
-            group_dex = -1
-
-            for ix, obs_g in enumerate(obs_groups):
-                dd = haversine(obs._pointingRA, obs._pointingDec,
-                               obs_list[obs_g[0]]._pointingRA, obs_list[obs_g[0]]._pointingDec)
-                if dd<tol:
-                    group_dex = ix
-                    break
-
-            if group_dex == -1:
-                obs_groups.append([iobs])
-                mjd_groups.append([obs_list[iobs].mjd.TAI])
-            else:
-                obs_groups[group_dex].append(iobs)
-                mjd_groups[group_dex].append(obs_list[iobs].mjd.TAI)
-
-        # rearrange each group of ObservationMetaDatas so that they
-        # appear in chronological order by MJD
-        for ix, (grp, mjd) in enumerate(zip(obs_groups, mjd_groups)):
-            oo = np.array(grp)
-            mm = np.array(grp)
-            dexes = np.argsort(mm)
-            obs_groups[ix] = oo[dexes]
 
         # Loop over the list of groups ObservationMetaData objects,
         # querying the database and generating light curves.
         print('number of groups ',len(obs_groups))
         for grp in obs_groups:
 
-            self._mjd_min = obs_list[grp[0]].mjd.TAI
-            self._mjd_max = obs_list[grp[-1]].mjd.TAI
+            self._mjd_min = grp[0].mjd.TAI
+            self._mjd_max = grp[-1].mjd.TAI
 
             print('    length of group ',len(grp))
             t_starting_group = time.time()
 
-            cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs_list[grp[0]])
+            cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
 
             local_gamma_cache = {}
 
@@ -356,9 +369,9 @@ class LightCurveGenerator(object):
                 chunk = self._filter_chunk(raw_chunk)
                 if chunk is not None:
                     print('    chunk ',len(chunk),' raw ',len(raw_chunk))
-                    for ix in grp:
+                    for ix, obs in enumerate(grp):
                         #print('        ix ',ix,time.time()-t_start)
-                        cat.obs_metadata = obs_list[ix]
+                        cat.obs_metadata = obs
                         if ix in local_gamma_cache:
                             cat._gamma_cache = local_gamma_cache[ix]
                         else:
@@ -395,7 +408,6 @@ class LightCurveGenerator(object):
                                                sig_dict[unique_id]])
 
         print('that took %e; grps %d' % (time.time()-t_start, len(obs_groups)))
-        print('len obs_list %d' % len(obs_list))
         return output_dict
 
 
