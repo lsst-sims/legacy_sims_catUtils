@@ -179,33 +179,34 @@ class SNFunctionality(object):
 
         for i in np.where(np.isfinite(t0))[0]:
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=ra[i], dec=dec[i])
-            SNobject.mwEBVfromMaps()
+            if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
+                SNobject.setCoords(ra=ra[i], dec=dec[i])
+                SNobject.mwEBVfromMaps()
 
-            # Calculate fluxes
-            fluxinMaggies = SNobject.catsimBandFlux(time=self.mjdobs,
-                                                    bandpassobject=bandpass)
-            mag = SNobject.catsimBandMag(time=self.mjdobs,
-                                         fluxinMaggies=fluxinMaggies,
-                                         bandpassobject=bandpass)
-            vals[i, 0] = fluxinMaggies
-            vals[i, 1] = mag
-            flux_err = SNobject.catsimBandFluxError(time=self.mjdobs,
-                                                    bandpassobject=bandpass,
-                                                    m5=self.obs_metadata.m5[
-                                                        bandname],
-                                                    photParams=None,
-                                                    fluxinMaggies=fluxinMaggies,
-                                                    magnitude=mag)
+                # Calculate fluxes
+                fluxinMaggies = SNobject.catsimBandFlux(time=self.mjdobs,
+                                                        bandpassobject=bandpass)
+                mag = SNobject.catsimBandMag(time=self.mjdobs,
+                                             fluxinMaggies=fluxinMaggies,
+                                             bandpassobject=bandpass)
+                vals[i, 0] = fluxinMaggies
+                vals[i, 1] = mag
+                flux_err = SNobject.catsimBandFluxError(time=self.mjdobs,
+                                                        bandpassobject=bandpass,
+                                                        m5=self.obs_metadata.m5[
+                                                            bandname],
+                                                        photParams=None,
+                                                        fluxinMaggies=fluxinMaggies,
+                                                        magnitude=mag)
 
-            mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
-                                                  bandpassobject=bandpass,
-                                                  m5=self.obs_metadata.m5[
-                                                      bandname],
-                                                  photParams=None,
-                                                  magnitude=mag)
-            vals[i, 2] = flux_err
-            vals[i, 3] = mag_err
+                mag_err = SNobject.catsimBandMagError(time=self.mjdobs,
+                                                      bandpassobject=bandpass,
+                                                      m5=self.obs_metadata.m5[
+                                                          bandname],
+                                                      photParams=None,
+                                                      magnitude=mag)
+                vals[i, 2] = flux_err
+                vals[i, 3] = mag_err
 
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
