@@ -194,7 +194,7 @@ class SNFunctionality(object):
         vals = np.array([[0.0]*len(t0), [np.inf]*len(t0),
                         [np.nan]*len(t0), [np.inf]*len(t0)]).transpose()
 
-        for i in np.where(np.isfinite(t0))[0]:
+        for i in np.where(np.logical_and(np.isfinite(t0), np.abs(self.mjdobs-t0)<self.maxTimeSNVisible))[0]:
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
                 SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
