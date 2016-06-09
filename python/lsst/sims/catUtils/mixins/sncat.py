@@ -140,12 +140,15 @@ class SNFunctionality(object):
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
+        raDeg = np.degrees(ra)
+        decDeg = np.degrees(dec)
+
         SNobject = SNObject()
 
         sedlist = []
         for i in range(self.numobjs):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=ra[i], dec=dec[i])
+            SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
             SNobject.mwEBVfromMaps()
             sed = SNobject.SNObjectSED(time=self.mjdobs,
                                        bandpass=self.lsstBandpassDict,
@@ -166,6 +169,9 @@ class SNFunctionality(object):
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
+        raDeg = np.degrees(ra)
+        decDeg = np.degrees(dec)
+
         SNobject = SNObject()
         bandname = self.obs_metadata.bandpass
         if isinstance(bandname, list):
@@ -180,7 +186,7 @@ class SNFunctionality(object):
         for i in np.where(np.isfinite(t0))[0]:
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
-                SNobject.setCoords(ra=ra[i], dec=dec[i])
+                SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
                 SNobject.mwEBVfromMaps()
 
                 # Calculate fluxes
@@ -223,12 +229,15 @@ class SNFunctionality(object):
             self.column_by_name('raJ2000'),\
             self.column_by_name('decJ2000')
 
+        raDeg = np.degrees(ra)
+        decDeg = np.degrees(dec)
+
         SNobject = SNObject()
         # Initialize return array
         vals = np.zeros(shape=(self.numobjs, 19))
         for i, _ in enumerate(vals):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=ra[i], dec=dec[i])
+            SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
             SNobject.mwEBVfromMaps()
             # Calculate fluxes
             vals[i, :6] = SNobject.catsimManyBandFluxes(time=self.mjdobs,
