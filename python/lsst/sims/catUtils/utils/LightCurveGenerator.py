@@ -172,6 +172,31 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
 
 class _sniaLightCurveCatalog(_baseLightCurveCatalog, SNIaCatalog, PhotometryBase):
 
+    _suppressDimSN = False
+    _sn_params_id_cache = None
+    _sn_params_cache = None
+
+
+    @compound('c', 'x1', 'x0', 't0')
+    def get_snparams(self):
+        id_list = self.column_by_name('uniqueId')
+
+        if self._sn_params_id_cache is None or \
+        len(id_list)!=len(self._sn_params_id_cache) or \
+        (id_list!=self._sn_params_id_cache).any():
+
+            print('generating params')
+
+            vals = self.SNparamDistFromHost(self.column_by_name('redshift'),
+                                            self.column_by_name('snid'),
+                                            self.column_by_name('cosmologicalDistanceModulus'))
+
+            self._sn_params_id_cache = id_list
+            self._sn_params_cache = np.array([vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3]])
+
+        return self._sn_params_cache
+
+
     @compound("lightCurveMag", "sigma_lightCurveMag")
     def get_lightCurvePhotometry(self):
 
