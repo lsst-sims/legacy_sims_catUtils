@@ -527,7 +527,10 @@ class SNObject(sncosmo.Model):
         global _sn_ax_cache
         global _sn_bx_cache
         global _sn_ax_bx_wavelen
-        if _sn_ax_bx_wavelen is None or (wavelen!=_sn_ax_bx_wavelen).any():
+        if _sn_ax_bx_wavelen is None \
+        or len(wavelen)!=len(_sn_ax_bx_wavelen) \
+        or (wavelen!=_sn_ax_bx_wavelen).any():
+
             ax, bx = SEDfromSNcosmo.setupCCMab()
             _sn_ax_cache = ax
             _sn_bx_cache = bx
