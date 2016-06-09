@@ -92,12 +92,13 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
             cache_name = None
 
         if cache_name not in _sed_cache:
+
             PhotometryStars._loadSedList(self, wavelen_match)
 
             if cache_name is not None:
                 _sed_cache[cache_name] = copy.copy(self._sedList)
         else:
-            self._sedList = _sed_cache[cache_name]
+            self._sedList = copy.copy(_sed_cache[cache_name])
 
 
     @compound("lightCurveMag", "sigma_lightCurveMag")
@@ -149,7 +150,7 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
             if cache_name is not None:
                 _sed_cache[cache_name] = copy.copy(self._agnSedList)
         else:
-            self._agnSedList = _sed_cache[cache_name]
+            self._agnSedList = copy.copy(_sed_cache[cache_name])
 
 
     @compound("lightCurveMag", "sigma_lightCurveMag")
