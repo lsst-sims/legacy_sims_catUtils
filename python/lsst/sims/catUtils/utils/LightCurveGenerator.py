@@ -5,12 +5,13 @@ import copy
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from  lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
 from lsst.sims.catUtils.mixins  import PhotometryGalaxies, VariabilityGalaxies
+from lsst.sims.catUtils.mixins import SNIaCatalog, PhotometryBase
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import haversine
 
 import time
 
-__all__ = ["StellarLightCurveGenerator", "AgnLightCurveGenerator"]
+__all__ = ["StellarLightCurveGenerator", "AgnLightCurveGenerator", "SNIaLightCurveGenerator"]
 
 _sed_cache = {} # a global cache to store SedLists loaded by the light curve catalogs
 
@@ -169,6 +170,16 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
                          self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)])
 
 
+class _sniaLightCurveCatalog(_baseLightCurveCatalog, SNIaCatalog, PhotometryBase):
+
+    @compound("lightCurveMag", "sigma_lightCurveMag")
+    def get_lightCurvePhotometry(self):
+
+        return np.array([self.column_by_name("mag"),
+                         self.column_by_name("mag_err")])
+
+
+
 class LightCurveGenerator(object):
     """
     This class will find all of the OpSim pointings in a particular region
@@ -195,7 +206,11 @@ class LightCurveGenerator(object):
         self._catalogdb = catalogdb
 
 
-    def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=10000):
+    def _filter_chunk(self, chunk):
+        return chunk
+
+
+    def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=100000):
         """
         Generate light curves for all of the objects in a particular region
         of sky in a particular bandpass.
@@ -292,11 +307,13 @@ class LightCurveGenerator(object):
         print('number of groups ',len(obs_groups))
         for grp in obs_groups:
 
+            self._mjd_min = obs_list[grp[0]].mjd.TAI
+            self._mjd_max = obs_list[grp[-1]].mjd.TAI
+
             print('    length of group ',len(grp))
             t_starting_group = time.time()
 
-            cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs_list[grp[0]],
-                                              constraint='varParamStr IS NOT NULL')
+            cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs_list[grp[0]])
 
             local_gamma_cache = {}
 
@@ -304,36 +321,42 @@ class LightCurveGenerator(object):
             t_before_query = time.time()
             print('starting query')
             query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
-                                                    obs_metadata=cat.obs_metadata,
-                                                    constraint=cat.constraint,
-                                                    chunk_size=chunk_size)
+                                                obs_metadata=cat.obs_metadata,
+                                                constraint=cat.constraint,
+                                                chunk_size=chunk_size)
 
             print('query took ',time.time()-t_before_query)
 
-            for chunk in query_result:
-                print('    chunk ',len(chunk))
-                for ix in grp:
-                    print('        ix ',ix,time.time()-t_start)
-                    cat.obs_metadata = obs_list[ix]
-                    if ix in local_gamma_cache:
-                        cat._gamma_cache = local_gamma_cache[ix]
-                    else:
-                        cat._gamma_cache = {}
+            for raw_chunk in query_result:
+                chunk = self._filter_chunk(raw_chunk)
+                if chunk is not None:
+                    print('    chunk ',len(chunk),' raw ',len(raw_chunk))
+                    for ix in grp:
+                        print('        ix ',ix,time.time()-t_start)
+                        cat.obs_metadata = obs_list[ix]
+                        if ix in local_gamma_cache:
+                            cat._gamma_cache = local_gamma_cache[ix]
+                        else:
+                            cat._gamma_cache = {}
 
-                    for star_obj in \
-                    cat.iter_catalog(chunk_size=chunk_size, query_cache=[chunk]):
+                        for star_obj in \
+                        cat.iter_catalog(chunk_size=chunk_size, query_cache=[chunk]):
 
-                        if star_obj[0] not in mjd_dict:
-                            mjd_dict[star_obj[0]] = []
-                            mag_dict[star_obj[0]] = []
-                            sig_dict[star_obj[0]] = []
+                            if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
 
-                        mjd_dict[star_obj[0]].append(cat.obs_metadata.mjd.TAI)
-                        mag_dict[star_obj[0]].append(star_obj[3])
-                        sig_dict[star_obj[0]].append(star_obj[4])
+                                if star_obj[0] not in mjd_dict:
+                                    mjd_dict[star_obj[0]] = []
+                                    mag_dict[star_obj[0]] = []
+                                    sig_dict[star_obj[0]] = []
 
-                    if ix not in local_gamma_cache:
-                        local_gamma_cache[ix] = cat._gamma_cache
+                                mjd_dict[star_obj[0]].append(cat.obs_metadata.mjd.TAI)
+                                mag_dict[star_obj[0]].append(star_obj[3])
+                                sig_dict[star_obj[0]].append(star_obj[4])
+
+                        if ix not in local_gamma_cache:
+                            local_gamma_cache[ix] = cat._gamma_cache
+
+                print('objects ',len(mjd_dict))
 
                 _sed_cache = {} # before moving on to the next chunk of objects
 
@@ -363,3 +386,35 @@ class AgnLightCurveGenerator(LightCurveGenerator):
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _agnLightCurveCatalog
         super(AgnLightCurveGenerator, self).__init__(*args, **kwargs)
+
+
+class SNIaLightCurveGenerator(LightCurveGenerator):
+
+    def __init__(self, *args, **kwargs):
+        self._lightCurveCatalogClass = _sniaLightCurveCatalog
+        self._filter_cat = None
+        super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
+
+
+    class _filterCatalogClass(_sniaLightCurveCatalog):
+        column_outputs = ["uniqueId", "t0"]
+
+    def _filter_chunk(self, raw_chunk):
+
+        if self._filter_cat is None:
+            self._filter_cat = self._filterCatalogClass(self._catalogdb)
+            self._filter_cat.suppressDimSN = False
+            db_required_columns = self._filter_cat.db_required_columns()
+
+        valid_chunk = []
+        for star_obj, raw_obj in zip(self._filter_cat.iter_catalog(query_cache=[raw_chunk]), raw_chunk):
+            if not np.isnan(star_obj[1]) and \
+            star_obj[1] > self._mjd_min-self._filter_cat.maxTimeSNVisible and \
+            star_obj[1] < self._mjd_max+self._filter_cat.maxTimeSNVisible:
+
+                valid_chunk.append(raw_obj)
+
+        if len(valid_chunk)==0:
+            return None
+
+        return np.core.records.fromrecords(valid_chunk, dtype=raw_chunk.dtype)
