@@ -89,7 +89,7 @@ class SNFunctionality(object):
             Value to set suppressDimSN to
         """
         self._suppressDimSN = suppressDimSN
-        return self._suppressDimSN 
+        return self._suppressDimSN
 
     @astropy.utils.lazyproperty
     def photometricparameters(self, expTime=15., nexp=2):
@@ -172,10 +172,12 @@ class SNFunctionality(object):
             raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
 
-        # Initialize return array
-        vals = np.zeros(shape=(self.numobjs, 4))
+        # Initialize return array so that it contains the values you would get
+        # if you passed through a t0=self.badvalues supernova
+        vals = np.array([[0.0]*len(t0), [np.inf]*len(t0),
+                        [np.nan]*len(t0), [np.inf]*len(t0)]).transpose()
 
-        for i, _ in enumerate(vals):
+        for i in np.where(np.isfinite(t0))[0]:
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
             SNobject.setCoords(ra=ra[i], dec=dec[i])
             SNobject.mwEBVfromMaps()
@@ -204,6 +206,7 @@ class SNFunctionality(object):
                                                   magnitude=mag)
             vals[i, 2] = flux_err
             vals[i, 3] = mag_err
+
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
@@ -318,7 +321,7 @@ class SNFunctionality(object):
 ###            Value to set suppressDimSN to
 ###        """
 ###        self._suppressDimSN = suppressDimSN
-###        return self._suppressDimSN 
+###        return self._suppressDimSN
 ###
 ###    @astropy.utils.lazyproperty
 ###    def photometricparameters(self, expTime=15., nexp=2):
