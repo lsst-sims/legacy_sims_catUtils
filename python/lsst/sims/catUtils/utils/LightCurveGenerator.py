@@ -332,7 +332,7 @@ class LightCurveGenerator(object):
                 if chunk is not None:
                     print('    chunk ',len(chunk),' raw ',len(raw_chunk))
                     for ix in grp:
-                        print('        ix ',ix,time.time()-t_start)
+                        #print('        ix ',ix,time.time()-t_start)
                         cat.obs_metadata = obs_list[ix]
                         if ix in local_gamma_cache:
                             cat._gamma_cache = local_gamma_cache[ix]
