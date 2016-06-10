@@ -308,6 +308,44 @@ class LightCurveGenerator(object):
         return cat, query_result
 
 
+    def _light_curves_from_query(self, cat, query_result, grp):
+
+        global _sed_cache
+        local_gamma_cache = {}
+
+        for raw_chunk in query_result:
+            chunk = self._filter_chunk(raw_chunk)
+            if chunk is not None:
+                print('    chunk ',len(chunk),' raw ',len(raw_chunk))
+                for ix, obs in enumerate(grp):
+                    #print('        ix ',ix,time.time()-t_start)
+                    cat.obs_metadata = obs
+                    if ix in local_gamma_cache:
+                        cat._gamma_cache = local_gamma_cache[ix]
+                    else:
+                        cat._gamma_cache = {}
+
+                    for star_obj in \
+                    cat.iter_catalog(query_cache=[chunk]):
+
+                        if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
+
+                            if star_obj[0] not in self.mjd_dict:
+                                self.mjd_dict[star_obj[0]] = []
+                                self.mag_dict[star_obj[0]] = []
+                                self.sig_dict[star_obj[0]] = []
+
+                            self.mjd_dict[star_obj[0]].append(cat.obs_metadata.mjd.TAI)
+                            self.mag_dict[star_obj[0]].append(star_obj[3])
+                            self.sig_dict[star_obj[0]].append(star_obj[4])
+
+                    if ix not in local_gamma_cache:
+                        local_gamma_cache[ix] = cat._gamma_cache
+
+            _sed_cache = {} # before moving on to the next chunk of objects
+            print('objects ',len(self.mjd_dict))
+
+
     def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=100000):
         """
         Generate light curves for all of the objects in a particular region
@@ -339,15 +377,12 @@ class LightCurveGenerator(object):
         array of magnitude uncertainties.
         """
 
-        global _sed_cache
-
         # First get the list of ObservationMetaData objects corresponding
         # to the OpSim pointings in the region and bandpass of interest
 
-
-        mjd_dict = {}
-        mag_dict = {}
-        sig_dict = {}
+        self.mjd_dict = {}
+        self.mag_dict = {}
+        self.sig_dict = {}
 
         obs_groups = self._get_observation_meta_data_groups(ra, dec, bandpass, expMJD=expMJD)
         if obs_groups is None:
@@ -364,8 +399,6 @@ class LightCurveGenerator(object):
             self._mjd_min = grp[0].mjd.TAI
             self._mjd_max = grp[-1].mjd.TAI
 
-            local_gamma_cache = {}
-
             print('    length of group ',len(grp))
             t_starting_group = time.time()
             print('starting query')
@@ -375,47 +408,15 @@ class LightCurveGenerator(object):
 
             print('query took ',time.time()-t_before_query)
 
-            for raw_chunk in query_result:
-                chunk = self._filter_chunk(raw_chunk)
-                if chunk is not None:
-                    print('    chunk ',len(chunk),' raw ',len(raw_chunk))
-                    for ix, obs in enumerate(grp):
-                        #print('        ix ',ix,time.time()-t_start)
-                        cat.obs_metadata = obs
-                        if ix in local_gamma_cache:
-                            cat._gamma_cache = local_gamma_cache[ix]
-                        else:
-                            cat._gamma_cache = {}
-
-                        for star_obj in \
-                        cat.iter_catalog(chunk_size=chunk_size, query_cache=[chunk]):
-
-                            if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
-
-                                if star_obj[0] not in mjd_dict:
-                                    mjd_dict[star_obj[0]] = []
-                                    mag_dict[star_obj[0]] = []
-                                    sig_dict[star_obj[0]] = []
-
-                                mjd_dict[star_obj[0]].append(cat.obs_metadata.mjd.TAI)
-                                mag_dict[star_obj[0]].append(star_obj[3])
-                                sig_dict[star_obj[0]].append(star_obj[4])
-
-                        if ix not in local_gamma_cache:
-                            local_gamma_cache[ix] = cat._gamma_cache
-
-                print('objects ',len(mjd_dict))
-
-                _sed_cache = {} # before moving on to the next chunk of objects
+            self._light_curves_from_query(cat, query_result, grp)
 
             print('    group took ',time.time()-t_starting_group)
 
-
         output_dict = {}
-        for unique_id in mjd_dict:
-            output_dict[unique_id] = np.array([mjd_dict[unique_id],
-                                               mag_dict[unique_id],
-                                               sig_dict[unique_id]])
+        for unique_id in self.mjd_dict:
+            output_dict[unique_id] = np.array([self.mjd_dict[unique_id],
+                                               self.mag_dict[unique_id],
+                                               self.sig_dict[unique_id]])
 
         print('that took %e; grps %d' % (time.time()-t_start, len(obs_groups)))
         return output_dict
