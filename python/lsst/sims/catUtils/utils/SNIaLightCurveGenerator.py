@@ -74,9 +74,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
                         if len(t_active)>0:
                             wave_ang = bandpass.wavelen * 10.0
-                            mask1 = wave_ang > snobj.minwave()
-                            mask2 = wave_ang < snobj.maxwave()
-                            mask = mask1 & mask2
+                            mask = np.logical_and(wave_ang>snobj.minwave(),
+                                                  wave_ang<snobj.maxwave())
                             wave_ang = wave_ang[mask]
                             flambda_grid = snobj.flux(time=t_active, wave=wave_ang)*10.0
 
