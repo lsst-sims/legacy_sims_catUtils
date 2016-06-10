@@ -249,7 +249,7 @@ class LightCurveGenerator(object):
         obs_groups_out = []
         for ix, (grp, mjd) in enumerate(zip(obs_groups, mjd_groups)):
             oo = np.array(grp)
-            mm = np.array(grp)
+            mm = np.array(mjd)
             dexes = np.argsort(mm)
             obs_groups_out.append([obs_list [ii] for ii in oo[dexes]])
 
