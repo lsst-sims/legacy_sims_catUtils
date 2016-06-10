@@ -8,7 +8,7 @@ from lsst.sims.catUtils.utils import LightCurveGenerator
 
 from lsst.sims.catUtils.supernovae import SNObject, SNUniverse
 from lsst.sims.photUtils import PhotometricParameters, calcGamma
-from lsst.sims.photUtils import Sed, calcMagError_m5
+from lsst.sims.photUtils import Sed, calcMagError_m5, BandpassDict
 
 import time
 
@@ -27,6 +27,7 @@ class _sniaLightCurveCatalog(_baseLightCurveCatalog, SNIaCatalog, PhotometryBase
 class SNIaLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
+        self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         self._lightCurveCatalogClass = _sniaLightCurveCatalog
         self._filter_cat = None
         self._ax_cache = None
@@ -44,7 +45,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
     def _light_curves_from_query(self, cat, query_result, grp):
 
-        bandpass = cat.lsstBandpassDict[grp[0].bandpass]
+        bandpass = self.lsstBandpassDict[grp[0].bandpass]
 
         t_list = np.array([obs.mjd.TAI for obs in grp])
 
