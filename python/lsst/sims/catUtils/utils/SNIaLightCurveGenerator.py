@@ -141,25 +141,3 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 self.mjd_dict[sn[0]].append(tt)
                                 self.mag_dict[sn[0]].append(mm)
                                 self.sig_dict[sn[0]].append(ee)
-
-
-
-    def _filter_chunk(self, raw_chunk):
-
-        if self._filter_cat is None:
-            self._filter_cat = self._filterCatalogClass(self._catalogdb)
-            self._filter_cat.suppressDimSN = False
-            db_required_columns = self._filter_cat.db_required_columns()
-
-        valid_chunk = []
-        for star_obj, raw_obj in zip(self._filter_cat.iter_catalog(query_cache=[raw_chunk]), raw_chunk):
-            if not np.isnan(star_obj[1]) and \
-            star_obj[1] > self._mjd_min-self._filter_cat.maxTimeSNVisible and \
-            star_obj[1] < self._mjd_max+self._filter_cat.maxTimeSNVisible:
-
-                valid_chunk.append(raw_obj)
-
-        if len(valid_chunk)==0:
-            return None
-
-        return np.core.records.fromrecords(valid_chunk, dtype=raw_chunk.dtype)
