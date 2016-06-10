@@ -84,7 +84,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                             flambda_grid = snobj.flux(time=t_active, wave=wave_ang)*10.0
 
                             flambda = np.zeros(len(bandpass.wavelen))*np.nan
-                            mag_list = []
+                            flux_list = []
                             for ix, ff in enumerate(flambda_grid):
                                 flambda[mask] = ff
                                 flambda = np.where(flambda > 0., flambda, 0.)
@@ -99,10 +99,11 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
                                 ss.addCCMDust(a_x=self._ax_cache, b_x=self._bx_cache, ebv=sn[6])
                                 flux = ss.calcFlux(bandpass)
-                                mag = ss.magFromFlux(flux)
-                                mag_list.append(mag)
+                                flux_list.append(flux)
 
-                            mag_list = np.array(mag_list)
+                            flux_list = np.array(flux_list)
+                            ss = Sed()
+                            mag_list = ss.magFromFlux(flux_list)
 
                             acceptable = np.where(np.isfinite(mag_list))
                             mag_error_list = calcMagError_m5(mag_list[acceptable], bandpass,
