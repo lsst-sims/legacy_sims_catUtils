@@ -82,22 +82,9 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                             mask = np.logical_and(wave_ang>snobj.minwave(),
                                                   wave_ang<snobj.maxwave())
                             wave_ang = wave_ang[mask]
+                            snobj.set(mwebv=sn[6])
                             flambda_grid = snobj.flux(time=t_active, wave=wave_ang)*10.0
 
-                            ss = Sed(bandpass.wavelen, np.zeros(len(bandpass.wavelen)))
-
-                            if self._ax_bx_wavelen is None or \
-                            len(self._ax_bx_wavelen) != len(bandpass.wavelen) or \
-                            (self._ax_bx_wavelen!=bandpass.wavelen).any():
-
-                                self._ax_bx_wavelen = bandpass.wavelen
-                                self._ax_cache, self._bx_cache = ss.setupCCMab()
-
-                            dust_extinction = \
-                            ss.calcCCMextinction(a_x=self._ax_cache,
-                                                 b_x=self._bx_cache,
-                                                 ebv=sn[6],
-                                                 wavelen=bandpass.wavelen)
 
                             flambda = np.zeros(len(bandpass.wavelen))*np.nan
                             flux_list = []
@@ -106,7 +93,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 flambda = np.where(flambda > 0., flambda, 0.)
 
                                 ss = Sed(wavelen=bandpass.wavelen,
-                                         flambda=flambda*dust_extinction)
+                                         flambda=flambda)
 
                                 flux = ss.calcFlux(bandpass)
                                 flux_list.append(flux)
@@ -133,3 +120,4 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 self.sig_dict[sn[0]].append(ee)
 
             print("chunk of ",len(chunk)," took ",time.clock()-t_start_chunk)
+
