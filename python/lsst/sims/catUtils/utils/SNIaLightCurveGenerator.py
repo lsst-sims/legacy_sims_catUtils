@@ -81,22 +81,20 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                             wave_ang = bandpass.wavelen * 10.0
                             mask = np.logical_and(wave_ang>snobj.minwave(),
                                                   wave_ang<snobj.maxwave())
+
                             wave_ang = wave_ang[mask]
                             snobj.set(mwebv=sn[6])
-                            flambda_grid = snobj.flux(time=t_active, wave=wave_ang)*10.0
+                            sn_ff_buffer = snobj.flux(time=t_active, wave=wave_ang)*10.0
+                            flambda_grid = np.zeros((len(t_active),len(bandpass.wavelen)))
+                            for ff, ff_sn in zip(flambda_grid, sn_ff_buffer):
+                                ff[mask] = np.where(ff_sn>0.0, ff_sn, 0.0)
 
+                            ss = Sed()
+                            fnu_grid = flambda_grid*bandpass.wavelen*bandpass.wavelen*ss._physParams.nm2m* \
+                                       ss._physParams.ergsetc2jansky/ss._physParams.lightspeed
 
-                            flambda = np.zeros(len(bandpass.wavelen))*np.nan
-                            flux_list = []
-                            for ix, ff in enumerate(flambda_grid):
-                                flambda[mask] = ff
-                                flambda = np.where(flambda > 0., flambda, 0.)
-
-                                ss = Sed(wavelen=bandpass.wavelen,
-                                         flambda=flambda)
-
-                                flux = ss.calcFlux(bandpass)
-                                flux_list.append(flux)
+                            bandpass.sbTophi()
+                            flux_list = (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
                             flux_list = np.array(flux_list)
                             ss = Sed()
