@@ -49,6 +49,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         gamma_list = np.array([calcGamma(bandpass, obs.m5[obs.bandpass], self.phot_params)
                                for obs in grp])
 
+        snobj = SNObject()
+
         for chunk in query_result:
             for sn in cat.iter_catalog(query_cache=[chunk]):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
@@ -61,7 +63,6 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                     sn_x1 = self.sn_universe.drawFromx1Dist(sn_rng)
                     sn_x0 = self.sn_universe.drawFromX0Dist(sn_rng, sn_x1, sn_c, sn[4])
 
-                    snobj = SNObject()
                     snobj.set(t0=sn_t0, c=sn_c, x1=sn_x1, x0=sn_x0, z=sn[5])
 
                     if snobj.maxtime()>=t_list[0] and snobj.mintime()<=t_list[-1]:
