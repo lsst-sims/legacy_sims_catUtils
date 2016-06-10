@@ -4,3 +4,4 @@ from .testUtils import *
 from .DBobjectTestUtils import *
 from .CatalogTestUtils import *
 from .LightCurveGenerator import *
+from .SNIaLightCurveGenerator import *
