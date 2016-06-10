@@ -6,7 +6,7 @@ from lsst.sims.catUtils.mixins import SNIaCatalog, PhotometryBase
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.catUtils.utils import LightCurveGenerator
 
-from lsst.sims.catUtils.supernovae import SNObject
+from lsst.sims.catUtils.supernovae import SNObject, SNUniverse
 from lsst.sims.photUtils import PhotometricParameters, calcGamma
 from lsst.sims.photUtils import Sed, calcMagError_m5
 
@@ -16,8 +16,8 @@ __all__ = ["SNIaLightCurveGenerator"]
 
 class _sniaLightCurveCatalog(_baseLightCurveCatalog, SNIaCatalog, PhotometryBase):
 
-    column_outputs = ["uniqueId", "raJ2000", "decJ2000",
-                      "t0", "c", "x1", "x0", "redshift", "EBV"]
+    column_outputs = ["uniqueId", "snid", "raJ2000", "decJ2000",
+                      "cosmologicalDistanceModulus", "redshift", "EBV"]
 
     _suppressDimSN = False
 
@@ -31,6 +31,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         self._bx_cache = None
         self._ax_bx_wavelen = None
         self.phot_params = PhotometricParameters()
+        self.sn_universe = SNUniverse()
+        self.sn_universe.suppressDimSN = False
         super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
 
 
@@ -49,12 +51,18 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
         for chunk in query_result:
             for sn in cat.iter_catalog(query_cache=[chunk]):
-                if np.isfinite(sn[3]) and \
-                sn[3]<t_list[-1]+cat.maxTimeSNVisible and \
-                sn[3]>t_list[0]-cat.maxTimeSNVisible:
+                sn_rng = self.sn_universe.getSN_rng(sn[1])
+                sn_t0 = self.sn_universe.drawFromT0Dist(sn_rng)
+                if np.isfinite(sn_t0) and \
+                sn_t0<t_list[-1]+cat.maxTimeSNVisible and \
+                sn_t0>t_list[0]-cat.maxTimeSNVisible:
+
+                    sn_c = self.sn_universe.drawFromcDist(sn_rng)
+                    sn_x1 = self.sn_universe.drawFromx1Dist(sn_rng)
+                    sn_x0 = self.sn_universe.drawFromX0Dist(sn_rng, sn_x1, sn_c, sn[4])
 
                     snobj = SNObject()
-                    snobj.set(t0=sn[3], c=sn[4], x1=sn[5], x0=sn[6], z=sn[7])
+                    snobj.set(t0=sn_t0, c=sn_c, x1=sn_x1, x0=sn_x0, z=sn[5])
 
                     if snobj.maxtime()>=t_list[0] and snobj.mintime()<=t_list[-1]:
                         active_dexes = np.where(np.logical_and(t_list>=snobj.mintime(),
@@ -86,7 +94,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                     self._ax_bx_wavelen = bandpass.wavelen
                                     self._ax_cache, self._bx_cache = ss.setupCCMab()
 
-                                ss.addCCMDust(a_x=self._ax_cache, b_x=self._bx_cache, ebv=sn[8])
+                                ss.addCCMDust(a_x=self._ax_cache, b_x=self._bx_cache, ebv=sn[6])
                                 flux = ss.calcFlux(bandpass)
                                 mag = ss.magFromFlux(flux)
                                 mag_list.append(mag)
