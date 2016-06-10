@@ -15,7 +15,6 @@ __all__ = ["StellarLightCurveGenerator", "AgnLightCurveGenerator", "SNIaLightCur
 
 _sed_cache = {} # a global cache to store SedLists loaded by the light curve catalogs
 
-
 class _baseLightCurveCatalog(InstanceCatalog):
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000",
@@ -145,6 +144,7 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
             cache_name = None
 
         if cache_name not in _sed_cache:
+
             PhotometryGalaxies._loadAgnSedList(self, wavelen_match)
 
             if cache_name is not None:
