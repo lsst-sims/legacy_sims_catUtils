@@ -10,6 +10,8 @@ from lsst.sims.catUtils.supernovae import SNObject, SNUniverse
 from lsst.sims.photUtils import PhotometricParameters, calcGamma
 from lsst.sims.photUtils import Sed, calcMagError_m5
 
+import time
+
 __all__ = ["SNIaLightCurveGenerator"]
 
 
@@ -52,6 +54,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         snobj = SNObject()
 
         for chunk in query_result:
+            t_start_chunk = time.clock()
             for sn in cat.iter_catalog(query_cache=[chunk]):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
                 sn_t0 = self.sn_universe.drawFromT0Dist(sn_rng)
@@ -117,3 +120,5 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 self.mjd_dict[sn[0]].append(tt)
                                 self.mag_dict[sn[0]].append(mm)
                                 self.sig_dict[sn[0]].append(ee)
+
+            print("chunk of ",len(chunk)," took ",time.clock()-t_start_chunk)
