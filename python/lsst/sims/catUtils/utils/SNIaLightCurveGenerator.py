@@ -46,7 +46,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
     def _light_curves_from_query(self, cat, query_result, grp):
 
         bandpass = self.lsstBandpassDict[grp[0].bandpass]
-
+        bandpass.sbTophi()
         t_list = np.array([obs.mjd.TAI for obs in grp])
 
         gamma_list = np.array([calcGamma(bandpass, obs.m5[obs.bandpass], self.phot_params)
@@ -93,7 +93,6 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                             fnu_grid = flambda_grid*bandpass.wavelen*bandpass.wavelen*ss._physParams.nm2m* \
                                        ss._physParams.ergsetc2jansky/ss._physParams.lightspeed
 
-                            bandpass.sbTophi()
                             flux_list = (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
                             flux_list = np.array(flux_list)
