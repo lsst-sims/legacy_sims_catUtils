@@ -3,8 +3,8 @@ import numpy as np
 import copy
 
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from  lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
-from lsst.sims.catUtils.mixins  import PhotometryGalaxies, VariabilityGalaxies
+from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
+from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import haversine
 
@@ -13,17 +13,26 @@ import time
 __all__ = ["StellarLightCurveGenerator", "AgnLightCurveGenerator",
            "_baseLightCurveCatalog", "LightCurveGenerator"]
 
-_sed_cache = {} # a global cache to store SedLists loaded by the light curve catalogs
+# a global cache to store SedLists loaded by the light curve catalogs
+_sed_cache = {}
+
 
 class _baseLightCurveCatalog(InstanceCatalog):
+    """
+    """
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000",
                       "lightCurveMag", "sigma_lightCurveMag"]
 
     def iter_catalog(self, chunk_size=None, query_cache=None):
         """
-        chunk_size (optional) is an int specifying the number of rows to return
-        from the database at a time
+        Returns an iterator over rows of the catalog.
+        
+        Parameters
+        ----------
+        chunk_size : int, optional, defaults to None
+            the number of rows to return from the database at a time. If None,
+            RB: what happens in this case?
 
         query_cache (optional) is the result of calling db_obj.query_columns().
         DO NOT use this unless you know what you are doing.  It is an optional
@@ -31,19 +40,25 @@ class _baseLightCurveCatalog(InstanceCatalog):
         without actually querying the database over and over again.  If it is set
         to 'None' (default), this method will handle the database query.
 
-        Returns an iterator over rows of the catalog.
+        RB : Does not using this mean setting it to the default None value? The
+        docstring for query_cache is somewhat confusing.
+
         """
 
         if query_cache is None:
+            # RB : I don't know what the following line does
+            # Why is this not self.iterCatalog ?
             for line in InstanceCatalog.iter_catalog(self, chunk_size=chunk_size):
                 yield line
         else:
+            # Otherwise iterate over the query cache
             for chunk in query_cache:
                 self._set_current_chunk(chunk)
                 chunk_cols = [self.transformations[col](self.column_by_name(col))
                               if col in self.transformations.keys() else
                               self.column_by_name(col)
                               for col in self.iter_column_names()]
+                # iterate over lines in the cache and yield lines
                 for line in zip(*chunk_cols):
                     yield line
 
@@ -201,6 +216,7 @@ class LightCurveGenerator(object):
 
     def _get_observation_meta_data_groups(self, ra, dec, bandpass, expMJD=None):
 
+        print('parameters', ra, dec, bandpass, expMJD)
         obs_list = self._generator.getObservationMetaData(
                                      fieldRA=ra,
                                      fieldDec=dec,
