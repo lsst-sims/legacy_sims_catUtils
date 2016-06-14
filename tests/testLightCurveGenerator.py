@@ -135,18 +135,18 @@ class StellarLightCurveTest(unittest.TestCase):
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
-            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
-            self.assertGreater(len(test_light_curves[unique_id][0]), 0)
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id]['mag'])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id]['mjd']), 0)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id][0]), len(chunk_light_curves[unique_id][0]))
-            np.testing.assert_array_equal(test_light_curves[unique_id][0], chunk_light_curves[unique_id][0])
-            np.testing.assert_array_equal(test_light_curves[unique_id][1], chunk_light_curves[unique_id][1])
-            np.testing.assert_array_equal(test_light_curves[unique_id][2], chunk_light_curves[unique_id][2])
+            self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id]['mjd'], chunk_light_curves[unique_id]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id]['mag'], chunk_light_curves[unique_id]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id]['error'], chunk_light_curves[unique_id]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -167,10 +167,10 @@ class StellarLightCurveTest(unittest.TestCase):
 
             for star_obj in cat.iter_catalog():
                 lc = test_light_curves[star_obj[0]]
-                dex = np.argmin(np.abs(lc[0]-obs.mjd.TAI))
-                self.assertLess(np.abs(lc[0][dex]-obs.mjd.TAI), 1.0e-7)
-                self.assertLess(np.abs(lc[1][dex]-star_obj[3]), 1.0e-7)
-                self.assertLess(np.abs(lc[2][dex]-star_obj[4]), 1.0e-7)
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
 
 
     def test_date_range(self):
@@ -193,10 +193,10 @@ class StellarLightCurveTest(unittest.TestCase):
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
-            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
-            self.assertGreater(len(test_light_curves[unique_id][0]), 0)
-            self.assertGreater(test_light_curves[unique_id][0].min(), mjdRange[0]-1.0e-12)
-            self.assertLess(test_light_curves[unique_id][0].max(), mjdRange[1]+1.0e-12)
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id]['mag'])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id]['mjd']), 0)
+            self.assertGreater(test_light_curves[unique_id]['mjd'].min(), mjdRange[0]-1.0e-12)
+            self.assertLess(test_light_curves[unique_id]['mjd'].max(), mjdRange[1]+1.0e-12)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
@@ -204,10 +204,10 @@ class StellarLightCurveTest(unittest.TestCase):
                                                           expMJD=mjdRange, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id][0]), len(chunk_light_curves[unique_id][0]))
-            np.testing.assert_array_equal(test_light_curves[unique_id][0], chunk_light_curves[unique_id][0])
-            np.testing.assert_array_equal(test_light_curves[unique_id][1], chunk_light_curves[unique_id][1])
-            np.testing.assert_array_equal(test_light_curves[unique_id][2], chunk_light_curves[unique_id][2])
+            self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id]['mjd'], chunk_light_curves[unique_id]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id]['mag'], chunk_light_curves[unique_id]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id]['error'], chunk_light_curves[unique_id]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -230,10 +230,10 @@ class StellarLightCurveTest(unittest.TestCase):
 
             for star_obj in cat.iter_catalog():
                 lc = test_light_curves[star_obj[0]]
-                dex = np.argmin(np.abs(lc[0]-obs.mjd.TAI))
-                self.assertLess(np.abs(lc[0][dex]-obs.mjd.TAI), 1.0e-7)
-                self.assertLess(np.abs(lc[1][dex]-star_obj[3]), 1.0e-7)
-                self.assertLess(np.abs(lc[2][dex]-star_obj[4]), 1.0e-7)
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
 
 
 class AgnLightCurveTest(unittest.TestCase):
@@ -356,18 +356,18 @@ class AgnLightCurveTest(unittest.TestCase):
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
-            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][1])).max(), 0.0)
-            self.assertGreater(len(test_light_curves[unique_id][0]), 0)
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id]['mag'])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id]['mjd']), 0)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id][0]), len(chunk_light_curves[unique_id][0]))
-            np.testing.assert_array_equal(test_light_curves[unique_id][0], chunk_light_curves[unique_id][0])
-            np.testing.assert_array_equal(test_light_curves[unique_id][1], chunk_light_curves[unique_id][1])
-            np.testing.assert_array_equal(test_light_curves[unique_id][2], chunk_light_curves[unique_id][2])
+            self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id]['mjd'], chunk_light_curves[unique_id]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id]['mag'], chunk_light_curves[unique_id]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id]['error'], chunk_light_curves[unique_id]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -388,10 +388,10 @@ class AgnLightCurveTest(unittest.TestCase):
 
             for agn_obj in cat.iter_catalog():
                 lc = test_light_curves[agn_obj[0]]
-                dex = np.argmin(np.abs(lc[0]-obs.mjd.TAI))
-                self.assertLess(np.abs(lc[0][dex]-obs.mjd.TAI), 1.0e-7)
-                self.assertLess(np.abs(lc[1][dex]-agn_obj[3]), 1.0e-7)
-                self.assertLess(np.abs(lc[2][dex]-agn_obj[4]), 1.0e-7)
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
 
 
 def suite():
