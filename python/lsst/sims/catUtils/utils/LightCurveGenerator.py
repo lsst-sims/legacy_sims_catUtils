@@ -32,22 +32,23 @@ class _baseLightCurveCatalog(InstanceCatalog):
         ----------
         chunk_size : int, optional, defaults to None
             the number of rows to return from the database at a time. If None,
-            RB: what happens in this case?
+            returns the entire database query in one chunk.
 
-        query_cache (optional) is the result of calling db_obj.query_columns().
-        DO NOT use this unless you know what you are doing.  It is an optional
-        input for those who want to repeatedly examine the same patch of sky
-        without actually querying the database over and over again.  If it is set
-        to 'None' (default), this method will handle the database query.
-
-        RB : Does not using this mean setting it to the default None value? The
-        docstring for query_cache is somewhat confusing.
-
+        query_cache : iterator over database rows, optional, defaults to None
+            the result of calling db_obj.query_columns().  If query_cache is not
+            None, this method will iterate over the rows in query_cache and produce
+            an appropriate InstanceCatalog. DO NOT use this
+            unless you know what you are doing.  It is an optional
+            input for those who want to repeatedly examine the same patch of sky
+            without actually querying the database over and over again.  If it is set
+            to None (default), this method will handle the database query.
         """
 
         if query_cache is None:
-            # RB : I don't know what the following line does
-            # Why is this not self.iterCatalog ?
+            # Call the originalversion of iter_catalog defined in the
+            # InstanceCatalog class.  This version of iter_catalog includes
+            # the call to self.db_obj.query_columns, which the user would have
+            # used to generate query_cache.
             for line in InstanceCatalog.iter_catalog(self, chunk_size=chunk_size):
                 yield line
         else:
@@ -58,7 +59,8 @@ class _baseLightCurveCatalog(InstanceCatalog):
                               if col in self.transformations.keys() else
                               self.column_by_name(col)
                               for col in self.iter_column_names()]
-                # iterate over lines in the cache and yield lines
+                # iterate over lines in the cache and yield lines augmented by
+                # values calculated using this catalogs getter methods
                 for line in zip(*chunk_cols):
                     yield line
 
