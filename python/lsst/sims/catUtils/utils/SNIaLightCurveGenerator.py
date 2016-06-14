@@ -135,6 +135,16 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                                                  gamma=gamma_active[acceptable])
 
                                 if len(acceptable)>0:
+
+                                    if sn[0] not in self.truth_dict:
+                                        self.truth_dict[sn[0]] = {}
+                                        self.truth_dict[sn[0]]['t0'] = sn_t0
+                                        self.truth_dict[sn[0]]['x1'] = sn_x1
+                                        self.truth_dict[sn[0]]['x0'] = sn_x0
+                                        self.truth_dict[sn[0]]['c'] = sn_c
+                                        self.truth_dict[sn[0]]['z'] = sn[5]
+                                        self.truth_dict[sn[0]]['E(B-V)'] = sn[6]
+
                                     if sn[0] not in self.mjd_dict:
                                         self.mjd_dict[sn[0]] = {}
                                         self.mag_dict[sn[0]] = {}

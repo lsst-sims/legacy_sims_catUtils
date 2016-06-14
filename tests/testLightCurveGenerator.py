@@ -189,7 +189,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
-        test_light_curves = lc_gen.light_curves_from_pointings(pointings)
+        test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
 
@@ -201,7 +201,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
-        chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
@@ -245,7 +245,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass, expMJD=mjdRange)
-        test_light_curves = lc_gen.light_curves_from_pointings(pointings)
+        test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2)
 
@@ -259,7 +259,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
-        chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
@@ -305,7 +305,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
-        lc_dict = gen.light_curves_from_pointings(pointings)
+        lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
@@ -453,7 +453,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
         lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
-        test_light_curves = lc_gen.light_curves_from_pointings(pointings)
+        test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
 
@@ -465,7 +465,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
-        chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
@@ -509,7 +509,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
         gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
-        lc_dict = gen.light_curves_from_pointings(pointings)
+        lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
