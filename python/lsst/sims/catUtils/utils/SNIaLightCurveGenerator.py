@@ -36,6 +36,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         self.phot_params = PhotometricParameters()
         self.sn_universe = SNUniverse()
         self.sn_universe.suppressDimSN = False
+        self.z_cutoff = 1.2
         super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
 
 
@@ -59,7 +60,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
             for sn in cat.iter_catalog(query_cache=[chunk]):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
                 sn_t0 = self.sn_universe.drawFromT0Dist(sn_rng)
-                if np.isfinite(sn_t0) and \
+                if sn[5] <= self.z_cutoff and np.isfinite(sn_t0) and \
                 sn_t0<t_list[-1]+cat.maxTimeSNVisible and \
                 sn_t0>t_list[0]-cat.maxTimeSNVisible:
 
