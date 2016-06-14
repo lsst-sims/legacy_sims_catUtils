@@ -27,7 +27,7 @@ class _baseLightCurveCatalog(InstanceCatalog):
     def iter_catalog(self, chunk_size=None, query_cache=None):
         """
         Returns an iterator over rows of the catalog.
-        
+
         Parameters
         ----------
         chunk_size : int, optional, defaults to None
