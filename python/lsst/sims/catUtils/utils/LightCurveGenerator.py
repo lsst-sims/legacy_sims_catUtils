@@ -353,9 +353,9 @@ class LightCurveGenerator(object):
         Output:
         -------
         A dict keyed on the object's uniqeId (an int).  Each entry in the dict
-        is a 2-D numpy array.  The first row is a numpy array of MJDs.  The
-        second row is a numpy array of magnitudes.  The third row is a numpy
-        array of magnitude uncertainties.
+        is a dict of numpy arrays.  The numpy arrays are 'mjd' (the date of
+        observations), 'mag' (the magnitudes observed), and 'error' (the uncertainty
+        in 'mag').
         """
 
         # First get the list of ObservationMetaData objects corresponding
@@ -395,9 +395,16 @@ class LightCurveGenerator(object):
 
         output_dict = {}
         for unique_id in self.mjd_dict:
-            output_dict[unique_id] = np.array([self.mjd_dict[unique_id],
-                                               self.mag_dict[unique_id],
-                                               self.sig_dict[unique_id]])
+            output_dict[unique_id] = {}
+
+            # we must sort the MJDs because, if an object appears in multiple
+            # spatial pointings, its observations will be concatenated out of order
+            mjd_arr = np.array(self.mjd_dict[unique_id])
+            mjd_dexes = np.argsort(mjd_arr)
+
+            output_dict[unique_id]['mjd'] = mjd_arr[mjd_dexes]
+            output_dict[unique_id]['mag'] = np.array(self.mag_dict[unique_id])[mjd_dexes]
+            output_dict[unique_id]['error'] = np.array(self.sig_dict[unique_id])[mjd_dexes]
 
         print('that took %e; grps %d' % (time.time()-t_start, len(obs_groups)))
         return output_dict
