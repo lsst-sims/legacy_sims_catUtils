@@ -675,7 +675,8 @@ class SNIaCatalog_tests(unittest.TestCase):
 class SNIaLightCurveControlCatalog(SNIaCatalog):
 
     column_outputs = ['uniqueId', 'mag', 'mag_err', 'redshift']
-    _midSurveyTime = 48000.0
+    _midSurveyTime = 49000.0
+    _snFrequency = 0.001
 
 class SNIaLightCurveTest(unittest.TestCase):
 
@@ -683,9 +684,9 @@ class SNIaLightCurveTest(unittest.TestCase):
     def setUpClass(cls):
 
         rng = np.random.RandomState(99)
-        n_sne=10000
-        ra_list = rng.random_sample(n_sne)*360.0
-        dec_list = rng.random_sample(n_sne)*(-90.0)
+        n_sne=100
+        ra_list = rng.random_sample(n_sne)*7.0+78.0
+        dec_list = rng.random_sample(n_sne)*4.0 - 69.0
         zz_list = rng.random_sample(n_sne)*1.0+0.05
 
         cls.input_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
@@ -734,7 +735,8 @@ class SNIaLightCurveTest(unittest.TestCase):
         bandpass = 'r'
 
         pointings = gen.get_pointings(raRange, decRange, bandpass)
-        gen.sn_universe._midSurveyTime=48000.0
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
         self.assertGreater(len(pointings), 1)
         lc_dict = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
@@ -750,6 +752,48 @@ class SNIaLightCurveTest(unittest.TestCase):
                         self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
                         self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
                         self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+    def test_sne_light_curves_z_cut(self):
+        """
+        Generate some super nova light curves.  Add a cutoff in redshift.
+        Verify that they come up with the same magnitudes and uncertainties
+        as supernova catalogs and that objects with z>z_cutoff are not returned.
+        """
+        z_cut = 0.9
+
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+        gen.z_cutoff = z_cut
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'r'
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass)
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
+        self.assertGreater(len(pointings), 1)
+        lc_dict = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 0)
+
+        over_z = 0
+
+        for group in pointings:
+            self.assertGreater(len(group), 1)
+            for obs in group:
+                cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+                for sn in cat.iter_catalog():
+                    if np.isfinite(sn[1]):
+                        if sn[3]>z_cut:
+                            self.assertNotIn(sn[0], lc_dict)
+                            over_z += 1
+                        else:
+                            lc = lc_dict[sn[0]]
+                            dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                            self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                            self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                            self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+        self.assertGreater(over_z, 0)
 
 
 def suite():
