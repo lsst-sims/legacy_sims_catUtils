@@ -216,7 +216,26 @@ class LightCurveGenerator(object):
         return chunk
 
 
-    def _get_observation_meta_data_groups(self, ra, dec, bandpass, expMJD=None):
+    def get_pointings(self, ra, dec, bandpass, expMJD=None):
+        """
+        Inputs
+        -------
+        ra is a tuple indicating the (min, max) values of RA in degrees.
+
+        dec is a tuple indicating the (min, max) values of Dec in degrees.
+
+        bandpass is a char (i.e. 'u', 'g', 'r', etc.) indicating which filter
+        you want the light curves in.
+
+        expMJD is an optional tuple indicating a (min, max) range in MJD.
+        Defaults to None, in which case, the light curves over the entire
+        10 year survey are returned.
+
+        Outputs
+        -------
+        A 2-D list of ObservationMetaData objects.  Each row is a list of
+        ObservationMetaDatas that point to the same patch of sky, sorted by MJD.
+        """
 
         print('parameters', ra, dec, bandpass, expMJD)
         obs_list = self._generator.getObservationMetaData(
@@ -327,23 +346,18 @@ class LightCurveGenerator(object):
             print('objects ',len(self.mjd_dict))
 
 
-    def generate_light_curves(self, ra, dec, bandpass, expMJD=None, chunk_size=100000):
+    def light_curves_from_pointings(self, pointings, chunk_size=100000):
         """
         Generate light curves for all of the objects in a particular region
         of sky in a particular bandpass.
 
         Input parameters:
         -----------------
-        ra is a tuple indicating the (min, max) values of RA in degrees.
 
-        dec is a tuple indicating the (min, max) values of Dec in degrees.
-
-        bandpass is a char (i.e. 'u', 'g', 'r', etc.) indicating which filter
-        you want the light curves in.
-
-        expMJD is an optional tuple indicating a (min, max) range in MJD.
-        Defaults to None, in which case, the light curves over the entire
-        10 year survey are returned.
+        pointings is a 2-D list of ObservationMetaData objects.  Each row
+        of pointings is a list of ObservationMetaDatas that all point to
+        the same patch of sky, sorted by MJD.  This can be generated with
+        the method get_pointings().
 
         chunk_size (optional; default=10000) is an int specifying how many
         objects to pull in from the database at a time.  Note: the larger
@@ -365,17 +379,13 @@ class LightCurveGenerator(object):
         self.mag_dict = {}
         self.sig_dict = {}
 
-        obs_groups = self._get_observation_meta_data_groups(ra, dec, bandpass, expMJD=expMJD)
-        if obs_groups is None:
-            return None
-
         t_start = time.time()
         print('starting light curve generation')
 
         # Loop over the list of groups ObservationMetaData objects,
         # querying the database and generating light curves.
-        print('number of groups ',len(obs_groups))
-        for grp in obs_groups:
+        print('number of groups ',len(pointings))
+        for grp in pointings:
 
             self._mjd_min = grp[0].mjd.TAI
             self._mjd_max = grp[-1].mjd.TAI
@@ -406,7 +416,7 @@ class LightCurveGenerator(object):
             output_dict[unique_id]['mag'] = np.array(self.mag_dict[unique_id])[mjd_dexes]
             output_dict[unique_id]['error'] = np.array(self.sig_dict[unique_id])[mjd_dexes]
 
-        print('that took %e; grps %d' % (time.time()-t_start, len(obs_groups)))
+        print('that took %e; grps %d' % (time.time()-t_start, len(pointings)))
         return output_dict
 
 
