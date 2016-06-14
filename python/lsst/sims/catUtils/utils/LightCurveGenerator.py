@@ -65,7 +65,6 @@ class _baseLightCurveCatalog(InstanceCatalog):
                 for line in zip(*chunk_cols):
                     yield line
 
-
     @cached
     def get_truthInfo(self):
         """
@@ -106,7 +105,7 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
 
         object_names = self.column_by_name("uniqueId")
 
-        if len(object_names)>0:
+        if len(object_names) > 0:
             cache_name = "stellar_%s_%s" % (object_names[0], object_names[-1])
         else:
             cache_name = None
@@ -119,7 +118,6 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
                 _sed_cache[cache_name] = copy.copy(self._sedList)
         else:
             self._sedList = copy.copy(_sed_cache[cache_name])
-
 
     @compound("lightCurveMag", "sigma_lightCurveMag")
     def get_lightCurvePhotometry(self):
@@ -141,7 +139,6 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
 
 class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, PhotometryGalaxies):
 
-
     def _loadAgnSedList(self, wavelen_match):
         """
         Wraps the PhotometryGalaxies._loadAgnSedList method.
@@ -159,7 +156,7 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
 
         object_names = self.column_by_name("uniqueId")
 
-        if len(object_names)>0:
+        if len(object_names) > 0:
             cache_name = "agn_%s_%s" % (object_names[0], object_names[-1])
         else:
             cache_name = None
@@ -172,7 +169,6 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
                 _sed_cache[cache_name] = copy.copy(self._agnSedList)
         else:
             self._agnSedList = copy.copy(_sed_cache[cache_name])
-
 
     @compound("lightCurveMag", "sigma_lightCurveMag")
     def get_lightCurvePhotometry(self):
@@ -217,10 +213,8 @@ class LightCurveGenerator(object):
 
         self._catalogdb = catalogdb
 
-
     def _filter_chunk(self, chunk):
         return chunk
-
 
     def get_pointings(self, ra, dec, bandpass=('u', 'g', 'r', 'i', 'z', 'y'), expMJD=None):
         """
@@ -262,7 +256,6 @@ class LightCurveGenerator(object):
                                                                   boundLength=1.75)
                 obs_list += sub_list
 
-
         if len(obs_list) == 0:
             print("No observations found matching your criterion")
             return None
@@ -273,13 +266,13 @@ class LightCurveGenerator(object):
         # the same results more than once.
         tol = 1.0e-12
 
-        obs_groups = [] # a list of list of the indices of the ObservationMetaDatas
-                        # in obs_list.  All of the ObservationMetaData in
-                        # obs_list[i] will point to the same point on the sky.
+        obs_groups = []  # a list of list of the indices of the ObservationMetaDatas
+                         # in obs_list.  All of the ObservationMetaData in
+                         # obs_list[i] will point to the same point on the sky.
 
-        mjd_groups = [] # a list of lists of the MJDs of the ObservationMetaDatas
-                        # so that they can be sorted into chronological order before
-                        # light curves are calculated
+        mjd_groups = []  # a list of lists of the MJDs of the ObservationMetaDatas
+                         # so that they can be sorted into chronological order before
+                         # light curves are calculated
 
         for iobs, obs in enumerate(obs_list):
             group_dex = -1
@@ -287,7 +280,7 @@ class LightCurveGenerator(object):
             for ix, obs_g in enumerate(obs_groups):
                 dd = haversine(obs._pointingRA, obs._pointingDec,
                                obs_list[obs_g[0]]._pointingRA, obs_list[obs_g[0]]._pointingDec)
-                if dd<tol:
+                if dd < tol:
                     group_dex = ix
                     break
 
@@ -305,10 +298,9 @@ class LightCurveGenerator(object):
             oo = np.array(grp)
             mm = np.array(mjd)
             dexes = np.argsort(mm)
-            obs_groups_out.append([obs_list [ii] for ii in oo[dexes]])
+            obs_groups_out.append([obs_list[ii] for ii in oo[dexes]])
 
         return obs_groups_out
-
 
     def _get_query_from_group(self, grp, chunk_size):
         """
@@ -317,10 +309,9 @@ class LightCurveGenerator(object):
         in that region, and return it as an iterator over database rows.
         """
 
-        cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
+        cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
 
-        db_required_columns = cat.db_required_columns()
-        t_before_query = time.time()
+        cat.db_required_columns()
 
         query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                 obs_metadata=cat.obs_metadata,
@@ -328,7 +319,6 @@ class LightCurveGenerator(object):
                                                 chunk_size=chunk_size)
 
         return query_result
-
 
     def _light_curves_from_query(self, cat_dict, query_result, grp):
         """
@@ -371,7 +361,7 @@ class LightCurveGenerator(object):
                         cat._gamma_cache = {}
 
                     for star_obj in \
-                    cat.iter_catalog(query_cache=[chunk]):
+                        cat.iter_catalog(query_cache=[chunk]):
 
                         if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
 
@@ -396,8 +386,7 @@ class LightCurveGenerator(object):
                     if ix not in local_gamma_cache:
                         local_gamma_cache[ix] = cat._gamma_cache
 
-            _sed_cache = {} # before moving on to the next chunk of objects
-
+            _sed_cache = {}  # before moving on to the next chunk of objects
 
     def light_curves_from_pointings(self, pointings, chunk_size=100000):
         """
@@ -464,13 +453,12 @@ class LightCurveGenerator(object):
             self._mjd_min = grp[0].mjd.TAI
             self._mjd_max = grp[-1].mjd.TAI
 
-            t_starting_group = time.time()
             print('starting query')
 
-            t_before_query=time.time()
+            t_before_query = time.time()
             query_result = self._get_query_from_group(grp, chunk_size)
 
-            print('query took ',time.time()-t_before_query)
+            print('query took ', time.time()-t_before_query)
 
             self._light_curves_from_query(cat_dict, query_result, grp)
 
