@@ -332,10 +332,8 @@ class LightCurveGenerator(object):
         for raw_chunk in query_result:
             chunk = self._filter_chunk(raw_chunk)
             if chunk is not None:
-                print('    chunk ',len(chunk),' raw ',len(raw_chunk))
                 for ix, obs in enumerate(grp):
                     cat = cat_dict[obs.bandpass]
-                    #print('        ix ',ix,time.time()-t_start)
                     cat.obs_metadata = obs
                     if ix in local_gamma_cache:
                         cat._gamma_cache = local_gamma_cache[ix]
@@ -369,7 +367,6 @@ class LightCurveGenerator(object):
                         local_gamma_cache[ix] = cat._gamma_cache
 
             _sed_cache = {} # before moving on to the next chunk of objects
-            print('objects ',len(self.mjd_dict))
 
 
     def light_curves_from_pointings(self, pointings, chunk_size=100000):
@@ -416,14 +413,13 @@ class LightCurveGenerator(object):
         # First get the list of ObservationMetaData objects corresponding
         # to the OpSim pointings in the region and bandpass of interest
 
+        t_start = time.time()
+
         self.mjd_dict = {}
         self.mag_dict = {}
         self.sig_dict = {}
         self.band_dict = {}
         self.truth_dict = {}
-
-        t_start = time.time()
-        print('starting light curve generation')
 
         cat_dict = {}
         for grp in pointings:
@@ -433,13 +429,11 @@ class LightCurveGenerator(object):
 
         # Loop over the list of groups ObservationMetaData objects,
         # querying the database and generating light curves.
-        print('number of groups ',len(pointings))
         for grp in pointings:
 
             self._mjd_min = grp[0].mjd.TAI
             self._mjd_max = grp[-1].mjd.TAI
 
-            print('    length of group ',len(grp))
             t_starting_group = time.time()
             print('starting query')
 
@@ -449,8 +443,6 @@ class LightCurveGenerator(object):
             print('query took ',time.time()-t_before_query)
 
             self._light_curves_from_query(cat_dict, query_result, grp)
-
-            print('    group took ',time.time()-t_starting_group)
 
         output_dict = {}
         for unique_id in self.mjd_dict:
@@ -468,7 +460,7 @@ class LightCurveGenerator(object):
                 output_dict[unique_id][bp]['mag'] = np.array(self.mag_dict[unique_id][bp])[mjd_dexes]
                 output_dict[unique_id][bp]['error'] = np.array(self.sig_dict[unique_id][bp])[mjd_dexes]
 
-        print('that took %e; grps %d' % (time.time()-t_start, len(pointings)))
+        print('light curves took %e seconds to generate' % (time.time()-t_start))
         return output_dict, self.truth_dict
 
 
