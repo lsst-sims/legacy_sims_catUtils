@@ -77,7 +77,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         cat = cat_dict[cat_dict.keys()[0]]  # does not need to be associated with a bandpass
 
         for chunk in query_result:
-            t_start_chunk = time.clock()
+            t_start_chunk = time.time()
             for sn in cat.iter_catalog(query_cache=[chunk]):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
                 sn_t0 = self.sn_universe.drawFromT0Dist(sn_rng)
@@ -162,5 +162,5 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                     self.mag_dict[sn[0]][bp_name].append(mm)
                                     self.sig_dict[sn[0]][bp_name].append(ee)
 
-            print("chunk of ",len(chunk)," took ",time.clock()-t_start_chunk)
+            print("chunk of ",len(chunk)," took ",time.time()-t_start_chunk)
 
