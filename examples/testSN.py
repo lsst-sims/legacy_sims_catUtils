@@ -796,6 +796,63 @@ class SNIaLightCurveTest(unittest.TestCase):
         self.assertGreater(over_z, 0)
 
 
+    def test_sne_multiband_light_curves(self):
+        """
+        Generate some super nova light curves.  Verify that they come up with the same
+        magnitudes and uncertainties as supernova catalogs.  Use multiband light curves.
+        """
+
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass=('r', 'z'))
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
+        self.assertGreater(len(pointings), 1)
+        lc_dict = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 0)
+
+        obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
+        control_obs_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                       telescopeFilter='r', boundLength=1.75)
+
+        control_obs_z = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                       telescopeFilter='z', boundLength=1.75)
+
+        self.assertGreater(len(control_obs_r), 0)
+        self.assertGreater(len(control_obs_z), 0)
+
+        ct_r = 0
+        for obs in control_obs_r:
+            cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+            for sn in cat.iter_catalog():
+                if np.isfinite(sn[1]):
+                    ct_r += 1
+                    lc = lc_dict[sn[0]]['r']
+                    dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                    self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                    self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                    self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+        self.assertGreater(ct_r, 0)
+
+        ct_z = 0
+        for obs in control_obs_z:
+            cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+            for sn in cat.iter_catalog():
+                if np.isfinite(sn[1]):
+                    ct_z += 1
+                    lc = lc_dict[sn[0]]['z']
+                    dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                    self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                    self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                    self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+        self.assertGreater(ct_z, 0)
+
+
 def suite():
     utilsTests.init()
     suites = []
