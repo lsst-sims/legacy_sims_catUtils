@@ -216,7 +216,7 @@ class LightCurveGenerator(object):
         return chunk
 
 
-    def get_pointings(self, ra, dec, bandpass, expMJD=None):
+    def get_pointings(self, ra, dec, bandpass=('u', 'g', 'r', 'i', 'z', 'y'), expMJD=None):
         """
         Inputs
         -------
@@ -224,8 +224,8 @@ class LightCurveGenerator(object):
 
         dec is a tuple indicating the (min, max) values of Dec in degrees.
 
-        bandpass is a char (i.e. 'u', 'g', 'r', etc.) indicating which filter
-        you want the light curves in.
+        bandpass is a str (i.e. 'u', 'g', 'r', etc.) or an iterable indicating
+        which filter(s) you want the light curves in.
 
         expMJD is an optional tuple indicating a (min, max) range in MJD.
         Defaults to None, in which case, the light curves over the entire
@@ -235,15 +235,25 @@ class LightCurveGenerator(object):
         -------
         A 2-D list of ObservationMetaData objects.  Each row is a list of
         ObservationMetaDatas that point to the same patch of sky, sorted by MJD.
+        Pointings will not be sorted or grouped by filter.
         """
 
         print('parameters', ra, dec, bandpass, expMJD)
-        obs_list = self._generator.getObservationMetaData(
-                                     fieldRA=ra,
-                                     fieldDec=dec,
-                                     telescopeFilter=bandpass,
-                                     expMJD=expMJD,
-                                     boundLength=1.75)
+        if isinstance(bandpass, str):
+            obs_list = self._generator.getObservationMetaData(fieldRA=ra,
+                                                              fieldDec=dec,
+                                                              telescopeFilter=bandpass,
+                                                              expMJD=expMJD,
+                                                              boundLength=1.75)
+        else:
+            obs_list = []
+            for bp in bandpass:
+                sub_list = self._generator.getObservationMetaData(fieldRA=ra,
+                                                                  fieldDec=dec,
+                                                                  telescopeFilter=bp,
+                                                                  expMJD=expMJD,
+                                                                  boundLength=1.75)
+                obs_list += sub_list
 
 
         if len(obs_list) == 0:
@@ -305,10 +315,10 @@ class LightCurveGenerator(object):
                                                 constraint=cat.constraint,
                                                 chunk_size=chunk_size)
 
-        return cat, query_result
+        return query_result
 
 
-    def _light_curves_from_query(self, cat, query_result, grp):
+    def _light_curves_from_query(self, cat_dict, query_result, grp):
 
         global _sed_cache
         local_gamma_cache = {}
@@ -318,6 +328,7 @@ class LightCurveGenerator(object):
             if chunk is not None:
                 print('    chunk ',len(chunk),' raw ',len(raw_chunk))
                 for ix, obs in enumerate(grp):
+                    cat = cat_dict[obs.bandpass]
                     #print('        ix ',ix,time.time()-t_start)
                     cat.obs_metadata = obs
                     if ix in local_gamma_cache:
@@ -331,13 +342,19 @@ class LightCurveGenerator(object):
                         if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
 
                             if star_obj[0] not in self.mjd_dict:
-                                self.mjd_dict[star_obj[0]] = []
-                                self.mag_dict[star_obj[0]] = []
-                                self.sig_dict[star_obj[0]] = []
+                                self.mjd_dict[star_obj[0]] = {}
+                                self.mag_dict[star_obj[0]] = {}
+                                self.sig_dict[star_obj[0]] = {}
 
-                            self.mjd_dict[star_obj[0]].append(cat.obs_metadata.mjd.TAI)
-                            self.mag_dict[star_obj[0]].append(star_obj[3])
-                            self.sig_dict[star_obj[0]].append(star_obj[4])
+                            bp = cat.obs_metadata.bandpass
+                            if bp not in self.mjd_dict[star_obj[0]]:
+                                self.mjd_dict[star_obj[0]][bp] = []
+                                self.mag_dict[star_obj[0]][bp] = []
+                                self.sig_dict[star_obj[0]][bp] = []
+
+                            self.mjd_dict[star_obj[0]][bp].append(cat.obs_metadata.mjd.TAI)
+                            self.mag_dict[star_obj[0]][bp].append(star_obj[3])
+                            self.sig_dict[star_obj[0]][bp].append(star_obj[4])
 
                     if ix not in local_gamma_cache:
                         local_gamma_cache[ix] = cat._gamma_cache
@@ -366,10 +383,19 @@ class LightCurveGenerator(object):
 
         Output:
         -------
-        A dict keyed on the object's uniqeId (an int).  Each entry in the dict
-        is a dict of numpy arrays.  The numpy arrays are 'mjd' (the date of
-        observations), 'mag' (the magnitudes observed), and 'error' (the uncertainty
-        in 'mag').
+        A dict of light curves.  The dict is keyed on the object's uniqueId.
+        This yields a dict keyed on bandpass, which yields a dict keyed on
+        'mjd', 'mag', and 'error', i.e.
+
+        output[111]['u']['mjd'] is a numpy array of the MJD of observations
+        of object 111 in the u band.
+
+        output[111]['u']['mag'] is a numpy array of the magnitudes of
+        object 111 in the u band.
+
+        output[111]['u']['error'] is a numpy array of the magnitude uncertainties
+        of object 111 in the u band.
+
         """
 
         # First get the list of ObservationMetaData objects corresponding
@@ -378,9 +404,16 @@ class LightCurveGenerator(object):
         self.mjd_dict = {}
         self.mag_dict = {}
         self.sig_dict = {}
+        self.band_dict = {}
 
         t_start = time.time()
         print('starting light curve generation')
+
+        cat_dict = {}
+        for grp in pointings:
+            for obs in grp:
+                if obs.bandpass not in cat_dict:
+                    cat_dict[obs.bandpass] = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=obs)
 
         # Loop over the list of groups ObservationMetaData objects,
         # querying the database and generating light curves.
@@ -395,26 +428,29 @@ class LightCurveGenerator(object):
             print('starting query')
 
             t_before_query=time.time()
-            cat, query_result = self._get_query_from_group(grp, chunk_size)
+            query_result = self._get_query_from_group(grp, chunk_size)
 
             print('query took ',time.time()-t_before_query)
 
-            self._light_curves_from_query(cat, query_result, grp)
+            self._light_curves_from_query(cat_dict, query_result, grp)
 
             print('    group took ',time.time()-t_starting_group)
 
         output_dict = {}
         for unique_id in self.mjd_dict:
             output_dict[unique_id] = {}
+            for bp in self.mjd_dict[unique_id]:
 
-            # we must sort the MJDs because, if an object appears in multiple
-            # spatial pointings, its observations will be concatenated out of order
-            mjd_arr = np.array(self.mjd_dict[unique_id])
-            mjd_dexes = np.argsort(mjd_arr)
+                output_dict[unique_id][bp] = {}
 
-            output_dict[unique_id]['mjd'] = mjd_arr[mjd_dexes]
-            output_dict[unique_id]['mag'] = np.array(self.mag_dict[unique_id])[mjd_dexes]
-            output_dict[unique_id]['error'] = np.array(self.sig_dict[unique_id])[mjd_dexes]
+                # we must sort the MJDs because, if an object appears in multiple
+                # spatial pointings, its observations will be concatenated out of order
+                mjd_arr = np.array(self.mjd_dict[unique_id][bp])
+                mjd_dexes = np.argsort(mjd_arr)
+
+                output_dict[unique_id][bp]['mjd'] = mjd_arr[mjd_dexes]
+                output_dict[unique_id][bp]['mag'] = np.array(self.mag_dict[unique_id][bp])[mjd_dexes]
+                output_dict[unique_id][bp]['error'] = np.array(self.sig_dict[unique_id][bp])[mjd_dexes]
 
         print('that took %e; grps %d' % (time.time()-t_start, len(pointings)))
         return output_dict

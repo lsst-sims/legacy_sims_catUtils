@@ -113,7 +113,6 @@ class StellarLightCurveTest(unittest.TestCase):
         if os.path.exists(cls.txt_name):
             os.unlink(cls.txt_name)
 
-
     def test_get_pointings(self):
        """
        Test that the get_pointings method does, in fact, return ObservationMetaData
@@ -138,6 +137,42 @@ class StellarLightCurveTest(unittest.TestCase):
                if ix > 0:
                    self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
 
+    def test_get_pointings_multiband(self):
+        """
+        Test that the get_pointings method does, in fact, return ObservationMetaData
+        that are grouped appropriately.  Test on more than one filter.
+        """
+
+        raRange = (78.0, 89.0)
+        decRange = (-74.0, -60.0)
+        bandpass = ('g', 'z')
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+        self.assertGreater(len(pointings), 1)
+
+        ct_g = 0
+        ct_z = 0
+
+        for group in pointings:
+            for ix, obs in enumerate(group):
+                self.assertAlmostEqual(obs.pointingRA, group[0].pointingRA, 12)
+                self.assertAlmostEqual(obs.pointingDec, group[0].pointingDec, 12)
+
+                if obs.bandpass == 'g':
+                    ct_g += 1
+                elif obs.bandpass == 'z':
+                    ct_z += 1
+                else:
+                    raise RuntimeError("Asked for filters (g,z) but got %s" % obs.bandpass)
+
+                if ix > 0:
+                    self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
+
+        self.assertGreater(ct_g, 0)
+        self.assertGreater(ct_z, 0)
 
     def test_stellar_light_curves(self):
         """
@@ -153,7 +188,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
-        pointings = lc_gen.get_pointings(raRange, decRange, bandpass)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
         test_light_curves = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
@@ -161,18 +196,18 @@ class StellarLightCurveTest(unittest.TestCase):
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
-            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id]['mag'])).max(), 0.0)
-            self.assertGreater(len(test_light_curves[unique_id]['mjd']), 0)
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][bandpass]['mag'])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id][bandpass]['mjd']), 0)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
-            np.testing.assert_array_equal(test_light_curves[unique_id]['mjd'], chunk_light_curves[unique_id]['mjd'])
-            np.testing.assert_array_equal(test_light_curves[unique_id]['mag'], chunk_light_curves[unique_id]['mag'])
-            np.testing.assert_array_equal(test_light_curves[unique_id]['error'], chunk_light_curves[unique_id]['error'])
+            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'], chunk_light_curves[unique_id][bandpass]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'], chunk_light_curves[unique_id][bandpass]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'], chunk_light_curves[unique_id][bandpass]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -192,12 +227,11 @@ class StellarLightCurveTest(unittest.TestCase):
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
-                lc = test_light_curves[star_obj[0]]
+                lc = test_light_curves[star_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
-
 
     def test_date_range(self):
         """
@@ -210,7 +244,7 @@ class StellarLightCurveTest(unittest.TestCase):
         mjdRange = (49356.0, 49357.0)
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
-        pointings = lc_gen.get_pointings(raRange, decRange, bandpass, expMJD=mjdRange)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass, expMJD=mjdRange)
         test_light_curves = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2)
@@ -218,20 +252,20 @@ class StellarLightCurveTest(unittest.TestCase):
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
-            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id]['mag'])).max(), 0.0)
-            self.assertGreater(len(test_light_curves[unique_id]['mjd']), 0)
-            self.assertGreater(test_light_curves[unique_id]['mjd'].min(), mjdRange[0]-1.0e-12)
-            self.assertLess(test_light_curves[unique_id]['mjd'].max(), mjdRange[1]+1.0e-12)
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][bandpass]['mag'])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id][bandpass]['mjd']), 0)
+            self.assertGreater(test_light_curves[unique_id][bandpass]['mjd'].min(), mjdRange[0]-1.0e-12)
+            self.assertLess(test_light_curves[unique_id][bandpass]['mjd'].max(), mjdRange[1]+1.0e-12)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
-            np.testing.assert_array_equal(test_light_curves[unique_id]['mjd'], chunk_light_curves[unique_id]['mjd'])
-            np.testing.assert_array_equal(test_light_curves[unique_id]['mag'], chunk_light_curves[unique_id]['mag'])
-            np.testing.assert_array_equal(test_light_curves[unique_id]['error'], chunk_light_curves[unique_id]['error'])
+            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'], chunk_light_curves[unique_id][bandpass]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'], chunk_light_curves[unique_id][bandpass]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'], chunk_light_curves[unique_id][bandpass]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -253,7 +287,53 @@ class StellarLightCurveTest(unittest.TestCase):
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
-                lc = test_light_curves[star_obj[0]]
+                lc = test_light_curves[star_obj[0]][bandpass]
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+
+    def test_multiband_light_curves(self):
+        """
+        Check that multi-band light curves are returned correctly.
+        """
+
+        raRange = (78.0, 82.0)
+        decRange = (-69.0, -65.0)
+        bandpass = ('r', 'g')
+
+        gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+        pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        lc_dict = gen.light_curves_from_pointings(pointings)
+
+        obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
+        control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                             telescopeFilter='r', boundLength=1.75)
+
+        control_pointings_g = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                             telescopeFilter='g', boundLength=1.75)
+
+        self.assertGreater(len(control_pointings_g), 0)
+        self.assertGreater(len(control_pointings_r), 0)
+
+        for obs in control_pointings_r:
+            cat = stellarControlCatalog(self.stellar_db,
+                                        obs_metadata=obs)
+
+            for star_obj in cat.iter_catalog():
+                lc = lc_dict[star_obj[0]]['r']
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        for obs in control_pointings_g:
+            cat = stellarControlCatalog(self.stellar_db,
+                                        obs_metadata=obs)
+
+            for star_obj in cat.iter_catalog():
+                lc = lc_dict[star_obj[0]]['g']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
@@ -358,7 +438,6 @@ class AgnLightCurveTest(unittest.TestCase):
             os.unlink(cls.txt_cat_name)
 
 
-
     def test_agn_light_curves(self):
         """
         Test the AgnLightCurveGenerator by generating some AGN light
@@ -373,7 +452,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
 
         lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
-        pointings = lc_gen.get_pointings(raRange, decRange, bandpass)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
         test_light_curves = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
@@ -381,18 +460,18 @@ class AgnLightCurveTest(unittest.TestCase):
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
             # np.diff run on the magnitudes reutrns something non-zero
-            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id]['mag'])).max(), 0.0)
-            self.assertGreater(len(test_light_curves[unique_id]['mjd']), 0)
+            self.assertGreater(np.abs(np.diff(test_light_curves[unique_id][bandpass]['mag'])).max(), 0.0)
+            self.assertGreater(len(test_light_curves[unique_id][bandpass]['mjd']), 0)
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
-            np.testing.assert_array_equal(test_light_curves[unique_id]['mjd'], chunk_light_curves[unique_id]['mjd'])
-            np.testing.assert_array_equal(test_light_curves[unique_id]['mag'], chunk_light_curves[unique_id]['mag'])
-            np.testing.assert_array_equal(test_light_curves[unique_id]['error'], chunk_light_curves[unique_id]['error'])
+            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'], chunk_light_curves[unique_id][bandpass]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'], chunk_light_curves[unique_id][bandpass]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'], chunk_light_curves[unique_id][bandpass]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -412,11 +491,58 @@ class AgnLightCurveTest(unittest.TestCase):
                                         obs_metadata=obs)
 
             for agn_obj in cat.iter_catalog():
-                lc = test_light_curves[agn_obj[0]]
+                lc = test_light_curves[agn_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
+
+
+    def test_multiband_light_curves(self):
+        """
+        Check that multi-band light curves are returned correctly.
+        """
+
+        raRange = (78.0, 82.0)
+        decRange = (-69.0, -65.0)
+        bandpass = ('r', 'g')
+
+        gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
+        pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        lc_dict = gen.light_curves_from_pointings(pointings)
+
+        obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
+        control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                             telescopeFilter='r', boundLength=1.75)
+
+        control_pointings_g = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                             telescopeFilter='g', boundLength=1.75)
+
+        self.assertGreater(len(control_pointings_g), 0)
+        self.assertGreater(len(control_pointings_r), 0)
+
+        for obs in control_pointings_r:
+            cat = agnControlCatalog(self.agn_db,
+                                    obs_metadata=obs)
+
+            for star_obj in cat.iter_catalog():
+                lc = lc_dict[star_obj[0]]['r']
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        for obs in control_pointings_g:
+            cat = agnControlCatalog(self.agn_db,
+                                    obs_metadata=obs)
+
+            for star_obj in cat.iter_catalog():
+                lc = lc_dict[star_obj[0]]['g']
+                dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
+                self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
+                self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
+                self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
 
 
 def suite():

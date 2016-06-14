@@ -734,7 +734,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         decRange = (-69.0, -65.0)
         bandpass = 'r'
 
-        pointings = gen.get_pointings(raRange, decRange, bandpass)
+        pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
         gen.sn_universe._midSurveyTime=49000.0
         gen.sn_universe._snFrequency=0.001
         self.assertGreater(len(pointings), 1)
@@ -747,7 +747,7 @@ class SNIaLightCurveTest(unittest.TestCase):
                 cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
                 for sn in cat.iter_catalog():
                     if np.isfinite(sn[1]):
-                        lc = lc_dict[sn[0]]
+                        lc = lc_dict[sn[0]][bandpass]
                         dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                         self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
                         self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
@@ -768,7 +768,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         decRange = (-69.0, -65.0)
         bandpass = 'r'
 
-        pointings = gen.get_pointings(raRange, decRange, bandpass)
+        pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
         gen.sn_universe._midSurveyTime=49000.0
         gen.sn_universe._snFrequency=0.001
         self.assertGreater(len(pointings), 1)
@@ -787,7 +787,7 @@ class SNIaLightCurveTest(unittest.TestCase):
                             self.assertNotIn(sn[0], lc_dict)
                             over_z += 1
                         else:
-                            lc = lc_dict[sn[0]]
+                            lc = lc_dict[sn[0]][bandpass]
                             dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                             self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
                             self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
