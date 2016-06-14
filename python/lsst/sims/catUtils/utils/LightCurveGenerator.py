@@ -68,6 +68,10 @@ class _baseLightCurveCatalog(InstanceCatalog):
 
     @cached
     def get_truthInfo(self):
+        """
+        Default information to be returned as 'truth_dict' by the
+        LightCurveGenerator.
+        """
         return self.column_by_name('varParamStr')
 
 
@@ -81,10 +85,6 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
 
     2) caches all of the SEDs read in so that they can be reused when sampling the
     objects in this catalog at a different MJD.
-
-    It provides its own iter_catalog() method that allows users to pass the cached
-    results of database queries in so that the catalog does not have to query the
-    database multiple times to get the same result.
 
     It should only be used in the context of the LightCurveGenerator class.
     """
@@ -146,7 +146,7 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
         """
         Wraps the PhotometryGalaxies._loadAgnSedList method.
 
-        If current chunk of objects is not represetned in the global
+        If current chunk of objects is not represented in the global
         _sed_cache, this will call the base method defined in
         PhotometryGalaxies.
 
@@ -231,7 +231,8 @@ class LightCurveGenerator(object):
         dec is a tuple indicating the (min, max) values of Dec in degrees.
 
         bandpass is a str (i.e. 'u', 'g', 'r', etc.) or an iterable indicating
-        which filter(s) you want the light curves in.
+        which filter(s) you want the light curves in.  Defaults to all six
+        LSST bandpasses.
 
         expMJD is an optional tuple indicating a (min, max) range in MJD.
         Defaults to None, in which case, the light curves over the entire
@@ -310,6 +311,11 @@ class LightCurveGenerator(object):
 
 
     def _get_query_from_group(self, grp, chunk_size):
+        """
+        Take a group of ObervationMetaData that all point to the same region
+        of the sky.  Query the CatSim database for all of the celestial objects
+        in that region, and return it as an iterator over database rows.
+        """
 
         cat =self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
 
@@ -325,6 +331,30 @@ class LightCurveGenerator(object):
 
 
     def _light_curves_from_query(self, cat_dict, query_result, grp):
+        """
+        Read in an iterator over database rows and return light curves for
+        all of the objects contained.
+
+        Input parameters:
+        -----------------
+        cat_dict is a dict of InstanceCatalogs keyed on bandpass name.  There
+        only needs to be one InstanceCatalog per bandpass name.  These dummy
+        catalogs provide the methods needed to calculate synthetic photometry.
+
+        query_result is an iterator over database rows that correspond to
+        celestial objects in our field of view.
+
+        grp is a list of ObservationMetaData objects that all point to the
+        region of sky containing the objects in query_result.  cat_dict
+        should contain an InstanceCatalog for each bandpass represented in
+        grp.
+
+        Output
+        ------
+        This method does not output anything.  It adds light curves to the
+        instance member variables self.mjd_dict, self.mag_dict, self.sig_dict,
+        and self.truth_dict.
+        """
 
         global _sed_cache
         local_gamma_cache = {}
