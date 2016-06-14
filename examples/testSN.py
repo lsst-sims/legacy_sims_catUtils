@@ -353,7 +353,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         # self.catalogList = self._writeManySNCatalogs()
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
-                                obs_metadata=cls.obsMetaDataResults[12],
+                                obs_metadata=cls.obsMetaDataResults[6],
                                 column_outputs=['t0', 'flux_u', 'flux_g', \
                                                 'flux_r', 'flux_i', 'flux_z',\
                                                 'flux_y', 'mag_u', 'mag_g',\
