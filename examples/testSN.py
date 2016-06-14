@@ -20,17 +20,19 @@ import unittest
 
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
+from lsst.utils import getPackageDir
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.generation.db import CatalogDBObject, fileDBObject
 import eups
 
 # Routines Being Tested
 from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
+from lsst.sims.catUtils.utils import SNIaLightCurveGenerator
 
 # External packages used
 # import pandas as pd
@@ -670,11 +672,92 @@ class SNIaCatalog_tests(unittest.TestCase):
         return s
 
 
+class SNIaLightCurveControlCatalog(SNIaCatalog):
+
+    column_outputs = ['uniqueId', 'mag', 'mag_err', 'redshift']
+    _midSurveyTime = 48000.0
+
+class SNIaLightCurveTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        rng = np.random.RandomState(99)
+        n_sne=10000
+        ra_list = rng.random_sample(n_sne)*360.0
+        dec_list = rng.random_sample(n_sne)*(-90.0)
+        zz_list = rng.random_sample(n_sne)*1.0+0.05
+
+        cls.input_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
+        cls.input_cat_name = os.path.join(cls.input_cat_name, "scratchSpace", "sne_input_cat.txt")
+
+        with open(cls.input_cat_name,"w") as output_file:
+            for ix in range(n_sne):
+                output_file.write("%d;%.12f;%.12f;%.12f;%.12f;%.12f\n"
+                % (ix+1, ra_list[ix], dec_list[ix],
+                   np.radians(ra_list[ix]), np.radians(dec_list[ix]),
+                   zz_list[ix]))
+
+        dtype=np.dtype([('id', np.int),
+                        ('raDeg', np.float), ('decDeg', np.float),
+                        ('raJ2000', np.float), ('decJ2000', np.float),
+                        ('redshift', np.float)])
+
+        cls.db = fileDBObject(cls.input_cat_name, delimiter=';',
+                              runtable='test', dtype=dtype,
+                              idColKey='id')
+
+        cls.db.raColName = 'raDeg'
+        cls.db.decColName = 'decDeg'
+        cls.db.objectTypeId = 873
+
+        cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
+        cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
+
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.input_cat_name):
+            os.unlink(cls.input_cat_name)
+
+
+    def test_sne_light_curves(self):
+        """
+        Generate some super nova light curves.  Verify that they come up with the same
+        magnitudes and uncertainties as supernova catalogs.
+        """
+
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'r'
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass)
+        gen.sn_universe._midSurveyTime=48000.0
+        self.assertGreater(len(pointings), 1)
+        lc_dict = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 0)
+
+        for group in pointings:
+            self.assertGreater(len(group), 1)
+            for obs in group:
+                cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+                for sn in cat.iter_catalog():
+                    if np.isfinite(sn[1]):
+                        lc = lc_dict[sn[0]]
+                        dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                        self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                        self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                        self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(SNObject_tests)
     suites += unittest.makeSuite(SNIaCatalog_tests)
+    suites += unittest.makeSuite(SNIaLightCurveTest)
     return unittest.TestSuite(suites)
 
 
