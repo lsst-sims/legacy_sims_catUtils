@@ -40,7 +40,7 @@ class agnControlCatalog(InstanceCatalog,
         return np.array([
                          self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
                          self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)
-                       ])
+                        ])
 
 
 class StellarLightCurveTest(unittest.TestCase):
@@ -84,9 +84,9 @@ class StellarLightCurveTest(unittest.TestCase):
             magNormList = rng.random_sample(n_stars)*3.0+14.0
             AvList = rng.random_sample(n_stars)*0.2+0.1
             for ix in range(n_stars):
-                varparams = {'varMethodName':'applyRRly',
-                             'pars':{'tStartMjd':mjd0[ix],
-                                     'filename':list_of_lc[lc_dex[ix]]}}
+                varparams = {'varMethodName': 'applyRRly',
+                             'pars': {'tStartMjd': mjd0[ix],
+                                      'filename': list_of_lc[lc_dex[ix]]}}
                 varparamstr = json.dumps(varparams)
                 output_file.write("%d;%lf;%lf;%lf;%lf;%lf;%lf;%s;%s\n"
                                   % (ix, raList[ix], decList[ix],
@@ -100,13 +100,12 @@ class StellarLightCurveTest(unittest.TestCase):
                                       runtable='test', dtype=cls.dtype,
                                       idColKey='id')
 
-        cls.stellar_db.raColName='raDeg'
-        cls.stellar_db.decColName='decDeg'
-        cls.stellar_db.objectTypeId=32
+        cls.stellar_db.raColName = 'raDeg'
+        cls.stellar_db.decColName = 'decDeg'
+        cls.stellar_db.objectTypeId = 32
 
         cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
         cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
-
 
     @classmethod
     def tearDownClass(cls):
@@ -114,28 +113,28 @@ class StellarLightCurveTest(unittest.TestCase):
             os.unlink(cls.txt_name)
 
     def test_get_pointings(self):
-       """
-       Test that the get_pointings method does, in fact, return ObservationMetaData
-       that are grouped appropriately.
-       """
+        """
+        Test that the get_pointings method does, in fact, return ObservationMetaData
+        that are grouped appropriately.
+        """
 
-       raRange = (78.0, 89.0)
-       decRange = (-74.0, -60.0)
-       bandpass = 'g'
+        raRange = (78.0, 89.0)
+        decRange = (-74.0, -60.0)
+        bandpass = 'g'
 
-       lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
 
-       pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
 
-       self.assertGreater(len(pointings), 1)
+        self.assertGreater(len(pointings), 1)
 
-       for group in pointings:
-           for ix, obs in enumerate(group):
-               self.assertAlmostEqual(obs.pointingRA, group[0].pointingRA, 12)
-               self.assertAlmostEqual(obs.pointingDec, group[0].pointingDec, 12)
-               self.assertEqual(obs.bandpass, bandpass)
-               if ix > 0:
-                   self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
+        for group in pointings:
+            for ix, obs in enumerate(group):
+                self.assertAlmostEqual(obs.pointingRA, group[0].pointingRA, 12)
+                self.assertAlmostEqual(obs.pointingDec, group[0].pointingDec, 12)
+                self.assertEqual(obs.bandpass, bandpass)
+                if ix > 0:
+                    self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
 
     def test_get_pointings_multiband(self):
         """
@@ -186,12 +185,11 @@ class StellarLightCurveTest(unittest.TestCase):
         decRange = (-69.0, -65.0)
         bandpass = 'r'
 
-
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
         test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
 
-        self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
+        self.assertGreater(len(test_light_curves), 2)  # make sure we got some light curves
 
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
@@ -204,10 +202,14 @@ class StellarLightCurveTest(unittest.TestCase):
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'], chunk_light_curves[unique_id][bandpass]['mjd'])
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'], chunk_light_curves[unique_id][bandpass]['mag'])
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'], chunk_light_curves[unique_id][bandpass]['error'])
+            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
+                             len(chunk_light_curves[unique_id][bandpass]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'],
+                                          chunk_light_curves[unique_id][bandpass]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'],
+                                          chunk_light_curves[unique_id][bandpass]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'],
+                                          chunk_light_curves[unique_id][bandpass]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -262,10 +264,14 @@ class StellarLightCurveTest(unittest.TestCase):
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'], chunk_light_curves[unique_id][bandpass]['mjd'])
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'], chunk_light_curves[unique_id][bandpass]['mag'])
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'], chunk_light_curves[unique_id][bandpass]['error'])
+            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
+                             len(chunk_light_curves[unique_id][bandpass]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'],
+                                          chunk_light_curves[unique_id][bandpass]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'],
+                                          chunk_light_curves[unique_id][bandpass]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'],
+                                          chunk_light_curves[unique_id][bandpass]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -281,7 +287,6 @@ class StellarLightCurveTest(unittest.TestCase):
                                               expMJD=mjdRange,
                                               boundLength=1.75)
 
-
         for obs in obs_list:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
@@ -292,7 +297,6 @@ class StellarLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
-
 
     def test_multiband_light_curves(self):
         """
@@ -379,12 +383,12 @@ class AgnLightCurveTest(unittest.TestCase):
 
         with open(cls.txt_cat_name, "w") as output_file:
             for ix in range(n_galaxies):
-                varParam = {'varMethodName':'applyAgn',
-                            'pars':{'agn_tau':tauList[ix], 'agn_sfu':sfuList[ix],
-                                    'agn_sfg':sfgList[ix], 'agn_sfr':sfrList[ix],
-                                    'agn_sfi':sfiList[ix], 'agn_sfz':sfzList[ix],
-                                    'agn_sfy':sfyList[ix], 't0_mjd':mjdList[ix],
-                                    'seed':rng.randint(0,200000)
+                varParam = {'varMethodName': 'applyAgn',
+                            'pars': {'agn_tau': tauList[ix], 'agn_sfu': sfuList[ix],
+                                     'agn_sfg': sfgList[ix], 'agn_sfr': sfrList[ix],
+                                     'agn_sfi': sfiList[ix], 'agn_sfz': sfzList[ix],
+                                     'agn_sfy': sfyList[ix], 't0_mjd': mjdList[ix],
+                                     'seed': rng.randint(0, 200000)
                                     }}
 
                 paramStr = json.dumps(varParam)
@@ -392,8 +396,10 @@ class AgnLightCurveTest(unittest.TestCase):
                 output_file.write("%d;%f;%f;" % (ix, raList[ix], decList[ix])
                                   + "%f;%f;" % (np.radians(raList[ix]), np.radians(decList[ix]))
                                   + "%f;" % (redshiftList[ix])
-                                  + "%s;%f;%f;" % (list_of_seds[disk_sed_dexes[ix]], avDisk[ix], normDisk[ix])
-                                  + "%s;%f;%f;" % (list_of_seds[bulge_sed_dexes[ix]], avBulge[ix], normBulge[ix])
+                                  + "%s;%f;%f;" % (list_of_seds[disk_sed_dexes[ix]],
+                                                   avDisk[ix], normDisk[ix])
+                                  + "%s;%f;%f;" % (list_of_seds[bulge_sed_dexes[ix]],
+                                                   avBulge[ix], normBulge[ix])
                                   + "agn.spec;%s;%f\n" % (paramStr, normAgn[ix]))
 
         dtype = np.dtype([
@@ -413,15 +419,15 @@ class AgnLightCurveTest(unittest.TestCase):
                                   runtable='test', dtype=dtype,
                                   idColKey='galid')
 
-        cls.agn_db.raColName='raDeg'
-        cls.agn_db.decColName='decDeg'
-        cls.agn_db.objectTypeId=112
+        cls.agn_db.raColName = 'raDeg'
+        cls.agn_db.decColName = 'decDeg'
+        cls.agn_db.objectTypeId = 112
 
-        ### what follows is a hack to deal with the fact thar
-        ### our varParamStr values are longer than 256 characters
-        ### which is the default maximum length that a
-        ### CatalogDBObject expects a string to be
-        ###
+        # what follows is a hack to deal with the fact thar
+        # our varParamStr values are longer than 256 characters
+        # which is the default maximum length that a
+        # CatalogDBObject expects a string to be
+        #
         cls.agn_db.dbTypeMap['STRING'] = (str, 600)
         cls.agn_db.columns = None
         cls.agn_db._make_default_columns()
@@ -431,12 +437,10 @@ class AgnLightCurveTest(unittest.TestCase):
         cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
         cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.txt_cat_name):
             os.unlink(cls.txt_cat_name)
-
 
     def test_agn_light_curves(self):
         """
@@ -450,12 +454,11 @@ class AgnLightCurveTest(unittest.TestCase):
         decRange = (-69.0, -65.0)
         bandpass = 'g'
 
-
         lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
         test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
 
-        self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
+        self.assertGreater(len(test_light_curves), 2)  # make sure we got some light curves
 
         for unique_id in test_light_curves:
             # verify that the sources returned all do vary by making sure that the
@@ -468,10 +471,14 @@ class AgnLightCurveTest(unittest.TestCase):
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
-            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']), len(chunk_light_curves[unique_id][bandpass]['mjd']))
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'], chunk_light_curves[unique_id][bandpass]['mjd'])
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'], chunk_light_curves[unique_id][bandpass]['mag'])
-            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'], chunk_light_curves[unique_id][bandpass]['error'])
+            self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
+                             len(chunk_light_curves[unique_id][bandpass]['mjd']))
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mjd'],
+                                          chunk_light_curves[unique_id][bandpass]['mjd'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['mag'],
+                                          chunk_light_curves[unique_id][bandpass]['mag'])
+            np.testing.assert_array_equal(test_light_curves[unique_id][bandpass]['error'],
+                                          chunk_light_curves[unique_id][bandpass]['error'])
 
         # Now find all of the ObservationMetaData that were included in our
         # light curves, generate InstanceCatalogs from them separately,
@@ -488,7 +495,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
         for obs in obs_list:
             cat = agnControlCatalog(self.agn_db,
-                                        obs_metadata=obs)
+                                    obs_metadata=obs)
 
             for agn_obj in cat.iter_catalog():
                 lc = test_light_curves[agn_obj[0]][bandpass]
@@ -496,7 +503,6 @@ class AgnLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
-
 
     def test_multiband_light_curves(self):
         """
@@ -544,7 +550,6 @@ class AgnLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
 
 
-
 def suite():
     utilsTests.init()
     suites = []
@@ -553,7 +558,10 @@ def suite():
 
     return unittest.TestSuite(suites)
 
+
 def run(shouldExit = False):
     utilsTests.run(suite(), shouldExit)
+
+
 if __name__ == "__main__":
     run(True)
