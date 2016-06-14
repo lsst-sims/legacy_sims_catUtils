@@ -1,7 +1,6 @@
 from __future__ import print_function
 import numpy as np
 
-from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.catUtils.mixins import SNIaCatalog, PhotometryBase
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.catUtils.utils import LightCurveGenerator
@@ -13,7 +12,6 @@ from lsst.sims.photUtils import Sed, calcMagError_m5, BandpassDict
 import time
 
 __all__ = ["SNIaLightCurveGenerator"]
-
 
 
 class _sniaLightCurveCatalog(_baseLightCurveCatalog, SNIaCatalog, PhotometryBase):
@@ -39,10 +37,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         self.z_cutoff = 1.2
         super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
 
-
     class _filterCatalogClass(_sniaLightCurveCatalog):
         column_outputs = ["uniqueId", "t0"]
-
 
     def _light_curves_from_query(self, cat_dict, query_result, grp):
 
@@ -54,16 +50,16 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         for bp_name in cat_dict:
             self.lsstBandpassDict[bp_name].sbTophi()
             t_dict[bp_name] = np.array([obs.mjd.TAI for obs in grp
-                                        if obs.bandpass==bp_name])
+                                        if obs.bandpass == bp_name])
 
             m5_dict[bp_name] = np.array([obs.m5[bp_name] for obs in grp
-                                         if obs.bandpass==bp_name])
+                                         if obs.bandpass == bp_name])
 
             gamma_dict[bp_name] = np.array([calcGamma(self.lsstBandpassDict[bp_name],
                                                       obs.m5[obs.bandpass], self.phot_params)
-                                            for obs in grp if obs.bandpass==bp_name])
+                                            for obs in grp if obs.bandpass == bp_name])
 
-            if len(t_dict[bp_name])>0:
+            if len(t_dict[bp_name]) > 0:
                 local_t_min = t_dict[bp_name].min()
                 local_t_max = t_dict[bp_name].max()
                 if t_min is None or local_t_min < t_min:
@@ -82,8 +78,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
                 sn_t0 = self.sn_universe.drawFromT0Dist(sn_rng)
                 if sn[5] <= self.z_cutoff and np.isfinite(sn_t0) and \
-                sn_t0<t_max+cat.maxTimeSNVisible and \
-                sn_t0>t_min-cat.maxTimeSNVisible:
+                    sn_t0 < t_max + cat.maxTimeSNVisible and \
+                    sn_t0 > t_min - cat.maxTimeSNVisible:
 
                     sn_c = self.sn_universe.drawFromcDist(sn_rng)
                     sn_x1 = self.sn_universe.drawFromx1Dist(sn_rng)
@@ -96,34 +92,36 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                         m5_list = m5_dict[bp_name]
                         gamma_list = gamma_dict[bp_name]
                         bandpass = self.lsstBandpassDict[bp_name]
-                        if len(t_list)==0:
+                        if len(t_list) == 0:
                             continue
 
-                        if snobj.maxtime()>=t_list[0] and snobj.mintime()<=t_list[-1]:
-                            active_dexes = np.where(np.logical_and(t_list>=snobj.mintime(),
-                                                                   t_list<=snobj.maxtime()))
+                        if snobj.maxtime() >= t_list[0] and snobj.mintime() <= t_list[-1]:
+                            active_dexes = np.where(np.logical_and(t_list >= snobj.mintime(),
+                                                                   t_list <= snobj.maxtime()))
 
                             t_active = t_list[active_dexes]
                             m5_active = m5_list[active_dexes]
                             gamma_active = gamma_list[active_dexes]
 
-                            if len(t_active)>0:
-                                wave_ang = bandpass.wavelen * 10.0
-                                mask = np.logical_and(wave_ang>snobj.minwave(),
-                                                      wave_ang<snobj.maxwave())
+                            if len(t_active) > 0:
+                                wave_ang = bandpass.wavelen*10.0
+                                mask = np.logical_and(wave_ang > snobj.minwave(),
+                                                      wave_ang < snobj.maxwave())
 
                                 wave_ang = wave_ang[mask]
                                 snobj.set(mwebv=sn[6])
                                 sn_ff_buffer = snobj.flux(time=t_active, wave=wave_ang)*10.0
-                                flambda_grid = np.zeros((len(t_active),len(bandpass.wavelen)))
+                                flambda_grid = np.zeros((len(t_active), len(bandpass.wavelen)))
                                 for ff, ff_sn in zip(flambda_grid, sn_ff_buffer):
-                                    ff[mask] = np.where(ff_sn>0.0, ff_sn, 0.0)
+                                    ff[mask] = np.where(ff_sn > 0.0, ff_sn, 0.0)
 
                                 ss = Sed()
-                                fnu_grid = flambda_grid*bandpass.wavelen*bandpass.wavelen*ss._physParams.nm2m* \
+                                fnu_grid = flambda_grid*bandpass.wavelen* \
+                                           bandpass.wavelen*ss._physParams.nm2m* \
                                            ss._physParams.ergsetc2jansky/ss._physParams.lightspeed
 
-                                flux_list = (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
+                                flux_list = \
+                                (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
                                 flux_list = np.array(flux_list)
                                 ss = Sed()
@@ -134,7 +132,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                                                  m5_active[acceptable], self.phot_params,
                                                                  gamma=gamma_active[acceptable])
 
-                                if len(acceptable)>0:
+                                if len(acceptable) > 0:
 
                                     if sn[0] not in self.truth_dict:
                                         self.truth_dict[sn[0]] = {}
@@ -162,5 +160,5 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                     self.mag_dict[sn[0]][bp_name].append(mm)
                                     self.sig_dict[sn[0]][bp_name].append(ee)
 
-            print("chunk of ",len(chunk)," took ",time.time()-t_start_chunk)
+            print("chunk of ", len(chunk), " took ", time.time()-t_start_chunk)
 
