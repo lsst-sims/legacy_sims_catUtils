@@ -45,6 +45,8 @@ class agnControlCatalog(InstanceCatalog,
 
 class StellarLightCurveTest(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def setUpClass(cls):
         """
@@ -114,6 +116,31 @@ class StellarLightCurveTest(unittest.TestCase):
             os.unlink(cls.txt_name)
 
 
+    def test_get_pointings(self):
+       """
+       Test that the get_pointings method does, in fact, return ObservationMetaData
+       that are grouped appropriately.
+       """
+
+       raRange = (78.0, 89.0)
+       decRange = (-74.0, -60.0)
+       bandpass = 'g'
+
+       lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+
+       pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+       self.assertGreater(len(pointings), 1)
+
+       for group in pointings:
+           for ix, obs in enumerate(group):
+               self.assertAlmostEqual(obs.pointingRA, group[0].pointingRA, 12)
+               self.assertAlmostEqual(obs.pointingDec, group[0].pointingDec, 12)
+               self.assertEqual(obs.bandpass, bandpass)
+               if ix > 0:
+                   self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI, msg='ix is %d ' % ix)
+
+
     def test_stellar_light_curves(self):
         """
         Test the StellarLightCurveGenerator by generating some RR Lyrae light
@@ -128,7 +155,8 @@ class StellarLightCurveTest(unittest.TestCase):
 
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
-        test_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass)
+        test_light_curves = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
 
@@ -140,7 +168,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
-        chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass, chunk_size=1)
+        chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
@@ -184,9 +212,8 @@ class StellarLightCurveTest(unittest.TestCase):
         mjdRange = (49356.0, 49357.0)
 
         lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
-        test_light_curves = lc_gen.generate_light_curves(raRange, decRange,
-                                                         bandpass,
-                                                         expMJD=mjdRange)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass, expMJD=mjdRange)
+        test_light_curves = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2)
 
@@ -200,8 +227,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
-        chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass,
-                                                          expMJD=mjdRange, chunk_size=1)
+        chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
@@ -349,7 +375,8 @@ class AgnLightCurveTest(unittest.TestCase):
 
 
         lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
-        test_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass)
+        test_light_curves = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2) # make sure we got some light curves
 
@@ -361,7 +388,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
         # Now test that specifying a small chunk_size does not change the output
         # light curves
-        chunk_light_curves = lc_gen.generate_light_curves(raRange, decRange, bandpass, chunk_size=1)
+        chunk_light_curves = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id]['mjd']), len(chunk_light_curves[unique_id]['mjd']))
