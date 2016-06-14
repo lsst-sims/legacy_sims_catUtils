@@ -45,8 +45,6 @@ class agnControlCatalog(InstanceCatalog,
 
 class StellarLightCurveTest(unittest.TestCase):
 
-    longMessage = True
-
     @classmethod
     def setUpClass(cls):
         """
@@ -138,7 +136,7 @@ class StellarLightCurveTest(unittest.TestCase):
                self.assertAlmostEqual(obs.pointingDec, group[0].pointingDec, 12)
                self.assertEqual(obs.bandpass, bandpass)
                if ix > 0:
-                   self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI, msg='ix is %d ' % ix)
+                   self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
 
 
     def test_stellar_light_curves(self):
