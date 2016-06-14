@@ -46,16 +46,35 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
     def _light_curves_from_query(self, cat_dict, query_result, grp):
 
-        bandpass_name = grp[0].bandpass
-        bandpass = self.lsstBandpassDict[bandpass_name]
-        cat = cat_dict[bandpass_name]
-        bandpass.sbTophi()
-        t_list = np.array([obs.mjd.TAI for obs in grp])
+        t_dict = {}
+        gamma_dict = {}
+        m5_dict = {}
+        t_min = None
+        t_max = None
+        for bp_name in cat_dict:
+            self.lsstBandpassDict[bp_name].sbTophi()
+            t_dict[bp_name] = np.array([obs.mjd.TAI for obs in grp
+                                        if obs.bandpass==bp_name])
 
-        gamma_list = np.array([calcGamma(bandpass, obs.m5[obs.bandpass], self.phot_params)
-                               for obs in grp])
+            m5_dict[bp_name] = np.array([obs.m5[bp_name] for obs in grp
+                                         if obs.bandpass==bp_name])
+
+            gamma_dict[bp_name] = np.array([calcGamma(self.lsstBandpassDict[bp_name],
+                                                      obs.m5[obs.bandpass], self.phot_params)
+                                            for obs in grp if obs.bandpass==bp_name])
+
+            if len(t_dict[bp_name])>0:
+                local_t_min = t_dict[bp_name].min()
+                local_t_max = t_dict[bp_name].max()
+                if t_min is None or local_t_min < t_min:
+                    t_min = local_t_min
+
+                if t_max is None or local_t_max > t_max:
+                    t_max = local_t_max
 
         snobj = SNObject()
+
+        cat = cat_dict[cat_dict.keys()[0]]  # does not need to be associated with a bandpass
 
         for chunk in query_result:
             t_start_chunk = time.clock()
@@ -63,8 +82,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
                 sn_t0 = self.sn_universe.drawFromT0Dist(sn_rng)
                 if sn[5] <= self.z_cutoff and np.isfinite(sn_t0) and \
-                sn_t0<t_list[-1]+cat.maxTimeSNVisible and \
-                sn_t0>t_list[0]-cat.maxTimeSNVisible:
+                sn_t0<t_max+cat.maxTimeSNVisible and \
+                sn_t0>t_min-cat.maxTimeSNVisible:
 
                     sn_c = self.sn_universe.drawFromcDist(sn_rng)
                     sn_x1 = self.sn_universe.drawFromx1Dist(sn_rng)
@@ -72,58 +91,66 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
                     snobj.set(t0=sn_t0, c=sn_c, x1=sn_x1, x0=sn_x0, z=sn[5])
 
-                    if snobj.maxtime()>=t_list[0] and snobj.mintime()<=t_list[-1]:
-                        active_dexes = np.where(np.logical_and(t_list>=snobj.mintime(),
-                                                               t_list<=snobj.maxtime()))
+                    for bp_name in cat_dict:
+                        t_list = t_dict[bp_name]
+                        m5_list = m5_dict[bp_name]
+                        gamma_list = gamma_dict[bp_name]
+                        bandpass = self.lsstBandpassDict[bp_name]
+                        if len(t_list)==0:
+                            continue
 
-                        t_active = t_list[active_dexes]
-                        m5_active = np.array([obs.m5[obs.bandpass] for obs in grp])[active_dexes]
-                        gamma_active = gamma_list[active_dexes]
+                        if snobj.maxtime()>=t_list[0] and snobj.mintime()<=t_list[-1]:
+                            active_dexes = np.where(np.logical_and(t_list>=snobj.mintime(),
+                                                                   t_list<=snobj.maxtime()))
 
-                        if len(t_active)>0:
-                            wave_ang = bandpass.wavelen * 10.0
-                            mask = np.logical_and(wave_ang>snobj.minwave(),
-                                                  wave_ang<snobj.maxwave())
+                            t_active = t_list[active_dexes]
+                            m5_active = m5_list[active_dexes]
+                            gamma_active = gamma_list[active_dexes]
 
-                            wave_ang = wave_ang[mask]
-                            snobj.set(mwebv=sn[6])
-                            sn_ff_buffer = snobj.flux(time=t_active, wave=wave_ang)*10.0
-                            flambda_grid = np.zeros((len(t_active),len(bandpass.wavelen)))
-                            for ff, ff_sn in zip(flambda_grid, sn_ff_buffer):
-                                ff[mask] = np.where(ff_sn>0.0, ff_sn, 0.0)
+                            if len(t_active)>0:
+                                wave_ang = bandpass.wavelen * 10.0
+                                mask = np.logical_and(wave_ang>snobj.minwave(),
+                                                      wave_ang<snobj.maxwave())
 
-                            ss = Sed()
-                            fnu_grid = flambda_grid*bandpass.wavelen*bandpass.wavelen*ss._physParams.nm2m* \
-                                       ss._physParams.ergsetc2jansky/ss._physParams.lightspeed
+                                wave_ang = wave_ang[mask]
+                                snobj.set(mwebv=sn[6])
+                                sn_ff_buffer = snobj.flux(time=t_active, wave=wave_ang)*10.0
+                                flambda_grid = np.zeros((len(t_active),len(bandpass.wavelen)))
+                                for ff, ff_sn in zip(flambda_grid, sn_ff_buffer):
+                                    ff[mask] = np.where(ff_sn>0.0, ff_sn, 0.0)
 
-                            flux_list = (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
+                                ss = Sed()
+                                fnu_grid = flambda_grid*bandpass.wavelen*bandpass.wavelen*ss._physParams.nm2m* \
+                                           ss._physParams.ergsetc2jansky/ss._physParams.lightspeed
 
-                            flux_list = np.array(flux_list)
-                            ss = Sed()
-                            mag_list = ss.magFromFlux(flux_list)
+                                flux_list = (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
-                            acceptable = np.where(np.isfinite(mag_list))
-                            mag_error_list = calcMagError_m5(mag_list[acceptable], bandpass,
-                                                             m5_active[acceptable], self.phot_params,
-                                                             gamma=gamma_active[acceptable])
+                                flux_list = np.array(flux_list)
+                                ss = Sed()
+                                mag_list = ss.magFromFlux(flux_list)
 
-                            if len(acceptable)>0:
-                                if sn[0] not in self.mjd_dict:
-                                    self.mjd_dict[sn[0]] = {}
-                                    self.mag_dict[sn[0]] = {}
-                                    self.sig_dict[sn[0]] = {}
+                                acceptable = np.where(np.isfinite(mag_list))
+                                mag_error_list = calcMagError_m5(mag_list[acceptable], bandpass,
+                                                                 m5_active[acceptable], self.phot_params,
+                                                                 gamma=gamma_active[acceptable])
 
-                                if bandpass_name not in self.mjd_dict[sn[0]]:
-                                    self.mjd_dict[sn[0]][bandpass_name] = []
-                                    self.mag_dict[sn[0]][bandpass_name] = []
-                                    self.sig_dict[sn[0]][bandpass_name] = []
+                                if len(acceptable)>0:
+                                    if sn[0] not in self.mjd_dict:
+                                        self.mjd_dict[sn[0]] = {}
+                                        self.mag_dict[sn[0]] = {}
+                                        self.sig_dict[sn[0]] = {}
 
-                            for tt, mm, ee in zip(t_active[acceptable], mag_list[acceptable],
-                                                  mag_error_list[0]):
+                                    if bp_name not in self.mjd_dict[sn[0]]:
+                                        self.mjd_dict[sn[0]][bp_name] = []
+                                        self.mag_dict[sn[0]][bp_name] = []
+                                        self.sig_dict[sn[0]][bp_name] = []
 
-                                self.mjd_dict[sn[0]][bandpass_name].append(tt)
-                                self.mag_dict[sn[0]][bandpass_name].append(mm)
-                                self.sig_dict[sn[0]][bandpass_name].append(ee)
+                                for tt, mm, ee in zip(t_active[acceptable], mag_list[acceptable],
+                                                      mag_error_list[0]):
+
+                                    self.mjd_dict[sn[0]][bp_name].append(tt)
+                                    self.mag_dict[sn[0]][bp_name].append(mm)
+                                    self.sig_dict[sn[0]][bp_name].append(ee)
 
             print("chunk of ",len(chunk)," took ",time.clock()-t_start_chunk)
 
