@@ -738,7 +738,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         gen.sn_universe._midSurveyTime=49000.0
         gen.sn_universe._snFrequency=0.001
         self.assertGreater(len(pointings), 1)
-        lc_dict = gen.light_curves_from_pointings(pointings)
+        lc_dict, truth = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
 
         for group in pointings:
@@ -772,7 +772,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         gen.sn_universe._midSurveyTime=49000.0
         gen.sn_universe._snFrequency=0.001
         self.assertGreater(len(pointings), 1)
-        lc_dict = gen.light_curves_from_pointings(pointings)
+        lc_dict, truth = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
 
         over_z = 0
@@ -811,7 +811,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         gen.sn_universe._midSurveyTime=49000.0
         gen.sn_universe._snFrequency=0.001
         self.assertGreater(len(pointings), 1)
-        lc_dict = gen.light_curves_from_pointings(pointings)
+        lc_dict, truth = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')

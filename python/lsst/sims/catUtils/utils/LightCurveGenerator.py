@@ -5,7 +5,7 @@ import copy
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
+from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
 from lsst.sims.utils import haversine
 
 import time
@@ -22,7 +22,8 @@ class _baseLightCurveCatalog(InstanceCatalog):
     """
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000",
-                      "lightCurveMag", "sigma_lightCurveMag"]
+                      "lightCurveMag", "sigma_lightCurveMag",
+                      "truthInfo"]
 
     def iter_catalog(self, chunk_size=None, query_cache=None):
         """
@@ -63,6 +64,11 @@ class _baseLightCurveCatalog(InstanceCatalog):
                 # values calculated using this catalogs getter methods
                 for line in zip(*chunk_cols):
                     yield line
+
+
+    @cached
+    def get_truthInfo(self):
+        return self.column_by_name('varParamStr')
 
 
 class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, PhotometryStars):
@@ -341,6 +347,9 @@ class LightCurveGenerator(object):
 
                         if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
 
+                            if star_obj[0] not in self.truth_dict:
+                                self.truth_dict[star_obj[0]] = star_obj[5]
+
                             if star_obj[0] not in self.mjd_dict:
                                 self.mjd_dict[star_obj[0]] = {}
                                 self.mag_dict[star_obj[0]] = {}
@@ -396,6 +405,12 @@ class LightCurveGenerator(object):
         output[111]['u']['error'] is a numpy array of the magnitude uncertainties
         of object 111 in the u band.
 
+        And a dict of truth data for each of the objects (again, keyed on
+        uniqueId).  The contents of this dict will vary, depending on the
+        variability model being used, but should be sufficient to reconstruct
+        the actual light curves 'by hand' if necessary (or determine the true
+        period of a variable source, if attempting to evaluate the performance
+        of a classification scheme against a proposed observing cadence).
         """
 
         # First get the list of ObservationMetaData objects corresponding
@@ -405,6 +420,7 @@ class LightCurveGenerator(object):
         self.mag_dict = {}
         self.sig_dict = {}
         self.band_dict = {}
+        self.truth_dict = {}
 
         t_start = time.time()
         print('starting light curve generation')
@@ -453,7 +469,7 @@ class LightCurveGenerator(object):
                 output_dict[unique_id][bp]['error'] = np.array(self.sig_dict[unique_id][bp])[mjd_dexes]
 
         print('that took %e; grps %d' % (time.time()-t_start, len(pointings)))
-        return output_dict
+        return output_dict, self.truth_dict
 
 
 class StellarLightCurveGenerator(LightCurveGenerator):
