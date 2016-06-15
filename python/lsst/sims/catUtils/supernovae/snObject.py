@@ -460,9 +460,9 @@ class SNObject(sncosmo.Model):
                              'should be greater than 0.')
 
         # Find the current value of the rest frame BessellB AB magnitude
-        peakAbsMag = self.source_peakabsmag('BessellB', 'AB')
+        peakAbsMag = self.source_peakabsmag('BessellB', 'AB', cosmo=cosmo)
         self.set(z=z)
-        self.set_source_peakabsmag(peakAbsMag, 'BessellB', 'AB', cosmo)
+        self.set_source_peakabsmag(peakAbsMag, 'BessellB', 'AB', cosmo=cosmo)
         return
 
 
