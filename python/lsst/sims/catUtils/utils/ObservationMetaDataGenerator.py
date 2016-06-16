@@ -118,10 +118,11 @@ class ObservationMetaDataGenerator(object):
         dtypeList = []
         self.baseQuery = 'SELECT'
         for column in self.columnMapping:
-            dtypeList.append((column[1],column[3]))
-            if self.baseQuery != 'SELECT':
-                self.baseQuery += ','
-            self.baseQuery += ' ' + column[1]
+            if column[1] in summary_columns:
+                dtypeList.append((column[1],column[3]))
+                if self.baseQuery != 'SELECT':
+                    self.baseQuery += ','
+                self.baseQuery += ' ' + column[1]
 
         self.dtype = numpy.dtype(dtypeList)
 
