@@ -145,7 +145,6 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 flux_list = \
                                 (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
-                                flux_list = np.array(flux_list)
                                 mag_list = dummy_sed.magFromFlux(flux_list)
 
                                 acceptable = np.where(np.isfinite(mag_list))
