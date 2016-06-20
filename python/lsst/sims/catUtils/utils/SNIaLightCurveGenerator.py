@@ -7,7 +7,7 @@ from lsst.sims.catUtils.utils import LightCurveGenerator
 
 from lsst.sims.catUtils.supernovae import SNObject, SNUniverse
 from lsst.sims.photUtils import PhotometricParameters, calcGamma
-from lsst.sims.photUtils import Sed, calcMagError_m5, BandpassDict
+from lsst.sims.photUtils import Sed, calcSNR_m5, BandpassDict
 
 import time
 
@@ -27,6 +27,9 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
     This class will find all of the OpSim pointings in a particular region
     of the sky in a particular filter and then return light curves for all
     of the supernovae observed in that region of sky.
+
+    Note: in this case, the method light_curves_from_pointings returns
+    fluxes and flux errors in maggies.
 
     Input parameters:
     -----------------
@@ -50,6 +53,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         self.sn_universe = SNUniverse()
         self.sn_universe.suppressDimSN = False
         self.z_cutoff = 1.2
+        self._brightness_name = 'flux'
         super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
 
     class _filterCatalogClass(_sniaLightCurveCatalog):
@@ -145,12 +149,13 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 flux_list = \
                                 (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
-                                mag_list = dummy_sed.magFromFlux(flux_list)
+                                acceptable = np.where(flux_list>0.0)
 
-                                acceptable = np.where(np.isfinite(mag_list))
-                                mag_error_list = calcMagError_m5(mag_list[acceptable], bandpass,
-                                                                 m5_active[acceptable], self.phot_params,
-                                                                 gamma=gamma_active[acceptable])
+                                flux_error_list = flux_list[acceptable]/ \
+                                                  calcSNR_m5(dummy_sed.magFromFlux(flux_list[acceptable]),
+                                                             bandpass,
+                                                             m5_active[acceptable], self.phot_params,
+                                                             gamma=gamma_active[acceptable])
 
                                 if len(acceptable) > 0:
 
@@ -173,12 +178,12 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                         self.bright_dict[sn[0]][bp_name] = []
                                         self.sig_dict[sn[0]][bp_name] = []
 
-                                for tt, mm, ee in zip(t_active[acceptable], mag_list[acceptable],
-                                                      mag_error_list[0]):
+                                for tt, ff, ee in zip(t_active[acceptable], flux_list[acceptable],
+                                                      flux_error_list[0]):
 
                                     self.mjd_dict[sn[0]][bp_name].append(tt)
-                                    self.bright_dict[sn[0]][bp_name].append(mm)
-                                    self.sig_dict[sn[0]][bp_name].append(ee)
+                                    self.bright_dict[sn[0]][bp_name].append(ff/3631.0)
+                                    self.sig_dict[sn[0]][bp_name].append(ee/3631.0)
 
             print("chunk of ", len(chunk), " took ", time.time()-t_start_chunk)
 
