@@ -61,7 +61,7 @@ class SNUniverse(object):
         properties of the survey, but will change the exact SN we find.
         '''
         if not hasattr(self, '_midSurveyTime'):
-            midSurveyTime_default = 570000.0
+            midSurveyTime_default = 61406.5
             self._midSurveyTime = midSurveyTime_default
         return self._midSurveyTime
 
@@ -128,6 +128,12 @@ class SNUniverse(object):
             vals[i, :] = self.drawSNParams(hostid[i], hostmu[i])
         
         return vals
+
+    def getSN_rng(self, hostid):
+        hostid = hostid % 4294967295
+        rng = np.random.RandomState(hostid)
+        return rng
+
     def drawSNParams(self, hostid, hostmu):
         """
         return the SALT2 parameters c, x1, x0, t0 for a SN with a particular
@@ -139,38 +145,40 @@ class SNUniverse(object):
 
         hostmu: float, mandatory
         """
-        hostid = hostid % 4294967295
-        np.random.seed(hostid)
-        t0val = self.drawFromT0Dist() 
+        rng = self.getSN_rng(hostid)
+        t0val = self.drawFromT0Dist(rng) 
         if t0val is self.badvalues:
             return [self.badvalues]*4
         else:
-            cval = self.drawFromcDist()
-            x1val = self.drawFromx1Dist()
-            x0val = self.drawFromX0Dist(x1val, cval, hostmu=hostmu)
+            cval = self.drawFromcDist(rng)
+            x1val = self.drawFromx1Dist(rng)
+            x0val = self.drawFromX0Dist(rng, x1val, cval, hostmu=hostmu)
         return [cval, x1val, x0val, t0val]
 
 
 
                     
             
-    def drawFromx1Dist(self, **hostParams):
+    def drawFromx1Dist(self, rng, **hostParams):
         """
+        rng is an instantiation of np.random.RandomState
         """
-        return np.random.normal(0. , 1.0) 
+        return rng.normal(0. , 1.0) 
 
-    def drawFromcDist(self, **hostParams):
+    def drawFromcDist(self, rng, **hostParams):
         """
+        rng is an instantiation of np.random.RandomState
         """
-        return np.random.normal(0. , 0.1) 
+        return rng.normal(0. , 0.1) 
     
-    def drawFromX0Dist(self, x1val, cval, hostmu, **hostParams):
+    def drawFromX0Dist(self, rng, x1val, cval, hostmu, **hostParams):
         """
+        rng is an instantiation of np.random.RandomState
         """
         import snObject
 
         # First draw an absolute BessellB magnitude for SN
-        mabs = np.random.normal(-19.3, 0.3)
+        mabs = rng.normal(-19.3, 0.3)
         mag = mabs + hostmu
 
         sn = snObject.SNObject()
@@ -180,17 +188,18 @@ class SNUniverse(object):
         
         return x0val
 
-    def drawFromT0Dist(self, **hostParams):
+    def drawFromT0Dist(self, rng, **hostParams):
         '''
         Distribution function of the time of peak of SN
 
+        rng is an instantiation of np.random.RandomState
         '''
 
         # Will not use hostid for now, but this is there so that 
         # later on one could obtain z, hostmass etc. This is useful to obtain
         # z and host dependent SN Frequency
         hundredyear = 1.0 / self.snFrequency
-        t0val = np.random.uniform(-hundredyear / 2.0 + self.midSurveyTime, 
+        t0val = rng.uniform(-hundredyear / 2.0 + self.midSurveyTime, 
                            hundredyear / 2.0 + self.midSurveyTime)
 
         if self.suppressDimSN:

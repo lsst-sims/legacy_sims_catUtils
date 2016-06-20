@@ -20,17 +20,19 @@ import unittest
 
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
+from lsst.utils import getPackageDir
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.generation.db import CatalogDBObject, fileDBObject
 import eups
 
 # Routines Being Tested
 from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
+from lsst.sims.catUtils.utils import SNIaLightCurveGenerator
 
 # External packages used
 # import pandas as pd
@@ -353,7 +355,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         # self.catalogList = self._writeManySNCatalogs()
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
-                                obs_metadata=cls.obsMetaDataResults[12],
+                                obs_metadata=cls.obsMetaDataResults[6],
                                 column_outputs=['t0', 'flux_u', 'flux_g', \
                                                 'flux_r', 'flux_i', 'flux_z',\
                                                 'flux_y', 'mag_u', 'mag_g',\
@@ -670,11 +672,193 @@ class SNIaCatalog_tests(unittest.TestCase):
         return s
 
 
+class SNIaLightCurveControlCatalog(SNIaCatalog):
+
+    column_outputs = ['uniqueId', 'flux', 'flux_err', 'redshift']
+    _midSurveyTime = 49000.0
+    _snFrequency = 0.001
+
+class SNIaLightCurveTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        rng = np.random.RandomState(99)
+        n_sne=100
+        ra_list = rng.random_sample(n_sne)*7.0+78.0
+        dec_list = rng.random_sample(n_sne)*4.0 - 69.0
+        zz_list = rng.random_sample(n_sne)*1.0+0.05
+
+        cls.input_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
+        cls.input_cat_name = os.path.join(cls.input_cat_name, "scratchSpace", "sne_input_cat.txt")
+
+        with open(cls.input_cat_name,"w") as output_file:
+            for ix in range(n_sne):
+                output_file.write("%d;%.12f;%.12f;%.12f;%.12f;%.12f\n"
+                % (ix+1, ra_list[ix], dec_list[ix],
+                   np.radians(ra_list[ix]), np.radians(dec_list[ix]),
+                   zz_list[ix]))
+
+        dtype=np.dtype([('id', np.int),
+                        ('raDeg', np.float), ('decDeg', np.float),
+                        ('raJ2000', np.float), ('decJ2000', np.float),
+                        ('redshift', np.float)])
+
+        cls.db = fileDBObject(cls.input_cat_name, delimiter=';',
+                              runtable='test', dtype=dtype,
+                              idColKey='id')
+
+        cls.db.raColName = 'raDeg'
+        cls.db.decColName = 'decDeg'
+        cls.db.objectTypeId = 873
+
+        cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
+        cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
+
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.input_cat_name):
+            os.unlink(cls.input_cat_name)
+
+
+    def test_sne_light_curves(self):
+        """
+        Generate some super nova light curves.  Verify that they come up with the same
+        magnitudes and uncertainties as supernova catalogs.
+        """
+
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'r'
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
+        self.assertGreater(len(pointings), 1)
+        lc_dict, truth = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 0)
+
+        for group in pointings:
+            self.assertGreater(len(group), 1)
+            for obs in group:
+                cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+                for sn in cat.iter_catalog():
+                    if sn[1]>0.0:
+                        lc = lc_dict[sn[0]][bandpass]
+                        dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                        self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                        self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
+                        self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+    def test_sne_light_curves_z_cut(self):
+        """
+        Generate some super nova light curves.  Add a cutoff in redshift.
+        Verify that they come up with the same magnitudes and uncertainties
+        as supernova catalogs and that objects with z>z_cutoff are not returned.
+        """
+        z_cut = 0.9
+
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+        gen.z_cutoff = z_cut
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'r'
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
+        self.assertGreater(len(pointings), 1)
+        lc_dict, truth = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 0)
+
+        over_z = 0
+
+        for group in pointings:
+            self.assertGreater(len(group), 1)
+            for obs in group:
+                cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+                for sn in cat.iter_catalog():
+                    if sn[1]>0.0:
+                        if sn[3]>z_cut:
+                            self.assertNotIn(sn[0], lc_dict)
+                            over_z += 1
+                        else:
+                            lc = lc_dict[sn[0]][bandpass]
+                            dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                            self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                            self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
+                            self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7,msg='%e vs %e' % (lc['error'][dex],sn[2]))
+
+        self.assertGreater(over_z, 0)
+
+
+    def test_sne_multiband_light_curves(self):
+        """
+        Generate some super nova light curves.  Verify that they come up with the same
+        magnitudes and uncertainties as supernova catalogs.  Use multiband light curves.
+        """
+
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass=('r', 'z'))
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
+        self.assertGreater(len(pointings), 1)
+        lc_dict, truth = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 0)
+
+        obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
+        control_obs_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                       telescopeFilter='r', boundLength=1.75)
+
+        control_obs_z = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
+                                                       telescopeFilter='z', boundLength=1.75)
+
+        self.assertGreater(len(control_obs_r), 0)
+        self.assertGreater(len(control_obs_z), 0)
+
+        ct_r = 0
+        for obs in control_obs_r:
+            cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+            for sn in cat.iter_catalog():
+                if sn[1]>0.0:
+                    ct_r += 1
+                    lc = lc_dict[sn[0]]['r']
+                    dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                    self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                    self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
+                    self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+        self.assertGreater(ct_r, 0)
+
+        ct_z = 0
+        for obs in control_obs_z:
+            cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
+            for sn in cat.iter_catalog():
+                if sn[1]>0.0:
+                    ct_z += 1
+                    lc = lc_dict[sn[0]]['z']
+                    dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
+                    self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
+                    self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
+                    self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+
+        self.assertGreater(ct_z, 0)
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(SNObject_tests)
     suites += unittest.makeSuite(SNIaCatalog_tests)
+    suites += unittest.makeSuite(SNIaLightCurveTest)
     return unittest.TestSuite(suites)
 
 

@@ -12,6 +12,8 @@ from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 
+from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
+
 def makeMflareTable(size=10, **kwargs):
     """
     Make a test database to serve information to the flare test
@@ -615,10 +617,69 @@ class VariabilityTest(unittest.TestCase):
         if os.path.exists('agnTestCatalog.dat'):
             os.unlink('agnTestCatalog.dat')
 
+
+class AgnCacheTest(unittest.TestCase):
+
+    def test_agn_caching(self):
+        """
+        Test that the light curve caching in applyAgn does not change
+        the outcomes of the delta_mag calculations.  We will do this
+        by simulating the same AGN twice: once using caching, once resetting
+        the cache after every time step.  We will then verify that the two sets
+        of outputs are identical.
+        """
+
+        rng = numpy.random.RandomState(8374)
+
+        var = Variability()
+
+        nn = 5
+        seed_list = rng.random_integers(0,20000,nn)
+        toff_list = rng.random_sample(nn)*10000.0+40000.0
+        sfz_list = rng.random_sample(nn)*2.0
+        sfu_list = rng.random_sample(nn)*2.0
+        sfg_list = rng.random_sample(nn)*2.0
+        sfr_list = rng.random_sample(nn)*2.0
+        sfi_list = rng.random_sample(nn)*2.0
+        sfy_list = rng.random_sample(nn)*2.0
+        tau_list = rng.random_sample(nn)*20.0+20.0
+
+        param_list = []
+        for ix in range(nn):
+            params = {'agn_sfu':sfu_list[ix], 'agn_sfg':sfg_list[ix],
+                      'agn_sfr':sfr_list[ix], 'agn_sfi':sfi_list[ix],
+                      'agn_sfz':sfz_list[ix], 'agn_sfy':sfy_list[ix],
+                      't0_mjd':toff_list[ix], 'agn_tau':tau_list[ix],
+                      'seed':seed_list[ix]}
+            param_list.append(params)
+
+        mjd_list = rng.random_sample(100)*10000.0+50000.0
+        mjd_list = numpy.sort(mjd_list)
+
+        caching_output = []
+
+        for mjd in mjd_list:
+            for pp in param_list:
+                dd = var.applyAgn(pp, mjd)
+                for kk in dd:
+                    caching_output.append(dd[kk])
+
+        uncached_output = []
+        for mjd in mjd_list:
+            for pp in param_list:
+                reset_agn_lc_cache()
+                dd = var.applyAgn(pp, mjd)
+                for kk in dd:
+                    uncached_output.append(dd[kk])
+
+        numpy.testing.assert_array_almost_equal(numpy.array(caching_output), numpy.array(uncached_output), decimal=10)
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(VariabilityTest)
+    suites += unittest.makeSuite(AgnCacheTest)
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 

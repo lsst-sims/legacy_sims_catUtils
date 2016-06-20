@@ -23,6 +23,10 @@ import sncosmo
 __all__ = ['SNObject']
 
 
+_sn_ax_cache = None
+_sn_bx_cache = None
+_sn_ax_bx_wavelen = None
+
 class SNObject(sncosmo.Model):
 
     """
@@ -520,7 +524,20 @@ class SNObject(sncosmo.Model):
             return SEDfromSNcosmo
 
         # Apply LSST extinction
-        ax, bx = SEDfromSNcosmo.setupCCMab()
+        global _sn_ax_cache
+        global _sn_bx_cache
+        global _sn_ax_bx_wavelen
+        if _sn_ax_bx_wavelen is None \
+        or len(wavelen)!=len(_sn_ax_bx_wavelen) \
+        or (wavelen!=_sn_ax_bx_wavelen).any():
+
+            ax, bx = SEDfromSNcosmo.setupCCMab()
+            _sn_ax_cache = ax
+            _sn_bx_cache = bx
+            _sn_ax_bx_wavelen = np.copy(wavelen)
+        else:
+            ax = _sn_ax_cache
+            bx = _sn_bx_cache
 
         if self.ebvofMW is None:
             raise ValueError('ebvofMW attribute cannot be None Type and must'

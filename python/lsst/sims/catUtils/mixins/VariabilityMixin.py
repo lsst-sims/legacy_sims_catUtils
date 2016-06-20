@@ -2,13 +2,28 @@ import numpy
 import linecache
 import math
 import os
+import copy
 import json as json
 from lsst.sims.catalogs.measures.instance import register_class, register_method, compound
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-__all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies"]
+__all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
+           "reset_agn_lc_cache"]
+
+_AGN_LC_CACHE = {} # a global cache of agn light curve calculations
+
+
+def reset_agn_lc_cache():
+    """
+    Resets the _AGN_LC_CACHE (a global dict for cacheing time steps in AGN
+    light curves) to an empty dict.
+    """
+    global _AGN_LC_CACHE
+    _AGN_LC_CACHE = {}
+    return None
+
 
 @register_class
 class Variability(object):
@@ -225,9 +240,11 @@ class Variability(object):
 
 
     @register_method('applyAgn')
-    def applyAgn(self, params, expmjd_in):
+    def applyAgn(self, params, expmjd):
+
+        global _AGN_LC_CACHE
+
         dMags = {}
-        expmjd = numpy.asarray(expmjd_in,dtype=float)
         toff = numpy.float(params['t0_mjd'])
         seed = int(params['seed'])
         sfint = {}
@@ -238,32 +255,78 @@ class Variability(object):
         sfint['z'] = params['agn_sfz']
         sfint['y'] = params['agn_sfy']
         tau = params['agn_tau']
-        epochs = expmjd - toff
-        if epochs.min() < 0:
+
+        # A string made up of this AGNs variability parameters that ought
+        # to uniquely identify it.
+        #
+        agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
+        %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
+          sfint['y'], tau, toff)
+
+        resumption = False
+
+        # Check to see if this AGN has already been simulated.
+        # If it has, see if the previously simulated MJD is
+        # earlier than the first requested MJD.  If so,
+        # use that previous simulation as the starting point.
+        #
+        if agn_ID in _AGN_LC_CACHE:
+            if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd:
+                resumption = True
+
+        if resumption:
+            rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
+            start_date = _AGN_LC_CACHE[agn_ID]['mjd']
+            dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
+        else:
+            start_date = toff
+            rng = numpy.random.RandomState(seed)
+            dx_0 = {}
+            for k in sfint:
+                dx_0[k]=0.0
+
+        endepoch = expmjd - start_date
+
+        if endepoch < 0:
             raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
                                "Not applying variability. "+
                                "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
                                "in applyAgn variability method")
 
-        endepoch = epochs.max()
-
         dt = tau/100.
         nbins = int(math.ceil(endepoch/dt))
-        dt = (endepoch/nbins)/tau
-        sdt = math.sqrt(dt)
-        numpy.random.seed(seed=seed)
-        es = numpy.random.normal(0., 1., nbins)
+
+        x1 = (nbins-1)*dt
+        x2 = (nbins)*dt
+
+        dt = dt/tau
+        es = rng.normal(0., 1., nbins)*math.sqrt(dt)
+        dx_cached = {}
+
         for k in sfint.keys():
-            dx = numpy.zeros(nbins+1)
-            dx[0] = 0.
+            dx2 = dx_0[k]
             for i in range(nbins):
                 #The second term differs from Zeljko's equation by sqrt(2.)
                 #because he assumes stdev = sfint/sqrt(2)
-                dx[i+1] = -dx[i]*dt + sfint[k]*es[i]*sdt + dx[i]
-            x = numpy.linspace(0, endepoch, nbins+1)
-            intdx = interp1d(x, dx)
-            magoff = intdx(epochs)
-            dMags[k] = magoff
+                dx1 = dx2
+                dx2 = -dx1*dt + sfint[k]*es[i] + dx1
+
+            dx_cached[k] = dx2
+            dMags[k] = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+
+        # Reset that AGN light curve cache once it contains
+        # one million objects (to prevent it from taking up
+        # too much memory).
+        if len(_AGN_LC_CACHE)>1000000:
+            reset_agn_lc_cache()
+
+        if agn_ID not in _AGN_LC_CACHE:
+            _AGN_LC_CACHE[agn_ID] = {}
+
+        _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
+        _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
+        _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
+
         return dMags
 
     @register_method('applyAmcvn')
