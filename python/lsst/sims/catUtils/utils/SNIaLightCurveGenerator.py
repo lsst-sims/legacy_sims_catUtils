@@ -64,17 +64,23 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         t_max = None
         for bp_name in cat_dict:
             self.lsstBandpassDict[bp_name].sbTophi()
-            t_dict[bp_name] = np.array([obs.mjd.TAI for obs in grp
-                                        if obs.bandpass == bp_name])
 
-            m5_dict[bp_name] = np.array([obs.m5[bp_name] for obs in grp
-                                         if obs.bandpass == bp_name])
+            # generate a 2-D numpy array containing MJDs, m5, and photometric gamma values
+            # for each observation in the given bandpass
+            raw_array = np.array([[obs.mjd.TAI, obs.m5[bp_name],
+                                   calcGamma(self.lsstBandpassDict[bp_name],
+                                             obs.m5[obs.bandpass],
+                                             self.phot_params)]
+                                  for obs in grp if obs.bandpass == bp_name]).transpose()
 
-            gamma_dict[bp_name] = np.array([calcGamma(self.lsstBandpassDict[bp_name],
-                                                      obs.m5[obs.bandpass], self.phot_params)
-                                            for obs in grp if obs.bandpass == bp_name])
+            if len(raw_array) > 0:
 
-            if len(t_dict[bp_name]) > 0:
+                t_dict[bp_name] = raw_array[0]
+
+                m5_dict[bp_name] = raw_array[1]
+
+                gamma_dict[bp_name] = raw_array[2]
+
                 local_t_min = t_dict[bp_name].min()
                 local_t_max = t_dict[bp_name].max()
                 if t_min is None or local_t_min < t_min:
@@ -102,7 +108,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
                     snobj.set(t0=sn_t0, c=sn_c, x1=sn_x1, x0=sn_x0, z=sn[5])
 
-                    for bp_name in cat_dict:
+                    for bp_name in t_dict:
                         t_list = t_dict[bp_name]
                         m5_list = m5_dict[bp_name]
                         gamma_list = gamma_dict[bp_name]
