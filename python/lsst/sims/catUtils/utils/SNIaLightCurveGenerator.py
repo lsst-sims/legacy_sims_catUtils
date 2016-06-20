@@ -165,19 +165,19 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
                                     if sn[0] not in self.mjd_dict:
                                         self.mjd_dict[sn[0]] = {}
-                                        self.mag_dict[sn[0]] = {}
+                                        self.bright_dict[sn[0]] = {}
                                         self.sig_dict[sn[0]] = {}
 
                                     if bp_name not in self.mjd_dict[sn[0]]:
                                         self.mjd_dict[sn[0]][bp_name] = []
-                                        self.mag_dict[sn[0]][bp_name] = []
+                                        self.bright_dict[sn[0]][bp_name] = []
                                         self.sig_dict[sn[0]][bp_name] = []
 
                                 for tt, mm, ee in zip(t_active[acceptable], mag_list[acceptable],
                                                       mag_error_list[0]):
 
                                     self.mjd_dict[sn[0]][bp_name].append(tt)
-                                    self.mag_dict[sn[0]][bp_name].append(mm)
+                                    self.bright_dict[sn[0]][bp_name].append(mm)
                                     self.sig_dict[sn[0]][bp_name].append(ee)
 
             print("chunk of ", len(chunk), " took ", time.time()-t_start_chunk)

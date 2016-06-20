@@ -206,6 +206,7 @@ class LightCurveGenerator(object):
     """
 
     _lightCurveCatalogClass = None
+    _brightness_name = 'mag'
 
     def __init__(self, catalogdb, opsimdb, opsimdriver="sqlite"):
         self._generator = ObservationMetaDataGenerator(database=opsimdb,
@@ -348,7 +349,7 @@ class LightCurveGenerator(object):
         Output
         ------
         This method does not output anything.  It adds light curves to the
-        instance member variables self.mjd_dict, self.mag_dict, self.sig_dict,
+        instance member variables self.mjd_dict, self.bright_dict, self.sig_dict,
         and self.truth_dict.
         """
 
@@ -380,17 +381,17 @@ class LightCurveGenerator(object):
 
                             if star_obj[0] not in self.mjd_dict:
                                 self.mjd_dict[star_obj[0]] = {}
-                                self.mag_dict[star_obj[0]] = {}
+                                self.bright_dict[star_obj[0]] = {}
                                 self.sig_dict[star_obj[0]] = {}
 
                             bp = cat.obs_metadata.bandpass
                             if bp not in self.mjd_dict[star_obj[0]]:
                                 self.mjd_dict[star_obj[0]][bp] = []
-                                self.mag_dict[star_obj[0]][bp] = []
+                                self.bright_dict[star_obj[0]][bp] = []
                                 self.sig_dict[star_obj[0]][bp] = []
 
                             self.mjd_dict[star_obj[0]][bp].append(cat.obs_metadata.mjd.TAI)
-                            self.mag_dict[star_obj[0]][bp].append(star_obj[3])
+                            self.bright_dict[star_obj[0]][bp].append(star_obj[3])
                             self.sig_dict[star_obj[0]][bp].append(star_obj[4])
 
                     if ix not in local_gamma_cache:
@@ -445,7 +446,7 @@ class LightCurveGenerator(object):
         t_start = time.time()
 
         self.mjd_dict = {}
-        self.mag_dict = {}
+        self.bright_dict = {}
         self.sig_dict = {}
         self.band_dict = {}
         self.truth_dict = {}
@@ -485,7 +486,8 @@ class LightCurveGenerator(object):
                 mjd_dexes = np.argsort(mjd_arr)
 
                 output_dict[unique_id][bp]['mjd'] = mjd_arr[mjd_dexes]
-                output_dict[unique_id][bp]['mag'] = np.array(self.mag_dict[unique_id][bp])[mjd_dexes]
+                output_dict[unique_id][bp][self._brightness_name] = \
+                    np.array(self.bright_dict[unique_id][bp])[mjd_dexes]
                 output_dict[unique_id][bp]['error'] = np.array(self.sig_dict[unique_id][bp])[mjd_dexes]
 
         print('light curves took %e seconds to generate' % (time.time()-t_start))
