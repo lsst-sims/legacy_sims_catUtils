@@ -38,7 +38,7 @@ class _baseLightCurveCatalog(InstanceCatalog):
         query_cache : iterator over database rows, optional, defaults to None
             the result of calling db_obj.query_columns().  If query_cache is not
             None, this method will iterate over the rows in query_cache and produce
-            an appropriate InstanceCatalog. DO NOT use this
+            an appropriate InstanceCatalog. DO NOT set to non-None values
             unless you know what you are doing.  It is an optional
             input for those who want to repeatedly examine the same patch of sky
             without actually querying the database over and over again.  If it is set
@@ -247,6 +247,12 @@ class LightCurveGenerator(object):
                                                               expMJD=expMJD,
                                                               boundLength=1.75)
         else:
+            # obs_list will be populated with a list of lists of ObservationMetaData.
+            # These ObervationMetaData will have pointingRA, pointingDec, filters,
+            # and mjd values as specified by the user-input parameters.
+            # Each row of obs_list will be a list of ObservationMetaData with identical
+            # pointingRA and pointingDec.
+            #
             obs_list = []
             for bp in bandpass:
                 sub_list = self._generator.getObservationMetaData(fieldRA=ra,
@@ -347,6 +353,10 @@ class LightCurveGenerator(object):
         """
 
         global _sed_cache
+
+        # local_gamma_cache will cache the InstanceCatalog._gamma_cache
+        # values used by the photometry mixins to efficiently calculate
+        # photometric uncertainties in each catalog.
         local_gamma_cache = {}
 
         for raw_chunk in query_result:
