@@ -523,7 +523,7 @@ class AgnLightCurveGenerator(LightCurveGenerator):
     Input parameters:
     -----------------
     catalogdb is a CatalogDBObject instantiation connecting to the database
-    of objects to be observed.
+    of AGN to be observed.
 
     opsimdb is the path to the OpSim database of observation.
 
