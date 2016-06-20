@@ -12,12 +12,16 @@ from scipy.interpolate import interp1d
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "reset_agn_lc_cache"]
 
-_agn_lc_cache = {} # a global cache of agn light curve calculations
+_AGN_LC_CACHE = {} # a global cache of agn light curve calculations
 
 
 def reset_agn_lc_cache():
-    global _agn_lc_cache
-    _agn_lc_cache = {}
+    """
+    Resets the _AGN_LC_CACHE (a global dict for cacheing time steps in AGN
+    light curves) to an empty dict.
+    """
+    global _AGN_LC_CACHE
+    _AGN_LC_CACHE = {}
     return None
 
 
@@ -236,12 +240,11 @@ class Variability(object):
 
 
     @register_method('applyAgn')
-    def applyAgn(self, params, expmjd_in):
+    def applyAgn(self, params, expmjd):
 
-        global _agn_lc_cache
+        global _AGN_LC_CACHE
 
         dMags = {}
-        expmjd = numpy.asarray(expmjd_in,dtype=float)
         toff = numpy.float(params['t0_mjd'])
         seed = int(params['seed'])
         sfint = {}
@@ -256,7 +259,7 @@ class Variability(object):
         # A string made up of this AGNs variability parameters that ought
         # to uniquely identify it.
         #
-        cache_name = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
+        agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
         %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
           sfint['y'], tau, toff)
 
@@ -267,14 +270,14 @@ class Variability(object):
         # earlier than the first requested MJD.  If so,
         # use that previous simulation as the starting point.
         #
-        if cache_name in _agn_lc_cache:
-            if _agn_lc_cache[cache_name]['mjd'] <expmjd:
+        if agn_ID in _AGN_LC_CACHE:
+            if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd:
                 resumption = True
 
         if resumption:
-            rng = copy.deepcopy(_agn_lc_cache[cache_name]['rng'])
-            start_date = _agn_lc_cache[cache_name]['mjd']
-            dx_0 = _agn_lc_cache[cache_name]['dx']
+            rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
+            start_date = _AGN_LC_CACHE[agn_ID]['mjd']
+            dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
         else:
             start_date = toff
             rng = numpy.random.RandomState(seed)
@@ -311,15 +314,18 @@ class Variability(object):
             dx_cached[k] = dx2
             dMags[k] = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
 
-        if len(_agn_lc_cache)>1000000:
-            _agn_lc_cache = {}
+        # Reset that AGN light curve cache once it contains
+        # one million objects (to prevent it from taking up
+        # too much memory).
+        if len(_AGN_LC_CACHE)>1000000:
+            reset_agn_lc_cache()
 
-        if cache_name not in _agn_lc_cache:
-            _agn_lc_cache[cache_name] = {}
+        if agn_ID not in _AGN_LC_CACHE:
+            _AGN_LC_CACHE[agn_ID] = {}
 
-        _agn_lc_cache[cache_name]['mjd'] = start_date+x2
-        _agn_lc_cache[cache_name]['rng'] = copy.deepcopy(rng)
-        _agn_lc_cache[cache_name]['dx'] = dx_cached
+        _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
+        _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
+        _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
 
         return dMags
 
