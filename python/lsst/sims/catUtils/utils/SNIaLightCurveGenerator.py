@@ -93,6 +93,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
         cat = cat_dict[cat_dict.keys()[0]]  # does not need to be associated with a bandpass
 
+        dummy_sed = Sed()
+
         for chunk in query_result:
             t_start_chunk = time.time()
             for sn in cat.iter_catalog(query_cache=[chunk]):
@@ -136,17 +138,15 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                 for ff, ff_sn in zip(flambda_grid, sn_ff_buffer):
                                     ff[mask] = np.where(ff_sn > 0.0, ff_sn, 0.0)
 
-                                ss = Sed()
                                 fnu_grid = flambda_grid*bandpass.wavelen* \
-                                           bandpass.wavelen*ss._physParams.nm2m* \
-                                           ss._physParams.ergsetc2jansky/ss._physParams.lightspeed
+                                           bandpass.wavelen*dummy_sed._physParams.nm2m* \
+                                           dummy_sed._physParams.ergsetc2jansky/dummy_sed._physParams.lightspeed
 
                                 flux_list = \
                                 (fnu_grid*bandpass.phi).sum(axis=1)*(bandpass.wavelen[1]-bandpass.wavelen[0])
 
                                 flux_list = np.array(flux_list)
-                                ss = Sed()
-                                mag_list = ss.magFromFlux(flux_list)
+                                mag_list = dummy_sed.magFromFlux(flux_list)
 
                                 acceptable = np.where(np.isfinite(mag_list))
                                 mag_error_list = calcMagError_m5(mag_list[acceptable], bandpass,
