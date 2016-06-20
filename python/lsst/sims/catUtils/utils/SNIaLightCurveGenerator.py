@@ -23,6 +23,21 @@ class _sniaLightCurveCatalog(_baseLightCurveCatalog, SNIaCatalog, PhotometryBase
 
 
 class SNIaLightCurveGenerator(LightCurveGenerator):
+    """
+    This class will find all of the OpSim pointings in a particular region
+    of the sky in a particular filter and then return light curves for all
+    of the supernovae observed in that region of sky.
+
+    Input parameters:
+    -----------------
+    catalogdb is a CatalogDBObject instantiation connecting to the database
+    of objects to be observed.
+
+    opsimdb is the path to the OpSim database of observation.
+
+    opsimdriver (optional; default 'sqlite') indicates the database driver to
+    be used when connecting to opsimdb.
+    """
 
     def __init__(self, *args, **kwargs):
         self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
