@@ -674,7 +674,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
 class SNIaLightCurveControlCatalog(SNIaCatalog):
 
-    column_outputs = ['uniqueId', 'mag', 'mag_err', 'redshift']
+    column_outputs = ['uniqueId', 'flux', 'flux_err', 'redshift']
     _midSurveyTime = 49000.0
     _snFrequency = 0.001
 
@@ -746,11 +746,11 @@ class SNIaLightCurveTest(unittest.TestCase):
             for obs in group:
                 cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
                 for sn in cat.iter_catalog():
-                    if np.isfinite(sn[1]):
+                    if sn[1]>0.0:
                         lc = lc_dict[sn[0]][bandpass]
                         dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                         self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
-                        self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                        self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
                         self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
 
     def test_sne_light_curves_z_cut(self):
@@ -782,7 +782,7 @@ class SNIaLightCurveTest(unittest.TestCase):
             for obs in group:
                 cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
                 for sn in cat.iter_catalog():
-                    if np.isfinite(sn[1]):
+                    if sn[1]>0.0:
                         if sn[3]>z_cut:
                             self.assertNotIn(sn[0], lc_dict)
                             over_z += 1
@@ -790,8 +790,8 @@ class SNIaLightCurveTest(unittest.TestCase):
                             lc = lc_dict[sn[0]][bandpass]
                             dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                             self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
-                            self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
-                            self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
+                            self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
+                            self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7,msg='%e vs %e' % (lc['error'][dex],sn[2]))
 
         self.assertGreater(over_z, 0)
 
@@ -828,12 +828,12 @@ class SNIaLightCurveTest(unittest.TestCase):
         for obs in control_obs_r:
             cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
             for sn in cat.iter_catalog():
-                if np.isfinite(sn[1]):
+                if sn[1]>0.0:
                     ct_r += 1
                     lc = lc_dict[sn[0]]['r']
                     dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                     self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
-                    self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                    self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
                     self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
 
         self.assertGreater(ct_r, 0)
@@ -842,12 +842,12 @@ class SNIaLightCurveTest(unittest.TestCase):
         for obs in control_obs_z:
             cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
             for sn in cat.iter_catalog():
-                if np.isfinite(sn[1]):
+                if sn[1]>0.0:
                     ct_z += 1
                     lc = lc_dict[sn[0]]['z']
                     dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                     self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
-                    self.assertLess(np.abs(lc['mag'][dex] - sn[1]), 1.0e-7)
+                    self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
                     self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
 
         self.assertGreater(ct_z, 0)
