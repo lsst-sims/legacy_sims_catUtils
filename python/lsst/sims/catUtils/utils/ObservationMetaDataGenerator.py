@@ -5,7 +5,7 @@ import lsst.utils
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["ObservationMetaDataGenerator"]
+__all__ = ["ObservationMetaDataGenerator", "ObservationMetaDataForPointing"]
 
 class ObservationMetaDataGenerator(object):
     """
@@ -44,7 +44,7 @@ class ObservationMetaDataGenerator(object):
         """
         if database is None:
             dbPath = os.path.join(lsst.utils.getPackageDir('sims_data'),'OpSimData/')
-            self.database =  os.path.join(dbPath, 'opsimblitz1_1133_sqlite.db')
+            self.database = os.path.join(dbPath, 'opsimblitz1_1133_sqlite.db')
             self.driver = 'sqlite'
             self.host = None
             self.port = None
@@ -91,27 +91,38 @@ class ObservationMetaDataGenerator(object):
         #(and possibly phoSimCatalogExamples.py) will need to be updated to
         #reflect what PhoSim actually expects now.
         #
-        self.columnMapping = [('obsHistID', 'obsHistID', 'Opsim_obshistid' ,numpy.int64, None),
-                              ('expDate', 'expDate', 'SIM_SEED', int, None),
-                              ('fieldRA', 'fieldRA', 'pointingRA', float, numpy.radians),
-                              ('fieldDec', 'fieldDec', 'pointingDec', float, numpy.radians),
-                              ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
-                              ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
-                              ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
-                              ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
-                              ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
-                              ('seeing', self._seeing_column, None, float, None),
-                              ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
-                              ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
-                              ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
-                              ('moonPhase', 'moonPhase', 'Opsim_moonphase', float, None),
-                              ('expMJD', 'expMJD', 'Opsim_expmjd', float, None),
-                              ('altitude', 'altitude', 'Opsim_altitude', float, numpy.radians),
-                              ('azimuth', 'azimuth', 'Opsim_azimuth', float, numpy.radians),
-                              ('visitExpTime', 'visitExpTime', 'exptime', float, None),
-                              ('airmass', 'airmass', 'airmass', float, None),
-                              ('m5', 'fiveSigmaDepth', None, float, None),
-                              ('skyBrightness', 'filtSkyBrightness', None, float, None)]
+
+        @staticmethod
+        def OpSimColumnMap():
+            """
+            Return a list of tuples.  Each tuple corresponds to a column in the
+            opsim database's summary table.
+            """
+            v = [('obsHistID', 'obsHistID', 'Opsim_obshistid', numpy.int64, None),
+                 ('expDate', 'expDate', 'SIM_SEED', int, None),
+                 ('fieldRA', 'fieldRA', 'pointingRA', float, numpy.radians),
+                 ('fieldDec', 'fieldDec', 'pointingDec', float, numpy.radians),
+                 ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
+                 ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
+                 ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
+                 ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
+                 ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
+                 ('seeing', self._seeing_column, None, float, None),
+                 ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
+                 ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
+                 ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
+                 ('moonPhase', 'moonPhase', 'Opsim_moonphase', float, None),
+                 ('expMJD', 'expMJD', 'Opsim_expmjd', float, None),
+                 ('altitude', 'altitude', 'Opsim_altitude', float, numpy.radians),
+                 ('azimuth', 'azimuth', 'Opsim_azimuth', float, numpy.radians),
+                 ('visitExpTime', 'visitExpTime', 'exptime', float, None),
+                 ('airmass', 'airmass', 'airmass', float, None),
+                 ('m5', 'fiveSigmaDepth', None, float, None),
+                 ('skyBrightness', 'filtSkyBrightness', None, float, None)]
+            return v
+
+
+        self.columnMapping = self.OpSimColumnMap()
 
         #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
         #Also setup baseQuery which is just the SELECT clause of the SQL query
@@ -250,4 +261,3 @@ class ObservationMetaDataGenerator(object):
 
 
         return obs_output
-
