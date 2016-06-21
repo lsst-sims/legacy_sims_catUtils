@@ -201,9 +201,9 @@ class ObservationMetaDataGenerator(object):
         @param [in] skyBrightness
         """
 
-        query = self.baseQuery+ ' FROM SUMMARY'
+        query = self.baseQuery + ' FROM SUMMARY'
 
-        nConstraints = 0 #the number of constraints in this query
+        nConstraints = 0 # the number of constraints in this query
 
         for column in self.columnMapping:
             value = eval(column[0])
