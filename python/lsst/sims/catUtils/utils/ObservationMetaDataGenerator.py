@@ -115,10 +115,15 @@ class ObservationMetaDataGenerator(object):
 
         #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
         #Also setup baseQuery which is just the SELECT clause of the SQL query
+        #
+        #self.active_columns will be a list containing the subset of columnMapping columns
+        #that actually exist in this opsim database
         dtypeList = []
         self.baseQuery = 'SELECT'
+        self.active_columns = []
         for column in self.columnMapping:
             if column[1] in summary_columns:
+                self.active_columns.append(column)
                 dtypeList.append((column[1],column[3]))
                 if self.baseQuery != 'SELECT':
                     self.baseQuery += ','
@@ -240,7 +245,7 @@ class ObservationMetaDataGenerator(object):
                                           seeing=pointing[self._seeing_column],
                                           phoSimMetaData=OrderedDict([(column[2],
                                                                     (pointing[column[1]], pointing[column[1]].dtype))
-                                                                    for column in self.columnMapping if column[2] is not None]))
+                                                                    for column in self.active_columns if column[2] is not None]))
                                           for pointing in results]
 
 
