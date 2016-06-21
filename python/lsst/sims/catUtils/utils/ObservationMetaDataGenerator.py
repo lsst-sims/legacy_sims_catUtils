@@ -5,7 +5,9 @@ import lsst.utils
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["ObservationMetaDataGenerator", "ObservationMetaDataForPointing"]
+__all__ = ["ObservationMetaDataGenerator",
+           "ObservationMetaDataForPointings"]
+
 
 class ObservationMetaDataGenerator(object):
     """
@@ -28,7 +30,7 @@ class ObservationMetaDataGenerator(object):
         @param [out] a string containing 'val' (i.e. the input value
         enclosed in single quotation marks, if they are not already there)
         """
-        if val[0]=='\'':
+        if val[0] == '\'':
             return val
         else:
             return "'%s'" % val
@@ -43,7 +45,7 @@ class ObservationMetaDataGenerator(object):
                     stored in sims_data/OpSimData/
         """
         if database is None:
-            dbPath = os.path.join(lsst.utils.getPackageDir('sims_data'),'OpSimData/')
+            dbPath = os.path.join(lsst.utils.getPackageDir('sims_data'), 'OpSimData/')
             self.database = os.path.join(dbPath, 'opsimblitz1_1133_sqlite.db')
             self.driver = 'sqlite'
             self.host = None
@@ -68,28 +70,28 @@ class ObservationMetaDataGenerator(object):
         else:
             self._seeing_column = 'finSeeing'
 
-        #27 January 2015
-        #self.columnMapping is an list of tuples.  Each tuple corresponds to a column in the opsim
-        #database's summary table.
+        # 27 January 2015
+        # self.columnMapping is an list of tuples.  Each tuple corresponds to a column in the opsim
+        # database's summary table.
 
-        #The 0th element of the tuple is how users will
-        #refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
+        # The 0th element of the tuple is how users will
+        # refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
         #
-        #The 1st element of the tuple is how the column is named in the OpSim db.
+        # The 1st element of the tuple is how the column is named in the OpSim db.
         #
-        #The 2nd element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
-        #(this is None if PhoSim does not expect the quantity)
+        # The 2nd element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
+        # (this is None if PhoSim does not expect the quantity)
         #
-        #The 3rd element of the tuple is the datatype of the column
+        # The 3rd element of the tuple is the datatype of the column
         #
-        #The 4th element of the tuple is any coordinate transformation required to go from the user interface
-        #to the OpSim database (i.e. OpSim stores all angles in radians; we would like users to be
-        #able to specify angles in degrees)
+        # The 4th element of the tuple is any coordinate transformation required to go from the user interface
+        # to the OpSim database (i.e. OpSim stores all angles in radians; we would like users to be
+        # able to specify angles in degrees)
         #
-        #Note that this conforms to an older
-        #PhoSim API.  At some time in the future, both this and OpSim3_61DBObject.py
-        #(and possibly phoSimCatalogExamples.py) will need to be updated to
-        #reflect what PhoSim actually expects now.
+        # Note that this conforms to an older
+        # PhoSim API.  At some time in the future, both this and OpSim3_61DBObject.py
+        # (and possibly phoSimCatalogExamples.py) will need to be updated to
+        # reflect what PhoSim actually expects now.
         #
 
         @staticmethod
@@ -105,7 +107,7 @@ class ObservationMetaDataGenerator(object):
                  ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
                  ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
                  ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
-                 ('telescopeFilter', 'filter', 'Opsim_filter', (str,1), self._put_quotations),
+                 ('telescopeFilter', 'filter', 'Opsim_filter', (str, 1), self._put_quotations),
                  ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
                  ('seeing', self._seeing_column, None, float, None),
                  ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
@@ -120,7 +122,6 @@ class ObservationMetaDataGenerator(object):
                  ('m5', 'fiveSigmaDepth', None, float, None),
                  ('skyBrightness', 'filtSkyBrightness', None, float, None)]
             return v
-
 
         self.columnMapping = self.OpSimColumnMap()
 
@@ -250,7 +251,7 @@ class ObservationMetaDataGenerator(object):
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
 
 
-        #convert the results into ObservationMetaData instantiations
+        # convert the results into ObservationMetaData instantiations
         obs_output = [ObservationMetaData(m5=pointing['fiveSigmaDepth'], boundType=boundType, boundLength=boundLength,
                                           skyBrightness=pointing['filtSkyBrightness'],
                                           seeing=pointing[self._seeing_column],
@@ -258,6 +259,5 @@ class ObservationMetaDataGenerator(object):
                                                                     (pointing[column[1]], pointing[column[1]].dtype))
                                                                     for column in self.active_columns if column[2] is not None]))
                                           for pointing in results]
-
 
         return obs_output
