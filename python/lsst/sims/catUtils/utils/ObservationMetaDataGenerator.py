@@ -6,7 +6,7 @@ from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["ObservationMetaDataGenerator",
-           "ObservationMetaDataForPointings"]
+           "ObservationMetaDataForPointing"]
 
 
 class ObservationMetaDataGenerator(object):
@@ -143,6 +143,104 @@ class ObservationMetaDataGenerator(object):
 
         self.dtype = numpy.dtype(dtypeList)
 
+    def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
+                        fieldDec=None, moonRA=None, moonDec=None,
+                        rotSkyPos=None, telescopeFilter=None, rawSeeing=None,
+                        seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
+                        moonPhase=None, expMJD=None, altitude=None,
+                        azimuth=None, visitExpTime=None, airmass=None,
+                        skyBrightness=None, m5=None, boundType='circle',
+                        boundLength=0.1, limit=None):
+        """
+        This method will query the OpSim database summary table according to
+        constraints specified in the input ranges and return a generator to all
+        records from the OpSim database that match those constraints. If limit
+        is used, the first N records will be returned in the list.
+
+        Parameters
+        ----------
+        obsHistID :
+        expDate :
+        fieldRA :
+        fieldDec :
+        moonRa :
+        moonDec :
+        rotSkyPos :
+        telescopeFilter :
+        rawSeeing :
+        seeing :
+        sunAlt :
+        moonAlt :
+        dist2Moon :
+        moonPhase :
+        expMJD :
+        altitude :
+        azimuth :
+        visitExpTime :
+        airmass :
+        skyBrightness :
+        m5 :
+        boundType :
+        boundLength :
+        limit :
+
+        Returns
+        -------
+        A generator to the records in OpSim satisfying the constraints provided
+        by the input parameters
+
+        .. notes:: The `limit` argument should only be used if a small example
+        is required.
+        """
+        query = self.baseQuery + ' FROM SUMMARY'
+
+        nConstraints = 0 # the number of constraints in this query
+
+        for column in self.columnMapping:
+            value = eval(column[0])
+            if value is not None:
+                if nConstraints > 0:
+                    query += ' AND'
+                else:
+                    query += ' WHERE '
+
+                if isinstance(value,tuple):
+                    if len(value)>2:
+                        raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
+                                           'to getObservationMetaData: %s is len %d'
+                                           % (column[0], len(value)))
+
+                    # perform any necessary coordinate transformations
+                    if column[4] is not None:
+                        vmin = column[4](value[0])
+                        vmax = column[4](value[1])
+                    else:
+                        vmin = value[0]
+                        vmax = value[1]
+
+                    query += ' %s > %s AND %s < %s' % \
+                             (column[1], vmin, column[1], vmax)
+                else:
+                    # perform any necessary coordinate transformations
+                    if column[4] is not None:
+                        vv = column[4](value)
+                    else:
+                        vv = value
+                    query += ' %s == %s' % (column[1], vv)
+
+                nConstraints += 1
+
+        query += ' GROUP BY expMJD'
+
+        if limit is not None:
+            query += ' LIMIT %d' % limit
+
+        if nConstraints == 0 and limit is None:
+            raise RuntimeError('You did not specify any contraints on your query;' +
+                               ' you will just return ObservationMetaData for all poitnings')
+
+        results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
+        return results
 
     def getObservationMetaData(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
@@ -219,7 +317,7 @@ class ObservationMetaDataGenerator(object):
                                            'to getObservationMetaData: %s is len %d'
                                            % (column[0], len(value)))
 
-                    #perform any necessary coordinate transformations
+                    # perform any necessary coordinate transformations
                     if column[4] is not None:
                         vmin = column[4](value[0])
                         vmax = column[4](value[1])
@@ -230,7 +328,7 @@ class ObservationMetaDataGenerator(object):
                     query += ' %s > %s AND %s < %s' % \
                              (column[1], vmin, column[1], vmax)
                 else:
-                    #perform any necessary coordinate transformations
+                    # perform any necessary coordinate transformations
                     if column[4] is not None:
                         vv = column[4](value)
                     else:
@@ -244,7 +342,7 @@ class ObservationMetaDataGenerator(object):
         if limit is not None:
             query += ' LIMIT %d' % limit
 
-        if nConstraints==0 and limit is None:
+        if nConstraints == 0 and limit is None:
             raise RuntimeError('You did not specify any contraints on your query;' +
                                ' you will just return ObservationMetaData for all poitnings')
 
@@ -261,3 +359,52 @@ class ObservationMetaDataGenerator(object):
                                           for pointing in results]
 
         return obs_output
+
+    @staticmethod
+    def ObservationMetaDataForPointing(OpSimPointingRecord, columnMap,
+                                       boundLength=1.75, boundType='circle'):
+        """
+        Return instance of ObservationMetaData for an OpSim Pointing record
+        from OpSim.
+
+        Parameters
+        ----------
+        OpSimPointingRecord : Dictionary, mandatory
+            Dictionary of values with keys corresponding to certain columns of
+            the Summary table in the OpSim database. The minimal list of keys
+            required for catsim to work is 'fiveSigmaDepth',
+            'filtSkyBrightness', and at least one of ('finSeeing', 'FWHMeff').
+            More keys defined in colunMap may be necessary for PhoSim to work.
+        columnMap : ObservationMetaDataGenerator.OpSimColumnMap()
+        boundType : {'circle', 'box'}, optiional, defaults to 'circle'
+            Shape of the observation
+        boundLength : scalar float, optional, defaults to 1.75
+            'characteristic size' of observation field, in units of degrees.
+            For boundType='circle', this is a radius, for boundType='box', this
+            is a size of the box
+        """
+        pointing = OpSimPointingRecord
+        # Decide what is the name of the column in the OpSim database
+        # corresponding to the Seeing. For older OpSim outputs, this is 
+        # 'finSeeing'. For later OpSim outputs this is 'FWHMeff'
+        if 'FWHMeff' in pointing:
+            _seeingColumn = 'FWHMeff'
+        elif 'finSeeing' in pointing:
+            _seeingColumn = 'finSeeing'
+        else:
+            raise ValueError('OpSimPointingRecord has to contain seeing values'
+                             "either as 'FWHMeff', or as 'finSeeing'\n")
+
+        # convert list of tuples of the form (Name, (value, dtype)) to
+        # an ordered Dict
+        phosimDict = OrderedDict([(col[2], (pointing[col[1]],
+                                            pointing[col[1]].dtype))
+                                  for col in self.columnMap
+                                  if col[2] is not None])
+
+        return ObservationMetaData(m5=pointing['fiveSigmaDepth'],
+                                   boundType=boundType,
+                                   boundLength=boundLength,
+                                   skyBrightness=pointing['filtSkyBrightness'],
+                                   seeing=pointing[_seeing_column],
+                                   phoSimMetaData=phosimDict)
