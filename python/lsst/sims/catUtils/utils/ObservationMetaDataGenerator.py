@@ -5,8 +5,7 @@ import lsst.utils
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["ObservationMetaDataGenerator",
-           "ObservationMetaDataForPointing"]
+__all__ = ["ObservationMetaDataGenerator"]
 
 
 class ObservationMetaDataGenerator(object):
@@ -94,35 +93,8 @@ class ObservationMetaDataGenerator(object):
         # reflect what PhoSim actually expects now.
         #
 
-        @staticmethod
-        def OpSimColumnMap():
-            """
-            Return a list of tuples.  Each tuple corresponds to a column in the
-            opsim database's summary table.
-            """
-            v = [('obsHistID', 'obsHistID', 'Opsim_obshistid', numpy.int64, None),
-                 ('expDate', 'expDate', 'SIM_SEED', int, None),
-                 ('fieldRA', 'fieldRA', 'pointingRA', float, numpy.radians),
-                 ('fieldDec', 'fieldDec', 'pointingDec', float, numpy.radians),
-                 ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
-                 ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
-                 ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
-                 ('telescopeFilter', 'filter', 'Opsim_filter', (str, 1), self._put_quotations),
-                 ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
-                 ('seeing', self._seeing_column, None, float, None),
-                 ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
-                 ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
-                 ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
-                 ('moonPhase', 'moonPhase', 'Opsim_moonphase', float, None),
-                 ('expMJD', 'expMJD', 'Opsim_expmjd', float, None),
-                 ('altitude', 'altitude', 'Opsim_altitude', float, numpy.radians),
-                 ('azimuth', 'azimuth', 'Opsim_azimuth', float, numpy.radians),
-                 ('visitExpTime', 'visitExpTime', 'exptime', float, None),
-                 ('airmass', 'airmass', 'airmass', float, None),
-                 ('m5', 'fiveSigmaDepth', None, float, None),
-                 ('skyBrightness', 'filtSkyBrightness', None, float, None)]
-            return v
-
+        # Just use the static method to assign this attribute
+        # to the mapping of names of phoSim to OpSim columns
         self.columnMapping = self.OpSimColumnMap()
 
         #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
@@ -142,6 +114,35 @@ class ObservationMetaDataGenerator(object):
                 self.baseQuery += ' ' + column[1]
 
         self.dtype = numpy.dtype(dtypeList)
+
+    @staticmethod
+    def OpSimColumnMap():
+        """
+        Return a list of tuples.  Each tuple corresponds to a column in the
+        opsim database's summary table.
+        """
+        v = [('obsHistID', 'obsHistID', 'Opsim_obshistid', numpy.int64, None),
+             ('expDate', 'expDate', 'SIM_SEED', int, None),
+             ('fieldRA', 'fieldRA', 'pointingRA', float, numpy.radians),
+             ('fieldDec', 'fieldDec', 'pointingDec', float, numpy.radians),
+             ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
+             ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
+             ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
+             ('telescopeFilter', 'filter', 'Opsim_filter', (str, 1), self._put_quotations),
+             ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None),
+             ('seeing', self._seeing_column, None, float, None),
+             ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians),
+             ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians),
+             ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians),
+             ('moonPhase', 'moonPhase', 'Opsim_moonphase', float, None),
+             ('expMJD', 'expMJD', 'Opsim_expmjd', float, None),
+             ('altitude', 'altitude', 'Opsim_altitude', float, numpy.radians),
+             ('azimuth', 'azimuth', 'Opsim_azimuth', float, numpy.radians),
+             ('visitExpTime', 'visitExpTime', 'exptime', float, None),
+             ('airmass', 'airmass', 'airmass', float, None),
+             ('m5', 'fiveSigmaDepth', None, float, None),
+             ('skyBrightness', 'filtSkyBrightness', None, float, None)]
+        return v
 
     def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
@@ -301,7 +302,7 @@ class ObservationMetaDataGenerator(object):
 
         query = self.baseQuery + ' FROM SUMMARY'
 
-        nConstraints = 0 # the number of constraints in this query
+        nConstraints = 0  # the number of constraints in this query
 
         for column in self.columnMapping:
             value = eval(column[0])
@@ -311,8 +312,8 @@ class ObservationMetaDataGenerator(object):
                 else:
                     query += ' WHERE '
 
-                if isinstance(value,tuple):
-                    if len(value)>2:
+                if isinstance(value, tuple):
+                    if len(value) > 2:
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
                                            'to getObservationMetaData: %s is len %d'
                                            % (column[0], len(value)))
@@ -385,7 +386,7 @@ class ObservationMetaDataGenerator(object):
         """
         pointing = OpSimPointingRecord
         # Decide what is the name of the column in the OpSim database
-        # corresponding to the Seeing. For older OpSim outputs, this is 
+        # corresponding to the Seeing. For older OpSim outputs, this is
         # 'finSeeing'. For later OpSim outputs this is 'FWHMeff'
         if 'FWHMeff' in pointing:
             _seeingColumn = 'FWHMeff'
@@ -399,12 +400,103 @@ class ObservationMetaDataGenerator(object):
         # an ordered Dict
         phosimDict = OrderedDict([(col[2], (pointing[col[1]],
                                             pointing[col[1]].dtype))
-                                  for col in self.columnMap
+                                  for col in columnMap
                                   if col[2] is not None])
 
         return ObservationMetaData(m5=pointing['fiveSigmaDepth'],
                                    boundType=boundType,
                                    boundLength=boundLength,
                                    skyBrightness=pointing['filtSkyBrightness'],
-                                   seeing=pointing[_seeing_column],
+                                   seeing=pointing[_seeingColumn],
                                    phoSimMetaData=phosimDict)
+
+
+    def getObservationMetaDataNew(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
+                               moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
+                               rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
+                               moonPhase=None, expMJD=None, altitude=None, azimuth=None,
+                               visitExpTime=None, airmass=None, skyBrightness=None,
+                               m5=None, boundType='circle', boundLength=0.1, limit=None):
+
+        """
+        This method will query the OpSim database summary table according to user-specified
+        constraints and return a list of of ObservationMetaData instantiations consistent
+        with those constraints.
+
+        @param [in] limit is an integer denoting the maximum number of ObservationMetaData to
+        be returned
+
+        @param [in] boundType is the boundType of the ObservationMetaData to be returned
+        (see documentation in sims_catalogs_generation/../db/spatialBounds.py for more
+        details)
+
+        @param [in] boundLength is the boundLength of the ObservationMetaData to be
+        returned (in degrees; see documentation in
+        sims_catalogs_generation/../db/spatialBounds.py for more details)
+
+        All other input parameters are constraints to be placed on the SQL query of the
+        opsim output db.  These contraints can either be tuples of the form (min, max)
+        or an exact value the user wants returned.
+
+        Parameters that can be constrained are:
+
+        @param [in] fieldRA in degrees
+        @param [in] fieldDec in degrees
+        @param [in] altitude in degrees
+        @param [in] azimuth in degrees
+
+        @param [in] moonRA in degrees
+        @param [in] moonDec in degrees
+        @param [in] moonAlt in degrees
+        @param [in] moonPhase (a value from 1 to 100 indicating how much of the moon is illuminated)
+        @param [in] dist2Moon the distance between the telescope pointing and the moon in degrees
+
+        @param [in] sunAlt in degrees
+
+        @param [in[ rotSkyPos (the angle of the sky with respect to the camera coordinate system) in degrees
+        @param [in] telescopeFilter a string that is one of u,g,r,i,z,y
+
+        @param [in] airmass
+        @param [in] rawSeeing (this is an idealized seeing at zenith at 500nm in arcseconds)
+        @param [in] seeing (this is the OpSim column 'FWHMeff' or 'finSeeing' [deprecated] in arcseconds)
+
+        @param [in] visitExpTime the exposure time in seconds
+        @param [in] obsHistID the integer used by OpSim to label pointings
+        @param [in] expDate is the date of the exposure (units????)
+        @param [in] expMJD is the MJD of the exposure
+        @param [in] m5 is the five sigma depth of the observation
+        @param [in] skyBrightness
+        """
+
+        OpSimPointingRecords = self.getOpSimRecords(obsHistID=obsHistID,
+                                                    expDate=expDate,
+                                                    fieldRA=fieldRA,
+                                                    fieldDec=fieldDec,
+                                                    moonRA=moonRA,
+                                                    moonDec=moonDec,
+                                                    rotSkyPos=rotSkyPos,
+                                                    telescopeFilter=telescopeFilter,
+                                                    rawSeeing=rawSeeing,
+                                                    seeing=seeing,
+                                                    sunAlt=sunAlt,
+                                                    moonAlt=moonAlt,
+                                                    dist2Moon=dist2Moon,
+                                                    moonPhase=moonPhase,
+                                                    expMJD=expMJD,
+                                                    altitude=altitude,
+                                                    azimuth=azimuth,
+                                                    visitExpTime=visitExpTime,
+                                                    airmass=airmass,
+                                                    skyBrightness=skyBrightness,
+                                                    m5=m5, boundType=boundType,
+                                                    boundLength=boundLength,
+                                                    limit=limit)
+
+        # convert the results into ObservationMetaData instantiations
+        out = list(self.ObservationMetaDataForPointing(OpSimPointingRecord,
+                                                       columnMap=self.columnMap,
+                                                       boundLength=boundLength,
+                                                       boundType=boundType)
+                   for OpSimPointingRecord in OpSimPointingRecords)
+
+        return out
