@@ -394,14 +394,14 @@ class ObservationMetaDataGenerator(object):
             the Summary table in the OpSim database. The minimal list of keys
             required for catsim to work is 'fiveSigmaDepth',
             'filtSkyBrightness', and at least one of ('finSeeing', 'FWHMeff').
-            More keys defined in colunMap may be necessary for PhoSim to work.
+            More keys defined in columnMap may be necessary for PhoSim to work.
         columnMap : A mapping of columns with names exepected by phosim for
             OpSim columns. This can be obtained from
             ObservationMetaDataGenerator.OpSimColumnMap()
         OpSimColumns : tuple of strings, optional, defaults to None
             The columns corresponding to the OpSim records. If None, attempts
             to obtain these from the OpSimRecord as OpSimRecord.dtype.names
-        boundType : {'circle', 'box'}, optiional, defaults to 'circle'
+        boundType : {'circle', 'box'}, optional, defaults to 'circle'
             Shape of the observation
         boundLength : scalar float, optional, defaults to 1.75
             'characteristic size' of observation field, in units of degrees.
