@@ -150,37 +150,58 @@ class ObservationMetaDataGenerator(object):
                         skyBrightness=None, m5=None, boundType='circle',
                         boundLength=0.1, limit=None):
         """
-        This method will query the OpSim database summary table according to
-        constraints specified in the input ranges and return a generator to all
-        records from the OpSim database that match those constraints. If limit
+        This method will query the summary table in the `self.opsimdb` database
+        according to constraints specified in the input ranges and return a
+        `numpy.recarray` containing the records that match those constraints. If limit
         is used, the first N records will be returned in the list.
 
         Parameters
         ----------
-        obsHistID :
-        expDate :
-        fieldRA :
-        fieldDec :
-        moonRa :
-        moonDec :
-        rotSkyPos :
-        telescopeFilter :
-        rawSeeing :
-        seeing :
-        sunAlt :
-        moonAlt :
-        dist2Moon :
-        moonPhase :
-        expMJD :
-        altitude :
-        azimuth :
-        visitExpTime :
-        airmass :
-        skyBrightness :
-        m5 :
-        boundType :
-        boundLength :
-        limit :
+        obsHistID, expDate, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
+        telescopeFilter, rawSeeing, seeing, sunAlt, moonAlt, dist2Moon, moonPhase, expMJD, 
+        altitude, azimuth, visitExpTime, airmass, skyBrightness, m5 : 
+        boundType : `sims.utils.ObservationMetaData.boundType`, optional, defaults to 'circle'
+            {'circle', 'box'} denoting the shape of the pointing. Further
+            documentation `sims.catalogs.generation.db.spatialBounds.py``
+        boundLength : float, optional, defaults to 0.1
+            sets `sims.utils.ObservationMetaData.boundLenght`
+        limit : integer, optional, defaults to None
+            if not None, denotes max number of records returned by the query
+
+
+
+        All other input parameters are constraints to be placed on the SQL query of the
+        opsim output db.  These contraints can either be tuples of the form (min, max)
+        or an exact value the user wants returned.
+
+        Parameters that can be constrained are:
+
+        @param [in] fieldRA in degrees
+        @param [in] fieldDec in degrees
+        @param [in] altitude in degrees
+        @param [in] azimuth in degrees
+
+        @param [in] moonRA in degrees
+        @param [in] moonDec in degrees
+        @param [in] moonAlt in degrees
+        @param [in] moonPhase (a value from 1 to 100 indicating how much of the moon is illuminated)
+        @param [in] dist2Moon the distance between the telescope pointing and the moon in degrees
+
+        @param [in] sunAlt in degrees
+
+        @param [in[ rotSkyPos (the angle of the sky with respect to the camera coordinate system) in degrees
+        @param [in] telescopeFilter a string that is one of u,g,r,i,z,y
+
+        @param [in] airmass
+        @param [in] rawSeeing (this is an idealized seeing at zenith at 500nm in arcseconds)
+        @param [in] seeing (this is the OpSim column 'FWHMeff' or 'finSeeing' [deprecated] in arcseconds)
+
+        @param [in] visitExpTime the exposure time in seconds
+        @param [in] obsHistID the integer used by OpSim to label pointings
+        @param [in] expDate is the date of the exposure (units????)
+        @param [in] expMJD is the MJD of the exposure
+        @param [in] m5 is the five sigma depth of the observation
+        @param [in] skyBrightness
 
         Returns
         -------
@@ -188,7 +209,7 @@ class ObservationMetaDataGenerator(object):
         res.dtype.names
 
         .. notes:: The `limit` argument should only be used if a small example
-        is required.
+        is required. The angle ranges in the argument should be specified in degrees.
         """
         query = self.baseQuery + ' FROM SUMMARY'
 
@@ -202,7 +223,7 @@ class ObservationMetaDataGenerator(object):
                 else:
                     query += ' WHERE '
 
-                if isinstance(value,tuple):
+                if isinstance(value, tuple):
                     if len(value)>2:
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
                                            'to getObservationMetaData: %s is len %d'
