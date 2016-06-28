@@ -373,6 +373,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         catName = 'testPhoSimFromObsMetaDataGenerator.txt'
         if os.path.exists(dbName):
             os.unlink(dbName)
+        _ = makePhoSimTestDB(filename=dbName)
         bulgeDB = testGalaxyBulge(driver='sqlite', database=dbName)
         gen = ObservationMetaDataGenerator()
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
