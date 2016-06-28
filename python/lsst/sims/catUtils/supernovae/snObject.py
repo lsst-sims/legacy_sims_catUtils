@@ -442,12 +442,11 @@ class SNObject(sncosmo.Model):
         None, but it changes the instance
 
         """
-        import types
+        import numbers
 
         # Check that the input redshift is a scalar
         try:
-            assert isinstance(z, types.FloatType) or \
-                isinstance(z, types.IntType)
+            assert isinstance(z, numbers.Number)
         except:
             raise TypeError('The argument z in method redshift should be'
                             'a scalar Numeric')
