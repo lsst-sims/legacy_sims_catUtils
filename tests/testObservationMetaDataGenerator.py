@@ -101,6 +101,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ('m5',(22.815249, 23.0)),
         ('skyBrightness',(19.017605, 19.5))]
 
+
         # test querying on a single column
         for line in bounds:
             tag = line[0]
@@ -109,25 +110,31 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             # corresponds to this bound
             for ii in range(len(gen.columnMapping)):
                 if gen.columnMapping[ii][0] == tag:
+                    opsimKey = gen.columnMapping[ii][1]
                     break
 
             if tag != 'telescopeFilter' and tag != 'visitExpTime':
                 args = {}
                 args[tag] = line[1]
                 results = gen.getObservationMetaData(**args)
+                OpSimRecords = gen.getOpSimRecords(**args)
 
                 if tag == 'skyBrightness':
                     ct = 0
                     for obs_metadata in results:
                         self.assertLess(obs_metadata.skyBrightness, line[1][1])
+                        self.assertLess(OpSimRecords[opsimKey].max(), line[1][1])
                         self.assertGreater(obs_metadata.skyBrightness, line[1][0])
+                        self.assertGreater(OpSimRecords[opsimKey].min(), line[1][0])
                         ct += 1
                     self.assertGreater(ct, 0)
                 elif tag == 'm5':
                     ct = 0
                     for obs_metadata in results:
                         self.assertLess(obs_metadata.m5[obs_metadata.bandpass], line[1][1])
+                        self.assertLess(OpSimRecords[opsimKey].max(), line[1][1])
                         self.assertGreater(obs_metadata.m5[obs_metadata.bandpass], line[1][0])
+                        self.assertGreater(OpSimRecords[opsimKey].min(), line[1][0])
                         ct += 1
                     self.assertGreater(ct, 0)
 
