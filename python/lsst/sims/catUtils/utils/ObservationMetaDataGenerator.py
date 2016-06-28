@@ -21,28 +21,13 @@ class ObservationMetaDataGenerator(object):
         and PhoSim Instance Catalogs.
     - getObservationMetaData : Obtain a list of ObservationMetaData instances
         corresponding to OpSim pointings matching the intersection of user
-        specified ranges on each column in the OpSim output database. 
+        specified ranges on each column in the OpSim output database.
 
     The major method is ObservationMetaDataGenerator.getObservationMetaData()
     which accepts bounds on columns of the opsim summary table and returns
     a list of ObservationMetaData instantiations that fall within those
     bounds.
     """
-
-    def _put_quotations(self, val):
-        """
-        This formats the user's input of telescopeFilter; in must be enclosed
-        in single quotation marks.  This method adds them if necessary.
-
-        @param [in] val is a string (denoting a Telescope Filter)
-
-        @param [out] a string containing 'val' (i.e. the input value
-        enclosed in single quotation marks, if they are not already there)
-        """
-        if val[0] == '\'':
-            return val
-        else:
-            return "'%s'" % val
 
     def __init__(self, driver=None, host=None, port=None, database=None):
         """
