@@ -16,7 +16,7 @@ class ObservationMetaDataGenerator(object):
     - getOpSimRecords : obtain OpSim records matching the intersection of user
         specified ranges on each column in the OpSim output database. The
         records are in the form of a `numpy.recarray`
-    - ObservationMetaDataForPointing : convert an OpSim record for a single
+    - ObservationMetaDataFromPointing : convert an OpSim record for a single
         OpSim Pointing to an instance of ObservationMetaData usable by catsim
         and PhoSim Instance Catalogs.
     - getObservationMetaData : Obtain a list of ObservationMetaData instances
@@ -380,7 +380,7 @@ class ObservationMetaDataGenerator(object):
         return obs_output
 
     @staticmethod
-    def ObservationMetaDataForPointing(OpSimPointingRecord, columnMap,
+    def ObservationMetaDataFromPointing(OpSimPointingRecord, columnMap,
                                        OpSimColumns=None,
                                        boundLength=1.75, boundType='circle'):
         """
@@ -523,7 +523,7 @@ class ObservationMetaDataGenerator(object):
 
         OpSimColumns = OpSimPointingRecords.dtype.names
         # convert the results into ObservationMetaData instantiations
-        out = list(self.ObservationMetaDataForPointing(OpSimPointingRecord,
+        out = list(self.ObservationMetaDataFromPointing(OpSimPointingRecord,
                                                        columnMap=self.columnMapping,
                                                        OpSimColumns=OpSimColumns,
                                                        boundLength=boundLength,
