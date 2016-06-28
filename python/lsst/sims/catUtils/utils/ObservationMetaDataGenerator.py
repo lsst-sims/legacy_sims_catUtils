@@ -13,15 +13,15 @@ class ObservationMetaDataGenerator(object):
     A class that allows the user to generate instantiations of
     `lsst.sims.utils.ObservationMetaData` corresponding to OpSim pointings.
     The functionality includes:
-    - getOpSimRecords : obtain OpSim records matching user specified ranges
-        on each column in the OpSim output database. The records are in the
-        form of a `numpy.recarray`
+    - getOpSimRecords : obtain OpSim records matching the intersection of user
+        specified ranges on each column in the OpSim output database. The
+        records are in the form of a `numpy.recarray`
     - ObservationMetaDataForPointing : convert an OpSim record for a single
         OpSim Pointing to an instance of ObservationMetaData usable by catsim
         and PhoSim Instance Catalogs.
     - getObservationMetaData : Obtain a list of ObservationMetaData instances
-        corresponding to OpSim pointings matching user specified ranges on each
-        column of the OpSim output database
+        corresponding to OpSim pointings matching the intersection of user
+        specified ranges on each column in the OpSim output database. 
 
     The major method is ObservationMetaDataGenerator.getObservationMetaData()
     which accepts bounds on columns of the opsim summary table and returns
@@ -128,8 +128,10 @@ class ObservationMetaDataGenerator(object):
     @staticmethod
     def OpSimColumnMap(seeing_column):
         """
-        Return a list of tuples.  Each tuple corresponds to a column in the
-        opsim database's summary table.
+        Return a list of tuples.  Each tuple has the following elements :
+        (phosimName, OpSimName, unknown, dtype, callable)
+
+        Needs some work:
         """
         v = [('obsHistID', 'obsHistID', 'Opsim_obshistid', numpy.int64, None),
              ('expDate', 'expDate', 'SIM_SEED', int, None),
