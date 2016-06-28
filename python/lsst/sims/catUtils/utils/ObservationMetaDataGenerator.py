@@ -10,8 +10,18 @@ __all__ = ["ObservationMetaDataGenerator"]
 
 class ObservationMetaDataGenerator(object):
     """
-    This is a class that allows the user to query an opsim output database
-    for ObservationMetaData instantiations that fit certain criteria.
+    A class that allows the user to generate instantiations of
+    `lsst.sims.utils.ObservationMetaData` corresponding to OpSim pointings.
+    The functionality includes:
+    - getOpSimRecords : obtain OpSim records matching user specified ranges
+        on each column in the OpSim output database. The records are in the
+        form of a `numpy.recarray`
+    - ObservationMetaDataForPointing : convert an OpSim record for a single
+        OpSim Pointing to an instance of ObservationMetaData usable by catsim
+        and PhoSim Instance Catalogs.
+    - getObservationMetaData : Obtain a list of ObservationMetaData instances
+        corresponding to OpSim pointings matching user specified ranges on each
+        column of the OpSim output database
 
     The major method is ObservationMetaDataGenerator.getObservationMetaData()
     which accepts bounds on columns of the opsim summary table and returns
