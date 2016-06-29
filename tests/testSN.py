@@ -313,7 +313,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         opsimPath = os.path.join(eups.productDir('sims_data'),'OpSimData')
         opsimDB = os.path.join(opsimPath,'opsimblitz1_1133_sqlite.db')
 
-        generator = ObservationMetaDataGenerator()
+        generator = ObservationMetaDataGenerator(database=opsimDB)
         cls.obsMetaDataResults = generator.getObservationMetaData(limit=100,
                                                     fieldRA=(5.0, 8.0), 
                                                     fieldDec=(-85.,-60.),
