@@ -29,7 +29,7 @@ class ObservationMetaDataGenerator(object):
     bounds.
     """
 
-    def __init__(self, dbPath, driver='sqlite', host=None, port=None):
+    def __init__(self, database, driver='sqlite', host=None, port=None):
         """
         Constructor for the class
 
@@ -54,7 +54,7 @@ class ObservationMetaDataGenerator(object):
         self.driver = driver
         self.host = host
         self.port = port
-        self.database = dbPath
+        self.database = database
         self.opsimdb = DBObject(driver=self.driver, database=self.database,
                                 host=self.host, port=self.port)
 

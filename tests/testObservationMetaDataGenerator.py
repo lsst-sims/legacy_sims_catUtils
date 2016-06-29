@@ -68,7 +68,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
     def setUp(self):
         dbPath = os.path.join(getPackageDir('sims_data'),
                              'OpSimData/opsimblitz1_1133_sqlite.db')
-        self.gen = ObservationMetaDataGenerator(dbPath=dbPath,
+        self.gen = ObservationMetaDataGenerator(database=dbPath,
                                                 driver='sqlite')
 
     def testExceptions(self):
