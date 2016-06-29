@@ -49,13 +49,13 @@ class SNObject_tests(unittest.TestCase):
         SN_blank: A SNObject with no MW extinction
         """
         homeDir = os.getenv('HOME')
-        print('HOME', homeDir, os.environ['HOME'])
+        # print('HOME', homeDir, os.environ['HOME'])
         astropyDir = os.path.join(homeDir, '/.astropy')
         print('astropy Dir', astropyDir)
         print(astropy.config.get_cache_dir())
-        from astropy.config import get_config_dir
+        # from astropy.config import get_config_dir
 
-        mydir = get_config_dir()
+        # mydir = get_config_dir()
         print '==============================='
         print '==============================='
         print (mydir)
