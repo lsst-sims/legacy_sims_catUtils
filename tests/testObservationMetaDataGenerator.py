@@ -9,6 +9,7 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+from lsst.utils import getPackageDir
 
 #28 January 2015
 #SearchReversion and testGalaxyBulge are duplicated from testPhoSimCatalogs.py
@@ -64,12 +65,17 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
+    def setUp(self):
+        dbPath = os.path.join(getPackageDir('sims_data'),
+                             'OpSimData/opsimblitz1_1133_sqlite.db')
+        self.gen = ObservationMetaDataGenerator(dbPath=dbPath,
+                                                driver='sqlite')
 
     def testExceptions(self):
         """
         Make sure that RuntimeErrors get raised when they should
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         self.assertRaises(RuntimeError, gen.getObservationMetaData)
         self.assertRaises(RuntimeError, gen.getObservationMetaData,fieldRA=(1.0, 2.0, 3.0))
 
@@ -82,7 +88,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         Test when querying on both a single and two columns.
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
 
         # An list containing the bounds of our queries.
         # The order of the tuples must correspond to the order of
@@ -211,7 +217,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Test that ObservationMetaData returned by a query demanding an exact value do,
         in fact, adhere to that requirement.
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
 
         bounds = [
         ('obsHistID',5973),
@@ -275,7 +281,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Test that, when we specify a limit on the number of ObservationMetaData we want returned,
         that limit is respected
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         results = gen.getObservationMetaData(fieldRA=(numpy.degrees(1.370916), numpy.degrees(1.5348635)),
                                              limit=20)
         self.assertEqual(len(results), 20)
@@ -284,7 +290,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         """
         Test that queries on the filter work.
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
@@ -301,7 +307,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         sky) are correctly passed through to the resulting ObservationMetaData
         """
 
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
 
         # Test a cirlce with a specified radius
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
@@ -375,7 +381,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             os.unlink(dbName)
         _ = makePhoSimTestDB(filename=dbName)
         bulgeDB = testGalaxyBulge(driver='sqlite', database=dbName)
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
                                              telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
