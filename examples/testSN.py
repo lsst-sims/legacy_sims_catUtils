@@ -229,6 +229,44 @@ class SNObject_tests(unittest.TestCase):
         SNObjectFluxDensity = unextincted_sed.flambda
         np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
                                    rtol=1.0e-7)
+    def test_redshift(self):
+        """
+        test that the redshift method works as expected by checking that 
+        if we redshift a SN from its original redshift orig_z to new_z where
+        new_z is smaller (larger) than orig_z:
+        - 1. x0 increases (decreases)
+        - 2. source peak absolute magnitude in BesselB band stays the same
+        """
+        from astropy.cosmology import FlatLambdaCDM
+        cosmo = FlatLambdaCDM(H0=70., Om0=0.3)
+
+        orig_z = self.SN_extincted.get('z')
+        orig_x0 = self.SN_extincted.get('x0')
+        peakabsMag = self.SN_extincted.source_peakabsmag('BessellB', 'AB', cosmo=cosmo)
+
+        lowz = orig_z * 0.5
+        highz = orig_z * 2.0
+
+        # Test Case for lower redshift
+        self.SN_extincted.redshift(z=lowz, cosmo=cosmo)
+        low_x0 = self.SN_extincted.get('x0')
+        lowPeakAbsMag = self.SN_extincted.source_peakabsmag('BessellB', 'AB', cosmo=cosmo)
+
+        # Test 1.
+        self.assertGreater(low_x0, orig_x0)
+        # Test 2.
+        self.assertEqual(peakabsMag, lowPeakAbsMag)
+
+        # Test Case for higher redshift
+        self.SN_extincted.redshift(z=highz, cosmo=cosmo)
+        high_x0 = self.SN_extincted.get('x0')
+        HiPeakAbsMag = self.SN_extincted.source_peakabsmag('BessellB', 'AB', cosmo=cosmo)
+
+        # Test 1.
+        self.assertLess(high_x0, orig_x0)
+        # Test 2.
+        self.assertEqual(peakabsMag, HiPeakAbsMag)
+
 
 class SNIaCatalog_tests(unittest.TestCase):
 

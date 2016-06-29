@@ -141,7 +141,6 @@ class SNObject(sncosmo.Model):
         self.rectifySED = True
         return
 
-
     @property
     def SNstate(self):
         """
@@ -423,6 +422,48 @@ class SNObject(sncosmo.Model):
         self.ebvofMW = self.lsstmwebv.calculateEbv(
             equatorialCoordinates=self.skycoord)[0]
         return
+
+
+    def redshift(self, z, cosmo):
+        """
+        Redshift the instance holding the intrinsic brightness of the object
+        fixed. By intrinsic brightness here, we mean the BessellB band asbolute
+        magnitude in rest frame. This requires knowing the cosmology
+
+
+        Parameters
+        ----------
+        z : float, mandatory
+            redshift at which the object must be placed.
+        cosmo : instance of `astropy.cosmology` objects, mandatory
+            specifies the cosmology.
+        Returns
+        -------
+        None, but it changes the instance
+
+        """
+        import numbers
+
+        # Check that the input redshift is a scalar
+        try:
+            assert isinstance(z, numbers.Number)
+        except:
+            raise TypeError('The argument z in method redshift should be'
+                            'a scalar Numeric')
+
+        # Ensure that the input redshift is greater than 0.
+        try:
+            assert z > 0.
+        except:
+            raise ValueError('The argument z in the method SNObject.redshift'
+                             'should be greater than 0.')
+
+        # Find the current value of the rest frame BessellB AB magnitude
+        peakAbsMag = self.source_peakabsmag('BessellB', 'AB', cosmo=cosmo)
+        self.set(z=z)
+        self.set_source_peakabsmag(peakAbsMag, 'BessellB', 'AB', cosmo=cosmo)
+        return
+
 
     def SNObjectSED(self, time, wavelen=None, bandpass=None,
                     applyExtinction=True):
