@@ -9,6 +9,7 @@ from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+from lsst.utils import getPackageDir
 
 #28 January 2015
 #SearchReversion and testGalaxyBulge are duplicated from testPhoSimCatalogs.py
@@ -64,12 +65,17 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
+    def setUp(self):
+        dbPath = os.path.join(getPackageDir('sims_data'),
+                             'OpSimData/opsimblitz1_1133_sqlite.db')
+        self.gen = ObservationMetaDataGenerator(dbPath=dbPath,
+                                                driver='sqlite')
 
     def testExceptions(self):
         """
         Make sure that RuntimeErrors get raised when they should
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         self.assertRaises(RuntimeError, gen.getObservationMetaData)
         self.assertRaises(RuntimeError, gen.getObservationMetaData,fieldRA=(1.0, 2.0, 3.0))
 
@@ -82,14 +88,14 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         Test when querying on both a single and two columns.
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
 
-        #An list containing the bounds of our queries.
-        #The order of the tuples must correspond to the order of
-        #self.columnMapping in ObservationMetaDataGenerator.
-        #This was generated with a separate script which printed
-        #the median and maximum values of all of the quantities
-        #in our test opsim database
+        # An list containing the bounds of our queries.
+        # The order of the tuples must correspond to the order of
+        # self.columnMapping in ObservationMetaDataGenerator.
+        # This was generated with a separate script which printed
+        # the median and maximum values of all of the quantities
+        # in our test opsim database
         bounds = [
         ('obsHistID',(5973, 7000)),
         ('fieldRA',(numpy.degrees(1.370916), numpy.degrees(1.40))),
@@ -101,7 +107,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         ('m5',(22.815249, 23.0)),
         ('skyBrightness',(19.017605, 19.5))]
 
-        #test querying on a single column
+
+        # test querying on a single column
         for line in bounds:
             tag = line[0]
 
@@ -109,25 +116,31 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             # corresponds to this bound
             for ii in range(len(gen.columnMapping)):
                 if gen.columnMapping[ii][0] == tag:
+                    opsimKey = gen.columnMapping[ii][1]
                     break
 
             if tag != 'telescopeFilter' and tag != 'visitExpTime':
                 args = {}
                 args[tag] = line[1]
                 results = gen.getObservationMetaData(**args)
+                OpSimRecords = gen.getOpSimRecords(**args)
 
                 if tag == 'skyBrightness':
                     ct = 0
                     for obs_metadata in results:
                         self.assertLess(obs_metadata.skyBrightness, line[1][1])
+                        self.assertLess(OpSimRecords[opsimKey].max(), line[1][1])
                         self.assertGreater(obs_metadata.skyBrightness, line[1][0])
+                        self.assertGreater(OpSimRecords[opsimKey].min(), line[1][0])
                         ct += 1
                     self.assertGreater(ct, 0)
                 elif tag == 'm5':
                     ct = 0
                     for obs_metadata in results:
                         self.assertLess(obs_metadata.m5[obs_metadata.bandpass], line[1][1])
+                        self.assertLess(OpSimRecords[opsimKey].max(), line[1][1])
                         self.assertGreater(obs_metadata.m5[obs_metadata.bandpass], line[1][0])
+                        self.assertGreater(OpSimRecords[opsimKey].min(), line[1][0])
                         ct += 1
                     self.assertGreater(ct, 0)
 
@@ -145,11 +158,11 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         self.assertLess(obs_metadata.phoSimMetaData[name][0], xmax)
                         self.assertGreater(obs_metadata.phoSimMetaData[name][0], xmin)
 
-                    #make sure that we did not accidentally choose values such that
-                    #no ObservationMetaData were ever returned
+                    # make sure that we did not accidentally choose values such that
+                    # no ObservationMetaData were ever returned
                     self.assertGreater(ct, 0)
 
-        #test querying on two columns at once
+        # test querying on two columns at once
         ct = 0
         for ix in range(len(bounds)):
             tag1 = bounds[ix][0]
@@ -195,17 +208,16 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                                     self.assertGreater(obs_metadata.phoSimMetaData[name2][0], ymin)
                                     self.assertLess(obs_metadata.phoSimMetaData[name2][0], ymax)
 
-        #Make sure that we didn't choose values such that no ObservationMetaData were
-        #ever returned
+        # Make sure that we didn't choose values such that no ObservationMetaData were
+        # ever returned
         self.assertGreater(ct, 0)
-
 
     def testQueryExactValues(self):
         """
         Test that ObservationMetaData returned by a query demanding an exact value do,
         in fact, adhere to that requirement.
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
 
         bounds = [
         ('obsHistID',5973),
@@ -249,7 +261,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         self.assertAlmostEqual(value, obs_metadata.phoSimMetaData[name][0],10)
                         ct += 1
 
-                    #Make sure that we did not choose a value which returns zero ObservationMetaData
+                    # Make sure that we did not choose a value which returns zero ObservationMetaData
                     self.assertGreater(ct, 0)
                 elif tag == 'm5':
                     ct = 0
@@ -264,48 +276,46 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         ct += 1
                     self.assertGreater(ct, 0)
 
-
-
     def testQueryLimit(self):
         """
         Test that, when we specify a limit on the number of ObservationMetaData we want returned,
         that limit is respected
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         results = gen.getObservationMetaData(fieldRA=(numpy.degrees(1.370916), numpy.degrees(1.5348635)),
                                              limit=20)
-        self.assertEqual(len(results),20)
-
+        self.assertEqual(len(results), 20)
 
     def testQueryOnFilter(self):
         """
         Test that queries on the filter work.
         """
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
-            self.assertAlmostEqual(obs_metadata.phoSimMetaData['pointingRA'][0],1.370916)
-            self.assertEqual(obs_metadata.phoSimMetaData['Opsim_filter'][0],'i')
+            self.assertAlmostEqual(obs_metadata.phoSimMetaData['pointingRA'][0], 1.370916)
+            self.assertEqual(obs_metadata.phoSimMetaData['Opsim_filter'][0], 'i')
             ct += 1
 
-        #Make sure that more than zero ObservationMetaData were returned
+        # Make sure that more than zero ObservationMetaData were returned
         self.assertGreater(ct, 0)
-
 
     def testObsMetaDataBounds(self):
         """
-        Make sure that the bound specifications (i.e. a circle or a box on the sky) are correctly
-        passed through to the resulting ObservationMetaData
+        Make sure that the bound specifications (i.e. a circle or a box on the
+        sky) are correctly passed through to the resulting ObservationMetaData
         """
 
-        gen = ObservationMetaDataGenerator()
+        gen = self.gen
 
-        #Test a cirlce with a specified radius
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i', boundLength=0.9)
+        # Test a cirlce with a specified radius
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+                                             telescopeFilter='i',
+                                             boundLength=0.9)
         ct = 0
         for obs_metadata in results:
-            self.assertTrue(isinstance(obs_metadata.bounds,CircleBounds))
+            self.assertTrue(isinstance(obs_metadata.bounds, CircleBounds))
 
             # include some wiggle room, in case ObservationMetaData needs to
             # adjust the boundLength to accommodate the transformation between
@@ -313,17 +323,21 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertGreaterEqual(obs_metadata.bounds.radiusdeg, 0.9)
             self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
 
-            self.assertAlmostEqual(obs_metadata.bounds.RA, obs_metadata.phoSimMetaData['pointingRA'][0], 5)
-            self.assertAlmostEqual(obs_metadata.bounds.DEC, obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+            self.assertAlmostEqual(obs_metadata.bounds.RA,
+                                   obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+            self.assertAlmostEqual(obs_metadata.bounds.DEC,
+                                   obs_metadata.phoSimMetaData['pointingDec'][0], 5)
             ct += 1
 
-        #Make sure that some ObservationMetaData were tested
+        # Make sure that some ObservationMetaData were tested
         self.assertGreater(ct, 0)
 
         boundLengthList = [1.2, (1.2, 0.6)]
         for boundLength in boundLengthList:
-            results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i',
-                                                 boundType='box', boundLength=boundLength)
+            results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+                                                 telescopeFilter='i',
+                                                 boundType='box',
+                                                 boundLength=boundLength)
 
             if hasattr(boundLength, '__len__'):
                 dra = boundLength[0]
@@ -336,7 +350,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             for obs_metadata in results:
                 RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingRA'][0])
                 DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingDec'][0])
-                self.assertTrue(isinstance(obs_metadata.bounds,BoxBounds))
+                self.assertTrue(isinstance(obs_metadata.bounds, BoxBounds))
 
                 self.assertAlmostEqual(obs_metadata.bounds.RAminDeg, RAdeg-dra, 10)
 
@@ -351,34 +365,35 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
                 ct += 1
 
-            #Make sure that some ObservationMetaData were tested
+            # Make sure that some ObservationMetaData were tested
             self.assertGreater(ct, 0)
-
 
     def testCreationOfPhoSimCatalog(self):
         """
-        Make sure that we can create PhoSim input catalogs using the returned ObservationMetaData.
-        This test will just make sure that all of the expected header entries are there.
+        Make sure that we can create PhoSim input catalogs using the returned
+        ObservationMetaData. This test will just make sure that all of the
+        expected header entries are there.
         """
 
         dbName = 'obsMetaDataGeneratorTest.db'
         catName = 'testPhoSimFromObsMetaDataGenerator.txt'
         if os.path.exists(dbName):
             os.unlink(dbName)
-        junk_obs_metadata = makePhoSimTestDB(filename=dbName)
+        _ = makePhoSimTestDB(filename=dbName)
         bulgeDB = testGalaxyBulge(driver='sqlite', database=dbName)
-        gen = ObservationMetaDataGenerator()
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),telescopeFilter='i')
+        gen = self.gen
+        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+                                             telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
 
-        filterTranslation=['u','g','r','i','z','y']
+        filterTranslation=['u', 'g', 'r', 'i', 'z', 'y']
 
         with open(catName) as inputFile:
             lines = inputFile.readlines()
             ix = 0
             for control in gen.columnMapping:
-                if control[0] != 'm5' and control[0]!='skyBrightness' and control[0]!='seeing':
+                if control[0] != 'm5' and control[0] != 'skyBrightness' and control[0] != 'seeing':
                     words = lines[ix].split()
                     self.assertEqual(control[2].replace('pointing', 'Unrefracted_'), words[0])
 
@@ -390,7 +405,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
                         self.assertAlmostEqual(value, results[0].phoSimMetaData[control[2]][0], 5)
                     else:
-                        self.assertEqual(filterTranslation[int(words[1])],results[0].phoSimMetaData[control[2]][0])
+                        self.assertEqual(filterTranslation[int(words[1])], results[0].phoSimMetaData[control[2]][0])
 
                     ix += 1
 
@@ -401,7 +416,6 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             os.unlink(dbName)
 
 
-
 def suite():
     utilsTests.init()
     suites = []
@@ -409,7 +423,8 @@ def suite():
 
     return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
+
+def run(shouldExit=False):
     utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
     run(True)
