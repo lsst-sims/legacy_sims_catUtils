@@ -35,7 +35,7 @@ class ObservationMetaDataGenerator(object):
 
         Parameters
         ----------
-        dbPath : string, mandatory
+        database : string, mandatory
             absolute path to the output of the OpSim database
         driver : string, optional, defaults to 'sqlite'
             driver/dialect for the SQL database
