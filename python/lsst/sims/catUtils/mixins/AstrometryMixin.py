@@ -1,18 +1,10 @@
-import numpy
-import ctypes
-import math
-import palpy as pal
-import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
-from lsst.afw.cameraGeom import SCIENCE
+import numpy as np
 from lsst.sims.catalogs.measures.instance import compound, cached
-from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
-                            _galacticFromEquatorial, sphericalFromCartesian, \
+from lsst.sims.utils import _galacticFromEquatorial, sphericalFromCartesian, \
                             cartesianFromSpherical
 
-from lsst.sims.utils import _appGeoFromICRS, _observedFromAppGeo, _applyProperMotion
+from lsst.sims.utils import _applyProperMotion
 from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
-from lsst.sims.utils import sphericalFromCartesian, cartesianFromSpherical
 from lsst.sims.utils import rotationMatrixFromVectors
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
@@ -22,10 +14,11 @@ __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies", "Astrometr
            "PhoSimAstrometrySSM",
            "CameraCoords"]
 
+
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
 
-    @compound('glon','glat')
+    @compound('glon', 'glat')
     def get_galactic_coords(self):
         """
         Getter for galactic coordinates, in case the catalog class does not provide that
@@ -35,15 +28,14 @@ class AstrometryBase(object):
 
         All angles are in radians
         """
-        ra=self.column_by_name('raJ2000')
-        dec=self.column_by_name('decJ2000')
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
 
-        glon, glat = _galacticFromEquatorial(ra,dec)
+        glon, glat = _galacticFromEquatorial(ra, dec)
 
-        return numpy.array([glon,glat])
+        return np.array([glon, glat])
 
-
-    @compound('x_pupil','y_pupil')
+    @compound('x_pupil', 'y_pupil')
     def get_pupilFromSky(self):
         """
         Take an input RA and dec from the sky and convert it to coordinates
@@ -56,18 +48,16 @@ class AstrometryBase(object):
         decObj = self.column_by_name('decICRS')
 
         return _pupilCoordsFromRaDec(raObj, decObj, epoch=self.db_obj.epoch,
-                                            obs_metadata=self.obs_metadata)
+                                     obs_metadata=self.obs_metadata)
 
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
-    allow_multiple_chips = False #this is a flag which, if true, would allow
-                                 #chipNameFromPupilCoords to return objects that land on
-                                 #multiple chips; only the first chip would be
-                                 #written to the catalog
-
-
+    allow_multiple_chips = False  # this is a flag which, if true, would allow
+                                  # chipNameFromPupilCoords to return objects that land on
+                                  # multiple chips; only the first chip would be
+                                  # written to the catalog
 
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
@@ -80,10 +70,10 @@ class CameraCoords(AstrometryBase):
         """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
-        chipNames = self.column_by_name('chipName')
+        chipNameList = self.column_by_name('chipName')
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
-        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNames,
+        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList,
                                           camera=self.camera)
 
     @compound('xFocalPlane', 'yFocalPlane')
@@ -92,6 +82,7 @@ class CameraCoords(AstrometryBase):
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
         return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=self.camera)
+
 
 class AstrometryGalaxies(AstrometryBase):
     """
@@ -109,10 +100,9 @@ class AstrometryGalaxies(AstrometryBase):
     def get_icrsCoordinates(self):
         """Getter for RA, Dec in the International Celestial Reference System with effects
         due to proper motion and radial velocity applied"""
-        return numpy.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
+        return np.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
 
-
-    @compound('raObserved','decObserved')
+    @compound('raObserved', 'decObserved')
     def get_observedCoordinates(self):
         """Getter for observed RA, Dec (i.e. RA and Dec with all effects due to the motion
         of the Earth and refraction by the atmosphere applied)"""
@@ -140,24 +130,23 @@ class AstrometryStars(AstrometryBase):
         Reference Frame to observed coordinates.
         """
 
-        #TODO
-        #are we going to store proper motion in raw radians per year
-        #or in sky motion = cos(dec) * (radians per year)
-        #PAL asks for radians per year inputs
+        # TODO
+        # are we going to store proper motion in raw radians per year
+        # or in sky motion = cos(dec) * (radians per year)
+        # PAL asks for radians per year inputs
 
-        pr = self.column_by_name('properMotionRa') #in radians per year
-        pd = self.column_by_name('properMotionDec') #in radians per year
-        px = self.column_by_name('parallax') #in radians
-        rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
+        pr = self.column_by_name('properMotionRa')  # in radians per year
+        pd = self.column_by_name('properMotionDec')  # in radians per year
+        px = self.column_by_name('parallax')  # in radians
+        rv = self.column_by_name('radialVelocity')  # in km/s; positive if receding
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
 
         return _observedFromICRS(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
-                     includeRefraction = includeRefraction, obs_metadata=self.obs_metadata,
-                     epoch=self.db_obj.epoch)
+                                 includeRefraction = includeRefraction, obs_metadata=self.obs_metadata,
+                                 epoch=self.db_obj.epoch)
 
-
-    @compound('raObserved','decObserved')
+    @compound('raObserved', 'decObserved')
     def get_observedCoordinates(self):
         """Getter for observed RA, Dec (i.e. RA and Dec with all effects due to the motion
         of the Earth and refraction by the atmosphere applied)"""
@@ -169,13 +158,13 @@ class AstrometryStars(AstrometryBase):
         due to proper motion and radial velocity applied"""
         ra0 = self.column_by_name('raJ2000')
         dec0 = self.column_by_name('decJ2000')
-        pr = self.column_by_name('properMotionRa') #in radians per year
-        pd = self.column_by_name('properMotionDec') #in radians per year
-        px = self.column_by_name('parallax') #in radians
-        rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
+        pr = self.column_by_name('properMotionRa')  # in radians per year
+        pd = self.column_by_name('properMotionDec')  # in radians per year
+        px = self.column_by_name('parallax')  # in radians
+        rv = self.column_by_name('radialVelocity')  # in km/s; positive if receding
 
         ra_corr, dec_corr = _applyProperMotion(ra0, dec0, pr, pd, px, rv, mjd=self.obs_metadata.mjd)
-        return numpy.array([ra_corr, dec_corr])
+        return np.array([ra_corr, dec_corr])
 
 
 class AstrometrySSM(AstrometryBase):
@@ -185,20 +174,18 @@ class AstrometrySSM(AstrometryBase):
 
     @compound('raICRS', 'decICRS')
     def get_icrsCoordinates(self):
-        return numpy.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
-
+        return np.array([self.column_by_name('raJ2000'), self.column_by_name('decJ2000')])
 
     def observedSSMCoordinates(self, includeRefraction = True):
         """
         Reads in ICRS coordinates from the database.  Returns observed coordinates
         with refraction toggled on or off based on the input boolean includeRefraction
         """
-        ra = self.column_by_name('raJ2000') # in radians
-        dec = self.column_by_name('decJ2000') # in radians
+        ra = self.column_by_name('raJ2000')  # in radians
+        dec = self.column_by_name('decJ2000')  # in radians
 
         return _observedFromICRS(ra, dec, includeRefraction=includeRefraction,
                                  obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
-
 
     @compound('raObserved', 'decObserved')
     def get_observedCoordinates(self):
@@ -210,12 +197,12 @@ class AstrometrySSM(AstrometryBase):
         Gets the skyVelocity in radians per day
         """
 
-        dradt = self.column_by_name('velRa') # in radians per day (actual sky velocity;
-                                             # i.e., no need to divide by cos(dec))
+        dradt = self.column_by_name('velRa')  # in radians per day (actual sky velocity;
+                                              # i.e., no need to divide by cos(dec))
 
-        ddecdt = self.column_by_name('velDec') # in radians per day
+        ddecdt = self.column_by_name('velDec')  # in radians per day
 
-        return numpy.sqrt(numpy.power(dradt,2) + numpy.power(ddecdt,2))
+        return np.sqrt(np.power(dradt, 2) + np.power(ddecdt, 2))
 
 
 class PhoSimAstrometryBase(object):
@@ -255,14 +242,14 @@ class PhoSimAstrometryBase(object):
         @param [out] dec_out is a numpy array of de-precessed Dec in radians
         """
 
-        if len(ra_in)==0:
-            return numpy.array([[],[]])
+        if len(ra_in) == 0:
+            return np.array([[], []])
 
-        xyz_bore = cartesianFromSpherical(numpy.array([obs_metadata._pointingRA]),
-                                          numpy.array([obs_metadata._pointingDec]))
+        xyz_bore = cartesianFromSpherical(np.array([obs_metadata._pointingRA]),
+                                          np.array([obs_metadata._pointingDec]))
 
-        precessedRA, precessedDec = _observedFromICRS(numpy.array([obs_metadata._pointingRA]),
-                                                      numpy.array([obs_metadata._pointingDec]),
+        precessedRA, precessedDec = _observedFromICRS(np.array([obs_metadata._pointingRA]),
+                                                      np.array([obs_metadata._pointingDec]),
                                                       obs_metadata=obs_metadata, epoch=2000.0,
                                                       includeRefraction=False)
 
@@ -272,9 +259,9 @@ class PhoSimAstrometryBase(object):
 
         xyz_list = cartesianFromSpherical(ra_in, dec_in)
 
-        xyz_de_precessed = numpy.array([numpy.dot(rotMat, xx) for xx in xyz_list])
+        xyz_de_precessed = np.array([np.dot(rotMat, xx) for xx in xyz_list])
         ra_deprecessed, dec_deprecessed = sphericalFromCartesian(xyz_de_precessed)
-        return numpy.array([ra_deprecessed, dec_deprecessed])
+        return np.array([ra_deprecessed, dec_deprecessed])
 
 
 class PhoSimAstrometryStars(AstrometryStars, PhoSimAstrometryBase):
@@ -284,7 +271,7 @@ class PhoSimAstrometryStars(AstrometryStars, PhoSimAstrometryBase):
     InstanceCatalog) in the case of stellar sources.
     """
 
-    @compound('raPhoSim','decPhoSim')
+    @compound('raPhoSim', 'decPhoSim')
     def get_phoSimCoordinates(self):
         """Getter for RA, Dec coordinates expected by PhoSim.
 
@@ -305,7 +292,7 @@ class PhoSimAstrometryGalaxies(AstrometryGalaxies, PhoSimAstrometryBase):
     InstanceCatalog) in the case of extra-galactic sources.
     """
 
-    @compound('raPhoSim','decPhoSim')
+    @compound('raPhoSim', 'decPhoSim')
     def get_phoSimCoordinates(self):
         """Getter for RA, Dec coordinates expected by PhoSim.
 
