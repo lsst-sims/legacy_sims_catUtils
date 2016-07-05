@@ -1,10 +1,10 @@
 import unittest
 import lsst.utils.tests as utilsTests
+import astropy
 
 class sncosmo_import_tests(unittest.TestCase):
     
     def Setup(self):
-        import astropy
     def test_versions(self):
         print(astropy.__version__)
 
