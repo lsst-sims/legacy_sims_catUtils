@@ -5,6 +5,7 @@ import astropy
 class sncosmo_import_tests(unittest.TestCase):
     
     def Setup(self):
+        pass
     def test_versions(self):
         print(astropy.__version__)
 
