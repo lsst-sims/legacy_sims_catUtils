@@ -162,10 +162,12 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 msg = "failed querying %s and %s" % (tag1, tag2)
                 self.assertGreater(len(results), 0, msg=msg)
                 for obs in results:
-                    self.assertGreater(get_val_from_obs(tag1, obs), bounds[ix][1][0], msg=msg)
-                    self.assertLess(get_val_from_obs(tag1, obs), bounds[ix][1][1], msg=msg)
-                    self.assertGreater(get_val_from_obs(tag2, obs), bounds[jx][1][0], msg=msg)
-                    self.assertLess(get_val_from_obs(tag2, obs), bounds[jx][1][1], msg=msg)
+                    v1 = get_val_from_obs(tag1, obs)
+                    v2 = get_val_from_obs(tag2, obs)
+                    self.assertGreater(v1, bounds[ix][1][0], msg=msg)
+                    self.assertLess(v1, bounds[ix][1][1], msg=msg)
+                    self.assertGreater(v2, bounds[jx][1][0], msg=msg)
+                    self.assertLess(v2, bounds[jx][1][1], msg=msg)
 
 
     def testOpSimQueryOnRanges(self):
