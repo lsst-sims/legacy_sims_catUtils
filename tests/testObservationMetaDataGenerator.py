@@ -56,6 +56,31 @@ def get_val_from_obs(tag, obs):
     return obs.phoSimMetaData[mapping[tag]]
 
 
+def get_val_from_rec(tag, rec):
+    """
+    tag is the name of a data column
+
+    rec is a record returned by a query to an OpSim database
+
+    returns the value of 'tag' for this rec
+    """
+    if tag == 'telescopeFilter':
+        return rec['filter']
+    elif tag == 'seeing':
+        return rec['finSeeing']  # because the test opsim database uses the old schema
+    elif tag == 'm5':
+        return rec['fiveSigmaDepth']
+    elif tag == 'skyBrightness':
+        return rec['filtSkyBrightness']
+    elif tag in ('fieldRA', 'fieldDec', 'moonRA', 'moonDec',
+    'rotSkyPos', 'sunAlt', 'moonAlt', 'dist2Moon', 'altitude',
+    'azimuth'):
+
+        return numpy.degrees(rec[tag])
+
+
+    return rec[tag]
+
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
     longMessage = True
@@ -141,6 +166,32 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     self.assertLess(get_val_from_obs(tag1, obs), bounds[ix][1][1], msg=msg)
                     self.assertGreater(get_val_from_obs(tag2, obs), bounds[jx][1][0], msg=msg)
                     self.assertLess(get_val_from_obs(tag2, obs), bounds[jx][1][1], msg=msg)
+
+
+    def testOpSimQueryOnRanges(self):
+        """
+        Test that getOpimRecords() returns correct results
+        """
+        bounds = [
+        ('obsHistID',(5973, 7000)),
+        ('fieldRA',(numpy.degrees(1.370916), numpy.degrees(1.40))),
+        ('rawSeeing',(0.728562, 0.9)),
+        ('seeing', (0.7, 0.9)),
+        ('dist2Moon',(numpy.degrees(1.570307), numpy.degrees(1.9))),
+        ('expMJD',(49367.129396, 49370.0)),
+        ('m5',(22.815249, 23.0)),
+        ('skyBrightness',(19.017605, 19.5)),]
+
+        for line in bounds:
+            tag = line[0]
+            args = {tag: line[1]}
+            results = self.gen.getOpSimRecords(**args)
+            msg = 'failed querying %s ' % tag
+            self.assertGreater(len(results), 0)
+            for rec in results:
+                val = get_val_from_rec(tag, rec)
+                self.assertGreater(val, line[1][0], msg=msg)
+                self.assertLess(val, line[1][1], msg=msg)
 
     def testQueryExactValues(self):
         """
