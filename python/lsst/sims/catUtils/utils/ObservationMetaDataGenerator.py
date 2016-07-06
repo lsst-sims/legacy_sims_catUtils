@@ -1,6 +1,5 @@
 import os
 import numpy
-from collections import OrderedDict
 import lsst.utils
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
@@ -125,8 +124,8 @@ class ObservationMetaDataGenerator(object):
         """
         v = [('obsHistID', 'obsHistID', 'Opsim_obshistid', numpy.int64, None),
              ('expDate', 'expDate', 'SIM_SEED', int, None),
-             ('fieldRA', 'fieldRA', 'pointingRA', float, numpy.radians),
-             ('fieldDec', 'fieldDec', 'pointingDec', float, numpy.radians),
+             ('fieldRA', 'fieldRA', 'Unrefracted_RA', float, numpy.radians),
+             ('fieldDec', 'fieldDec', 'Unrefracted_Dec', float, numpy.radians),
              ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians),
              ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians),
              ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians),
@@ -243,123 +242,6 @@ class ObservationMetaDataGenerator(object):
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
         return results
 
-    def getObservationMetaDataOld(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
-                               moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
-                               rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
-                               moonPhase=None, expMJD=None, altitude=None, azimuth=None,
-                               visitExpTime=None, airmass=None, skyBrightness=None,
-                               m5=None, boundType='circle', boundLength=0.1, limit=None):
-
-        """
-        This method will query the OpSim database summary table according to user-specified
-        constraints and return a list of of ObservationMetaData instantiations consistent
-        with those constraints.
-
-        @param [in] limit is an integer denoting the maximum number of ObservationMetaData to
-        be returned
-
-        @param [in] boundType is the boundType of the ObservationMetaData to be returned
-        (see documentation in sims_catalogs_generation/../db/spatialBounds.py for more
-        details)
-
-        @param [in] boundLength is the boundLength of the ObservationMetaData to be
-        returned (in degrees; see documentation in
-        sims_catalogs_generation/../db/spatialBounds.py for more details)
-
-        All other input parameters are constraints to be placed on the SQL query of the
-        opsim output db.  These contraints can either be tuples of the form (min, max)
-        or an exact value the user wants returned.
-
-        Parameters that can be constrained are:
-
-        @param [in] fieldRA in degrees
-        @param [in] fieldDec in degrees
-        @param [in] altitude in degrees
-        @param [in] azimuth in degrees
-
-        @param [in] moonRA in degrees
-        @param [in] moonDec in degrees
-        @param [in] moonAlt in degrees
-        @param [in] moonPhase (a value from 1 to 100 indicating how much of the moon is illuminated)
-        @param [in] dist2Moon the distance between the telescope pointing and the moon in degrees
-
-        @param [in] sunAlt in degrees
-
-        @param [in[ rotSkyPos (the angle of the sky with respect to the camera coordinate system) in degrees
-        @param [in] telescopeFilter a string that is one of u,g,r,i,z,y
-
-        @param [in] airmass
-        @param [in] rawSeeing (this is an idealized seeing at zenith at 500nm in arcseconds)
-        @param [in] seeing (this is the OpSim column 'FWHMeff' or 'finSeeing' [deprecated] in arcseconds)
-
-        @param [in] visitExpTime the exposure time in seconds
-        @param [in] obsHistID the integer used by OpSim to label pointings
-        @param [in] expDate is the date of the exposure (units????)
-        @param [in] expMJD is the MJD of the exposure
-        @param [in] m5 is the five sigma depth of the observation
-        @param [in] skyBrightness
-        """
-
-        query = self.baseQuery + ' FROM SUMMARY'
-
-        nConstraints = 0  # the number of constraints in this query
-
-        for column in self.columnMapping:
-            value = eval(column[0])
-            if value is not None:
-                if nConstraints > 0:
-                    query += ' AND'
-                else:
-                    query += ' WHERE '
-
-                if isinstance(value, tuple):
-                    if len(value) > 2:
-                        raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
-                                           'to getObservationMetaData: %s is len %d'
-                                           % (column[0], len(value)))
-
-                    # perform any necessary coordinate transformations
-                    if column[4] is not None:
-                        vmin = column[4](value[0])
-                        vmax = column[4](value[1])
-                    else:
-                        vmin = value[0]
-                        vmax = value[1]
-
-                    query += ' %s > %s AND %s < %s' % \
-                             (column[1], vmin, column[1], vmax)
-                else:
-                    # perform any necessary coordinate transformations
-                    if column[4] is not None:
-                        vv = column[4](value)
-                    else:
-                        vv = value
-                    query += ' %s == %s' % (column[1], vv)
-
-                nConstraints += 1
-
-        query += ' GROUP BY expMJD'
-
-        if limit is not None:
-            query += ' LIMIT %d' % limit
-
-        if nConstraints == 0 and limit is None:
-            raise RuntimeError('You did not specify any contraints on your query;' +
-                               ' you will just return ObservationMetaData for all poitnings')
-
-        results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
-
-
-        # convert the results into ObservationMetaData instantiations
-        obs_output = [ObservationMetaData(m5=pointing['fiveSigmaDepth'], boundType=boundType, boundLength=boundLength,
-                                          skyBrightness=pointing['filtSkyBrightness'],
-                                          seeing=pointing[self._seeing_column],
-                                          phoSimMetaData=OrderedDict([(column[2],
-                                                                    (pointing[column[1]], pointing[column[1]].dtype))
-                                                                    for column in self.active_columns if column[2] is not None]))
-                                          for pointing in results]
-
-        return obs_output
 
     @staticmethod
     def ObservationMetaDataFromPointing(OpSimPointingRecord, columnMap,
@@ -392,11 +274,12 @@ class ObservationMetaDataGenerator(object):
         """
 
         pointing = OpSimPointingRecord
+        pointing_column_names = pointing.dtype.names
         # Decide what is the name of the column in the OpSim database
         # corresponding to the Seeing. For older OpSim outputs, this is
         # 'finSeeing'. For later OpSim outputs this is 'FWHMeff'
         if OpSimColumns is None:
-            OpSimColumns = pointing.dtype.names
+            OpSimColumns = pointing_column_names
 
         if 'FWHMeff' in OpSimColumns:
             _seeingColumn = 'FWHMeff'
@@ -409,17 +292,34 @@ class ObservationMetaDataGenerator(object):
                              if column[1] in OpSimColumns)
         # convert list of tuples of the form (Name, (value, dtype)) to
         # an ordered Dict
-        phosimDict = OrderedDict([(col[2], (pointing[col[1]],
-                                            pointing[col[1]].dtype))
-                                  for col in ActiveColumns
-                                  if col[2] is not None])
+        phosimDict = dict([(col[2], pointing[col[1]])
+                           for col in columnMap
+                           if (col[1] in pointing_column_names and
+                               col[1] not in
+                               ('fieldRA', 'fieldDec', 'expMJD',
+                                'filter', 'fiveSigmaDepth',
+                                'filtSkyBrightness', _seeingColumn,
+                                'rotSkyPos', 'altitude', 'azimuth',
+                                'airmass'))])
 
-        return ObservationMetaData(m5=pointing['fiveSigmaDepth'],
-                                   boundType=boundType,
-                                   boundLength=boundLength,
-                                   skyBrightness=pointing['filtSkyBrightness'],
-                                   seeing=pointing[_seeingColumn],
-                                   phoSimMetaData=phosimDict)
+        obs = ObservationMetaData(pointingRA=numpy.degrees(pointing['fieldRA']),
+                                  pointingDec=numpy.degrees(pointing['fieldDec']),
+                                  mjd=pointing['expMJD'],
+                                  rotSkyPos=numpy.degrees(pointing['rotSkyPos']),
+                                  bandpassName=pointing['filter'],
+                                  boundType=boundType,
+                                  boundLength=boundLength)
+
+        if 'fiveSigmaDepth' in pointing_column_names:
+            obs.m5 = pointing['fiveSigmaDepth']
+        if 'filtSkyBrightness' in pointing_column_names:
+            obs.skyBrightness = pointing['filtSkyBrightness']
+        if _seeingColumn in pointing_column_names:
+            obs.seeing = pointing[_seeingColumn]
+
+        obs.phoSimMetaData = phosimDict
+
+        return obs
 
     @staticmethod 
     def ObservationMetaDataFromPointingArray(OpSimPointingRecords,

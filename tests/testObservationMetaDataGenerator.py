@@ -66,6 +66,12 @@ class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
     def setUp(self):
+        # these are the names of header fields that are handled from the standard ObservationMetaData
+        # data, and thus should not be expected to be in the phoSimMetaData
+        self.special_field_names = ('pointingRA', 'pointingDec', 'Opsim_altitude', 'Opsim_azimuth',
+                                    'Opsim_expmjd', 'airmass', 'Opsim_filter', 'Opsim_rotskypos',
+                                    'Unrefracted_RA', 'Unrefracted_Dec')
+
         dbPath = os.path.join(getPackageDir('sims_data'),
                              'OpSimData/opsimblitz1_1133_sqlite.db')
         self.gen = ObservationMetaDataGenerator(database=dbPath,
@@ -145,7 +151,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     self.assertGreater(ct, 0)
 
                 name = gen.columnMapping[ii][2]
-                if name is not None:
+                if name is not None and name not in self.special_field_names:
                     if gen.columnMapping[ii][4] is not None:
                         xmin = gen.columnMapping[ii][4](line[1][0])
                         xmax = gen.columnMapping[ii][4](line[1][1])
@@ -155,8 +161,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                     ct = 0
                     for obs_metadata in results:
                         ct += 1
-                        self.assertLess(obs_metadata.phoSimMetaData[name][0], xmax)
-                        self.assertGreater(obs_metadata.phoSimMetaData[name][0], xmin)
+                        self.assertLess(obs_metadata.phoSimMetaData[name], xmax)
+                        self.assertGreater(obs_metadata.phoSimMetaData[name], xmin)
 
                     # make sure that we did not accidentally choose values such that
                     # no ObservationMetaData were ever returned
@@ -201,12 +207,12 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                         if name1 is not None or name2 is not None:
                             for obs_metadata in results:
                                 ct += 1
-                                if name1 is not None:
-                                    self.assertGreater(obs_metadata.phoSimMetaData[name1][0], xmin)
-                                    self.assertLess(obs_metadata.phoSimMetaData[name1][0], xmax)
-                                if name2 is not None:
-                                    self.assertGreater(obs_metadata.phoSimMetaData[name2][0], ymin)
-                                    self.assertLess(obs_metadata.phoSimMetaData[name2][0], ymax)
+                                if name1 is not None and name1 not in self.special_field_names:
+                                    self.assertGreater(obs_metadata.phoSimMetaData[name1], xmin)
+                                    self.assertLess(obs_metadata.phoSimMetaData[name1], xmax)
+                                if name2 is not None and name2 not in self.special_field_names:
+                                    self.assertGreater(obs_metadata.phoSimMetaData[name2], ymin)
+                                    self.assertLess(obs_metadata.phoSimMetaData[name2], ymax)
 
         # Make sure that we didn't choose values such that no ObservationMetaData were
         # ever returned
@@ -255,10 +261,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 else:
                     value = bounds[ii][1]
 
-                if name is not None:
+                if name is not None and name not in self.special_field_names:
                     ct = 0
                     for obs_metadata in results:
-                        self.assertAlmostEqual(value, obs_metadata.phoSimMetaData[name][0],10)
+                        self.assertAlmostEqual(value, obs_metadata.phoSimMetaData[name],10)
                         ct += 1
 
                     # Make sure that we did not choose a value which returns zero ObservationMetaData
@@ -294,8 +300,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
-            self.assertAlmostEqual(obs_metadata.phoSimMetaData['pointingRA'][0], 1.370916)
-            self.assertEqual(obs_metadata.phoSimMetaData['Opsim_filter'][0], 'i')
+            self.assertAlmostEqual(obs_metadata._pointingRA, 1.370916)
+            self.assertEqual(obs_metadata.bandpass, 'i')
             ct += 1
 
         # Make sure that more than zero ObservationMetaData were returned
@@ -324,9 +330,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
 
             self.assertAlmostEqual(obs_metadata.bounds.RA,
-                                   obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+                                   numpy.radians(obs_metadata.pointingRA), 5)
             self.assertAlmostEqual(obs_metadata.bounds.DEC,
-                                   obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+                                   numpy.radians(obs_metadata.pointingDec), 5)
             ct += 1
 
         # Make sure that some ObservationMetaData were tested
@@ -348,8 +354,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
             ct = 0
             for obs_metadata in results:
-                RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingRA'][0])
-                DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingDec'][0])
+                RAdeg = obs_metadata.pointingRA
+                DECdeg = obs_metadata.pointingDec
                 self.assertTrue(isinstance(obs_metadata.bounds, BoxBounds))
 
                 self.assertAlmostEqual(obs_metadata.bounds.RAminDeg, RAdeg-dra, 10)
@@ -360,8 +366,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
                 self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg, DECdeg+ddec, 10)
 
-                self.assertAlmostEqual(obs_metadata.bounds.RA, obs_metadata.phoSimMetaData['pointingRA'][0], 5)
-                self.assertAlmostEqual(obs_metadata.bounds.DEC, obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+                self.assertAlmostEqual(obs_metadata.bounds.RA, numpy.radians(obs_metadata.pointingRA), 5)
+                self.assertAlmostEqual(obs_metadata.bounds.DEC, numpy.radians(obs_metadata.pointingDec), 5)
 
                 ct += 1
 
@@ -387,27 +393,18 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
 
-        filterTranslation=['u', 'g', 'r', 'i', 'z', 'y']
-
         with open(catName) as inputFile:
             lines = inputFile.readlines()
-            ix = 0
-            for control in gen.columnMapping:
-                if control[0] != 'm5' and control[0] != 'skyBrightness' and control[0] != 'seeing':
-                    words = lines[ix].split()
-                    self.assertEqual(control[2].replace('pointing', 'Unrefracted_'), words[0])
+            header_entries = []
+            for line in lines:
+                words = line.split()
+                if words[0] == 'object':
+                   break
+                header_entries.append(words[0])
 
-                    if control[0] != 'telescopeFilter':
-                        if control[4] is not None:
-                            value = control[4](float(words[1]))
-                        else:
-                            value = float(words[1])
-
-                        self.assertAlmostEqual(value, results[0].phoSimMetaData[control[2]][0], 5)
-                    else:
-                        self.assertEqual(filterTranslation[int(words[1])], results[0].phoSimMetaData[control[2]][0])
-
-                    ix += 1
+            for column in self.gen.columnMapping:
+                if column[2] is not None:
+                    self.assertIn(column[2], header_entries)
 
         if os.path.exists(catName):
             os.unlink(catName)
