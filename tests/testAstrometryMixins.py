@@ -130,14 +130,13 @@ class astrometryUnitTest(unittest.TestCase):
         #these would be set to meaningful values.  Because we are generating
         #an artificial set of inputs that must comport to the baseline SLALIB
         #inputs, these are set arbitrarily by hand
-        self.metadata['pointingRA'] = (numpy.radians(200.0), float)
-        self.metadata['pointingDec'] = (numpy.radians(-30.0), float)
-        self.metadata['Opsim_rotskypos'] = (1.0, float)
 
-        self.obs_metadata=ObservationMetaData(mjd=57388.0,
-                                     boundType='circle',
-                                     boundLength=0.05,
-                                     phoSimMetaData=self.metadata)
+        self.obs_metadata=ObservationMetaData(pointingRA=200.0,
+                                              pointingDec=-30.0,
+                                              rotSkyPos=numpy.degrees(1.0),
+                                              mjd=57388.0,
+                                              boundType='circle',
+                                              boundLength=0.05)
 
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5

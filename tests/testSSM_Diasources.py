@@ -113,11 +113,14 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 # (note that we need the phosim dictionary as well)
                 newMJD = obsMeta.mjd.TAI + (747 - 20)
                 phoSimMetaDict = {'exptime': [30]}
-                obs = ObservationMetaData(phoSimMetaData = phoSimMetaDict, mjd=newMJD,
+                obs = ObservationMetaData(mjd=newMJD,
                                           pointingRA=obsMeta.pointingRA, pointingDec=obsMeta.pointingDec,
                                           bandpassName=obsMeta.bandpass, rotSkyPos=obsMeta.rotSkyPos,
                                           m5=obsMeta.m5[obsMeta.bandpass], seeing=obsMeta.seeing[obsMeta.bandpass],
                                           boundLength=obsMeta.boundLength, boundType=obsMeta.boundType)
+
+                obs.phoSimMetaData = phoSimMetaDict
+
                 mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
                 #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
                 photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0], nexp=1, bandpass=obs.bandpass)

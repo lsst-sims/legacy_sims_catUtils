@@ -26,18 +26,18 @@ def write_phoSim_header(obs, file_handle):
     file_handle points to the catalog being written.
     """
     try:
-        file_handle.write('Unrefracted_RA %f\n' % obs.pointingRA)
-        file_handle.write('Unrefracted_Dec %f\n' % obs.pointingDec)
-        file_handle.write('Opsim_expmjd %f\n' % obs.mjd.TAI)
+        file_handle.write('Unrefracted_RA %.9g\n' % obs.pointingRA)
+        file_handle.write('Unrefracted_Dec %.9g\n' % obs.pointingDec)
+        file_handle.write('Opsim_expmjd %.9g\n' % obs.mjd.TAI)
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
-        file_handle.write('Opsim_altitude %f\n' % alt)
-        file_handle.write('Opsim_azimuth %f\n' % az)
+        file_handle.write('Opsim_altitude %.9g\n' % alt)
+        file_handle.write('Opsim_azimuth %.9g\n' % az)
         airmass = 1.0/numpy.cos(numpy.pi-numpy.radians(alt))
-        file_handle.write('airmass %f\n' % airmass)
+        file_handle.write('airmass %.9g\n' % airmass)
         file_handle.write('Opsim_filter %d\n' %
                       {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}[obs.bandpass])
 
-        file_handle.write('Opsim_rotskypos %f\n' % obs.rotSkyPos)
+        file_handle.write('Opsim_rotskypos %.9g\n' % obs.rotSkyPos)
     except:
         print "The ObservationMetaData you tried to write a PhoSim header from"
         print "lacks one of the required parameters"
@@ -55,7 +55,7 @@ def write_phoSim_header(obs, file_handle):
             raise RuntimeError("This ObservationMetaData has conflicting values for "
                                "%s" % kk)
 
-        file_handle.write('%s %f\n' % (kk, obs._phoSimMetadata[kk]))
+        file_handle.write('%s %.9g\n' % (kk, obs._phoSimMetadata[kk]))
 
 
 
