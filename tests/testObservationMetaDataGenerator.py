@@ -193,6 +193,22 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 self.assertGreater(val, line[1][0], msg=msg)
                 self.assertLess(val, line[1][1], msg=msg)
 
+        for ix in range(len(bounds)):
+            tag1 = bounds[ix][0]
+            for jx in range(ix+1, len(bounds)):
+                tag2 = bounds[jx][0]
+                args = {tag1: bounds[ix][1], tag2: bounds[jx][1]}
+                results = self.gen.getOpSimRecords(**args)
+                msg = 'failed while querying %s and %s' % (tag1, tag2)
+                self.assertGreater(len(results), 0)
+                for rec in results:
+                    v1 = get_val_from_rec(tag1, rec)
+                    v2 = get_val_from_rec(tag2, rec)
+                    self.assertGreater(v1, bounds[ix][1][0], msg=msg)
+                    self.assertLess(v1, bounds[ix][1][1], msg=msg)
+                    self.assertGreater(v2, bounds[jx][1][0], msg=msg)
+                    self.assertLess(v2, bounds[jx][1][1], msg=msg)
+
     def testQueryExactValues(self):
         """
         Test that ObservationMetaData returned by a query demanding an exact value do,
