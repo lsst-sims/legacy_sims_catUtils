@@ -230,6 +230,41 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             for obs in results:
                 self.assertEqual(get_val_from_obs(tag, obs), bounds[ii][1], msg=msg)
 
+    def testOpSimQueryExact(self):
+        """
+        Test that querying OpSim records for exact values works
+        """
+
+        bounds = [
+        ('obsHistID',5973),
+        ('expDate',1220779),
+        ('fieldRA',numpy.degrees(1.370916)),
+        ('fieldDec',numpy.degrees(-0.456238)),
+        ('moonRA',numpy.degrees(2.914132)),
+        ('moonDec',numpy.degrees(0.06305)),
+        ('rotSkyPos',numpy.degrees(3.116656)),
+        ('telescopeFilter','i'),
+        ('rawSeeing',0.728562),
+        ('seeing', 0.88911899999999999),
+        ('sunAlt',numpy.degrees(-0.522905)),
+        ('moonAlt',numpy.degrees(0.099096)),
+        ('dist2Moon',numpy.degrees(1.570307)),
+        ('moonPhase',52.2325),
+        ('expMJD',49367.129396),
+        ('visitExpTime',30.0),
+        ('m5',22.815249),
+        ('skyBrightness',19.017605)]
+
+
+        for line in bounds:
+            tag = line[0]
+            args = {tag: line[1]}
+            results = self.gen.getOpSimRecords(**args)
+            msg = 'failed while querying %s' % tag
+            self.assertGreater(len(results), 0, msg=msg)
+            for rec in results:
+                self.assertEqual(get_val_from_rec(tag, rec), line[1], msg=msg)
+
     def testQueryLimit(self):
         """
         Test that, when we specify a limit on the number of ObservationMetaData we want returned,
