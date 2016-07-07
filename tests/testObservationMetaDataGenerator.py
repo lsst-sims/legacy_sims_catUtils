@@ -1,7 +1,7 @@
 from __future__ import with_statement
 import os
 import unittest
-import numpy
+import numpy as np
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
@@ -30,7 +30,7 @@ def get_val_from_obs(tag, obs):
         return obs.mjd.TAI
     elif tag == 'airmass':
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
-        return 1.0/(numpy.cos(numpy.pi/2.0-numpy.radians(alt)))
+        return 1.0/(np.cos(np.pi/2.0-np.radians(alt)))
     elif tag == 'm5':
         return obs.m5[obs.bandpass]
     elif tag == 'skyBrightness':
@@ -74,7 +74,7 @@ def get_val_from_rec(tag, rec):
                  'rotSkyPos', 'sunAlt', 'moonAlt', 'dist2Moon', 'altitude',
                  'azimuth'):
 
-        return numpy.degrees(rec[tag])
+        return np.degrees(rec[tag])
 
     return rec[tag]
 
@@ -120,10 +120,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         # the median and maximum values of all of the quantities
         # in our test opsim database
         bounds = [('obsHistID', (5973, 7000)),
-                  ('fieldRA', (numpy.degrees(1.370916), numpy.degrees(1.40))),
+                  ('fieldRA', (np.degrees(1.370916), np.degrees(1.40))),
                   ('rawSeeing', (0.728562, 0.9)),
                   ('seeing', (0.7, 0.9)),
-                  ('dist2Moon', (numpy.degrees(1.570307), numpy.degrees(1.9))),
+                  ('dist2Moon', (np.degrees(1.570307), np.degrees(1.9))),
                   ('expMJD', (49367.129396, 49370.0)),
                   ('m5', (22.815249, 23.0)),
                   ('skyBrightness', (19.017605, 19.5))]
@@ -169,10 +169,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Test that getOpimRecords() returns correct results
         """
         bounds = [('obsHistID', (5973, 7000)),
-                  ('fieldRA', (numpy.degrees(1.370916), numpy.degrees(1.40))),
+                  ('fieldRA', (np.degrees(1.370916), np.degrees(1.40))),
                   ('rawSeeing', (0.728562, 0.9)),
                   ('seeing', (0.7, 0.9)),
-                  ('dist2Moon', (numpy.degrees(1.570307), numpy.degrees(1.9))),
+                  ('dist2Moon', (np.degrees(1.570307), np.degrees(1.9))),
                   ('expMJD', (49367.129396, 49370.0)),
                   ('m5', (22.815249, 23.0)),
                   ('skyBrightness', (19.017605, 19.5))]
@@ -213,17 +213,17 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         bounds = [('obsHistID', 5973),
                   ('expDate', 1220779),
-                  ('fieldRA', numpy.degrees(1.370916)),
-                  ('fieldDec', numpy.degrees(-0.456238)),
-                  ('moonRA', numpy.degrees(2.914132)),
-                  ('moonDec', numpy.degrees(0.06305)),
-                  ('rotSkyPos', numpy.degrees(3.116656)),
+                  ('fieldRA', np.degrees(1.370916)),
+                  ('fieldDec', np.degrees(-0.456238)),
+                  ('moonRA', np.degrees(2.914132)),
+                  ('moonDec', np.degrees(0.06305)),
+                  ('rotSkyPos', np.degrees(3.116656)),
                   ('telescopeFilter', 'i'),
                   ('rawSeeing', 0.728562),
                   ('seeing', 0.88911899999999999),
-                  ('sunAlt', numpy.degrees(-0.522905)),
-                  ('moonAlt', numpy.degrees(0.099096)),
-                  ('dist2Moon', numpy.degrees(1.570307)),
+                  ('sunAlt', np.degrees(-0.522905)),
+                  ('moonAlt', np.degrees(0.099096)),
+                  ('dist2Moon', np.degrees(1.570307)),
                   ('moonPhase', 52.2325),
                   ('expMJD', 49367.129396),
                   ('visitExpTime', 30.0),
@@ -247,17 +247,17 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         bounds = [('obsHistID', 5973),
                   ('expDate', 1220779),
-                  ('fieldRA', numpy.degrees(1.370916)),
-                  ('fieldDec', numpy.degrees(-0.456238)),
-                  ('moonRA', numpy.degrees(2.914132)),
-                  ('moonDec', numpy.degrees(0.06305)),
-                  ('rotSkyPos', numpy.degrees(3.116656)),
+                  ('fieldRA', np.degrees(1.370916)),
+                  ('fieldDec', np.degrees(-0.456238)),
+                  ('moonRA', np.degrees(2.914132)),
+                  ('moonDec', np.degrees(0.06305)),
+                  ('rotSkyPos', np.degrees(3.116656)),
                   ('telescopeFilter', 'i'),
                   ('rawSeeing', 0.728562),
                   ('seeing', 0.88911899999999999),
-                  ('sunAlt', numpy.degrees(-0.522905)),
-                  ('moonAlt', numpy.degrees(0.099096)),
-                  ('dist2Moon', numpy.degrees(1.570307)),
+                  ('sunAlt', np.degrees(-0.522905)),
+                  ('moonAlt', np.degrees(0.099096)),
+                  ('dist2Moon', np.degrees(1.570307)),
                   ('moonPhase', 52.2325),
                   ('expMJD', 49367.129396),
                   ('visitExpTime', 30.0),
@@ -280,7 +280,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         out
         """
 
-        pointing_list = self.gen.getOpSimRecords(fieldRA=numpy.degrees(1.370916))
+        pointing_list = self.gen.getOpSimRecords(fieldRA=np.degrees(1.370916))
         self.assertGreater(len(pointing_list), 1)
         local_gen = ObservationMetaDataGenerator()
         obs_list = local_gen.ObservationMetaDataFromPointingArray(pointing_list)
@@ -296,7 +296,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         that limit is respected
         """
         gen = self.gen
-        results = gen.getObservationMetaData(fieldRA=(numpy.degrees(1.370916), numpy.degrees(1.5348635)),
+        results = gen.getObservationMetaData(fieldRA=(np.degrees(1.370916), np.degrees(1.5348635)),
                                              limit=20)
         self.assertEqual(len(results), 20)
 
@@ -305,7 +305,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Test that queries on the filter work.
         """
         gen = self.gen
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
             self.assertAlmostEqual(obs_metadata._pointingRA, 1.370916)
@@ -324,7 +324,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         gen = self.gen
 
         # Test a cirlce with a specified radius
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                              telescopeFilter='i',
                                              boundLength=0.9)
         ct = 0
@@ -338,9 +338,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
 
             self.assertAlmostEqual(obs_metadata.bounds.RA,
-                                   numpy.radians(obs_metadata.pointingRA), 5)
+                                   np.radians(obs_metadata.pointingRA), 5)
             self.assertAlmostEqual(obs_metadata.bounds.DEC,
-                                   numpy.radians(obs_metadata.pointingDec), 5)
+                                   np.radians(obs_metadata.pointingDec), 5)
             ct += 1
 
         # Make sure that some ObservationMetaData were tested
@@ -348,7 +348,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         boundLengthList = [1.2, (1.2, 0.6)]
         for boundLength in boundLengthList:
-            results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+            results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                                  telescopeFilter='i',
                                                  boundType='box',
                                                  boundLength=boundLength)
@@ -374,8 +374,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
                 self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg, DECdeg+ddec, 10)
 
-                self.assertAlmostEqual(obs_metadata.bounds.RA, numpy.radians(obs_metadata.pointingRA), 5)
-                self.assertAlmostEqual(obs_metadata.bounds.DEC, numpy.radians(obs_metadata.pointingDec), 5)
+                self.assertAlmostEqual(obs_metadata.bounds.RA, np.radians(obs_metadata.pointingRA), 5)
+                self.assertAlmostEqual(obs_metadata.bounds.DEC, np.radians(obs_metadata.pointingDec), 5)
 
                 ct += 1
 
@@ -396,7 +396,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         makePhoSimTestDB(filename=dbName)
         bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=dbName)
         gen = self.gen
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                              telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
