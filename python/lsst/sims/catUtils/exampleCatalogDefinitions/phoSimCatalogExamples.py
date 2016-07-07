@@ -3,9 +3,8 @@ import numpy as np
 from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaDec
-from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, \
-                                      AstrometrySSM, EBVmixin, PhoSimAstrometryStars, \
-                                      PhoSimAstrometryGalaxies, PhoSimAstrometrySSM
+from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
+                                       PhoSimAstrometryGalaxies, PhoSimAstrometrySSM)
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
@@ -13,7 +12,7 @@ __all__ = ["write_phoSim_header", "PhosimInputBase",
 
 
 PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
-                        dirDict={'(^lte)':'starSED/phoSimMLT'})
+                        dirDict={'(^lte)': 'starSED/phoSimMLT'})
 
 
 def write_phoSim_header(obs, file_handle):
@@ -35,7 +34,7 @@ def write_phoSim_header(obs, file_handle):
         airmass = 1.0/np.cos(0.5*np.pi-np.radians(alt))
         file_handle.write('airmass %.9g\n' % airmass)
         file_handle.write('Opsim_filter %d\n' %
-                      {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}[obs.bandpass])
+                          {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}[obs.bandpass])
 
         file_handle.write('Opsim_rotskypos %.9g\n' % obs.rotSkyPos)
     except:
@@ -44,7 +43,6 @@ def write_phoSim_header(obs, file_handle):
         print "lacks one of the required parameters"
         print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
         raise
-
 
     already_written = ('Unrefracted_RA', 'Unrefracted_Dec',
                        'Opsim_expmjd', 'Opsim_altitude',
@@ -59,10 +57,9 @@ def write_phoSim_header(obs, file_handle):
         file_handle.write('%s %.9g\n' % (kk, obs._phoSimMetadata[kk]))
 
 
-
 class PhosimInputBase(InstanceCatalog):
 
-    filtMap = dict([(c, i) for i,c in enumerate('ugrizy')])
+    filtMap = dict([(c, i) for i, c in enumerate('ugrizy')])
 
     specFileMap = PhoSimSpecMap
 
@@ -70,21 +67,17 @@ class PhosimInputBase(InstanceCatalog):
 
     delimiter = " "
 
-
     def get_prefix(self):
         chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
         return np.array(['object' for i in chunkiter], dtype=(str, 6))
-
 
     def get_sedFilepath(self):
         return np.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
                          for k in self.column_by_name('sedFilename')])
 
-
     def get_spatialmodel(self):
         chunkiter = xrange(len(self._current_chunk))
-        return np.array([self.spatialModel for i in
-               chunkiter], dtype=(str, 8))
+        return np.array([self.spatialModel for i in chunkiter], dtype=(str, 8))
 
     def get_phoSimMagNorm(self):
         """
@@ -121,72 +114,71 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     catalog_type = 'phoSim_catalog_POINT'
 
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
-                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
-                      'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
+    column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
+                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'spatialmodel', 'galacticExtinctionModel', 'galacticAv', 'galacticRv',
                       'internalExtinctionModel']
 
-    default_columns = [('redshift', 0., float),('shear1', 0., float), ('shear2', 0., float),
+    default_columns = [('redshift', 0., float), ('shear1', 0., float), ('shear2', 0., float),
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float),
-                       ('galacticExtinctionModel', 'CCM', (str,3)), ('galacticRv', 3.1, float),
-                       ('internalExtinctionModel', 'none', (str,4))]
+                       ('galacticExtinctionModel', 'CCM', (str, 3)), ('galacticRv', 3.1, float),
+                       ('internalExtinctionModel', 'none', (str, 4))]
 
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    default_formats = {'S': '%s', 'f': '%.9g', 'i': '%i'}
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
+    transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
 
 
 class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
 
     catalog_type = 'phoSim_catalog_ZPOINT'
 
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
-                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
-                      'spatialmodel','galacticExtinctionModel','galacticAv','galacticRv',
+    column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
+                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'spatialmodel', 'galacticExtinctionModel', 'galacticAv', 'galacticRv',
                       'internalExtinctionModel']
 
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
-                       ('raOffset', 0., float), ('decOffset', 0., float), ('spatialmodel', 'ZPOINT', (str, 6)),
-                       ('galacticExtinctionModel', 'CCM', (str,3)),
+                       ('raOffset', 0., float), ('decOffset', 0., float),
+                       ('spatialmodel', 'ZPOINT', (str, 6)),
+                       ('galacticExtinctionModel', 'CCM', (str, 3)),
                        ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
-                       ('internalExtinctionModel', 'none', (str,4))]
+                       ('internalExtinctionModel', 'none', (str, 4))]
 
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    default_formats = {'S': '%s', 'f': '%.9g', 'i': '%i'}
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
-
+    transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
 
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
 
     catalog_type = 'phoSim_catalog_SERSIC2D'
 
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
-                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
-                      'spatialmodel','majorAxis','minorAxis','positionAngle','sindex',
-                      'galacticExtinctionModel','galacticAv','galacticRv',
-                      'internalExtinctionModel','internalAv','internalRv']
+    column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
+                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'spatialmodel', 'majorAxis', 'minorAxis', 'positionAngle', 'sindex',
+                      'galacticExtinctionModel', 'galacticAv', 'galacticRv',
+                      'internalExtinctionModel', 'internalAv', 'internalRv']
 
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float),
                        ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
-                       ('galacticExtinctionModel', 'CCM', (str,3)),
-                       ('internalExtinctionModel', 'CCM', (str,3)), ('internalAv', 0., float),
-                       ('internalRv', 3.1, float) ]
+                       ('galacticExtinctionModel', 'CCM', (str, 3)),
+                       ('internalExtinctionModel', 'CCM', (str, 3)), ('internalAv', 0., float),
+                       ('internalRv', 3.1, float)]
 
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    default_formats = {'S': '%s', 'f': '%.9g', 'i': '%i'}
 
     spatialModel = "sersic2d"
 
-    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees, 'positionAngle':np.degrees,
-                       'majorAxis':arcsecFromRadians, 'minorAxis':arcsecFromRadians}
+    transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees, 'positionAngle': np.degrees,
+                       'majorAxis': arcsecFromRadians, 'minorAxis': arcsecFromRadians}
 
-
-    @compound('raPhoSim','decPhoSim')
+    @compound('raPhoSim', 'decPhoSim')
     def get_phoSimCoordinates(self):
         """Getter for RA, Dec coordinates expected by PhoSim.
 
@@ -208,17 +200,17 @@ class PhoSimCatalogSSM(PhosimInputBase, PhoSimAstrometrySSM):
 
     catalog_type = 'phoSim_catalog_SSM'
 
-    column_outputs = ['prefix', 'uniqueId','raPhoSim','decPhoSim','phoSimMagNorm','sedFilepath',
-                      'redshift','shear1','shear2','kappa','raOffset','decOffset',
-                      'spatialmodel','galacticExtinctionModel', 'internalExtinctionModel']
+    column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
+                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'spatialmodel', 'galacticExtinctionModel', 'internalExtinctionModel']
 
-    default_columns = [('redshift', 0., float),('shear1', 0., float), ('shear2', 0., float),
+    default_columns = [('redshift', 0., float), ('shear1', 0., float), ('shear2', 0., float),
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float),
-                       ('galacticExtinctionModel', 'none', (str,3)),
-                       ('internalExtinctionModel', 'none', (str,4))]
+                       ('galacticExtinctionModel', 'none', (str, 3)),
+                       ('internalExtinctionModel', 'none', (str, 4))]
 
-    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+    default_formats = {'S': '%s', 'f': '%.9g', 'i': '%i'}
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
+    transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
