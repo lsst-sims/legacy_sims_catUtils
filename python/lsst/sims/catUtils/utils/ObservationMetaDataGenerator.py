@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
@@ -73,23 +73,23 @@ class ObservationMetaDataGenerator(object):
         # a dict keyed on the user interface (i.e. args to getObservationMetaData)
         # names of OpSim data columns.  Returns a tuple that is the
         # (name of data in OpSim, transformation to go from user interface to OpSim units, dtyp in OpSim)
-        self._user_interface_to_opsim = {'obsHistID': ('obsHistID', None, numpy.int64),
+        self._user_interface_to_opsim = {'obsHistID': ('obsHistID', None, np.int64),
                                          'expDate': ('expDate', None, int),
-                                         'fieldRA': ('fieldRA', numpy.radians, float),
-                                         'fieldDec': ('fieldDec', numpy.radians, float),
-                                         'moonRA': ('moonRA', numpy.radians, float),
-                                         'moonDec': ('moonDec', numpy.radians, float),
-                                         'rotSkyPos': ('rotSkyPos', numpy.radians, float),
+                                         'fieldRA': ('fieldRA', np.radians, float),
+                                         'fieldDec': ('fieldDec', np.radians, float),
+                                         'moonRA': ('moonRA', np.radians, float),
+                                         'moonDec': ('moonDec', np.radians, float),
+                                         'rotSkyPos': ('rotSkyPos', np.radians, float),
                                          'telescopeFilter':
                                              ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
                                          'rawSeeing': ('rawSeeing', None, float),
-                                         'sunAlt': ('sunAlt', numpy.radians, float),
-                                         'moonAlt': ('moonAlt', numpy.radians, float),
-                                         'dist2Moon': ('dist2Moon', numpy.radians, float),
+                                         'sunAlt': ('sunAlt', np.radians, float),
+                                         'moonAlt': ('moonAlt', np.radians, float),
+                                         'dist2Moon': ('dist2Moon', np.radians, float),
                                          'moonPhase': ('moonPhase', None, float),
                                          'expMJD': ('expMJD', None, float),
-                                         'altitude': ('altitude', numpy.radians, float),
-                                         'azimuth': ('azimuth', numpy.radians, float),
+                                         'altitude': ('altitude', np.radians, float),
+                                         'azimuth': ('azimuth', np.radians, float),
                                          'visitExpTime': ('visitExpTime', None, float),
                                          'airmass': ('airmass', None, float),
                                          'm5': ('fiveSigmaDepth', None, float),
@@ -99,13 +99,13 @@ class ObservationMetaDataGenerator(object):
         # is (PhoSim name of column, transformation needed to go from OpSim to PhoSim)
         self._opsim_to_phosim = {'obsHistID': ('Opsim_obshistid', None),
                                  'expDate': ('SIM_SEED', None),
-                                 'moonRA': ('Opsim_moonra', numpy.degrees),
-                                 'moonDec': ('Opsim_moondec', numpy.degrees),
+                                 'moonRA': ('Opsim_moonra', np.degrees),
+                                 'moonDec': ('Opsim_moondec', np.degrees),
                                  'filter': ('Opsim_filter', None),
                                  'rawSeeing': ('Opsim_rawseeing', None),
-                                 'sunAlt': ('Opsim_sunalt', numpy.degrees),
-                                 'moonAlt': ('Opsim_moonalt', numpy.degrees),
-                                 'dist2Moon': ('Opsim_dist2moon', numpy.degrees),
+                                 'sunAlt': ('Opsim_sunalt', np.degrees),
+                                 'moonAlt': ('Opsim_moonalt', np.degrees),
+                                 'dist2Moon': ('Opsim_dist2moon', np.degrees),
                                  'moonPhase': ('Opsim_moonphase', None),
                                  'visitExpTime': ('exptime', None)}
 
@@ -139,7 +139,7 @@ class ObservationMetaDataGenerator(object):
                     self.baseQuery += ','
                 self.baseQuery += ' ' + rec[0]
 
-        self.dtype = numpy.dtype(dtypeList)
+        self.dtype = np.dtype(dtypeList)
 
     def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
@@ -295,10 +295,10 @@ class ObservationMetaDataGenerator(object):
             if transform[0] in phosimDict and transform[1] is not None:
                 phosimDict[transform[0]] = transform[1](phosimDict[transform[0]])
 
-        obs = ObservationMetaData(pointingRA=numpy.degrees(pointing['fieldRA']),
-                                  pointingDec=numpy.degrees(pointing['fieldDec']),
+        obs = ObservationMetaData(pointingRA=np.degrees(pointing['fieldRA']),
+                                  pointingDec=np.degrees(pointing['fieldDec']),
                                   mjd=pointing['expMJD'],
-                                  rotSkyPos=numpy.degrees(pointing['rotSkyPos']),
+                                  rotSkyPos=np.degrees(pointing['rotSkyPos']),
                                   bandpassName=pointing['filter'],
                                   boundType=boundType,
                                   boundLength=boundLength)
