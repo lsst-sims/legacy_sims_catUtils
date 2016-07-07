@@ -142,10 +142,7 @@ class basicAccessTest(unittest.TestCase):
             obs_metadata = dbobj.testObservationMetaData
             # To cover the central ~raft
             obs_metadata.boundLength = 0.4
-            opsMetadata = {'Opsim_rotskypos':(0., float),
-                           'pointingRA':(numpy.radians(obs_metadata.pointingRA), float),
-                           'pointingDec':(numpy.radians(obs_metadata.pointingDec), float)}
-            obs_metadata.phoSimMetaData = opsMetadata
+            obs_metadata.rotSkyPos=0.0
             cat = dbobj.getCatalog('obs_star_cat', obs_metadata)
             if os.path.exists(catName):
                 os.unlink(catName)
