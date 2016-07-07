@@ -403,9 +403,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                    break
                 header_entries.append(words[0])
 
-            for column in self.gen.columnMapping:
-                if column[2] is not None:
-                    self.assertIn(column[2], header_entries)
+            for column in self.gen._opsim_to_phosim:
+                new_name = self.gen._opsim_to_phosim[column][0]
+                self.assertIn(new_name, header_entries)
 
         if os.path.exists(catName):
             os.unlink(catName)

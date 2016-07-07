@@ -28,13 +28,22 @@ class ObservationMetaDataGenerator(object):
     bounds.
     """
 
-    def __init__(self, database, driver='sqlite', host=None, port=None):
+    def _set_seeing_column(self):
+
+        if 'FWHMeff' in self._summary_columns:
+            self._seeing_column = 'FWHMeff'
+        else:
+            self._seeing_column = 'finSeeing'
+
+        self._user_interface_to_opsim['seeing'] = (self._seeing_column, None, float)
+
+    def __init__(self, database=None, driver='sqlite', host=None, port=None):
         """
         Constructor for the class
 
         Parameters
         ----------
-        database : string, mandatory
+        database : string
             absolute path to the output of the OpSim database
         driver : string, optional, defaults to 'sqlite'
             driver/dialect for the SQL database
@@ -54,6 +63,53 @@ class ObservationMetaDataGenerator(object):
         self.host = host
         self.port = port
         self.database = database
+        self._seeing_column = 'FWHMeff'
+
+
+        # a dict keyed on the user interface (i.e. args to getObservationMetaData)
+        # names of OpSim data columns.  Returns a tuple that is the
+        # (name of data in OpSim, transformation to go from user interface to OpSim units, dtyp in OpSim)
+        self._user_interface_to_opsim = {'obsHistID': ('obsHistID', None, numpy.int64),
+                                         'expDate': ('expDate', None, int),
+                                         'fieldRA': ('fieldRA', numpy.radians, float),
+                                         'fieldDec': ('fieldDec', numpy.radians, float),
+                                         'moonRA': ('moonRA', numpy.radians, float),
+                                         'moonDec': ('moonDec', numpy.radians, float),
+                                         'rotSkyPos': ('rotSkyPos', numpy.radians, float),
+                                         'telescopeFilter': ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
+                                         'rawSeeing': ('rawSeeing', None, float),
+                                         'sunAlt': ('sunAlt', numpy.radians, float),
+                                         'moonAlt': ('moonAlt', numpy.radians, float),
+                                         'dist2Moon': ('dist2Moon', numpy.radians, float),
+                                         'moonPhase': ('moonPhase', None, float),
+                                         'expMJD': ('expMJD', None, float),
+                                         'altitude': ('altitude', numpy.radians, float),
+                                         'azimuth': ('azimuth', numpy.radians, float),
+                                         'visitExpTime': ('visitExpTime', None, float),
+                                         'airmass': ('airmass', None, float),
+                                         'm5': ('fiveSigmaDepth', None, float),
+                                         'skyBrightness': ('filtSkyBrightness', None, float)
+                                        }
+
+        # a dict keyed on the OpSim names for data columns that returns a tuple that
+        # is (PhoSim name of column, transformation needed to go from OpSim to PhoSim)
+        self._opsim_to_phosim = {'obsHistID': ('Opsim_obshistid', None),
+                                 'expDate': ('SIM_SEED', None),
+                                 'moonRA': ('Opsim_moonra', numpy.degrees),
+                                 'moonDec': ('Opsim_moondec', numpy.degrees),
+                                 'filter': ('Opsim_filter', None),
+                                 'rawSeeing': ('Opsim_rawseeing', None),
+                                 'sunAlt': ('Opsim_sunalt', numpy.degrees),
+                                 'moonAlt': ('Opsim_moonalt', numpy.degrees),
+                                 'dist2Moon': ('Opsim_dist2moon', numpy.degrees),
+                                 'moonPhase': ('Opsim_moonphase', None),
+                                 'visitExpTime': ('exptime', None)
+                                }
+
+
+        if self.database is None:
+            return
+
         self.opsimdb = DBObject(driver=self.driver, database=self.database,
                                 host=self.host, port=self.port)
 
@@ -61,43 +117,9 @@ class ObservationMetaDataGenerator(object):
         # Detect whether the OpSim db you are connecting to uses 'finSeeing'
         # as its seeing column (deprecated), or FWHMeff, which is the modern
         # standard
-        summary_columns = self.opsimdb.get_column_names('Summary')
+        self._summary_columns = self.opsimdb.get_column_names('Summary')
+        self._set_seeing_column()
 
-        if 'FWHMeff' in summary_columns:
-            self._seeing_column = 'FWHMeff'
-        else:
-            self._seeing_column = 'finSeeing'
-
-        # 27 January 2015
-        # self.columnMapping is an list of tuples.  Each tuple corresponds to a column in the opsim
-        # database's summary table.
-
-        # The 0th element of the tuple is how users will
-        # refer to the OpSim summary table columns (ie. how they are called in getObservationMetaDAta).
-        #
-        # The 1st element of the tuple is how the column is named in the OpSim db.
-        #
-        # The 2nd element of the tuple is how PhoSim refers to the quantity (as of OpSim3_61DBObject.py)
-        # (this is None if PhoSim does not expect the quantity)
-        #
-        # The 3rd element of the tuple is the datatype of the column
-        #
-        # The 4th element of the tuple is any coordinate transformation required to go from the user interface
-        # to the OpSim database (i.e. OpSim stores all angles in radians; we would like users to be
-        # able to specify angles in degrees)
-        #
-        # The 5th column is any coordinate transformation required to go from the OpSim database
-        # to the PhoSim header
-        #
-        # Note that this conforms to an older
-        # PhoSim API.  At some time in the future, both this and OpSim3_61DBObject.py
-        # (and possibly phoSimCatalogExamples.py) will need to be updated to
-        # reflect what PhoSim actually expects now.
-        #
-
-        # Just use the static method to assign this attribute
-        # to the mapping of names of phoSim to OpSim columns
-        self.columnMapping = self.OpSimColumnMap(self._seeing_column)
 
         #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
         #Also setup baseQuery which is just the SELECT clause of the SQL query
@@ -107,46 +129,16 @@ class ObservationMetaDataGenerator(object):
         dtypeList = []
         self.baseQuery = 'SELECT'
         self.active_columns = []
-        for column in self.columnMapping:
-            if column[1] in summary_columns:
+        for column in self._user_interface_to_opsim:
+            rec = self._user_interface_to_opsim[column]
+            if rec[0] in self._summary_columns:
                 self.active_columns.append(column)
-                dtypeList.append((column[1],column[3]))
+                dtypeList.append((rec[0],rec[2]))
                 if self.baseQuery != 'SELECT':
                     self.baseQuery += ','
-                self.baseQuery += ' ' + column[1]
+                self.baseQuery += ' ' + rec[0]
 
         self.dtype = numpy.dtype(dtypeList)
-
-    @staticmethod
-    def OpSimColumnMap(seeing_column):
-        """
-        Return a list of tuples.  Each tuple has the following elements :
-        (phosimName, OpSimName, unknown, dtype, callable)
-
-        Needs some work:
-        """
-        v = [('obsHistID', 'obsHistID', 'Opsim_obshistid', numpy.int64, None, None),
-             ('expDate', 'expDate', 'SIM_SEED', int, None, None),
-             ('fieldRA', 'fieldRA', 'Unrefracted_RA', float, numpy.radians, numpy.degrees),
-             ('fieldDec', 'fieldDec', 'Unrefracted_Dec', float, numpy.radians, numpy.degrees),
-             ('moonRA', 'moonRA', 'Opsim_moonra', float, numpy.radians, numpy.degrees),
-             ('moonDec', 'moonDec', 'Opsim_moondec', float, numpy.radians, numpy.degrees),
-             ('rotSkyPos', 'rotSkyPos', 'Opsim_rotskypos', float, numpy.radians, numpy.degrees),
-             ('telescopeFilter', 'filter', 'Opsim_filter', (str, 1), lambda x: '\'{}\''.format(x), None),
-             ('rawSeeing', 'rawSeeing', 'Opsim_rawseeing', float, None, None),
-             ('seeing', seeing_column, None, float, None, None),
-             ('sunAlt', 'sunAlt', 'Opsim_sunalt', float, numpy.radians, numpy.degrees),
-             ('moonAlt', 'moonAlt', 'Opsim_moonalt', float, numpy.radians, numpy.degrees),
-             ('dist2Moon', 'dist2Moon', 'Opsim_dist2moon', float, numpy.radians, numpy.degrees),
-             ('moonPhase', 'moonPhase', 'Opsim_moonphase', float, None, None),
-             ('expMJD', 'expMJD', 'Opsim_expmjd', float, None, None),
-             ('altitude', 'altitude', 'Opsim_altitude', float, numpy.radians, numpy.degrees),
-             ('azimuth', 'azimuth', 'Opsim_azimuth', float, numpy.radians, numpy.degrees),
-             ('visitExpTime', 'visitExpTime', 'exptime', float, None, None),
-             ('airmass', 'airmass', 'airmass', float, None, None),
-             ('m5', 'fiveSigmaDepth', None, float, None, None),
-             ('skyBrightness', 'filtSkyBrightness', None, float, None, None)]
-        return v
 
     def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
@@ -195,12 +187,17 @@ class ObservationMetaDataGenerator(object):
         .. notes:: The `limit` argument should only be used if a small example
         is required. The angle ranges in the argument should be specified in degrees.
         """
+
+        self._summary_columns = self.opsimdb.get_column_names('Summary')
+        self._set_seeing_column()
+
         query = self.baseQuery + ' FROM SUMMARY'
 
         nConstraints = 0 # the number of constraints in this query
 
-        for column in self.columnMapping:
-            value = eval(column[0])
+        for column in self._user_interface_to_opsim:
+            transform = self._user_interface_to_opsim[column]
+            value = eval(column)
             if value is not None:
                 if nConstraints > 0:
                     query += ' AND'
@@ -211,25 +208,25 @@ class ObservationMetaDataGenerator(object):
                     if len(value)>2:
                         raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
                                            'to getObservationMetaData: %s is len %d'
-                                           % (column[0], len(value)))
+                                           % (column, len(value)))
 
                     # perform any necessary coordinate transformations
-                    if column[4] is not None:
-                        vmin = column[4](value[0])
-                        vmax = column[4](value[1])
+                    if transform[1] is not None:
+                        vmin = transform[1](value[0])
+                        vmax = transform[1](value[1])
                     else:
                         vmin = value[0]
                         vmax = value[1]
 
                     query += ' %s > %s AND %s < %s' % \
-                             (column[1], vmin, column[1], vmax)
+                             (transform[0], vmin, transform[0], vmax)
                 else:
                     # perform any necessary coordinate transformations
-                    if column[4] is not None:
-                        vv = column[4](value)
+                    if transform[1] is not None:
+                        vv = transform[1](value)
                     else:
                         vv = value
-                    query += ' %s == %s' % (column[1], vv)
+                    query += ' %s == %s' % (transform[0], vv)
 
                 nConstraints += 1
 
@@ -246,10 +243,8 @@ class ObservationMetaDataGenerator(object):
         return results
 
 
-    @staticmethod
-    def ObservationMetaDataFromPointing(OpSimPointingRecord, columnMap,
-                                       OpSimColumns=None,
-                                       boundLength=1.75, boundType='circle'):
+    def ObservationMetaDataFromPointing(self, OpSimPointingRecord, OpSimColumns=None,
+                                        boundLength=1.75, boundType='circle'):
         """
         Return instance of ObservationMetaData for an OpSim Pointing record
         from OpSim.
@@ -262,9 +257,6 @@ class ObservationMetaDataGenerator(object):
             required for catsim to work is 'fiveSigmaDepth',
             'filtSkyBrightness', and at least one of ('finSeeing', 'FWHMeff').
             More keys defined in columnMap may be necessary for PhoSim to work.
-        columnMap : A mapping of columns with names exepected by phosim for
-            OpSim columns. This can be obtained from
-            ObservationMetaDataGenerator.OpSimColumnMap()
         OpSimColumns : tuple of strings, optional, defaults to None
             The columns corresponding to the OpSim records. If None, attempts
             to obtain these from the OpSimRecord as OpSimRecord.dtype.names
@@ -284,30 +276,26 @@ class ObservationMetaDataGenerator(object):
         if OpSimColumns is None:
             OpSimColumns = pointing_column_names
 
-        if 'FWHMeff' in OpSimColumns:
-            _seeingColumn = 'FWHMeff'
-        elif 'finSeeing' in OpSimColumns:
-            _seeingColumn = 'finSeeing'
-        else:
-            raise ValueError('OpSimPointingRecord has to contain seeing values'
-                             "either as 'FWHMeff', or as 'finSeeing'\n")
-        ActiveColumns = list(column for column in columnMap
-                             if column[1] in OpSimColumns)
+        self._summary_columns = OpSimColumns
+
+        self._set_seeing_column()
+
         # convert list of tuples of the form (Name, (value, dtype)) to
         # an ordered Dict
-        phosimDict = dict([(col[2], pointing[col[1]])
-                           for col in columnMap
-                           if (col[1] in pointing_column_names and
-                               col[1] not in
+        phosimDict = dict([(self._opsim_to_phosim[col][0], pointing[col])
+                           for col in self._opsim_to_phosim
+                           if (col in pointing_column_names and
+                               col not in
                                ('fieldRA', 'fieldDec', 'expMJD',
                                 'filter', 'fiveSigmaDepth',
-                                'filtSkyBrightness', _seeingColumn,
+                                'filtSkyBrightness', self._seeing_column,
                                 'rotSkyPos', 'altitude', 'azimuth',
                                 'airmass'))])
 
-        for col in columnMap:
-            if col[2] in phosimDict and col[5] is not None:
-                phosimDict[col[2]] = col[5](phosimDict[col[2]])
+        for col in self._opsim_to_phosim:
+            transform = self._opsim_to_phosim[col]
+            if transform[0] in phosimDict and transform[1] is not None:
+                phosimDict[transform[0]] = transform[1](phosimDict[transform[0]])
 
         obs = ObservationMetaData(pointingRA=numpy.degrees(pointing['fieldRA']),
                                   pointingDec=numpy.degrees(pointing['fieldDec']),
@@ -321,15 +309,14 @@ class ObservationMetaDataGenerator(object):
             obs.m5 = pointing['fiveSigmaDepth']
         if 'filtSkyBrightness' in pointing_column_names:
             obs.skyBrightness = pointing['filtSkyBrightness']
-        if _seeingColumn in pointing_column_names:
-            obs.seeing = pointing[_seeingColumn]
+        if self._seeing_column in pointing_column_names:
+            obs.seeing = pointing[self._seeing_column]
 
         obs.phoSimMetaData = phosimDict
 
         return obs
 
-    @staticmethod
-    def ObservationMetaDataFromPointingArray(OpSimPointingRecords,
+    def ObservationMetaDataFromPointingArray(self, OpSimPointingRecords,
                                                 OpSimColumns=None,
                                                 boundLength=1.75,
                                                 boundType='circle'):
@@ -366,10 +353,7 @@ class ObservationMetaDataGenerator(object):
         if matches in [0, 2]:
             raise ValueError('finSeeing or FWHMeff not in OpSimColumn\n')
 
-        columnMapping = ObservationMetaDataGenerator.OpSimColumnMap(seeingVar)
-
-        out = list(ObservationMetaDataGenerator.ObservationMetaDataFromPointing(OpSimPointingRecord,
-                                                        columnMap=columnMapping,
+        out = list(self.ObservationMetaDataFromPointing(OpSimPointingRecord,
                                                         OpSimColumns=OpSimColumns,
                                                         boundLength=boundLength,
                                                         boundType=boundType)
