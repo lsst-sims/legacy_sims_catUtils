@@ -32,7 +32,7 @@ def write_phoSim_header(obs, file_handle):
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
         file_handle.write('Opsim_altitude %.9g\n' % alt)
         file_handle.write('Opsim_azimuth %.9g\n' % az)
-        airmass = 1.0/numpy.cos(numpy.pi-numpy.radians(alt))
+        airmass = 1.0/numpy.cos(0.5*numpy.pi-numpy.radians(alt))
         file_handle.write('airmass %.9g\n' % airmass)
         file_handle.write('Opsim_filter %d\n' %
                       {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}[obs.bandpass])
