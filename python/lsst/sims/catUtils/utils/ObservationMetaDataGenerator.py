@@ -448,13 +448,3 @@ class ObservationMetaDataGenerator(object):
                                                            boundType=boundType,
                                                            boundLength=boundLength)
         return output
-
-        # OpSimColumns = OpSimPointingRecords.dtype.names
-        # convert the results into ObservationMetaData instantiations
-        # out = list(self.ObservationMetaDataFromPointing(OpSimPointingRecord,
-        #                                                 columnMap=self.columnMapping,
-        #                                                 OpSimColumns=OpSimColumns,
-        #                                                 boundLength=boundLength,
-        #                                                 boundType=boundType)
-        #          for OpSimPointingRecord in OpSimPointingRecords)
-        # return out
