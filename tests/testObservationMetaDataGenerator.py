@@ -283,6 +283,22 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             for rec in results:
                 self.assertEqual(get_val_from_rec(tag, rec), line[1], msg=msg)
 
+    def testPassInOtherQuery(self):
+        """
+        Test that you can pass OpSim pointings generated from another source
+        into an ObservationMetaDataGenerator and still get ObservationMetaData
+        out
+        """
+
+        pointing_list = self.gen.getOpSimRecords(fieldRA=numpy.degrees(1.370916))
+        self.assertGreater(len(pointing_list), 1)
+        local_gen = ObservationMetaDataGenerator()
+        obs_list = local_gen.ObservationMetaDataFromPointingArray(pointing_list)
+        self.assertEqual(len(obs_list), len(pointing_list))
+
+        for pp in pointing_list:
+            obs = local_gen.ObservationMetaDataFromPointing(pp)
+
     def testQueryLimit(self):
         """
         Test that, when we specify a limit on the number of ObservationMetaData we want returned,
