@@ -39,6 +39,7 @@ def write_phoSim_header(obs, file_handle):
 
         file_handle.write('Opsim_rotskypos %.9g\n' % obs.rotSkyPos)
     except:
+        print "\n\n"
         print "The ObservationMetaData you tried to write a PhoSim header from"
         print "lacks one of the required parameters"
         print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
