@@ -328,7 +328,7 @@ class ObservationMetaDataGenerator(object):
 
         return obs
 
-    @staticmethod 
+    @staticmethod
     def ObservationMetaDataFromPointingArray(OpSimPointingRecords,
                                                 OpSimColumns=None,
                                                 boundLength=1.75,
@@ -338,7 +338,7 @@ class ObservationMetaDataGenerator(object):
         corresponding to the records in `numpy.recarray`, where it uses
         the dtypes of the recArray for ObservationMetaData attributes that
         require the dtype.
-    
+
         Parameters
         ----------
         OpSimPointingRecords : `numpy.recarray` of OpSim Records
@@ -352,29 +352,29 @@ class ObservationMetaDataGenerator(object):
             'box', this is the length of the side of the square box. For boundType
             'circle' this is the radius.
         """
-    
+
         if OpSimColumns is None:
             OpSimColumns = OpSimPointingRecords.dtype.names
-    
+
         # Find out what the Seeing Variable is called in these OpSim records
         seeingVar = None
-        matches = 0 
+        matches = 0
         for var in ['finSeeing', 'FWHMeff']:
             if var in OpSimColumns:
                 seeingVar = var
                 matches += 1
         if matches in [0, 2]:
             raise ValueError('finSeeing or FWHMeff not in OpSimColumn\n')
-    
+
         columnMapping = ObservationMetaDataGenerator.OpSimColumnMap(seeingVar)
-    
+
         out = list(ObservationMetaDataGenerator.ObservationMetaDataFromPointing(OpSimPointingRecord,
                                                         columnMap=columnMapping,
                                                         OpSimColumns=OpSimColumns,
                                                         boundLength=boundLength,
                                                         boundType=boundType)
                    for OpSimPointingRecord in OpSimPointingRecords)
-    
+
         return out
 
     def getObservationMetaData(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
