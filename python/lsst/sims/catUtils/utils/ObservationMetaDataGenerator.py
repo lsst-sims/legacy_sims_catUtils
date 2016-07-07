@@ -28,9 +28,12 @@ class ObservationMetaDataGenerator(object):
     bounds.
     """
 
-    def _set_seeing_column(self):
+    def _set_seeing_column(self, summary_columns):
+        """
+        summary_columns is a list of columns in the OpSim database schema
+        """
 
-        if 'FWHMeff' in self._summary_columns:
+        if 'FWHMeff' in summary_columns:
             self._seeing_column = 'FWHMeff'
         else:
             self._seeing_column = 'finSeeing'
@@ -117,8 +120,8 @@ class ObservationMetaDataGenerator(object):
         # Detect whether the OpSim db you are connecting to uses 'finSeeing'
         # as its seeing column (deprecated), or FWHMeff, which is the modern
         # standard
-        self._summary_columns = self.opsimdb.get_column_names('Summary')
-        self._set_seeing_column()
+        summary_columns = self.opsimdb.get_column_names('Summary')
+        self._set_seeing_column(summary_columns)
 
 
         #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
@@ -131,7 +134,7 @@ class ObservationMetaDataGenerator(object):
         self.active_columns = []
         for column in self._user_interface_to_opsim:
             rec = self._user_interface_to_opsim[column]
-            if rec[0] in self._summary_columns:
+            if rec[0] in summary_columns:
                 self.active_columns.append(column)
                 dtypeList.append((rec[0],rec[2]))
                 if self.baseQuery != 'SELECT':
@@ -188,8 +191,8 @@ class ObservationMetaDataGenerator(object):
         is required. The angle ranges in the argument should be specified in degrees.
         """
 
-        self._summary_columns = self.opsimdb.get_column_names('Summary')
-        self._set_seeing_column()
+        summary_columns = self.opsimdb.get_column_names('Summary')
+        self._set_seeing_column(summary_columns)
 
         query = self.baseQuery + ' FROM SUMMARY'
 
@@ -276,9 +279,7 @@ class ObservationMetaDataGenerator(object):
         if OpSimColumns is None:
             OpSimColumns = pointing_column_names
 
-        self._summary_columns = OpSimColumns
-
-        self._set_seeing_column()
+        self._set_seeing_column(OpSimColumns)
 
         # convert list of tuples of the form (Name, (value, dtype)) to
         # an ordered Dict
