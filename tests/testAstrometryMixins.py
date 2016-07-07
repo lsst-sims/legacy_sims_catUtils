@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 import os
 import unittest
@@ -32,9 +32,9 @@ class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
                       'properMotionRa', 'properMotionDec',
                       'radialVelocity', 'parallax']
 
-    transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,
-                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
-                       'properMotionRa':numpy.degrees, 'properMotionDec':numpy.degrees,
+    transformations = {'raJ2000':np.degrees, 'decJ2000':np.degrees,
+                       'raObserved':np.degrees, 'decObserved':np.degrees,
+                       'properMotionRa':np.degrees, 'properMotionDec':np.degrees,
                        'parallax':arcsecFromRadians}
 
     default_formats = {'f':'%.12f'}
@@ -52,7 +52,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     camera = camTestUtils.CameraWrapper().camera
     default_formats = {'f':'%.12f'}
 
-    delimiter = ';' #so that numpy.loadtxt can parse the chipNames which may contain commas
+    delimiter = ';' #so that np.loadtxt can parse the chipNames which may contain commas
                      #(see testClassMethods)
 
     default_columns = [('properMotionRa', 0., float),
@@ -133,7 +133,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.obs_metadata=ObservationMetaData(pointingRA=200.0,
                                               pointingDec=-30.0,
-                                              rotSkyPos=numpy.degrees(1.0),
+                                              rotSkyPos=np.degrees(1.0),
                                               mjd=57388.0,
                                               boundType='circle',
                                               boundLength=0.05)
@@ -169,8 +169,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         stars.write_catalog(catName)
 
-        dtypeList = [(name, numpy.float) for name in stars._column_outputs]
-        testData = numpy.genfromtxt(catName, delimiter=', ', dtype=numpy.dtype(dtypeList))
+        dtypeList = [(name, np.float) for name in stars._column_outputs]
+        testData = np.genfromtxt(catName, delimiter=', ', dtype=np.dtype(dtypeList))
 
         self.assertGreater(len(testData), 0)
 
@@ -192,8 +192,8 @@ class astrometryUnitTest(unittest.TestCase):
         galaxies.write_catalog(catName)
 
 
-        dtypeList = [(name, numpy.float) for name in galaxies._column_outputs]
-        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList), delimiter=';')
+        dtypeList = [(name, np.float) for name in galaxies._column_outputs]
+        testData = np.genfromtxt(catName, dtype=np.dtype(dtypeList), delimiter=';')
 
         self.assertGreater(len(testData), 0)
 
@@ -223,7 +223,7 @@ class astrometryUnitTest(unittest.TestCase):
                  ('xPix',float), ('yPix',float),
                  ('xFocalPlane',float), ('yFocalPlane',float)]
 
-        baselineData = numpy.loadtxt(catName, dtype=dtype, delimiter=';')
+        baselineData = np.loadtxt(catName, dtype=dtype, delimiter=';')
 
         self.assertGreater(len(baselineData), 0)
 
@@ -263,18 +263,18 @@ class astrometryUnitTest(unittest.TestCase):
                 zip(pixTest[0], pixTest[1], pixTestRaDec[0], pixTestRaDec[1],
                            baselineData['xPix'], baselineData['yPix']):
 
-            if not numpy.isnan(xx) and not numpy.isnan(yy):
+            if not np.isnan(xx) and not np.isnan(yy):
                 self.assertAlmostEqual(xxtest,xx,5)
                 self.assertAlmostEqual(yytest,yy,5)
                 self.assertAlmostEqual(xxra,xx,5)
                 self.assertAlmostEqual(yyra,yy,5)
             else:
-                self.assertTrue(numpy.isnan(xx))
-                self.assertTrue(numpy.isnan(yy))
-                self.assertTrue(numpy.isnan(xxra))
-                self.assertTrue(numpy.isnan(yyra))
-                self.assertTrue(numpy.isnan(xxtest))
-                self.assertTrue(numpy.isnan(yytest))
+                self.assertTrue(np.isnan(xx))
+                self.assertTrue(np.isnan(yy))
+                self.assertTrue(np.isnan(xxra))
+                self.assertTrue(np.isnan(yyra))
+                self.assertTrue(np.isnan(xxtest))
+                self.assertTrue(np.isnan(yytest))
 
 
         nameTest = chipNameFromPupilCoords(pupilTest[0], pupilTest[1],
@@ -316,7 +316,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         cat.write_catalog(parallaxName)
 
-        data = numpy.genfromtxt(parallaxName,delimiter=',')
+        data = np.genfromtxt(parallaxName,delimiter=',')
         self.assertGreater(len(data), 0)
 
         epoch = cat.db_obj.epoch
@@ -325,20 +325,20 @@ class astrometryUnitTest(unittest.TestCase):
         for vv in data:
             #run the PALPY routines that actuall do astrometry `by hand' and compare
             #the results to the contents of the catalog
-            ra0 = numpy.radians(vv[0])
-            dec0 = numpy.radians(vv[1])
-            pmra = numpy.radians(vv[4])
-            pmdec = numpy.radians(vv[5])
+            ra0 = np.radians(vv[0])
+            dec0 = np.radians(vv[1])
+            pmra = np.radians(vv[4])
+            pmdec = np.radians(vv[5])
             rv = vv[6]
             px = vv[7]
             ra_apparent, dec_apparent = pal.mapqk(ra0, dec0, pmra, pmdec, px, rv, prms)
-            ra_apparent = numpy.array([ra_apparent])
-            dec_apparent = numpy.array([dec_apparent])
+            ra_apparent = np.array([ra_apparent])
+            dec_apparent = np.array([dec_apparent])
             raObserved, decObserved = _observedFromAppGeo(ra_apparent, dec_apparent,
                                                                  obs_metadata=cat.obs_metadata)
 
-            self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),7)
-            self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),7)
+            self.assertAlmostEqual(raObserved[0],np.radians(vv[2]),7)
+            self.assertAlmostEqual(decObserved[0],np.radians(vv[3]),7)
 
         if os.path.exists(parallaxName):
             os.unlink(parallaxName)
