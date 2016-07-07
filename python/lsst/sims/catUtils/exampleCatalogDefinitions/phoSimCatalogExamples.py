@@ -1,5 +1,5 @@
 """Instance Catalog"""
-import numpy
+import numpy as np
 from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaDec
@@ -32,7 +32,7 @@ def write_phoSim_header(obs, file_handle):
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
         file_handle.write('Opsim_altitude %.9g\n' % alt)
         file_handle.write('Opsim_azimuth %.9g\n' % az)
-        airmass = 1.0/numpy.cos(0.5*numpy.pi-numpy.radians(alt))
+        airmass = 1.0/np.cos(0.5*np.pi-np.radians(alt))
         file_handle.write('airmass %.9g\n' % airmass)
         file_handle.write('Opsim_filter %d\n' %
                       {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}[obs.bandpass])
@@ -73,17 +73,17 @@ class PhosimInputBase(InstanceCatalog):
 
     def get_prefix(self):
         chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
-        return numpy.array(['object' for i in chunkiter], dtype=(str, 6))
+        return np.array(['object' for i in chunkiter], dtype=(str, 6))
 
 
     def get_sedFilepath(self):
-        return numpy.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
+        return np.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
                          for k in self.column_by_name('sedFilename')])
 
 
     def get_spatialmodel(self):
         chunkiter = xrange(len(self._current_chunk))
-        return numpy.array([self.spatialModel for i in
+        return np.array([self.spatialModel for i in
                chunkiter], dtype=(str, 8))
 
     def get_phoSimMagNorm(self):
@@ -135,7 +135,7 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
 
 
 class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
@@ -157,7 +157,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
 
 
 
@@ -182,7 +182,7 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
 
     spatialModel = "sersic2d"
 
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees, 'positionAngle':numpy.degrees,
+    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees, 'positionAngle':np.degrees,
                        'majorAxis':arcsecFromRadians, 'minorAxis':arcsecFromRadians}
 
 
@@ -221,4 +221,4 @@ class PhoSimCatalogSSM(PhosimInputBase, PhoSimAstrometrySSM):
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
