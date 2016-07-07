@@ -1,6 +1,4 @@
-import os
 import numpy
-import lsst.utils
 from lsst.sims.catalogs.generation.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
@@ -31,6 +29,10 @@ class ObservationMetaDataGenerator(object):
     def _set_seeing_column(self, summary_columns):
         """
         summary_columns is a list of columns in the OpSim database schema
+
+        This method sets the member variable self._seeing_column to a string
+        denoting the name of the seeing column in the OpSimDatabase.  It also
+        sets self._user_interface_to_opsim['seeing'] to the correct value.
         """
 
         if 'FWHMeff' in summary_columns:
@@ -68,7 +70,6 @@ class ObservationMetaDataGenerator(object):
         self.database = database
         self._seeing_column = 'FWHMeff'
 
-
         # a dict keyed on the user interface (i.e. args to getObservationMetaData)
         # names of OpSim data columns.  Returns a tuple that is the
         # (name of data in OpSim, transformation to go from user interface to OpSim units, dtyp in OpSim)
@@ -79,7 +80,8 @@ class ObservationMetaDataGenerator(object):
                                          'moonRA': ('moonRA', numpy.radians, float),
                                          'moonDec': ('moonDec', numpy.radians, float),
                                          'rotSkyPos': ('rotSkyPos', numpy.radians, float),
-                                         'telescopeFilter': ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
+                                         'telescopeFilter':
+                                             ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
                                          'rawSeeing': ('rawSeeing', None, float),
                                          'sunAlt': ('sunAlt', numpy.radians, float),
                                          'moonAlt': ('moonAlt', numpy.radians, float),
@@ -91,8 +93,7 @@ class ObservationMetaDataGenerator(object):
                                          'visitExpTime': ('visitExpTime', None, float),
                                          'airmass': ('airmass', None, float),
                                          'm5': ('fiveSigmaDepth', None, float),
-                                         'skyBrightness': ('filtSkyBrightness', None, float)
-                                        }
+                                         'skyBrightness': ('filtSkyBrightness', None, float)}
 
         # a dict keyed on the OpSim names for data columns that returns a tuple that
         # is (PhoSim name of column, transformation needed to go from OpSim to PhoSim)
@@ -106,9 +107,7 @@ class ObservationMetaDataGenerator(object):
                                  'moonAlt': ('Opsim_moonalt', numpy.degrees),
                                  'dist2Moon': ('Opsim_dist2moon', numpy.degrees),
                                  'moonPhase': ('Opsim_moonphase', None),
-                                 'visitExpTime': ('exptime', None)
-                                }
-
+                                 'visitExpTime': ('exptime', None)}
 
         if self.database is None:
             return
@@ -123,12 +122,11 @@ class ObservationMetaDataGenerator(object):
         summary_columns = self.opsimdb.get_column_names('Summary')
         self._set_seeing_column(summary_columns)
 
-
-        #Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
-        #Also setup baseQuery which is just the SELECT clause of the SQL query
+        # Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
+        # Also setup baseQuery which is just the SELECT clause of the SQL query
         #
-        #self.active_columns will be a list containing the subset of columnMapping columns
-        #that actually exist in this opsim database
+        # self.active_columns will be a list containing the subset of columnMapping columns
+        # that actually exist in this opsim database
         dtypeList = []
         self.baseQuery = 'SELECT'
         self.active_columns = []
@@ -136,7 +134,7 @@ class ObservationMetaDataGenerator(object):
             rec = self._user_interface_to_opsim[column]
             if rec[0] in summary_columns:
                 self.active_columns.append(column)
-                dtypeList.append((rec[0],rec[2]))
+                dtypeList.append((rec[0], rec[2]))
                 if self.baseQuery != 'SELECT':
                     self.baseQuery += ','
                 self.baseQuery += ' ' + rec[0]
@@ -196,7 +194,7 @@ class ObservationMetaDataGenerator(object):
 
         query = self.baseQuery + ' FROM SUMMARY'
 
-        nConstraints = 0 # the number of constraints in this query
+        nConstraints = 0  # the number of constraints in this query
 
         for column in self._user_interface_to_opsim:
             transform = self._user_interface_to_opsim[column]
@@ -208,8 +206,8 @@ class ObservationMetaDataGenerator(object):
                     query += ' WHERE '
 
                 if isinstance(value, tuple):
-                    if len(value)>2:
-                        raise RuntimeError('Cannot pass a tuple longer than 2 elements '+
+                    if len(value) > 2:
+                        raise RuntimeError('Cannot pass a tuple longer than 2 elements ' +
                                            'to getObservationMetaData: %s is len %d'
                                            % (column, len(value)))
 
@@ -244,7 +242,6 @@ class ObservationMetaDataGenerator(object):
 
         results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
         return results
-
 
     def ObservationMetaDataFromPointing(self, OpSimPointingRecord, OpSimColumns=None,
                                         boundLength=1.75, boundType='circle'):
@@ -318,9 +315,9 @@ class ObservationMetaDataGenerator(object):
         return obs
 
     def ObservationMetaDataFromPointingArray(self, OpSimPointingRecords,
-                                                OpSimColumns=None,
-                                                boundLength=1.75,
-                                                boundType='circle'):
+                                             OpSimColumns=None,
+                                             boundLength=1.75,
+                                             boundType='circle'):
         """
         Static method to get a list of instances of ObservationMetaData
         corresponding to the records in `numpy.recarray`, where it uses
@@ -345,11 +342,9 @@ class ObservationMetaDataGenerator(object):
             OpSimColumns = OpSimPointingRecords.dtype.names
 
         # Find out what the Seeing Variable is called in these OpSim records
-        seeingVar = None
         matches = 0
         for var in ['finSeeing', 'FWHMeff']:
             if var in OpSimColumns:
-                seeingVar = var
                 matches += 1
         if matches in [0, 2]:
             raise ValueError('finSeeing or FWHMeff not in OpSimColumn\n')
