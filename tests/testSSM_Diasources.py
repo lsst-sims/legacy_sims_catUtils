@@ -81,6 +81,8 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
 
     def test_ssm_catalog_creation(self):
 
+        output_cat = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'catsim_ssm_test')
+
         t = time.time()
         # Fake opsim data.
         database = os.path.join(getPackageDir('SIMS_DATA'), 'OpSimData/opsimblitz1_1133_sqlite.db')
@@ -104,7 +106,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
             #ssmObj = NEOObj()
             ssmObj = SolarSystemObj()
 
-            output_cat = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'catsim_ssm_test')
             if os.path.exists(output_cat):
                 os.unlink(output_cat)
 
@@ -165,6 +166,9 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 pass
             else:
                 raise
+
+        if os.path.exists(output_cat):
+            os.unlink(output_cat)
 
 
 def suite():
