@@ -2,7 +2,6 @@ from __future__ import with_statement
 import os, sys
 import traceback
 import unittest
-from copy import deepcopy
 import lsst.utils.tests as utilsTests
 
 import numpy as np
@@ -14,15 +13,18 @@ from lsst.utils import getPackageDir
 # photometric parameters (exptime lives here for dmag calculation)
 from lsst.sims.photUtils import PhotometricParameters
 # SSM catalog modules
-from lsst.sims.catUtils.baseCatalogModels import SolarSystemObj, CometObj, MBAObj, NEOObj, MiscSolarSystemObj
+from lsst.sims.catUtils.baseCatalogModels import SolarSystemObj
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM, CameraCoords, ObsMetadataBase
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 # For camera.
 from lsst.obs.lsstSim import LsstSimMapper
 
 import time
+
+
 def dtime(time_prev):
     return (time.time() - time_prev, time.time())
+
 
 def failedOnFatboy(tracebackList):
     """
@@ -42,7 +44,7 @@ def failedOnFatboy(tracebackList):
         if 'sims' in item[0]:
             lastSimsDex = ix
 
-    if lastSimsDex<0:
+    if lastSimsDex < 0:
         return False
 
     if '_connect_to_engine' in tracebackList[lastSimsDex][2]:
@@ -56,15 +58,18 @@ def reassure():
     print 'Sometimes that happens.  Do not worry.'
 
 # Build sso instance class
-basic_columns = ['objid', 'expMJD', 'raJ2000', 'decJ2000', 'velRa', 'velDec', 'skyVelocity', 'dist', 'dmagTrailing', 'dmagDetection',
-                 'sedFilename', 'magFilter', 'magSNR', 'visibility', 'seeing', 'bandpass', 'visitExpTime', 'm5']
+basic_columns = ['objid', 'expMJD', 'raJ2000', 'decJ2000', 'velRa', 'velDec',
+                 'skyVelocity', 'dist', 'dmagTrailing', 'dmagDetection',
+                 'sedFilename', 'magFilter', 'magSNR', 'visibility',
+                 'seeing', 'bandpass', 'visitExpTime', 'm5']
+
 
 class ssmCat(InstanceCatalog, PhotometrySSM, AstrometrySSM, ObsMetadataBase, CameraCoords):
     column_outputs = basic_columns
     cannot_be_null = ['visibility']
     transformations = {'raJ2000': np.degrees, 'decJ2000': np.degrees,
                        'velRa': np.degrees, 'velDec': np.degrees}
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class ssmCatCamera(ssmCat):
@@ -73,7 +78,7 @@ class ssmCatCamera(ssmCat):
     cannot_be_null = ['visibility', 'chipName']
     transformations = {'raJ2000': np.degrees, 'decJ2000': np.degrees,
                        'velRa': np.degrees, 'velDec': np.degrees}
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 ######
 
@@ -89,15 +94,16 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
         generator = ObservationMetaDataGenerator(database=database, driver='sqlite')
 
         night = 20
-        query = 'select min(expMJD), max(expMJD) from summary where night=%d' %(night)
+        query = 'select min(expMJD), max(expMJD) from summary where night=%d' % (night)
         res = generator.opsimdb.execute_arbitrary(query)
         expMJD_min = res[0][0]
         expMJD_max = res[0][1]
 
-        obsMetaDataResults = generator.getObservationMetaData(expMJD=(expMJD_min, expMJD_max), limit=3, boundLength=2.2)
+        obsMetaDataResults = generator.getObservationMetaData(expMJD=(expMJD_min, expMJD_max),
+                                                              limit=3, boundLength=2.2)
 
         dt, t = dtime(t)
-        print 'To query opsim database: %f seconds' %(dt)
+        print 'To query opsim database: %f seconds' % (dt)
 
         write_header = True
         write_mode = 'w'
@@ -110,21 +116,27 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 os.unlink(output_cat)
 
             for obsMeta in obsMetaDataResults:
-                # But moving objects databases are not currently complete for all years. Push forward to night=747.
+                # But moving objects databases are not currently complete for all years.
+                # Push forward to night=747.
                 # (note that we need the phosim dictionary as well)
                 newMJD = obsMeta.mjd.TAI + (747 - 20)
                 phoSimMetaDict = {'exptime': [30]}
                 obs = ObservationMetaData(mjd=newMJD,
-                                          pointingRA=obsMeta.pointingRA, pointingDec=obsMeta.pointingDec,
-                                          bandpassName=obsMeta.bandpass, rotSkyPos=obsMeta.rotSkyPos,
-                                          m5=obsMeta.m5[obsMeta.bandpass], seeing=obsMeta.seeing[obsMeta.bandpass],
-                                          boundLength=obsMeta.boundLength, boundType=obsMeta.boundType)
+                                          pointingRA=obsMeta.pointingRA,
+                                          pointingDec=obsMeta.pointingDec,
+                                          bandpassName=obsMeta.bandpass,
+                                          rotSkyPos=obsMeta.rotSkyPos,
+                                          m5=obsMeta.m5[obsMeta.bandpass],
+                                          seeing=obsMeta.seeing[obsMeta.bandpass],
+                                          boundLength=obsMeta.boundLength,
+                                          boundType=obsMeta.boundType)
 
                 obs.phoSimMetaData = phoSimMetaDict
 
                 mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
                 #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
-                photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0], nexp=1, bandpass=obs.bandpass)
+                photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0],
+                                                   nexp=1, bandpass=obs.bandpass)
                 mySsmDb.photParams = photParams
 
                 try:
@@ -150,7 +162,7 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 write_header = False
 
                 dt, t = dtime(t)
-                print 'To query solar system objects: %f seconds (obs MJD time %f)' %(dt, obs.mjd.TAI)
+                print 'To query solar system objects: %f seconds (obs MJD time %f)' % (dt, obs.mjd.TAI)
 
                 if os.path.exists(output_cat):
                     os.unlink(output_cat)
@@ -177,7 +189,10 @@ def suite():
     suites += unittest.makeSuite(createSSMSourceCatalogsTest)
     return unittest.TestSuite(suites)
 
+
 def run(shouldExit = False):
     utilsTests.run(suite(), shouldExit)
+
+
 if __name__ == "__main__":
     run(True)
