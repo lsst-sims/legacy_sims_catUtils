@@ -2,18 +2,15 @@ from __future__ import with_statement
 import os
 import unittest
 import lsst.utils.tests as utilsTests
-import sqlite3
-import numpy
-import json
 import lsst.utils
-from collections import OrderedDict
 from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec
-from lsst.sims.catalogs.measures.instance import compound, CompoundInstanceCatalog
-from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
-                                     testGalaxyBulgeDBObj, testGalaxyAgnDBObj
-from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
-                                                         PhoSimCatalogZPoint
+from lsst.sims.catalogs.measures.instance import CompoundInstanceCatalog
+from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
+                                      testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
+from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
+                                                          PhoSimCatalogZPoint)
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+
 
 class PhoSimCatalogTest(unittest.TestCase):
 
@@ -23,28 +20,28 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
         self.starDB = testStarsDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        filter_translation={'u':0,'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
-        alt, az, pa = altAzPaFromRaDec(self.obs_metadata.pointingRA, self.obs_metadata.pointingDec, self.obs_metadata)
+        filter_translation = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
+        alt, az, pa = altAzPaFromRaDec(self.obs_metadata.pointingRA,
+                                       self.obs_metadata.pointingDec,
+                                       self.obs_metadata)
         self.control_header = ['Opsim_moondec %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moondec'],
-                              'Opsim_rottelpos %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_rottelpos'],
-                              'Unrefracted_Dec %.9g\n' % self.obs_metadata.pointingDec,
-                              'Opsim_moonalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonalt'],
-                              'Opsim_rotskypos %.9g\n' % self.obs_metadata.rotSkyPos,
-                              'Opsim_moonra %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonra'],
-                              'Opsim_sunalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_sunalt'],
-                              'Opsim_expmjd %.9g\n' % self.obs_metadata.mjd.TAI,
-                              'Opsim_azimuth %.9g\n' % az,
-                              'Unrefracted_RA %.9g\n' % self.obs_metadata.pointingRA,
-                              'Opsim_dist2moon %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_dist2moon'],
-                              'Opsim_filter %d\n' % filter_translation[self.obs_metadata.bandpass],
-                              'Opsim_altitude %.9g\n' % alt]
-
+                               'Opsim_rottelpos %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_rottelpos'],
+                               'Unrefracted_Dec %.9g\n' % self.obs_metadata.pointingDec,
+                               'Opsim_moonalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonalt'],
+                               'Opsim_rotskypos %.9g\n' % self.obs_metadata.rotSkyPos,
+                               'Opsim_moonra %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonra'],
+                               'Opsim_sunalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_sunalt'],
+                               'Opsim_expmjd %.9g\n' % self.obs_metadata.mjd.TAI,
+                               'Opsim_azimuth %.9g\n' % az,
+                               'Unrefracted_RA %.9g\n' % self.obs_metadata.pointingRA,
+                               'Opsim_dist2moon %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_dist2moon'],
+                               'Opsim_filter %d\n' % filter_translation[self.obs_metadata.bandpass],
+                               'Opsim_altitude %.9g\n' % alt]
 
     def tearDown(self):
 
         if os.path.exists('PhoSimTestDatabase.db'):
             os.unlink('PhoSimTestDatabase.db')
-
 
     def verify_catalog(self, file_name):
         """
@@ -56,7 +53,6 @@ class PhoSimCatalogTest(unittest.TestCase):
                 self.assertIn(control_line, lines)
 
             self.assertGreater(len(lines), len(self.control_header)+3)
-
 
     def testSpecFileMap(self):
         """
@@ -73,11 +69,10 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         # verify that the usual stellar mappings still apply
         for test_name in ('kp_123.txt', 'km_123.txt', 'Const_123.txt', 'Exp_123.txt', 'Burst_123.txt',
-                         'bergeron_123.txt', 'burrows_123.txt', 'm1_123.txt', 'L1_123.txt', 'l1_123.txt',
-                         'Inst_123.txt'):
+                          'bergeron_123.txt', 'burrows_123.txt', 'm1_123.txt', 'L1_123.txt', 'l1_123.txt',
+                          'Inst_123.txt'):
 
             self.assertEqual(cat.specFileMap[test_name], defaultSpecMap[test_name])
-
 
     def testCatalog(self):
         """
@@ -90,7 +85,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
         catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
-                               'tests','scratchSpace','phoSimTestCatalog.txt')
+                               'tests', 'scratchSpace', 'phoSimTestCatalog.txt')
 
         testBulge.write_catalog(catName)
         testDisk.write_catalog(catName, write_header=False, write_mode='a')
@@ -102,7 +97,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def testCompoundCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
@@ -113,7 +107,7 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         # first, generate the catalog without a CompoundInstanceCatalog
         single_catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
-                                      'tests','scratchSpace','phoSimTestCatalog_single.txt')
+                                      'tests', 'scratchSpace', 'phoSimTestCatalog_single.txt')
 
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
         testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
@@ -139,7 +133,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         class dummyBulgeDB(dummyDBbase, testGalaxyBulgeDBObj):
             objid = 'dummy_bulge'
 
-        class dummyDiskDB(dummyDBbase,  testGalaxyDiskDBObj):
+        class dummyDiskDB(dummyDBbase, testGalaxyDiskDBObj):
             objid = 'dummy_disk'
 
         class dummyAgnDB(dummyDBbase, testGalaxyAgnDBObj):
@@ -147,7 +141,6 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         class dummyStarDB(dummyDBbase, testStarsDBObj):
             objid = 'dummy_stars'
-
 
         compoundCatalog = CompoundInstanceCatalog([PhoSimCatalogSersic2D, PhoSimCatalogSersic2D,
                                                    PhoSimCatalogZPoint, PhoSimCatalogPoint],
@@ -176,7 +169,6 @@ class PhoSimCatalogTest(unittest.TestCase):
                 for line in compound_lines:
                     self.assertIn(line, single_lines)
 
-
         if os.path.exists(compound_catName):
             os.unlink(compound_catName)
 
@@ -191,7 +183,10 @@ def suite():
 
     return unittest.TestSuite(suites)
 
+
 def run(shouldExit = False):
     utilsTests.run(suite(), shouldExit)
+
+
 if __name__ == "__main__":
     run(True)
