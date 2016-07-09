@@ -8,7 +8,7 @@ class sncosmo_import_tests(unittest.TestCase):
         pass
     def test_versions(self):
         print(astropy.__version__)
-        self.assert(astropy.__version__>='1.2.0')
+        self.assertGreaterEqual(astropy.__version__, '1.1.2')
 
 
 def suite():
