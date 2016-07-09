@@ -1,5 +1,7 @@
 import unittest
 import lsst.utils.tests as utilsTests
+import astropy
+import sncosmo
 
 class sncosmo_import_tests(unittest.TestCase):
     
@@ -7,6 +9,8 @@ class sncosmo_import_tests(unittest.TestCase):
         import astropy
     def test_versions(self):
         self.assertGreaterEqual(astropy.__version__, '1.1.1')
+    def test_versions(self):
+        self.assertGreaterEqual(sncosmo.__version__, '1.3.0')
 
 
 def suite():
