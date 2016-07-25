@@ -72,7 +72,7 @@ class ObservationMetaDataGenerator(object):
 
         # a dict keyed on the user interface (i.e. args to getObservationMetaData)
         # names of OpSim data columns.  Returns a tuple that is the
-        # (name of data in OpSim, transformation to go from user interface to OpSim units, dtyp in OpSim)
+        # (name of data in OpSim, transformation to go from user interface to OpSim units, dtype in OpSim)
         self._user_interface_to_opsim = {'obsHistID': ('obsHistID', None, np.int64),
                                          'expDate': ('expDate', None, int),
                                          'fieldRA': ('fieldRA', np.radians, float),
