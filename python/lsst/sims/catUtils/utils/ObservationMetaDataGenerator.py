@@ -344,14 +344,6 @@ class ObservationMetaDataGenerator(object):
         if OpSimColumns is None:
             OpSimColumns = OpSimPointingRecords.dtype.names
 
-        # Find out what the Seeing Variable is called in these OpSim records
-        matches = 0
-        for var in ['finSeeing', 'FWHMeff']:
-            if var in OpSimColumns:
-                matches += 1
-        if matches in [0, 2]:
-            raise ValueError('finSeeing or FWHMeff not in OpSimColumn\n')
-
         out = list(self.ObservationMetaDataFromPointing(OpSimPointingRecord,
                                                         OpSimColumns=OpSimColumns,
                                                         boundLength=boundLength,
