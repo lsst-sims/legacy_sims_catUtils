@@ -280,6 +280,8 @@ class ObservationMetaDataGenerator(object):
 
         self._set_seeing_column(OpSimColumns)
 
+        # check to make sure the OpSim pointings being supplied contain
+        # the minimum required information
         for required_column in ('fieldRA', 'fieldDec', 'expMJD', 'filter'):
             if required_column not in OpSimColumns:
                 raise RuntimeError("ObservationMetaDataGenerator requires that the database of "
