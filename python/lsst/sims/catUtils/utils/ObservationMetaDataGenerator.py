@@ -125,8 +125,8 @@ class ObservationMetaDataGenerator(object):
         # Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
         # Also setup baseQuery which is just the SELECT clause of the SQL query
         #
-        # self.active_columns will be a list containing the subset of columnMapping columns
-        # that actually exist in this opsim database
+        # self.active_columns will be a list containing the subset of OpSim database columns
+        # (specified in self._user_interface_to_opsim) that actually exist in this opsim database
         dtypeList = []
         self.baseQuery = 'SELECT'
         self.active_columns = []
