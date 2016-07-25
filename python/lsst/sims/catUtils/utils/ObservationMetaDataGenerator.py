@@ -26,16 +26,16 @@ class ObservationMetaDataGenerator(object):
     bounds.
     """
 
-    def _set_seeing_column(self, summary_columns):
+    def _set_seeing_column(self, input_summary_columns):
         """
-        summary_columns is a list of columns in the OpSim database schema
+        input_summary_columns is a list of columns in the OpSim database schema
 
         This method sets the member variable self._seeing_column to a string
         denoting the name of the seeing column in the OpSimDatabase.  It also
         sets self._user_interface_to_opsim['seeing'] to the correct value.
         """
 
-        if 'FWHMeff' in summary_columns:
+        if 'FWHMeff' in input_summary_columns:
             self._seeing_column = 'FWHMeff'
         else:
             self._seeing_column = 'finSeeing'
@@ -119,8 +119,8 @@ class ObservationMetaDataGenerator(object):
         # Detect whether the OpSim db you are connecting to uses 'finSeeing'
         # as its seeing column (deprecated), or FWHMeff, which is the modern
         # standard
-        summary_columns = self.opsimdb.get_column_names('Summary')
-        self._set_seeing_column(summary_columns)
+        self._summary_columns = self.opsimdb.get_column_names('Summary')
+        self._set_seeing_column(self._summary_columns)
 
         # Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
         # Also setup baseQuery which is just the SELECT clause of the SQL query
@@ -132,7 +132,7 @@ class ObservationMetaDataGenerator(object):
         self.active_columns = []
         for column in self._user_interface_to_opsim:
             rec = self._user_interface_to_opsim[column]
-            if rec[0] in summary_columns:
+            if rec[0] in self._summary_columns:
                 self.active_columns.append(column)
                 dtypeList.append((rec[0], rec[2]))
                 if self.baseQuery != 'SELECT':
@@ -189,8 +189,7 @@ class ObservationMetaDataGenerator(object):
         is required. The angle ranges in the argument should be specified in degrees.
         """
 
-        summary_columns = self.opsimdb.get_column_names('Summary')
-        self._set_seeing_column(summary_columns)
+        self._set_seeing_column(self._summary_columns)
 
         query = self.baseQuery + ' FROM SUMMARY'
 
