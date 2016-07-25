@@ -1,6 +1,7 @@
 from __future__ import with_statement
 import os
 import unittest
+import sqlite3
 import numpy as np
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
@@ -421,10 +422,79 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             os.unlink(dbName)
 
 
+class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
+    """
+    This class will test the performance of the ObservationMetaDataGenerator
+    on a 'mock OpSim' database (i.e. a database of pointings whose Summary
+    table contains only a subset of the official OpSim schema)
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace')
+        cls.opsim_db_name = os.path.join(scratch_dir, 'mock_opsim_sqlite.db')
+
+        if os.path.exists(cls.opsim_db_name):
+            os.unlink(cls.opsim_db_name)
+
+        conn = sqlite3.connect(cls.opsim_db_name)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE Summary (obsHistID int, expMJD real, '''
+                  '''fieldRA real, fieldDec real, filter text)''')
+        conn.commit()
+        rng = np.random.RandomState(77)
+        n_pointings = 100
+        ra_data = rng.random_sample(n_pointings)*2.0*np.pi
+        dec_data = (rng.random_sample(n_pointings)-0.5)*np.pi
+        mjd_data = rng.random_sample(n_pointings)*1000.0 + 59580.0
+        filter_dexes = rng.randint(0, 6, n_pointings)
+        bands = ('u', 'g', 'r', 'i', 'z', 'y')
+        filter_data = []
+        for ii in filter_dexes:
+            filter_data.append(bands[ii])
+
+        for ii in range(n_pointings):
+            cmd = '''INSERT INTO Summary VALUES(%i, %f, %f, %f, '%s')''' % \
+                  (ii, mjd_data[ii], ra_data[ii], dec_data[ii], filter_data[ii])
+            c.execute(cmd)
+        conn.commit()
+        conn.close()
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.opsim_db_name):
+            os.unlink(cls.opsim_db_name)
+
+    def setUp(self):
+        self.obs_meta_gen = ObservationMetaDataGenerator(database=self.opsim_db_name)
+
+    def testSpatialQuery(self):
+        """
+        Test that when we run a spatial query on the mock opsim database, we get expected results.
+        """
+
+        raBounds = (45.0, 100.0)
+        results = self.obs_meta_gen.getObservationMetaData(fieldRA=raBounds)
+        self.assertGreater(len(results), 0)
+        for obs in results:
+            self.assertGreater(obs.pointingRA, raBounds[0])
+            self.assertLess(obs.pointingDec, raBounds[1])
+
+    def testSelectException(self):
+        """
+        Test that an exception is raised if you try to SELECT pointings on a column that does not exist
+        """
+        with self.assertRaises(RuntimeError) as context:
+            results = self.obs_meta_gen.getObservationMetaData(rotSkyPos=(27.0, 112.0))
+        self.assertIn("You have asked ObservationMetaDataGenerator to SELECT",
+                      context.exception.message)
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(ObservationMetaDataGeneratorTest)
+    suites += unittest.makeSuite(ObsMetaDataGenMockOpsimTest)
 
     return unittest.TestSuite(suites)
 
