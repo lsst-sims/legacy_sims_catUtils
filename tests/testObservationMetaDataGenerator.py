@@ -489,6 +489,50 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         self.assertIn("You have asked ObservationMetaDataGenerator to SELECT",
                       context.exception.message)
 
+    def testIncompletDB(self):
+        """
+        Test that if the mock OpSim database does not have all required columns, an exception
+        is raised.
+        """
+        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace')
+        opsim_db_name = os.path.join(scratch_dir, 'incomplete_mock_opsim_sqlite.db')
+
+        if os.path.exists(opsim_db_name):
+            os.unlink(opsim_db_name)
+
+        conn = sqlite3.connect(opsim_db_name)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE Summary (obsHistID int, expMJD real, '''
+                  '''fieldRA real, filter text)''')
+        conn.commit()
+
+        rng = np.random.RandomState(77)
+        n_pointings = 100
+        ra_data = rng.random_sample(n_pointings)*2.0*np.pi
+        mjd_data = rng.random_sample(n_pointings)*1000.0 + 59580.0
+        filter_dexes = rng.randint(0, 6, n_pointings)
+        bands = ('u', 'g', 'r', 'i', 'z', 'y')
+        filter_data = []
+        for ii in filter_dexes:
+            filter_data.append(bands[ii])
+
+        for ii in range(n_pointings):
+            cmd = '''INSERT INTO Summary VALUES(%i, %f, %f, '%s')''' % \
+                  (ii, mjd_data[ii], ra_data[ii], filter_data[ii])
+            c.execute(cmd)
+        conn.commit()
+        conn.close()
+
+        incomplete_obs_gen = ObservationMetaDataGenerator(database=opsim_db_name)
+
+        with self.assertRaises(RuntimeError) as context:
+            results = incomplete_obs_gen.getObservationMetaData(telescopeFilter='r')
+        self.assertIn("ObservationMetaDataGenerator requires that the database",
+                      context.exception.message)
+
+        if os.path.exists(opsim_db_name):
+            os.unlink(opsim_db_name)
+
 
 def suite():
     utilsTests.init()

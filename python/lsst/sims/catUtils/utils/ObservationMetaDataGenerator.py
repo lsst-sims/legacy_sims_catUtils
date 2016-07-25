@@ -280,6 +280,12 @@ class ObservationMetaDataGenerator(object):
 
         self._set_seeing_column(OpSimColumns)
 
+        for required_column in ('fieldRA', 'fieldDec', 'expMJD', 'filter'):
+            if required_column not in OpSimColumns:
+                raise RuntimeError("ObservationMetaDataGenerator requires that the database of "
+                                   "pointings include the coluns:\nfieldRA (in radians)"
+                                   "\nfieldDec (in radians)\nexpMJD\nfilter")
+
         # convert list of tuples of the form (Name, (value, dtype)) to
         # an ordered Dict
         phosimDict = dict([(self._opsim_to_phosim[col][0], pointing[col])
