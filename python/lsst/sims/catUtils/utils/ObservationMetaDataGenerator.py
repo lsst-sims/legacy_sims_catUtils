@@ -300,7 +300,6 @@ class ObservationMetaDataGenerator(object):
         obs = ObservationMetaData(pointingRA=np.degrees(pointing['fieldRA']),
                                   pointingDec=np.degrees(pointing['fieldDec']),
                                   mjd=pointing['expMJD'],
-                                  rotSkyPos=np.degrees(pointing['rotSkyPos']),
                                   bandpassName=pointing['filter'],
                                   boundType=boundType,
                                   boundLength=boundLength)
@@ -311,6 +310,8 @@ class ObservationMetaDataGenerator(object):
             obs.skyBrightness = pointing['filtSkyBrightness']
         if self._seeing_column in pointing_column_names:
             obs.seeing = pointing[self._seeing_column]
+        if 'rotSkyPos' in pointing_column_names:
+            obs.rotSkyPos = np.degrees(pointing['rotSkyPos'])
 
         obs.phoSimMetaData = phosimDict
 
