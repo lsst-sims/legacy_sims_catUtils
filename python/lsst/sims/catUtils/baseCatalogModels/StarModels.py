@@ -4,7 +4,7 @@ from lsst.sims.catalogs.db import CompoundCatalogDBObject
 
 __all__ = ["StarBase", "StarObj", "MsStarObj", "WdStarObj", "RRLyStarObj",
            "BhbStarObj", "EbStarObj", "CepheidStarObj", "EasterEggStarObj",
-           "DwarfGalStarObj"]
+           "DwarfGalStarObj", "BrightStarObj"]
 
 class StarBase(BaseCatalogObj):
     objid = 'starbase'
@@ -82,6 +82,26 @@ class MsStarObj(StarBase):
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', unicode, 40)]
+
+
+class BrightStarObj(StarBase):
+    objid = 'brightstars'
+    tableid = 'bright_stars'
+    objectTypeId = 13
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(boundType='circle', pointingRA=210.0, pointingDec=-30.0,
+                                                  boundLength=0.1, mjd=52000.0, bandpassName='r', m5=22.0)
+
+    columns = [('id', 'simobjid', int),
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'decl*PI()/180.'),
+               ('glon', 'gal_l*PI()/180.'),
+               ('glat', 'gal_b*PI()/180.'),
+               ('magNorm', 'mag_norm'),
+               ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
+               ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
+               ('galacticAv', 'CONVERT(float, ebv*3.1)'),
+               ('sedFilename', 'sedfilename', unicode, 60)]
 
 class WdStarObj(StarBase):
     objid = 'wdstars'
