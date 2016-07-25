@@ -487,7 +487,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             results = self.obs_meta_gen.getObservationMetaData(rotSkyPos=(27.0, 112.0))
         self.assertIn("You have asked ObservationMetaDataGenerator to SELECT",
-                      context.exception.message)
+                      context.exception.args[0])
 
     def testIncompletDB(self):
         """
@@ -528,7 +528,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             results = incomplete_obs_gen.getObservationMetaData(telescopeFilter='r')
         self.assertIn("ObservationMetaDataGenerator requires that the database",
-                      context.exception.message)
+                      context.exception.args[0])
 
         if os.path.exists(opsim_db_name):
             os.unlink(opsim_db_name)
