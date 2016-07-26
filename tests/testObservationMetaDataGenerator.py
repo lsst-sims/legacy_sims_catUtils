@@ -1,73 +1,98 @@
 from __future__ import with_statement
 import os
 import unittest
-import numpy
+import sqlite3
+import numpy as np
 import lsst.utils.tests as utilsTests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.utils import CircleBounds, BoxBounds
-from lsst.sims.catalogs.generation.db import CatalogDBObject
-from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, GalaxyAgnObj, StarObj
+from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
+from lsst.sims.catUtils.utils import testGalaxyBulgeDBObj
 from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
 from lsst.utils import getPackageDir
 
-#28 January 2015
-#SearchReversion and testGalaxyBulge are duplicated from testPhoSimCatalogs.py
-#There is already a pull request outstanding that will move
-#these classes to a testUtils.py file in sims_catUtils/../utils/
-#Once that pull request is merged, I will clean this file up
-#and remove the duplicated code.
-class SearchReversion(CatalogDBObject):
+
+def get_val_from_obs(tag, obs):
     """
-    This is a mixin which is used below to force the galaxy CatalogDBObjects created for
-    this unittest to use the methods defined in the CatalogDBObject class.  This is because
-    we are using classes which inherit from GalaxyTileObj but do not actually want to use
-    the tiled query routines.
+    tag is the name of a data column
 
-    We also use this mixin for our stellar database object.  This is because StarObj
-    implements a query search based on htmid, which the test database for this unit
-    test will not have.
+    obs is an ObservationMetaData
+
+    returns the value of 'tag' for this obs
     """
+    if tag == 'fieldRA':
+        return obs.pointingRA
+    elif tag == 'fieldDec':
+        return obs.pointingDec
+    elif tag == 'rotSkyPos':
+        return obs.rotSkyPos
+    elif tag == 'expMJD':
+        return obs.mjd.TAI
+    elif tag == 'airmass':
+        alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
+        return 1.0/(np.cos(np.pi/2.0-np.radians(alt)))
+    elif tag == 'm5':
+        return obs.m5[obs.bandpass]
+    elif tag == 'skyBrightness':
+        return obs.skyBrightness
+    elif tag == 'seeing':
+        return obs.seeing[obs.bandpass]
+    elif tag == 'telescopeFilter':
+        return obs.bandpass
 
-    def _get_column_query(self, *args, **kwargs):
-        return CatalogDBObject._get_column_query(self,*args, **kwargs)
+    mapping = {'obsHistID': 'Opsim_obshistid',
+               'rawSeeing': 'Opsim_rawseeing',
+               'dist2Moon': 'Opsim_dist2moon',
+               'visitExpTime': 'exptime',
+               'moonAlt': 'Opsim_moonalt',
+               'sunAlt': 'Opsim_sunalt',
+               'expDate': 'SIM_SEED',
+               'moonRA': 'Opsim_moonra',
+               'moonDec': 'Opsim_moondec',
+               'moonPhase': 'Opsim_moonphase'}
 
-    def _final_pass(self, *args, **kwargs):
-        return CatalogDBObject._final_pass(self,*args, **kwargs)
+    return obs.phoSimMetaData[mapping[tag]]
 
-    def query_columns(self, *args, **kwargs):
-        return CatalogDBObject.query_columns(self, *args, **kwargs)
 
-class testGalaxyBulge(SearchReversion, GalaxyBulgeObj):
+def get_val_from_rec(tag, rec):
     """
-    A class for storing galaxy bulges
+    tag is the name of a data column
+
+    rec is a record returned by a query to an OpSim database
+
+    returns the value of 'tag' for this rec
     """
-    objid = 'phoSimTestBulges'
-    objectTypeId = 88
+    if tag == 'telescopeFilter':
+        return rec['filter']
+    elif tag == 'seeing':
+        return rec['finSeeing']  # because the test opsim database uses the old schema
+    elif tag == 'm5':
+        return rec['fiveSigmaDepth']
+    elif tag == 'skyBrightness':
+        return rec['filtSkyBrightness']
+    elif tag in ('fieldRA', 'fieldDec', 'moonRA', 'moonDec',
+                 'rotSkyPos', 'sunAlt', 'moonAlt', 'dist2Moon', 'altitude',
+                 'azimuth'):
 
-    #The code below makes sure that we can store RA, Dec in degrees
-    #in the database but use radians in our calculations.
-    #We had to overwrite the original columns list because
-    #GalaxyTileObject daughter classes assume that RA and Dec are stored
-    #in radians in the database.  This is a side effect of the tiling
-    #scheme used to cover the whole sky.
+        return np.degrees(rec[tag])
 
-    columns = GalaxyBulgeObj.columns
-    _to_remove = []
-    for entry in columns:
-        if entry[0] == 'raJ2000' or entry[0] == 'decJ2000':
-            _to_remove.append(entry)
-    for target in _to_remove:
-        columns.remove(target)
+    return rec[tag]
 
-    columns.append(('raJ2000','ra*PI()/180.'))
-    columns.append(('decJ2000','dec*PI()/180.'))
 
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
+    longMessage = True
+
     def setUp(self):
+        # these are the names of header fields that are handled from the standard ObservationMetaData
+        # data, and thus should not be expected to be in the phoSimMetaData
+        self.special_field_names = ('pointingRA', 'pointingDec', 'Opsim_altitude', 'Opsim_azimuth',
+                                    'Opsim_expmjd', 'airmass', 'Opsim_filter', 'Opsim_rotskypos',
+                                    'Unrefracted_RA', 'Unrefracted_Dec')
+
         dbPath = os.path.join(getPackageDir('sims_data'),
-                             'OpSimData/opsimblitz1_1133_sqlite.db')
+                              'OpSimData/opsimblitz1_1133_sqlite.db')
         self.gen = ObservationMetaDataGenerator(database=dbPath,
                                                 driver='sqlite')
 
@@ -77,8 +102,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         """
         gen = self.gen
         self.assertRaises(RuntimeError, gen.getObservationMetaData)
-        self.assertRaises(RuntimeError, gen.getObservationMetaData,fieldRA=(1.0, 2.0, 3.0))
-
+        self.assertRaises(RuntimeError, gen.getObservationMetaData, fieldRA=(1.0, 2.0, 3.0))
 
     def testQueryOnRanges(self):
         """
@@ -96,121 +120,90 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         # This was generated with a separate script which printed
         # the median and maximum values of all of the quantities
         # in our test opsim database
-        bounds = [
-        ('obsHistID',(5973, 7000)),
-        ('fieldRA',(numpy.degrees(1.370916), numpy.degrees(1.40))),
-        ('rawSeeing',(0.728562, 0.9)),
-        ('seeing', (0.7, 0.9)),
-        ('dist2Moon',(numpy.degrees(1.570307), numpy.degrees(1.9))),
-        ('expMJD',(49367.129396, 49370.0)),
-        ('airmass',(1.420459, 1.6)),
-        ('m5',(22.815249, 23.0)),
-        ('skyBrightness',(19.017605, 19.5))]
-
+        bounds = [('obsHistID', (5973, 7000)),
+                  ('fieldRA', (np.degrees(1.370916), np.degrees(1.40))),
+                  ('rawSeeing', (0.728562, 0.9)),
+                  ('seeing', (0.7, 0.9)),
+                  ('dist2Moon', (np.degrees(1.570307), np.degrees(1.9))),
+                  ('expMJD', (49367.129396, 49370.0)),
+                  ('m5', (22.815249, 23.0)),
+                  ('skyBrightness', (19.017605, 19.5))]
 
         # test querying on a single column
         for line in bounds:
             tag = line[0]
 
-            # find the index of the entry in columnMapping that
-            # corresponds to this bound
-            for ii in range(len(gen.columnMapping)):
-                if gen.columnMapping[ii][0] == tag:
-                    opsimKey = gen.columnMapping[ii][1]
-                    break
+            args = {tag: line[1]}
 
-            if tag != 'telescopeFilter' and tag != 'visitExpTime':
-                args = {}
-                args[tag] = line[1]
-                results = gen.getObservationMetaData(**args)
-                OpSimRecords = gen.getOpSimRecords(**args)
+            results = gen.getObservationMetaData(**args)
+            msg = "failed querying on %s" % tag
+            self.assertGreater(len(results), 0, msg=msg)
 
-                if tag == 'skyBrightness':
-                    ct = 0
-                    for obs_metadata in results:
-                        self.assertLess(obs_metadata.skyBrightness, line[1][1])
-                        self.assertLess(OpSimRecords[opsimKey].max(), line[1][1])
-                        self.assertGreater(obs_metadata.skyBrightness, line[1][0])
-                        self.assertGreater(OpSimRecords[opsimKey].min(), line[1][0])
-                        ct += 1
-                    self.assertGreater(ct, 0)
-                elif tag == 'm5':
-                    ct = 0
-                    for obs_metadata in results:
-                        self.assertLess(obs_metadata.m5[obs_metadata.bandpass], line[1][1])
-                        self.assertLess(OpSimRecords[opsimKey].max(), line[1][1])
-                        self.assertGreater(obs_metadata.m5[obs_metadata.bandpass], line[1][0])
-                        self.assertGreater(OpSimRecords[opsimKey].min(), line[1][0])
-                        ct += 1
-                    self.assertGreater(ct, 0)
-
-                name = gen.columnMapping[ii][2]
-                if name is not None:
-                    if gen.columnMapping[ii][4] is not None:
-                        xmin = gen.columnMapping[ii][4](line[1][0])
-                        xmax = gen.columnMapping[ii][4](line[1][1])
-                    else:
-                        xmin = line[1][0]
-                        xmax = line[1][1]
-                    ct = 0
-                    for obs_metadata in results:
-                        ct += 1
-                        self.assertLess(obs_metadata.phoSimMetaData[name][0], xmax)
-                        self.assertGreater(obs_metadata.phoSimMetaData[name][0], xmin)
-
-                    # make sure that we did not accidentally choose values such that
-                    # no ObservationMetaData were ever returned
-                    self.assertGreater(ct, 0)
+            for obs in results:
+                val = get_val_from_obs(tag, obs)
+                self.assertGreater(val, line[1][0], msg=msg)
+                self.assertLess(val, line[1][1], msg=msg)
 
         # test querying on two columns at once
-        ct = 0
         for ix in range(len(bounds)):
             tag1 = bounds[ix][0]
 
-            for ii in range(len(gen.columnMapping)):
-                if gen.columnMapping[ii][0] == tag1:
-                    break
+            for jx in range(ix+1, len(bounds)):
+                tag2 = bounds[jx][0]
 
-            if tag1 != 'telescopeFilter' and tag1 != 'visitExpTime':
-                name1 = gen.columnMapping[ii][2]
-                if gen.columnMapping[ii][4] is not None:
-                    xmin = gen.columnMapping[ii][4](bounds[ix][1][0])
-                    xmax = gen.columnMapping[ii][4](bounds[ix][1][1])
-                else:
-                    xmin = bounds[ix][1][0]
-                    xmax = bounds[ix][1][1]
-                for jx in range(ii+1, len(bounds)):
-                    tag2 = bounds[jx][0]
+                args = {}
+                args[tag1] = bounds[ix][1]
+                args[tag2] = bounds[jx][1]
+                results = gen.getObservationMetaData(**args)
+                msg = "failed querying %s and %s" % (tag1, tag2)
+                self.assertGreater(len(results), 0, msg=msg)
+                for obs in results:
+                    v1 = get_val_from_obs(tag1, obs)
+                    v2 = get_val_from_obs(tag2, obs)
+                    self.assertGreater(v1, bounds[ix][1][0], msg=msg)
+                    self.assertLess(v1, bounds[ix][1][1], msg=msg)
+                    self.assertGreater(v2, bounds[jx][1][0], msg=msg)
+                    self.assertLess(v2, bounds[jx][1][1], msg=msg)
 
-                    for jj in range(len(gen.columnMapping)):
-                        if gen.columnMapping[jj][0] == tag2:
-                            break
+    def testOpSimQueryOnRanges(self):
+        """
+        Test that getOpimRecords() returns correct results
+        """
+        bounds = [('obsHistID', (5973, 7000)),
+                  ('fieldRA', (np.degrees(1.370916), np.degrees(1.40))),
+                  ('rawSeeing', (0.728562, 0.9)),
+                  ('seeing', (0.7, 0.9)),
+                  ('dist2Moon', (np.degrees(1.570307), np.degrees(1.9))),
+                  ('expMJD', (49367.129396, 49370.0)),
+                  ('m5', (22.815249, 23.0)),
+                  ('skyBrightness', (19.017605, 19.5))]
 
-                    if tag2 != 'telescopeFilter' and tag2 != 'visitExpTime':
-                        name2 = gen.columnMapping[jj][2]
-                        if gen.columnMapping[jj][4] is not None:
-                            ymin = gen.columnMapping[jj][4](bounds[jx][1][0])
-                            ymax = gen.columnMapping[jj][4](bounds[jx][1][1])
-                        else:
-                            ymin = bounds[jx][1][0]
-                            ymax = bounds[jx][1][1]
-                        args = {}
-                        args[tag1] = bounds[ix][1]
-                        args[tag2] = bounds[jx][1]
-                        results = gen.getObservationMetaData(**args)
-                        if name1 is not None or name2 is not None:
-                            for obs_metadata in results:
-                                ct += 1
-                                if name1 is not None:
-                                    self.assertGreater(obs_metadata.phoSimMetaData[name1][0], xmin)
-                                    self.assertLess(obs_metadata.phoSimMetaData[name1][0], xmax)
-                                if name2 is not None:
-                                    self.assertGreater(obs_metadata.phoSimMetaData[name2][0], ymin)
-                                    self.assertLess(obs_metadata.phoSimMetaData[name2][0], ymax)
+        for line in bounds:
+            tag = line[0]
+            args = {tag: line[1]}
+            results = self.gen.getOpSimRecords(**args)
+            msg = 'failed querying %s ' % tag
+            self.assertGreater(len(results), 0)
+            for rec in results:
+                val = get_val_from_rec(tag, rec)
+                self.assertGreater(val, line[1][0], msg=msg)
+                self.assertLess(val, line[1][1], msg=msg)
 
-        # Make sure that we didn't choose values such that no ObservationMetaData were
-        # ever returned
-        self.assertGreater(ct, 0)
+        for ix in range(len(bounds)):
+            tag1 = bounds[ix][0]
+            for jx in range(ix+1, len(bounds)):
+                tag2 = bounds[jx][0]
+                args = {tag1: bounds[ix][1], tag2: bounds[jx][1]}
+                results = self.gen.getOpSimRecords(**args)
+                msg = 'failed while querying %s and %s' % (tag1, tag2)
+                self.assertGreater(len(results), 0)
+                for rec in results:
+                    v1 = get_val_from_rec(tag1, rec)
+                    v2 = get_val_from_rec(tag2, rec)
+                    self.assertGreater(v1, bounds[ix][1][0], msg=msg)
+                    self.assertLess(v1, bounds[ix][1][1], msg=msg)
+                    self.assertGreater(v2, bounds[jx][1][0], msg=msg)
+                    self.assertLess(v2, bounds[jx][1][1], msg=msg)
 
     def testQueryExactValues(self):
         """
@@ -219,62 +212,84 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         """
         gen = self.gen
 
-        bounds = [
-        ('obsHistID',5973),
-        ('expDate',1220779),
-        ('fieldRA',numpy.degrees(1.370916)),
-        ('fieldDec',numpy.degrees(-0.456238)),
-        ('moonRA',numpy.degrees(2.914132)),
-        ('moonDec',numpy.degrees(0.06305)),
-        ('rotSkyPos',numpy.degrees(3.116656)),
-        ('telescopeFilter','i'),
-        ('rawSeeing',0.728562),
-        ('seeing', 0.88911899999999999),
-        ('sunAlt',numpy.degrees(-0.522905)),
-        ('moonAlt',numpy.degrees(0.099096)),
-        ('dist2Moon',numpy.degrees(1.570307)),
-        ('moonPhase',52.2325),
-        ('expMJD',49367.129396),
-        ('altitude',numpy.degrees(0.781015)),
-        ('azimuth',numpy.degrees(3.470077)),
-        ('visitExpTime',30.0),
-        ('airmass',1.420459),
-        ('m5',22.815249),
-        ('skyBrightness',19.017605)]
+        bounds = [('obsHistID', 5973),
+                  ('expDate', 1220779),
+                  ('fieldRA', np.degrees(1.370916)),
+                  ('fieldDec', np.degrees(-0.456238)),
+                  ('moonRA', np.degrees(2.914132)),
+                  ('moonDec', np.degrees(0.06305)),
+                  ('rotSkyPos', np.degrees(3.116656)),
+                  ('telescopeFilter', 'i'),
+                  ('rawSeeing', 0.728562),
+                  ('seeing', 0.88911899999999999),
+                  ('sunAlt', np.degrees(-0.522905)),
+                  ('moonAlt', np.degrees(0.099096)),
+                  ('dist2Moon', np.degrees(1.570307)),
+                  ('moonPhase', 52.2325),
+                  ('expMJD', 49367.129396),
+                  ('visitExpTime', 30.0),
+                  ('m5', 22.815249),
+                  ('skyBrightness', 19.017605)]
 
         for ii in range(len(bounds)):
             tag = bounds[ii][0]
-            if tag != 'telescopeFilter' and tag != 'visitExpTime':
-                name = gen.columnMapping[ii][2]
-                args = {}
-                args[tag] = bounds[ii][1]
-                results = gen.getObservationMetaData(**args)
+            args = {}
+            args[tag] = bounds[ii][1]
+            results = gen.getObservationMetaData(**args)
+            msg = 'failed querying %s' % tag
+            self.assertGreater(len(results), 0, msg=msg)
+            for obs in results:
+                self.assertEqual(get_val_from_obs(tag, obs), bounds[ii][1], msg=msg)
 
-                if gen.columnMapping[ii][4] is not None:
-                    value = gen.columnMapping[ii][4](bounds[ii][1])
-                else:
-                    value = bounds[ii][1]
+    def testOpSimQueryExact(self):
+        """
+        Test that querying OpSim records for exact values works
+        """
 
-                if name is not None:
-                    ct = 0
-                    for obs_metadata in results:
-                        self.assertAlmostEqual(value, obs_metadata.phoSimMetaData[name][0],10)
-                        ct += 1
+        bounds = [('obsHistID', 5973),
+                  ('expDate', 1220779),
+                  ('fieldRA', np.degrees(1.370916)),
+                  ('fieldDec', np.degrees(-0.456238)),
+                  ('moonRA', np.degrees(2.914132)),
+                  ('moonDec', np.degrees(0.06305)),
+                  ('rotSkyPos', np.degrees(3.116656)),
+                  ('telescopeFilter', 'i'),
+                  ('rawSeeing', 0.728562),
+                  ('seeing', 0.88911899999999999),
+                  ('sunAlt', np.degrees(-0.522905)),
+                  ('moonAlt', np.degrees(0.099096)),
+                  ('dist2Moon', np.degrees(1.570307)),
+                  ('moonPhase', 52.2325),
+                  ('expMJD', 49367.129396),
+                  ('visitExpTime', 30.0),
+                  ('m5', 22.815249),
+                  ('skyBrightness', 19.017605)]
 
-                    # Make sure that we did not choose a value which returns zero ObservationMetaData
-                    self.assertGreater(ct, 0)
-                elif tag == 'm5':
-                    ct = 0
-                    for obs_metadata in results:
-                        self.assertAlmostEqual(value, obs_metadata.m5.values()[0])
-                        ct += 1
-                    self.assertGreater(ct, 0)
-                elif tag == 'seeing':
-                    ct = 0
-                    for obs_metadata in results:
-                        self.assertAlmostEqual(value, obs_metadata.seeing.values()[0])
-                        ct += 1
-                    self.assertGreater(ct, 0)
+        for line in bounds:
+            tag = line[0]
+            args = {tag: line[1]}
+            results = self.gen.getOpSimRecords(**args)
+            msg = 'failed while querying %s' % tag
+            self.assertGreater(len(results), 0, msg=msg)
+            for rec in results:
+                self.assertEqual(get_val_from_rec(tag, rec), line[1], msg=msg)
+
+    def testPassInOtherQuery(self):
+        """
+        Test that you can pass OpSim pointings generated from another source
+        into an ObservationMetaDataGenerator and still get ObservationMetaData
+        out
+        """
+
+        pointing_list = self.gen.getOpSimRecords(fieldRA=np.degrees(1.370916))
+        self.assertGreater(len(pointing_list), 1)
+        local_gen = ObservationMetaDataGenerator()
+        obs_list = local_gen.ObservationMetaDataFromPointingArray(pointing_list)
+        self.assertEqual(len(obs_list), len(pointing_list))
+
+        for pp in pointing_list:
+            obs = local_gen.ObservationMetaDataFromPointing(pp)
+            self.assertIsInstance(obs, ObservationMetaData)
 
     def testQueryLimit(self):
         """
@@ -282,7 +297,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         that limit is respected
         """
         gen = self.gen
-        results = gen.getObservationMetaData(fieldRA=(numpy.degrees(1.370916), numpy.degrees(1.5348635)),
+        results = gen.getObservationMetaData(fieldRA=(np.degrees(1.370916), np.degrees(1.5348635)),
                                              limit=20)
         self.assertEqual(len(results), 20)
 
@@ -291,11 +306,11 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         Test that queries on the filter work.
         """
         gen = self.gen
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916), telescopeFilter='i')
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916), telescopeFilter='i')
         ct = 0
         for obs_metadata in results:
-            self.assertAlmostEqual(obs_metadata.phoSimMetaData['pointingRA'][0], 1.370916)
-            self.assertEqual(obs_metadata.phoSimMetaData['Opsim_filter'][0], 'i')
+            self.assertAlmostEqual(obs_metadata._pointingRA, 1.370916)
+            self.assertEqual(obs_metadata.bandpass, 'i')
             ct += 1
 
         # Make sure that more than zero ObservationMetaData were returned
@@ -310,7 +325,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         gen = self.gen
 
         # Test a cirlce with a specified radius
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                              telescopeFilter='i',
                                              boundLength=0.9)
         ct = 0
@@ -324,9 +339,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
 
             self.assertAlmostEqual(obs_metadata.bounds.RA,
-                                   obs_metadata.phoSimMetaData['pointingRA'][0], 5)
+                                   np.radians(obs_metadata.pointingRA), 5)
             self.assertAlmostEqual(obs_metadata.bounds.DEC,
-                                   obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+                                   np.radians(obs_metadata.pointingDec), 5)
             ct += 1
 
         # Make sure that some ObservationMetaData were tested
@@ -334,7 +349,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         boundLengthList = [1.2, (1.2, 0.6)]
         for boundLength in boundLengthList:
-            results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+            results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                                  telescopeFilter='i',
                                                  boundType='box',
                                                  boundLength=boundLength)
@@ -348,8 +363,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
             ct = 0
             for obs_metadata in results:
-                RAdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingRA'][0])
-                DECdeg = numpy.degrees(obs_metadata.phoSimMetaData['pointingDec'][0])
+                RAdeg = obs_metadata.pointingRA
+                DECdeg = obs_metadata.pointingDec
                 self.assertTrue(isinstance(obs_metadata.bounds, BoxBounds))
 
                 self.assertAlmostEqual(obs_metadata.bounds.RAminDeg, RAdeg-dra, 10)
@@ -360,8 +375,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
                 self.assertAlmostEqual(obs_metadata.bounds.DECmaxDeg, DECdeg+ddec, 10)
 
-                self.assertAlmostEqual(obs_metadata.bounds.RA, obs_metadata.phoSimMetaData['pointingRA'][0], 5)
-                self.assertAlmostEqual(obs_metadata.bounds.DEC, obs_metadata.phoSimMetaData['pointingDec'][0], 5)
+                self.assertAlmostEqual(obs_metadata.bounds.RA, np.radians(obs_metadata.pointingRA), 5)
+                self.assertAlmostEqual(obs_metadata.bounds.DEC, np.radians(obs_metadata.pointingDec), 5)
 
                 ct += 1
 
@@ -379,35 +394,26 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         catName = 'testPhoSimFromObsMetaDataGenerator.txt'
         if os.path.exists(dbName):
             os.unlink(dbName)
-        _ = makePhoSimTestDB(filename=dbName)
-        bulgeDB = testGalaxyBulge(driver='sqlite', database=dbName)
+        makePhoSimTestDB(filename=dbName)
+        bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=dbName)
         gen = self.gen
-        results = gen.getObservationMetaData(fieldRA=numpy.degrees(1.370916),
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                              telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.write_catalog(catName)
 
-        filterTranslation=['u', 'g', 'r', 'i', 'z', 'y']
-
         with open(catName) as inputFile:
             lines = inputFile.readlines()
-            ix = 0
-            for control in gen.columnMapping:
-                if control[0] != 'm5' and control[0] != 'skyBrightness' and control[0] != 'seeing':
-                    words = lines[ix].split()
-                    self.assertEqual(control[2].replace('pointing', 'Unrefracted_'), words[0])
+            header_entries = []
+            for line in lines:
+                words = line.split()
+                if words[0] == 'object':
+                    break
+                header_entries.append(words[0])
 
-                    if control[0] != 'telescopeFilter':
-                        if control[4] is not None:
-                            value = control[4](float(words[1]))
-                        else:
-                            value = float(words[1])
-
-                        self.assertAlmostEqual(value, results[0].phoSimMetaData[control[2]][0], 5)
-                    else:
-                        self.assertEqual(filterTranslation[int(words[1])], results[0].phoSimMetaData[control[2]][0])
-
-                    ix += 1
+            for column in self.gen._opsim_to_phosim:
+                new_name = self.gen._opsim_to_phosim[column][0]
+                self.assertIn(new_name, header_entries)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -416,10 +422,123 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             os.unlink(dbName)
 
 
+class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
+    """
+    This class will test the performance of the ObservationMetaDataGenerator
+    on a 'mock OpSim' database (i.e. a database of pointings whose Summary
+    table contains only a subset of the official OpSim schema)
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace')
+        cls.opsim_db_name = os.path.join(scratch_dir, 'mock_opsim_sqlite.db')
+
+        if os.path.exists(cls.opsim_db_name):
+            os.unlink(cls.opsim_db_name)
+
+        conn = sqlite3.connect(cls.opsim_db_name)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE Summary (obsHistID int, expMJD real, '''
+                  '''fieldRA real, fieldDec real, filter text)''')
+        conn.commit()
+        rng = np.random.RandomState(77)
+        n_pointings = 100
+        ra_data = rng.random_sample(n_pointings)*2.0*np.pi
+        dec_data = (rng.random_sample(n_pointings)-0.5)*np.pi
+        mjd_data = rng.random_sample(n_pointings)*1000.0 + 59580.0
+        filter_dexes = rng.randint(0, 6, n_pointings)
+        bands = ('u', 'g', 'r', 'i', 'z', 'y')
+        filter_data = []
+        for ii in filter_dexes:
+            filter_data.append(bands[ii])
+
+        for ii in range(n_pointings):
+            cmd = '''INSERT INTO Summary VALUES(%i, %f, %f, %f, '%s')''' % \
+                  (ii, mjd_data[ii], ra_data[ii], dec_data[ii], filter_data[ii])
+            c.execute(cmd)
+        conn.commit()
+        conn.close()
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.opsim_db_name):
+            os.unlink(cls.opsim_db_name)
+
+    def setUp(self):
+        self.obs_meta_gen = ObservationMetaDataGenerator(database=self.opsim_db_name)
+
+    def testSpatialQuery(self):
+        """
+        Test that when we run a spatial query on the mock opsim database, we get expected results.
+        """
+
+        raBounds = (45.0, 100.0)
+        results = self.obs_meta_gen.getObservationMetaData(fieldRA=raBounds)
+        self.assertGreater(len(results), 0)
+        for obs in results:
+            self.assertGreater(obs.pointingRA, raBounds[0])
+            self.assertLess(obs.pointingDec, raBounds[1])
+
+    def testSelectException(self):
+        """
+        Test that an exception is raised if you try to SELECT pointings on a column that does not exist
+        """
+        with self.assertRaises(RuntimeError) as context:
+            results = self.obs_meta_gen.getObservationMetaData(rotSkyPos=(27.0, 112.0))
+        self.assertIn("You have asked ObservationMetaDataGenerator to SELECT",
+                      context.exception.args[0])
+
+    def testIncompletDB(self):
+        """
+        Test that if the mock OpSim database does not have all required columns, an exception
+        is raised.
+        """
+        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace')
+        opsim_db_name = os.path.join(scratch_dir, 'incomplete_mock_opsim_sqlite.db')
+
+        if os.path.exists(opsim_db_name):
+            os.unlink(opsim_db_name)
+
+        conn = sqlite3.connect(opsim_db_name)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE Summary (obsHistID int, expMJD real, '''
+                  '''fieldRA real, filter text)''')
+        conn.commit()
+
+        rng = np.random.RandomState(77)
+        n_pointings = 100
+        ra_data = rng.random_sample(n_pointings)*2.0*np.pi
+        mjd_data = rng.random_sample(n_pointings)*1000.0 + 59580.0
+        filter_dexes = rng.randint(0, 6, n_pointings)
+        bands = ('u', 'g', 'r', 'i', 'z', 'y')
+        filter_data = []
+        for ii in filter_dexes:
+            filter_data.append(bands[ii])
+
+        for ii in range(n_pointings):
+            cmd = '''INSERT INTO Summary VALUES(%i, %f, %f, '%s')''' % \
+                  (ii, mjd_data[ii], ra_data[ii], filter_data[ii])
+            c.execute(cmd)
+        conn.commit()
+        conn.close()
+
+        incomplete_obs_gen = ObservationMetaDataGenerator(database=opsim_db_name)
+
+        with self.assertRaises(RuntimeError) as context:
+            results = incomplete_obs_gen.getObservationMetaData(telescopeFilter='r')
+        self.assertIn("ObservationMetaDataGenerator requires that the database",
+                      context.exception.args[0])
+
+        if os.path.exists(opsim_db_name):
+            os.unlink(opsim_db_name)
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(ObservationMetaDataGeneratorTest)
+    suites += unittest.makeSuite(ObsMetaDataGenMockOpsimTest)
 
     return unittest.TestSuite(suites)
 

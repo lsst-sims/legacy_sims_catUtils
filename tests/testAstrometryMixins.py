@@ -1,9 +1,7 @@
-import numpy
+import numpy as np
 
 import os
 import unittest
-import warnings
-import sys
 import math
 import palpy as pal
 import lsst.utils.tests as utilsTests
@@ -15,8 +13,8 @@ from lsst.sims.utils import _observedFromAppGeo, _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, _focalPlaneCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoords, _chipNameFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, _pixelCoordsFromRaDec
-from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
-                                                myTestGals, makeGalTestDB
+from lsst.sims.catalogs.generation.utils import (myTestStars, makeStarTestDB,
+                                                 myTestGals, makeGalTestDB)
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, CameraCoords
 
@@ -24,36 +22,39 @@ from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, Camer
 class AstrometryTestStars(myTestStars):
     database = 'AstrometryTestStarDatabase.db'
 
+
 class AstrometryTestGalaxies(myTestGals):
     database = 'AstrometryTestGalaxyDatabase.db'
+
 
 class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
                       'properMotionRa', 'properMotionDec',
                       'radialVelocity', 'parallax']
 
-    transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,
-                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
-                       'properMotionRa':numpy.degrees, 'properMotionDec':numpy.degrees,
-                       'parallax':arcsecFromRadians}
+    transformations = {'raJ2000': np.degrees, 'decJ2000': np.degrees,
+                       'raObserved': np.degrees, 'decObserved': np.degrees,
+                       'properMotionRa': np.degrees, 'properMotionDec': np.degrees,
+                       'parallax': arcsecFromRadians}
 
-    default_formats = {'f':'%.12f'}
+    default_formats = {'f': '%.12f'}
 
-class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
+
+class testCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
     """
     A (somewhat meaningless) instance catalog class that will allow us
     to run the astrometry routines for testing purposes
     """
     catalog_type = 'test_stars'
-    column_outputs=['id','raICRS','decICRS',
-                   'x_pupil','y_pupil',
-                   'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
-    #Needed to do camera coordinate transforms.
+    column_outputs = ['id', 'raICRS', 'decICRS',
+                      'x_pupil', 'y_pupil',
+                      'chipName', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane']
+    # Needed to do camera coordinate transforms.
     camera = camTestUtils.CameraWrapper().camera
-    default_formats = {'f':'%.12f'}
+    default_formats = {'f': '%.12f'}
 
-    delimiter = ';' #so that numpy.loadtxt can parse the chipNames which may contain commas
-                     #(see testClassMethods)
+    delimiter = ';'  # so that np.loadtxt can parse the chipNames which may contain commas
+                     # (see testClassMethods)
 
     default_columns = [('properMotionRa', 0., float),
                        ('properMotionDec', 0., float),
@@ -75,6 +76,7 @@ class testStellarCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
                       'chipName',
                       'raObserved', 'decObserved']
 
+
 class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
     """
     Define a catalog of galaxies with all possible astrometric columns
@@ -87,6 +89,7 @@ class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
                       'chipName', 'raObserved', 'decObserved']
 
     delimiter = '; '
+
 
 class astrometryUnitTest(unittest.TestCase):
     """
@@ -105,7 +108,7 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists(cls.starDBName):
             os.unlink(cls.starDBName)
         makeStarTestDB(filename=cls.starDBName,
-                      size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+                       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
         if os.path.exists(cls.galDBName):
             os.unlink(cls.galDBName)
@@ -123,38 +126,29 @@ class astrometryUnitTest(unittest.TestCase):
     def setUp(self):
         self.starDBObject = AstrometryTestStars()
         self.galaxyDBObject = AstrometryTestGalaxies()
-        self.metadata={}
 
-        #below are metadata values that need to be set in order for
-        #get_getFocalPlaneCoordinates to work.  If we had been querying the database,
-        #these would be set to meaningful values.  Because we are generating
-        #an artificial set of inputs that must comport to the baseline SLALIB
-        #inputs, these are set arbitrarily by hand
-        self.metadata['pointingRA'] = (numpy.radians(200.0), float)
-        self.metadata['pointingDec'] = (numpy.radians(-30.0), float)
-        self.metadata['Opsim_rotskypos'] = (1.0, float)
+        # below are metadata values that need to be set in order for
+        # get_getFocalPlaneCoordinates to work.  If we had been querying the database,
+        # these would be set to meaningful values.  Because we are generating
+        # an artificial set of inputs that must comport to the baseline SLALIB
+        # inputs, these are set arbitrarily by hand
 
-        self.obs_metadata=ObservationMetaData(mjd=57388.0,
-                                     boundType='circle',
-                                     boundLength=0.05,
-                                     phoSimMetaData=self.metadata)
+        self.obs_metadata = ObservationMetaData(pointingRA=200.0,
+                                                pointingDec=-30.0,
+                                                rotSkyPos=np.degrees(1.0),
+                                                mjd=57388.0,
+                                                boundType='circle',
+                                                boundLength=0.05)
 
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
-        self.tol=1.0e-5
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists('AstrometryTestDatabase.db'):
-            os.unlink('AstrometryTestDatabase.db')
+        self.tol = 1.0e-5
 
     def tearDown(self):
         del self.starDBObject
         del self.galaxyDBObject
         del self.cat
         del self.obs_metadata
-        del self.metadata
         del self.tol
-
 
     def testWritingOfStars(self):
         """
@@ -170,8 +164,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         stars.write_catalog(catName)
 
-        dtypeList = [(name, numpy.float) for name in stars._column_outputs]
-        testData = numpy.genfromtxt(catName, delimiter=', ', dtype=numpy.dtype(dtypeList))
+        dtypeList = [(name, np.float) for name in stars._column_outputs]
+        testData = np.genfromtxt(catName, delimiter=', ', dtype=np.dtype(dtypeList))
 
         self.assertGreater(len(testData), 0)
 
@@ -192,16 +186,13 @@ class astrometryUnitTest(unittest.TestCase):
         galaxies.delimiter = ';'
         galaxies.write_catalog(catName)
 
-
-        dtypeList = [(name, numpy.float) for name in galaxies._column_outputs]
-        testData = numpy.genfromtxt(catName, dtype=numpy.dtype(dtypeList), delimiter=';')
+        dtypeList = [(name, np.float) for name in galaxies._column_outputs]
+        testData = np.genfromtxt(catName, dtype=np.dtype(dtypeList), delimiter=';')
 
         self.assertGreater(len(testData), 0)
 
         if os.path.exists(catName):
             os.unlink(catName)
-
-
 
     def testUtilityMethods(self):
         """
@@ -218,25 +209,25 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.cat.write_catalog(catName)
 
-        dtype = [('id',int),
-                 ('raICRS',float), ('decICRS',float),
-                 ('x_pupil',float), ('y_pupil',float), ('chipName',str,11),
-                 ('xPix',float), ('yPix',float),
-                 ('xFocalPlane',float), ('yFocalPlane',float)]
+        dtype = [('id', int),
+                 ('raICRS', float), ('decICRS', float),
+                 ('x_pupil', float), ('y_pupil', float), ('chipName', str, 11),
+                 ('xPix', float), ('yPix', float),
+                 ('xFocalPlane', float), ('yFocalPlane', float)]
 
-        baselineData = numpy.loadtxt(catName, dtype=dtype, delimiter=';')
+        baselineData = np.loadtxt(catName, dtype=dtype, delimiter=';')
 
         self.assertGreater(len(baselineData), 0)
 
         pupilTest = _pupilCoordsFromRaDec(baselineData['raICRS'],
-                                              baselineData['decICRS'],
-                                              obs_metadata=self.obs_metadata,
-                                              epoch=2000.0)
+                                          baselineData['decICRS'],
+                                          obs_metadata=self.obs_metadata,
+                                          epoch=2000.0)
 
         for (xxtest, yytest, xx, yy) in \
                 zip(pupilTest[0], pupilTest[1], baselineData['x_pupil'], baselineData['y_pupil']):
-            self.assertAlmostEqual(xxtest,xx,6)
-            self.assertAlmostEqual(yytest,yy,6)
+            self.assertAlmostEqual(xxtest, xx, 6)
+            self.assertAlmostEqual(yytest, yy, 6)
 
         focalTest = focalPlaneCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
@@ -246,12 +237,12 @@ class astrometryUnitTest(unittest.TestCase):
 
         for (xxtest, yytest, xxra, yyra, xx, yy) in \
                 zip(focalTest[0], focalTest[1], focalRa[0], focalRa[1],
-                        baselineData['xFocalPlane'], baselineData['yFocalPlane']):
+                    baselineData['xFocalPlane'], baselineData['yFocalPlane']):
 
-            self.assertAlmostEqual(xxtest,xx,6)
-            self.assertAlmostEqual(yytest,yy,6)
-            self.assertAlmostEqual(xxra,xx,6)
-            self.assertAlmostEqual(yyra,yy,6)
+            self.assertAlmostEqual(xxtest, xx, 6)
+            self.assertAlmostEqual(yytest, yy, 6)
+            self.assertAlmostEqual(xxra, xx, 6)
+            self.assertAlmostEqual(yyra, yy, 6)
 
         pixTest = pixelCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
@@ -262,21 +253,20 @@ class astrometryUnitTest(unittest.TestCase):
 
         for (xxtest, yytest, xxra, yyra, xx, yy) in \
                 zip(pixTest[0], pixTest[1], pixTestRaDec[0], pixTestRaDec[1],
-                           baselineData['xPix'], baselineData['yPix']):
+                    baselineData['xPix'], baselineData['yPix']):
 
-            if not numpy.isnan(xx) and not numpy.isnan(yy):
-                self.assertAlmostEqual(xxtest,xx,5)
-                self.assertAlmostEqual(yytest,yy,5)
-                self.assertAlmostEqual(xxra,xx,5)
-                self.assertAlmostEqual(yyra,yy,5)
+            if not np.isnan(xx) and not np.isnan(yy):
+                self.assertAlmostEqual(xxtest, xx, 5)
+                self.assertAlmostEqual(yytest, yy, 5)
+                self.assertAlmostEqual(xxra, xx, 5)
+                self.assertAlmostEqual(yyra, yy, 5)
             else:
-                self.assertTrue(numpy.isnan(xx))
-                self.assertTrue(numpy.isnan(yy))
-                self.assertTrue(numpy.isnan(xxra))
-                self.assertTrue(numpy.isnan(yyra))
-                self.assertTrue(numpy.isnan(xxtest))
-                self.assertTrue(numpy.isnan(yytest))
-
+                self.assertTrue(np.isnan(xx))
+                self.assertTrue(np.isnan(yy))
+                self.assertTrue(np.isnan(xxra))
+                self.assertTrue(np.isnan(yyra))
+                self.assertTrue(np.isnan(xxtest))
+                self.assertTrue(np.isnan(yytest))
 
         nameTest = chipNameFromPupilCoords(pupilTest[0], pupilTest[1],
                                            camera=self.cat.camera)
@@ -287,15 +277,14 @@ class astrometryUnitTest(unittest.TestCase):
 
         for (ntest, nra, ncontrol) in zip(nameTest, nameRA, baselineData['chipName']):
             if ncontrol != 'None':
-                self.assertEqual(ntest,ncontrol)
-                self.assertEqual(nra,ncontrol)
+                self.assertEqual(ntest, ncontrol)
+                self.assertEqual(nra, ncontrol)
             else:
                 self.assertTrue(ntest is None)
                 self.assertTrue(nra is None)
 
         if os.path.exists(catName):
             os.unlink(catName)
-
 
     def testParallax(self):
         """
@@ -306,8 +295,8 @@ class astrometryUnitTest(unittest.TestCase):
         generating code correctly applied the transformations.
         """
 
-        #create and write a catalog that performs astrometric transformations
-        #on a cartoon star database
+        # create and write a catalog that performs astrometric transformations
+        # on a cartoon star database
         cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         parallaxName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
                                     'scratchSpace', 'parallaxCatalog.sav')
@@ -317,32 +306,33 @@ class astrometryUnitTest(unittest.TestCase):
 
         cat.write_catalog(parallaxName)
 
-        data = numpy.genfromtxt(parallaxName,delimiter=',')
+        data = np.genfromtxt(parallaxName, delimiter=',')
         self.assertGreater(len(data), 0)
 
         epoch = cat.db_obj.epoch
         mjd = cat.obs_metadata.mjd
         prms = pal.mappa(epoch, mjd.TDB)
         for vv in data:
-            #run the PALPY routines that actuall do astrometry `by hand' and compare
-            #the results to the contents of the catalog
-            ra0 = numpy.radians(vv[0])
-            dec0 = numpy.radians(vv[1])
-            pmra = numpy.radians(vv[4])
-            pmdec = numpy.radians(vv[5])
+            # run the PALPY routines that actuall do astrometry `by hand' and compare
+            # the results to the contents of the catalog
+            ra0 = np.radians(vv[0])
+            dec0 = np.radians(vv[1])
+            pmra = np.radians(vv[4])
+            pmdec = np.radians(vv[5])
             rv = vv[6]
             px = vv[7]
             ra_apparent, dec_apparent = pal.mapqk(ra0, dec0, pmra, pmdec, px, rv, prms)
-            ra_apparent = numpy.array([ra_apparent])
-            dec_apparent = numpy.array([dec_apparent])
+            ra_apparent = np.array([ra_apparent])
+            dec_apparent = np.array([dec_apparent])
             raObserved, decObserved = _observedFromAppGeo(ra_apparent, dec_apparent,
-                                                                 obs_metadata=cat.obs_metadata)
+                                                          obs_metadata=cat.obs_metadata)
 
-            self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),7)
-            self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),7)
+            self.assertAlmostEqual(raObserved[0], np.radians(vv[2]), 7)
+            self.assertAlmostEqual(decObserved[0], np.radians(vv[3]), 7)
 
         if os.path.exists(parallaxName):
             os.unlink(parallaxName)
+
 
 def suite():
     utilsTests.init()
@@ -350,8 +340,9 @@ def suite():
     suites += unittest.makeSuite(astrometryUnitTest)
     return unittest.TestSuite(suites)
 
+
 def run(shouldExit=False):
-    utilsTests.run(suite(),shouldExit)
+    utilsTests.run(suite(), shouldExit)
 
 if __name__ == "__main__":
     run(True)
