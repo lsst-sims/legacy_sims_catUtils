@@ -214,6 +214,11 @@ class LightCurveGenerator(object):
 
         self._catalogdb = catalogdb
 
+        # optional constraint on query to catalog database
+        # (usually 'varParamStr IS NOT NULL')
+        if not hasattr(self, '_constraint'):
+            self._constraint = None
+
     def _filter_chunk(self, chunk):
         return chunk
 
@@ -322,7 +327,7 @@ class LightCurveGenerator(object):
 
         query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                 obs_metadata=cat.obs_metadata,
-                                                constraint=cat.constraint,
+                                                constraint=self._constraint,
                                                 chunk_size=chunk_size)
 
         return query_result
@@ -513,6 +518,7 @@ class StellarLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _stellarLightCurveCatalog
+        self._constraint = 'varParamStr IS NOT NULL'
         super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
 
 
@@ -535,4 +541,5 @@ class AgnLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _agnLightCurveCatalog
+        self._constraint = 'varParamStr IS NOT NULL'
         super(AgnLightCurveGenerator, self).__init__(*args, **kwargs)
