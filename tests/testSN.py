@@ -34,7 +34,6 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject, fileDBObject
-import eups
 
 # Routines Being Tested
 from lsst.sims.catUtils.supernovae import SNObject
@@ -361,7 +360,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         # Generate a set of Observation MetaData Outputs that overlap
         # the galaxies in space
-        opsimPath = os.path.join(eups.productDir('sims_data'), 'OpSimData')
+        opsimPath = os.path.join(getPackageDir('sims_data'), 'OpSimData')
         opsimDB = os.path.join(opsimPath, 'opsimblitz1_1133_sqlite.db')
 
         generator = ObservationMetaDataGenerator(database=opsimDB)
