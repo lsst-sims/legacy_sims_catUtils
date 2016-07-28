@@ -271,7 +271,7 @@ class GalaxyTileObj(BaseCatalogObj):
                           "daughter class.  Because of the way GalaxyTileObj is searched, row "
                           "number limits are not possible.  If you really want to limit the number "
                           "of rows returned by you query, consider using GalaxyObj (note that you "
-                          "will have to you limit your serach to -2.5<RA<2.5 -2.25<Dec<2.25 -- both in "
+                          "will have to you limit your search to -2.5<RA<2.5 -2.25<Dec<2.25 -- both in "
                           "degrees -- as this is the only region where galaxies exist in GalaxyObj).")
 
         return ChunkIterator(self, query, chunk_size)
