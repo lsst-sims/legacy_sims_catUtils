@@ -18,6 +18,20 @@ import sqlite3
 import numpy as np
 import unittest
 
+# External packages used
+# import pandas as pd
+from pandas.util.testing import assert_frame_equal
+import sncosmo
+import astropy
+
+_skip_sn_tests = False
+from astropy.config import get_config_dir
+
+try:
+    get_config_dir()
+except:
+    _skip_sn_tests = True
+
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
@@ -34,13 +48,8 @@ from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
 from lsst.sims.catUtils.utils import SNIaLightCurveGenerator
 
-# External packages used
-# import pandas as pd
-from pandas.util.testing import assert_frame_equal
-import sncosmo
-import astropy
 
-
+@unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNObject_tests(unittest.TestCase):
 
     def setUp(self):
@@ -48,8 +57,6 @@ class SNObject_tests(unittest.TestCase):
         Setup tests
         SN_blank: A SNObject with no MW extinction
         """
-
-        from astropy.config import get_config_dir
 
         mydir = get_config_dir()
         print '==============================='
@@ -268,6 +275,7 @@ class SNObject_tests(unittest.TestCase):
         self.assertEqual(peakabsMag, HiPeakAbsMag)
 
 
+@unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNIaCatalog_tests(unittest.TestCase):
 
     @classmethod
@@ -716,6 +724,8 @@ class SNIaLightCurveControlCatalog(SNIaCatalog):
     _midSurveyTime = 49000.0
     _snFrequency = 0.001
 
+
+@unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNIaLightCurveTest(unittest.TestCase):
 
     @classmethod
