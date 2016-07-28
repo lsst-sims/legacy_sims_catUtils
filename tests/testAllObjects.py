@@ -47,6 +47,8 @@ class TestCat(InstanceCatalog):
 
 class basicAccessTest(unittest.TestCase):
 
+    longMessage = True
+
     def testObjects(self):
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                'testObjectsCat.txt')
@@ -172,6 +174,55 @@ class basicAccessTest(unittest.TestCase):
                 pass
             else:
                 raise
+
+    def test_limit(self):
+        """
+        Test that the limit kwarg in query_columns behaves correctly.
+
+        Will test on one star table and one galaxy table.
+        """
+        list_of_failures = []
+        for objcls, clsname in zip((bcm.StarObj, bcm.GalaxyObj), ('StarObj', 'GalaxyObj')):
+            msg = "failed the limit test\noffending class is %s" % clsname
+            try:
+                dbobj = objcls(verbose=False)
+            except:
+                trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
+                msg = sys.exc_info()[1].args[0]
+                if 'Failed to connect' in msg or failedOnFatboy(trace):
+
+                    # if the exception was due to a failed connection
+                    # to fatboy, ignore it
+                    list_of_failures.append(clsname)
+                    continue
+                else:
+                    raise
+
+            obs_metadata = dbobj.testObservationMetaData
+
+            results = dbobj.query_columns(obs_metadata=obs_metadata)
+
+            ct_res = 0
+            for chunk in results:
+                for line in chunk:
+                    ct_res += 1
+
+            self.assertGreater(ct_res, 10, msg=msg)
+
+            limited_results = dbobj.query_columns(obs_metadata=obs_metadata, limit=10)
+
+            ct_limit = 0
+            for chunk in limited_results:
+                for line in chunk:
+                    ct_limit += 1
+
+            self.assertEqual(ct_limit, 10, msg=msg)
+
+        if len(list_of_failures) > 0:
+            print "\nList of DBObjects that could not connect to fatboy " \
+                  "for the test on the limit kwarg"
+            for nn in list_of_failures:
+                print nn
 
 
 def suite():
