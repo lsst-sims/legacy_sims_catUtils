@@ -519,26 +519,6 @@ class SNIaCatalog_tests(unittest.TestCase):
                 np.radians(x.summary['unrefractedDec'])
 
 
-    @staticmethod
-    def cleanDB(dbname, verbose=True):
-        '''
-        Deletes the database dbname from the disk.
-        Parameters
-        ----------
-        dbname: string, mandatory
-            name (abs path) of the database to be deleted
-        verbose: Bool, optional, defaults to True
-
-        '''
-
-        if os.path.exists(dbname):
-            if verbose:
-                print "deleting database ", dbname
-            os.unlink(dbname)
-        else:
-            if verbose:
-                print 'database ', dbname, ' does not exist'
-
     @classmethod
     def _writeManySNCatalogs(cls, obsMetaDataResults, suffix=''):
 
