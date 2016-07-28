@@ -186,7 +186,8 @@ class GalaxyTileObj(BaseCatalogObj):
     def getIdColKey(self):
         return 'galtileid'
 
-    def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None):
+    def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None,
+                      limit=None):
         """Execute a query
 
         **Parameters**
@@ -204,6 +205,10 @@ class GalaxyTileObj(BaseCatalogObj):
               to query and time of the observation.
             * constraint : string (optional)
               if specified, the predicate is added to the query verbatim using AND
+            * limit:
+              This kwarg is not actually used.  It exists to preserve the same interface
+              as other definitions of query_columns elsewhere in CatSim.  If not None,
+              a warning will be emitted, pointing out to the user that 'limit' is not used.
 
         **Returns**
 
@@ -260,6 +265,14 @@ class GalaxyTileObj(BaseCatalogObj):
 
         if constraint is not None:
             query += ", @WhereClause = '%s'"%(constraint)
+
+        if limit is not None:
+            warnings.warn("You specified a row number limit in your query of a GalaxyTileObj "
+                          "daughter class.  Because of the way GalaxyTileObj is searched, row "
+                          "number limits are not possible.  If you really want to limit the number "
+                          "of rows returned by you query, consider using GalaxyObj (note that you "
+                          "will have to you limit your serach to -2.5<RA<2.5 -2.25<Dec<2.25 -- both in "
+                          "degrees -- as this is the only region where galaxies exist in GalaxyObj).")
 
         return ChunkIterator(self, query, chunk_size)
 
