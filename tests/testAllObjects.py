@@ -1,4 +1,6 @@
-import numpy
+import os
+import inspect
+import numpy as np
 import sys
 import traceback
 import unittest
@@ -10,7 +12,6 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catUtils.exampleCatalogDefinitions import ObsStarCatalogBase
 # The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
-import os, inspect
 
 
 def failedOnFatboy(tracebackList):
@@ -114,9 +115,9 @@ class basicAccessTest(unittest.TestCase):
                 os.unlink(catName)
             try:
                 cat.write_catalog(catName)
-                dtypeList = [(name, numpy.float) for name in cat._column_outputs]
-                testData = numpy.genfromtxt(catName, delimiter = ', ',
-                                            dtype=numpy.dtype(dtypeList))
+                dtypeList = [(name, np.float) for name in cat._column_outputs]
+                testData = np.genfromtxt(catName, delimiter = ', ',
+                                         dtype=np.dtype(dtypeList))
                 self.assertGreater(len(testData), 0)
             finally:
                 if os.path.exists(catName):
@@ -150,9 +151,9 @@ class basicAccessTest(unittest.TestCase):
                 os.unlink(catName)
             try:
                 cat.write_catalog(catName)
-                dtypeList = [(name, numpy.float) for name in cat._column_outputs]
-                testData = numpy.genfromtxt(catName, delimiter = ', ',
-                                            dtype=numpy.dtype(dtypeList))
+                dtypeList = [(name, np.float) for name in cat._column_outputs]
+                testData = np.genfromtxt(catName, delimiter = ', ',
+                                         dtype=np.dtype(dtypeList))
                 self.assertGreater(len(testData), 0)
             finally:
                 if os.path.exists(catName):
