@@ -136,7 +136,7 @@ class SNObject_tests(unittest.TestCase):
         checking that this is indeed the case, and checking that they are not
         negative if rectified.
         """
-        
+
         snobj = SNObject(ra=30., dec=-60., source='salt2')
         snobj.set(z=0.96, t0=self.mjdobs, x1=-3., x0=1.8e-6)
         snobj.rectifySED  = False
@@ -238,7 +238,7 @@ class SNObject_tests(unittest.TestCase):
                                    rtol=1.0e-7)
     def test_redshift(self):
         """
-        test that the redshift method works as expected by checking that 
+        test that the redshift method works as expected by checking that
         if we redshift a SN from its original redshift orig_z to new_z where
         new_z is smaller (larger) than orig_z:
         - 1. x0 increases (decreases)
@@ -325,7 +325,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             '''
             Create a like CatalogDBObject connecting to a local sqlite database
             '''
-        
+
             objid = 'mytestgals'
             tableid = 'gals'
             idColKey = 'id'
@@ -336,7 +336,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             raColName = 'raJ2000'
             decColName = 'decJ2000'
             driver = 'sqlite'
-        
+
             # columns required to convert the ra, dec values in degrees
             # to radians again
             columns = [('id', 'id', int),
@@ -361,14 +361,14 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         generator = ObservationMetaDataGenerator(database=opsimDB)
         cls.obsMetaDataResults = generator.getObservationMetaData(limit=100,
-                                                    fieldRA=(5.0, 8.0), 
+                                                    fieldRA=(5.0, 8.0),
                                                     fieldDec=(-85.,-60.),
                                                     expMJD=(49300., 49400.),
                                                     boundLength=0.15,
                                                     boundType='circle')
 
         # cls.obsMetaDataResults has obsMetaData corresponding to 15 pointings
-        # This is tested in test_obsMetaDataGeneration 
+        # This is tested in test_obsMetaDataGeneration
 
 #        v = zip(*map(cls.coords, cls.obsMetaDataResults))
 
@@ -450,7 +450,7 @@ class SNIaCatalog_tests(unittest.TestCase):
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
-        different pointings leading to different instance catalogs, the 
+        different pointings leading to different instance catalogs, the
         values of properties remain the same.
         """
         lcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
@@ -458,7 +458,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         props = ['snid', 'snra', 'sndec', 'z', 'x0', 'x1', 'c',
                  'cosmologicalDistanceModulus', 'mwebv']
         s = "Testing Equality across {0:2d} pointings for reported properties"
-        s += " of SN {1:8d} of the property " 
+        s += " of SN {1:8d} of the property "
         for key in lcs.groups.keys():
             df = lcs.get_group(key)
             for prop in props:
@@ -468,7 +468,7 @@ class SNIaCatalog_tests(unittest.TestCase):
     # Skip the following test using the command below if we integrate into
     # tests before pandas is in
     #@unittest.skip('depends on  pandas')
-    def test_redrawingCatalog(self): 
+    def test_redrawingCatalog(self):
         """
         test that drawing the same catalog
         """
@@ -490,7 +490,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             df_old.sort(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
             df_new.sort(['time', 'band'], inplace=True)
-            s = "Testing equality for SNID {0:8d} with {1:2d} datapoints" 
+            s = "Testing equality for SNID {0:8d} with {1:2d} datapoints"
             print(s.format(df_new.snid.iloc[0], len(df_old)))
             assert_frame_equal(df_new, df_old)
 
@@ -514,7 +514,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
 
     @staticmethod
-    def coords(x): 
+    def coords(x):
             return np.radians(x.summary['unrefractedRA']),\
                 np.radians(x.summary['unrefractedDec'])
 
@@ -528,9 +528,9 @@ class SNIaCatalog_tests(unittest.TestCase):
         dbname: string, mandatory
             name (abs path) of the database to be deleted
         verbose: Bool, optional, defaults to True
-    
+
         '''
-    
+
         if os.path.exists(dbname):
             if verbose:
                 print "deleting database ", dbname
@@ -542,7 +542,7 @@ class SNIaCatalog_tests(unittest.TestCase):
     @classmethod
     def _writeManySNCatalogs(cls, obsMetaDataResults, suffix=''):
 
-        
+
         fnameList = []
         for obsindex, obsMetaData in enumerate(obsMetaDataResults):
 
@@ -571,7 +571,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         Parameters
         ----------
-        
+
         '''
         dbname = cls.dbname
         samps = cls.GalaxyPositionSamps
@@ -580,13 +580,13 @@ class SNIaCatalog_tests(unittest.TestCase):
         conn = sqlite3.connect(dbname)
         curs = conn.cursor()
         curs.execute('CREATE TABLE if not exists gals (id INT, raJ2000 FLOAT, decJ2000 FLOAT, redshift FLOAT)')
-    
+
         seed = 1
         np.random.seed(seed)
-    
+
         for count in range(size):
             id = 1000000 + count
-    
+
             # Main Database should have values in degrees
             ra = samps[0][count]
             dec = samps[1][count]
@@ -595,7 +595,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             exec_str = cls.insertfromdata(tablename='gals', records=row,
                                       multiple=False)
             curs.execute(exec_str, row)
-    
+
         conn.commit()
         conn.close()
         return samps
@@ -608,19 +608,19 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        field of view by picking the area enclosed in
 #        obsmetadata.unrefractedRA \pm obsmetadata.boundLength
 #        obsmetadata.unrefractedDec \pm obsmetadata.boundLength
-#    
+#
 #        Parameters
 #        ----------
 #        obsmetadata: instance of
 #            `sims.catalogs.generation.db.ObservationMetaData`
-#    
+#
 #        size: integer, optional, defaults to 1
 #            number of samples
-#    
-#    
+#
+#
 #        Returns
 #        -------
-#    
+#
 #        tuple of ravals, decvalues
 #        '''
 #        mydict = obsmetadata.summary
@@ -639,15 +639,15 @@ class SNIaCatalog_tests(unittest.TestCase):
 #    def samplePatchOnSphere(phi, theta, delta, size):
 #        """
 #        Samples of corrdinates in spherical coordinates (\phi,\theta)
-#        of length size, uniformly distributed in the region 
-#        in 
-#        Uniformly distributes samples on a spherical patch between 
+#        of length size, uniformly distributed in the region
+#        in
+#        Uniformly distributes samples on a spherical patch between
 #        phi \pm delta and theta \pm delta.
-#        
+#
 #        Parameters
 #        ----------
 #        phi: float, mandatory, radians
-#            center of the spherical patch in ra with range 
+#            center of the spherical patch in ra with range
 #        theta: float, mandatory, radians
 #        delta: float, mandatory, radians
 #        size: int, mandatory
@@ -656,18 +656,18 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        np.random.seed(1)
 #        u = np.random.uniform(size=size)
 #        v = np.random.uniform(size=size)
-#    
+#
 #        # phivals = delta * (2. * u - 1) + phi
 #        phivals = 2. * delta* u + (phi - delta )
 #        phivals = np.where ( phivals >= 0., phivals, phivals + 2. * np.pi)
-#        
+#
 #        # use conventions in spherical coordinates
 #        theta = np.pi/2.0 - theta
 #        # thetavals = 2. * delta* v + (theta - delta )
 #        # thetavals = np.where ( thetavals < np.pi , thetavals, thetavals - np.pi)
 #        # thetavals = np.where ( thetavals > - np.pi , thetavals, thetavals + np.pi)
-#        
-#        
+#
+#
 #        thetamax = theta + delta
 #        thetamin = theta - delta
 #        # CDF is cos(thetamin) - cos(theta) / cos(thetamin) - cos(thetamax)
@@ -675,7 +675,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        thetavals = np.arccos(-v * a + np.cos(thetamin))
 #
 #        # Get back to -pi/2 to pi/2 range of decs
-#        thetavals = np.pi/2.0 - thetavals 
+#        thetavals = np.pi/2.0 - thetavals
 #
 #        return phivals, thetavals
 
@@ -689,7 +689,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             name (abs path) of the database to be deleted
         verbose: Bool, optional, defaults to True
         """
-    
+
         if os.path.exists(dbname):
             if verbose:
                 print "deleting database ", dbname
