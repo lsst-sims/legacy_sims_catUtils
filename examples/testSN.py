@@ -759,7 +759,6 @@ class SNIaLightCurveTest(unittest.TestCase):
         if os.path.exists(cls.input_cat_name):
             os.unlink(cls.input_cat_name)
 
-
     def test_sne_light_curves(self):
         """
         Generate some super nova light curves.  Verify that they come up with the same
@@ -833,7 +832,6 @@ class SNIaLightCurveTest(unittest.TestCase):
 
         self.assertGreater(over_z, 0)
 
-
     def test_sne_multiband_light_curves(self):
         """
         Generate some super nova light curves.  Verify that they come up with the same
@@ -889,6 +887,24 @@ class SNIaLightCurveTest(unittest.TestCase):
                     self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
 
         self.assertGreater(ct_z, 0)
+
+    def test_limit_sne_light_curves(self):
+        """
+        Test that we can limit the number of light curves returned per field of view
+        """
+        lc_limit = 2
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+        gen.sn_universe._midSurveyTime=49000.0
+        gen.sn_universe._snFrequency=0.001
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass=('r', 'z'))
+
+        control_lc, truth = gen.light_curves_from_pointings(pointings)
+        test_lc, truth = gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
+        self.assertGreater(len(control_lc), len(test_lc))
 
 
 def suite():

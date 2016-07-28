@@ -238,6 +238,29 @@ class StellarLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
 
+    def test_limited_stellar_light_curves(self):
+        """
+        Test that we can ask for a limited number of light curves per field of view
+        """
+
+        lc_limit = 2
+        raRange = (78.0, 82.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'r'
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+        self.assertEqual(len(pointings), 1)
+
+        control_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
+
+        test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings,
+                                                                           lc_per_field=lc_limit)
+
+        self.assertGreater(len(control_light_curves), len(test_light_curves))
+        self.assertEqual(len(test_light_curves), lc_limit)
+
     def test_date_range(self):
         """
         Run test_stellar_light_curves, this time specifying a range in MJD.
@@ -604,6 +627,26 @@ class AgnLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
+
+    def test_limited_agn_light_curves(self):
+        """
+        Test that we can select only a limited number of agn light curves
+        per field of view
+        """
+
+        lc_limit = 2
+        raRange = (78.0, 82.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'g'
+
+        lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        self.assertEqual(len(pointings), 1)
+
+        control_lc, truth = lc_gen.light_curves_from_pointings(pointings)
+        test_lc, truth = lc_gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
+        self.assertGreater(len(control_lc), len(test_lc))
+        self.assertEqual(len(test_lc), lc_limit)
 
     def test_multiband_light_curves(self):
         """

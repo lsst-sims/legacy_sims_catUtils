@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import warnings
 
 from lsst.sims.catUtils.mixins import SNIaCatalog, PhotometryBase
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
@@ -55,6 +56,20 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         self.z_cutoff = 1.2
         self._brightness_name = 'flux'
         super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
+
+    def light_curves_from_pointings(self, pointings, chunk_size=100000, lc_per_field=None):
+        if lc_per_field is not None:
+            warnings.warn("You have set lc_per_field in the SNIaLightCurveGenerator. "
+                          "This will limit the number of candidate galaxies queried from the "
+                          "CatSim database per field-of-view.  Because supernovae are randomly "
+                          "populated in those galaxies, there is no guarantee that the galaxies "
+                          "queried will have supernovae in them.  If the galaxies you actuall "
+                          "query do not host supernovae, you could get fewer light curves than "
+                          "you expect.")
+
+        return LightCurveGenerator.light_curves_from_pointings(self, pointings,
+                                                               chunk_size=chunk_size,
+                                                               lc_per_field=lc_per_field)
 
     class _filterCatalogClass(_sniaLightCurveCatalog):
         column_outputs = ["uniqueId", "t0"]
