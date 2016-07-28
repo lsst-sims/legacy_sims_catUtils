@@ -8,6 +8,7 @@ __all__ = ["GalaxyObj", "GalaxyTileObj", "GalaxyBulgeObj",
            "GalaxyDiskObj", "GalaxyAgnObj", "ImageAgnObj", "LensGalaxyObj",
            "GalaxyTileCompoundObj"]
 
+
 class GalaxyObj(BaseCatalogObj):
     """
     Note: building a catalog out of this object will directly call the
@@ -21,7 +22,7 @@ class GalaxyObj(BaseCatalogObj):
     objid = 'galaxyBase'
 
     #: This is the base table for the galaxies
-    #tableid = 'final_clone_db'
+    # tableid = 'final_clone_db'
     tableid = 'galaxy'
     idColKey = 'id'
     raColName = '((CAST(ra AS NUMERIC(9,6))%360.)+360.)%360.'
@@ -40,7 +41,7 @@ class GalaxyObj(BaseCatalogObj):
     #: I'm over riding the _postprocess_results method to take care of this.
     #: I could also have refactored my database table so that no integer values
     #: contain NULL values.
-    dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
+    dbDefaultValues = {'varsimobjid': -1, 'myid': -1}
 
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -48,45 +49,44 @@ class GalaxyObj(BaseCatalogObj):
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galid', None, str, 30),
-            ('raJ2000', 'ra*PI()/180.'),
-            ('decJ2000', 'dec*PI()/180.'),
-            ('raJ2000Bulge', 'bra*PI()/180.'),
-            ('decJ2000Bulge', 'bdec*PI()/180.'),
-            ('raJ2000Disk', 'dra*PI()/180.'),
-            ('decJ2000Disk', 'ddec*PI()/180.'),
-            ('raJ2000Agn', 'agnra*PI()/180.'),
-            ('decJ2000Agn', 'agndec*PI()/180.'),
-            ('magNormBulge', 'magnorm_bulge'),
-            ('magNormDisk', 'magnorm_disk'),
-            ('magNormAgn', 'magnorm_agn'),
-            ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
-            ('sedFilenameDisk', 'sedname_disk', unicode, 40),
-            ('sedFilenameAgn', 'sedname_agn', unicode, 40),
-            ('majorAxisBulge', 'a_b*PI()/648000.'),
-            ('minorAxisBulge', 'b_b*PI()/648000.'),
-            ('positionAngleBulge', 'pa_bulge*PI()/180.'),
-            ('sindexBulge', 'bulge_n', int),
-            ('majorAxisDisk', 'a_d*PI()/648000.'),
-            ('minorAxisDisk', 'b_d*PI()/648000.'),
-            ('positionAngleDisk', 'pa_disk*PI()/180.'),
-            ('sindexDisk', 'disk_n', int),
-            ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
-            ('internalAvBulge', 'av_b'),
-            ('internalRvBulge', 'rv_b'),
-            ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
-            ('internalAvDisk', 'av_d'),
-            ('internalRvDisk', 'rv_d'),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')
-            ]
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'dec*PI()/180.'),
+               ('raJ2000Bulge', 'bra*PI()/180.'),
+               ('decJ2000Bulge', 'bdec*PI()/180.'),
+               ('raJ2000Disk', 'dra*PI()/180.'),
+               ('decJ2000Disk', 'ddec*PI()/180.'),
+               ('raJ2000Agn', 'agnra*PI()/180.'),
+               ('decJ2000Agn', 'agndec*PI()/180.'),
+               ('magNormBulge', 'magnorm_bulge'),
+               ('magNormDisk', 'magnorm_disk'),
+               ('magNormAgn', 'magnorm_agn'),
+               ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
+               ('sedFilenameDisk', 'sedname_disk', unicode, 40),
+               ('sedFilenameAgn', 'sedname_agn', unicode, 40),
+               ('majorAxisBulge', 'a_b*PI()/648000.'),
+               ('minorAxisBulge', 'b_b*PI()/648000.'),
+               ('positionAngleBulge', 'pa_bulge*PI()/180.'),
+               ('sindexBulge', 'bulge_n', int),
+               ('majorAxisDisk', 'a_d*PI()/648000.'),
+               ('minorAxisDisk', 'b_d*PI()/648000.'),
+               ('positionAngleDisk', 'pa_disk*PI()/180.'),
+               ('sindexDisk', 'disk_n', int),
+               ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
+               ('internalAvBulge', 'av_b'),
+               ('internalRvBulge', 'rv_b'),
+               ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
+               ('internalAvDisk', 'av_d'),
+               ('internalRvDisk', 'rv_d'),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
 
     def _final_pass(self, results):
         """This is to map the values from 0 - 2*PI() as ra goes negative currently"""
-        for ra in ('raJ2000','raJ2000Bulge','raJ2000Disk','raJ2000Agn'):
+        for ra in ('raJ2000', 'raJ2000Bulge', 'raJ2000Disk', 'raJ2000Agn'):
             if ra in results.dtype.names:
                 results[ra] = results[ra]%(numpy.pi*2.)
         return results
@@ -101,7 +101,7 @@ class GalaxyTileObj(BaseCatalogObj):
     objid = 'galaxyTiled'
     #: This is the base table for the galaxies
     tableid = 'galaxy'
-    #componentSubset must be one of "ALL" (default), "AGN", "BULGE", "DISK"
+    # componentSubset must be one of "ALL" (default), "AGN", "BULGE", "DISK"
     componentSubset = 'ALL'
     raColName = 'ra'
     decColName = 'dec'
@@ -119,7 +119,7 @@ class GalaxyTileObj(BaseCatalogObj):
     #: I'm over riding the _postprocess_results method to take care of this.
     #: I could also have refactored my database table so that no integer values
     #: contain NULL values.
-    dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
+    dbDefaultValues = {'varsimobjid': -1, 'myid': -1}
 
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
@@ -127,41 +127,41 @@ class GalaxyTileObj(BaseCatalogObj):
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
-            ('galid', None, str, 30),
-            ('raJ2000', 'ra'),
-            ('decJ2000', 'dec'),
-            ('raJ2000Bulge', 'bra*PI()/180.'),
-            ('decJ2000Bulge', 'bdec*PI()/180.'),
-            ('raJ2000Disk', 'dra*PI()/180.'),
-            ('decJ2000Disk', 'ddec*PI()/180.'),
-            ('raJ2000Agn', 'agnra*PI()/180.'),
-            ('decJ2000Agn', 'agndec*PI()/180.'),
-            ('magNormBulge', 'magnorm_bulge'),
-            ('magNormDisk', 'magnorm_disk'),
-            ('magNormAgn', 'magnorm_agn'),
-            ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
-            ('sedFilenameDisk', 'sedname_disk', unicode, 40),
-            ('sedFilenameAgn', 'sedname_agn', unicode, 40),
-            ('majorAxisBulge', 'a_b*PI()/648000.'),
-            ('minorAxisBulge', 'b_b*PI()/648000.'),
-            ('positionAngleBulge', 'pa_bulge*PI()/180.'),
-            ('sindexBulge', 'bulge_n', int),
-            ('majorAxisDisk', 'a_d*PI()/648000.'),
-            ('minorAxisDisk', 'b_d*PI()/648000.'),
-            ('positionAngleDisk', 'pa_disk*PI()/180.'),
-            ('sindexDisk', 'disk_n', int),
-            ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
-            ('internalAvBulge', 'av_b'),
-            ('internalRvBulge', 'rv_b'),
-            ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
-            ('internalAvDisk', 'av_d'),
-            ('internalRvDisk', 'rv_d'),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+               ('galid', None, str, 30),
+               ('raJ2000', 'ra'),
+               ('decJ2000', 'dec'),
+               ('raJ2000Bulge', 'bra*PI()/180.'),
+               ('decJ2000Bulge', 'bdec*PI()/180.'),
+               ('raJ2000Disk', 'dra*PI()/180.'),
+               ('decJ2000Disk', 'ddec*PI()/180.'),
+               ('raJ2000Agn', 'agnra*PI()/180.'),
+               ('decJ2000Agn', 'agndec*PI()/180.'),
+               ('magNormBulge', 'magnorm_bulge'),
+               ('magNormDisk', 'magnorm_disk'),
+               ('magNormAgn', 'magnorm_agn'),
+               ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
+               ('sedFilenameDisk', 'sedname_disk', unicode, 40),
+               ('sedFilenameAgn', 'sedname_agn', unicode, 40),
+               ('majorAxisBulge', 'a_b*PI()/648000.'),
+               ('minorAxisBulge', 'b_b*PI()/648000.'),
+               ('positionAngleBulge', 'pa_bulge*PI()/180.'),
+               ('sindexBulge', 'bulge_n', int),
+               ('majorAxisDisk', 'a_d*PI()/648000.'),
+               ('minorAxisDisk', 'b_d*PI()/648000.'),
+               ('positionAngleDisk', 'pa_disk*PI()/180.'),
+               ('sindexDisk', 'disk_n', int),
+               ('internalExtinctionModelBulge', 'ext_model_b', str, 3),
+               ('internalAvBulge', 'av_b'),
+               ('internalRvBulge', 'rv_b'),
+               ('internalExtinctionModelDisk', 'ext_model_d', str, 3),
+               ('internalAvDisk', 'av_d'),
+               ('internalRvDisk', 'rv_d'),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
 
     def _get_column_query(self, colnames=None):
         raise NotImplementedError("We are calling a stored procedure so "
@@ -222,8 +222,8 @@ class GalaxyTileObj(BaseCatalogObj):
         if colnames is None:
             colnames = [k for k in self.columnMap.keys()]
 
-        #We know that galtileid comes back with the query, but we don't want
-        #to add it to the query since it's generated on the fly.
+        # We know that galtileid comes back with the query, but we don't want
+        # to add it to the query since it's generated on the fly.
         #
         # 25 August 2015
         # The code below has been modified to remove all column names
@@ -258,7 +258,6 @@ class GalaxyTileObj(BaseCatalogObj):
                           "This could be a very bad idea "
                           "if the database is large")
 
-
         query = """EXECUTE [LSSTCATSIM].[dbo].[GalaxySearch2015]
                    @ApertureStr = '%s', @ColumnNames = '%s',
                    @ComponentSubset = '%s' """ % (regionStr, mappedcolnames, self.componentSubset)
@@ -287,8 +286,8 @@ class GalaxyTileCompoundObj(CompoundCatalogDBObject, GalaxyTileObj):
     query in the most naive way possible).
     """
 
-    doRunTest = False # because this is not like other CatalogDBObjects
-                      # and should not be tested in the same way
+    doRunTest = False  # because this is not like other CatalogDBObjects
+                       # and should not be tested in the same way
 
     _table_restriction = ['galaxy']
 
@@ -315,29 +314,32 @@ class GalaxyBulgeObj(GalaxyTileObj):
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
-            ('galid', None, str, 30),
-            ('componentra','bra*PI()/180.'),
-            ('componentdec', 'bdec*PI()/180.'),
-            #: This is actually a problem with the stored procedure.  We need to be able to map columns other than
-            #: just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
-            ('raJ2000', 'ra'),
-            ('decJ2000', 'dec'),
-            ('magNorm', 'magnorm_bulge'),
-            ('sedFilename', 'sedname_bulge', unicode, 40),
-            ('majorAxis', 'a_b*PI()/648000.'),
-            ('minorAxis', 'b_b*PI()/648000.'),
-            ('positionAngle', 'pa_bulge*PI()/180.'),
-            ('sindex', 'bulge_n', int),
-            ('halfLightRadius', 'BulgeHalfLightRadius*PI()/648000.'),
-            ('internalExtinctionModel', 'ext_model_b', str, 3),
-            ('internalAv', 'av_b'),
-            ('internalRv', 'rv_b'),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+               ('galid', None, str, 30),
+               ('componentra', 'bra*PI()/180.'),
+               ('componentdec', 'bdec*PI()/180.'),
+               #: This is actually a problem with the stored procedure.
+               #: We need to be able to map columns other than
+               #: just ra/dec to raJ2000/decJ2000.  This gets
+               #: important when we start perturbing the three galaxy components
+               ('raJ2000', 'ra'),
+               ('decJ2000', 'dec'),
+               ('magNorm', 'magnorm_bulge'),
+               ('sedFilename', 'sedname_bulge', unicode, 40),
+               ('majorAxis', 'a_b*PI()/648000.'),
+               ('minorAxis', 'b_b*PI()/648000.'),
+               ('positionAngle', 'pa_bulge*PI()/180.'),
+               ('sindex', 'bulge_n', int),
+               ('halfLightRadius', 'BulgeHalfLightRadius*PI()/648000.'),
+               ('internalExtinctionModel', 'ext_model_b', str, 3),
+               ('internalAv', 'av_b'),
+               ('internalRv', 'rv_b'),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
+
 
 class GalaxyDiskObj(GalaxyTileObj):
     objid = 'galaxyDisk'
@@ -354,29 +356,32 @@ class GalaxyDiskObj(GalaxyTileObj):
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
-            ('galid', None, str, 30),
-            ('componentra','dra*PI()/180.'),
-            ('componentdec', 'ddec*PI()/180.'),
-            #: This is actually a problem with the stored procedure.  We need to be able to map columns other than
-            #: just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
-            ('raJ2000', 'ra'),
-            ('decJ2000', 'dec'),
-            ('magNorm', 'magnorm_disk'),
-            ('sedFilename', 'sedname_disk', unicode, 40),
-            ('majorAxis', 'a_d*PI()/648000.'),
-            ('minorAxis', 'b_d*PI()/648000.'),
-            ('positionAngle', 'pa_disk*PI()/180.'),
-            ('sindex', 'disk_n', int),
-            ('halfLightRadius', 'DiskHalfLightRadius*PI()/648000.'),
-            ('internalExtinctionModel', 'ext_model_d', str, 3),
-            ('internalAv', 'av_d'),
-            ('internalRv', 'rv_d'),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+               ('galid', None, str, 30),
+               ('componentra', 'dra*PI()/180.'),
+               ('componentdec', 'ddec*PI()/180.'),
+               #: This is actually a problem with the stored procedure.
+               #: We need to be able to map columns other than
+               #: just ra/dec to raJ2000/decJ2000.  This gets
+               #: important when we start perturbing the three galaxy components
+               ('raJ2000', 'ra'),
+               ('decJ2000', 'dec'),
+               ('magNorm', 'magnorm_disk'),
+               ('sedFilename', 'sedname_disk', unicode, 40),
+               ('majorAxis', 'a_d*PI()/648000.'),
+               ('minorAxis', 'b_d*PI()/648000.'),
+               ('positionAngle', 'pa_disk*PI()/180.'),
+               ('sindex', 'disk_n', int),
+               ('halfLightRadius', 'DiskHalfLightRadius*PI()/648000.'),
+               ('internalExtinctionModel', 'ext_model_d', str, 3),
+               ('internalAv', 'av_d'),
+               ('internalRv', 'rv_d'),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
+
 
 class GalaxyAgnObj(GalaxyTileObj):
     objid = 'galaxyAgn'
@@ -393,22 +398,25 @@ class GalaxyAgnObj(GalaxyTileObj):
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galtileid', None, numpy.int64),
-            ('galid', None, str, 30),
-            ('componentra','agnra*PI()/180.'),
-            ('componentdec', 'agndec*PI()/180.'),
-            #: This is actually a problem with the stored procedure.  We need to be able to map columns other than
-            #: just ra/dec to raJ2000/decJ2000.  This gets important when we start perturbing the three galaxy components
-            ('raJ2000', 'ra'),
-            ('decJ2000', 'dec'),
-            ('magNorm', 'magnorm_agn'),
-            ('sedFilename', 'sedname_agn', unicode, 40),
-            ('variabilityParameters', 'varParamStr', str, 256),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+               ('galid', None, str, 30),
+               ('componentra', 'agnra*PI()/180.'),
+               ('componentdec', 'agndec*PI()/180.'),
+               #: This is actually a problem with the stored procedure.
+               #: We need to be able to map columns other than
+               #: just ra/dec to raJ2000/decJ2000.  This gets
+               #: important when we start perturbing the three galaxy components
+               ('raJ2000', 'ra'),
+               ('decJ2000', 'dec'),
+               ('magNorm', 'magnorm_agn'),
+               ('sedFilename', 'sedname_agn', unicode, 40),
+               ('variabilityParameters', 'varParamStr', str, 256),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
+
 
 class ImageAgnObj(BaseCatalogObj):
     objid = 'imageagn'
@@ -418,27 +426,28 @@ class ImageAgnObj(BaseCatalogObj):
     decColName = 'dec'
     objectTypeId = 29
     doRunTest = True
-    #all sky since this is a small set.
+    #: all sky since this is a small set.
     testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='r', m5=22.0)
 
-    dbDefaultValues = {'varsimobjid':-1, 'myid':-1}
+    dbDefaultValues = {'varsimobjid': -1, 'myid': -1}
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galid', 'id', int),
-            ('raJ2000', 'ra*PI()/180.'),
-            ('decJ2000', 'dec*PI()/180.'),
-            ('magNorm', 'magnorm_agn'),
-            ('sedFilename', 'sedname_agn', unicode, 40),
-            ('variabilityParameters', 'varParamStr', str, 256),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'dec*PI()/180.'),
+               ('magNorm', 'magnorm_agn'),
+               ('sedFilename', 'sedname_agn', unicode, 40),
+               ('variabilityParameters', 'varParamStr', str, 256),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
+
 
 class LensGalaxyObj(BaseCatalogObj):
     objid = 'lensgalaxy'
@@ -448,23 +457,23 @@ class LensGalaxyObj(BaseCatalogObj):
     decColName = 'dec'
     objectTypeId = 30
     doRunTest = True
-    #all sky since this is a small set.
+    #: all sky since this is a small set.
     testObservationMetaData = ObservationMetaData(mjd=53000., bandpassName='r', m5=22.0)
 
-    dbDefaultValues = {'varsimobjid':-1, 'myid':-1, 'variabilityParameters':None}
+    dbDefaultValues = {'varsimobjid': -1, 'myid': -1, 'variabilityParameters': None}
     #: The following maps column names to database schema.  The tuples
     #: must be at least length 2.  If column name is the same as the name
     #: in the DB the mapping element may be None.  The rest of the tuple
     #: should be formatted like a numpy.dtype.  If ommitted, the dtype
     #: is assumed to be float.
     columns = [('galid', 'id', int),
-            ('raJ2000', 'ra_bulge*PI()/180.'),
-            ('decJ2000', 'dec_bulge*PI()/180.'),
-            ('magNorm', 'magnorm_bulge'),
-            ('sedFilename', 'sedname_bulge', unicode, 40),
-            ('lsst_u', 'u_ab'),
-            ('lsst_g', 'g_ab'),
-            ('lsst_r', 'r_ab'),
-            ('lsst_i', 'i_ab'),
-            ('lsst_z', 'z_ab'),
-            ('lsst_y', 'y_ab')]
+               ('raJ2000', 'ra_bulge*PI()/180.'),
+               ('decJ2000', 'dec_bulge*PI()/180.'),
+               ('magNorm', 'magnorm_bulge'),
+               ('sedFilename', 'sedname_bulge', unicode, 40),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
