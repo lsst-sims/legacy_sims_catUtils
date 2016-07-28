@@ -290,6 +290,62 @@ class basicAccessTest(unittest.TestCase):
             for nn in list_of_failures:
                 print nn
 
+    def test_limit_and_constraint(self):
+        """
+        Test that limit and constraint work together
+        """
+        list_of_failures = []
+        constraint = "varParamStr IS NOT NULL"
+        could_connect = True
+        try:
+            dbobj = bcm.GalaxyObj(verbose=False)
+        except:
+            trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
+            msg = sys.exc_info()[1].args[0]
+            if 'Failed to connect' in msg or failedOnFatboy(trace):
+
+                # if the exception was due to a failed connection
+                # to fatboy, ignore it
+                list_of_failures.append('GalaxyObj')
+                could_connect = False
+            else:
+                raise
+
+        if could_connect:
+            obs_metadata = dbobj.testObservationMetaData
+
+            # query witout a constraint on varParamStr but no limit
+            results_no_limit = dbobj.query_columns(colnames=['raJ2000', 'decJ2000', 'varParamStr'],
+                                                   obs_metadata=obs_metadata,
+                                                   constraint=constraint)
+
+            ct_res = 0
+            for chunk in results_no_limit:
+                for line in chunk:
+                    self.assertNotEqual(line[3], 'None')
+                    ct_res += 1
+
+            self.assertGreater(ct_res, 1)
+
+            # run the same query, but limiting the results
+            limited_results = dbobj.query_columns(colnames=['raJ2000', 'decJ2000', 'varParamStr'],
+                                                  obs_metadata=obs_metadata,
+                                                  constraint=constraint,
+                                                  limit=ct_res-1)
+            ct_lim = 0
+            for chunk in limited_results:
+                for line in chunk:
+                    ct_lim += 1
+                    self.assertNotEqual(line[3], 'None')
+
+                self.assertEqual(ct_lim, ct_res-1)
+
+        if len(list_of_failures) > 0:
+            print "\nList of DBObjects that could not connect to fatboy " \
+                  "for the test on the constraint and limit kwargs"
+            for nn in list_of_failures:
+                print nn
+
 
 def suite():
     utilsTests.init()
