@@ -16,7 +16,7 @@ import numpy as np
 import os
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.baseCatalogModels import SolarSystemObj, CometObj, \
                                                  MBAObj, NEOObj, \
                                                  MiscSolarSystemObj
