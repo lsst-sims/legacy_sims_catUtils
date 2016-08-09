@@ -6,8 +6,8 @@ import numpy
 import sqlite3
 import json
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.generation.db import CatalogDBObject
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.db import CatalogDBObject
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin

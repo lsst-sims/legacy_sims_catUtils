@@ -1,7 +1,8 @@
 """Instance Catalog"""
 import numpy as np
 from lsst.sims.utils import SpecMap, defaultSpecMap
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import compound
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaDec
 from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
                                        PhoSimAstrometryGalaxies, PhoSimAstrometrySSM)

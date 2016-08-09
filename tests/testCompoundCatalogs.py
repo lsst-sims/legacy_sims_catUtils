@@ -8,7 +8,7 @@ from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, 
                                                  GalaxyAgnObj, GalaxyTileCompoundObj, \
                                                  StarObj
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, CompoundInstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog, CompoundInstanceCatalog
 
 class BulgeDiskCatalog(InstanceCatalog):
     cannot_be_null = ['sedFilename']

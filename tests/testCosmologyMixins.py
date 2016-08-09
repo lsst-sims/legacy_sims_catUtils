@@ -4,9 +4,9 @@ import lsst.utils.tests as utilsTests
 import numpy
 
 from lsst.sims.photUtils import CosmologyObject
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 
-from lsst.sims.catalogs.generation.utils import myTestGals, makeGalTestDB
+from lsst.sims.catalogs.utils import myTestGals, makeGalTestDB
 
 from lsst.sims.catUtils.utils import testGalaxies
 from lsst.sims.catUtils.mixins import CosmologyMixin

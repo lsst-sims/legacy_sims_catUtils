@@ -5,7 +5,8 @@ import copy
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.utils import haversine
 
 import time

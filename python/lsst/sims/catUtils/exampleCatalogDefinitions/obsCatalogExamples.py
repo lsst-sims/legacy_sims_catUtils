@@ -1,7 +1,7 @@
 """Instance Catalog"""
 import numpy
 import lsst.utils
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import AstrometryStars, CameraCoords, PhotometryStars
 from lsst.obs.lsstSim.utils import loadCamera
 

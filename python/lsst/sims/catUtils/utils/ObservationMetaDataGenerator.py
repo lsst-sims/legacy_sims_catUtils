@@ -1,5 +1,5 @@
 import numpy as np
-from lsst.sims.catalogs.generation.db import DBObject
+from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["ObservationMetaDataGenerator"]

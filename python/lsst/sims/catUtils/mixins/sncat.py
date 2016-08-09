@@ -3,8 +3,8 @@ Mixin to InstanceCatalog class to give SN catalogs in catsim
 """
 import numpy as np
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase

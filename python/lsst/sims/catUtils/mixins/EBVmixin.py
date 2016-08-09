@@ -3,7 +3,7 @@ import math
 import numpy
 import os
 
-from lsst.sims.catalogs.measures.instance import cached
+from lsst.sims.catalogs.decorators import cached
 from lsst.sims.photUtils import EBVmap, EBVbase
 
 __all__ = ["EBVmixin"]

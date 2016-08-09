@@ -7,14 +7,14 @@ import palpy as pal
 import lsst.utils.tests as utilsTests
 
 from lsst.utils import getPackageDir
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
 from lsst.sims.utils import _observedFromAppGeo, _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, _focalPlaneCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoords, _chipNameFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, _pixelCoordsFromRaDec
-from lsst.sims.catalogs.generation.utils import (myTestStars, makeStarTestDB,
-                                                 myTestGals, makeGalTestDB)
+from lsst.sims.catalogs.utils import (myTestStars, makeStarTestDB,
+                                      myTestGals, makeGalTestDB)
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, CameraCoords
 

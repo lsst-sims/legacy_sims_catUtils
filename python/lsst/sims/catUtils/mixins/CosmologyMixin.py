@@ -1,7 +1,7 @@
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
-from lsst.sims.catalogs.measures.instance import cached
+from lsst.sims.catalogs.decorators import cached
 from lsst.sims.photUtils import CosmologyObject
 flatnessthresh = 1.0e-12
 
