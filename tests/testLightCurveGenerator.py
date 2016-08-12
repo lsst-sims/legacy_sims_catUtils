@@ -16,7 +16,7 @@ from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
 from lsst.sims.catUtils.utils import StellarLightCurveGenerator
 
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catUtils.utils import AgnLightCurveGenerator
