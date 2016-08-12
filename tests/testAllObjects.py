@@ -314,7 +314,7 @@ class basicAccessTest(unittest.TestCase):
         if could_connect:
             obs_metadata = dbobj.testObservationMetaData
 
-            # query witout a constraint on varParamStr but no limit
+            # query with a constraint on varParamStr but no limit
             results_no_limit = dbobj.query_columns(colnames=['raJ2000', 'decJ2000', 'varParamStr'],
                                                    obs_metadata=obs_metadata,
                                                    constraint=constraint)
