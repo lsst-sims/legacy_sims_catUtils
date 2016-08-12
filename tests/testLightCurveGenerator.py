@@ -2,6 +2,7 @@ from __future__ import with_statement
 import unittest
 import os
 import json
+import sqlite3
 import numpy as np
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
@@ -13,6 +14,8 @@ from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 
 from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
 from lsst.sims.catUtils.utils import StellarLightCurveGenerator
+
+from lsst.sims.catalogs.generation.db import CatalogDBObject
 
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catUtils.utils import AgnLightCurveGenerator
@@ -235,6 +238,29 @@ class StellarLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
 
+    def test_limited_stellar_light_curves(self):
+        """
+        Test that we can ask for a limited number of light curves per field of view
+        """
+
+        lc_limit = 2
+        raRange = (78.0, 82.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'r'
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+        self.assertEqual(len(pointings), 1)
+
+        control_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
+
+        test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings,
+                                                                           lc_per_field=lc_limit)
+
+        self.assertGreater(len(control_light_curves), len(test_light_curves))
+        self.assertEqual(len(test_light_curves), lc_limit)
+
     def test_date_range(self):
         """
         Run test_stellar_light_curves, this time specifying a range in MJD.
@@ -342,6 +368,104 @@ class StellarLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+    def test_constraint(self):
+        """
+        Test that the light curve generator correctly ignores objects
+        with varParamStr == None
+
+        We do this by generating a database of two stars with RRLyrae-like
+        varParamStr and two stars with no varParamStr. We run this database
+        through a LightCurveGenerator and an InstanceCatalog.  We verify that
+        the LightCurveGenerator finds 2 stars while the InstanceCatalog finds
+        4 stars.
+        """
+
+        rng = np.random.RandomState(83)
+
+        raRange = (80.8, 83.8)
+        decRange = (-71.0, -69.0)
+        bandpass = 'g'
+
+        sed_name = "kp01_7500.fits_g40_7600.gz"
+
+        varparams = {'varMethodName': 'applyRRly',
+                     'pars': {'tStartMjd': 30000.0,
+                              'filename': 'rrly_lc/RRab/1096833_per.txt'}}
+
+        varParamStr = json.dumps(varparams)
+
+        # create the dummy database
+        db_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
+        db_name = os.path.join(db_name, "scratchSpace", "stellar_constraint_cat_sqlite.db")
+
+        if os.path.exists(db_name):
+            os.unlink(db_name)
+
+        conn = sqlite3.connect(db_name)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE rrly
+                  (id int, ra real, dec real, sedFilename text, magNorm real,
+                   varParamStr text, galacticAv real)''')
+        conn.commit()
+
+        for ix, (rr, dd, mn) in \
+        enumerate(zip(rng.random_sample(4)*(raRange[1]-raRange[0])+raRange[0],
+                      rng.random_sample(4)*(decRange[1]-decRange[0])+decRange[0],
+                      rng.random_sample(4)*5.0+16.0)):
+
+            if ix < 2:
+                cmd = '''INSERT INTO rrly VALUES(%d, %e, %e, '%s', %e, '%s', 0.1)''' % \
+                      (ix, rr, dd, sed_name, mn, varParamStr)
+            else:
+                cmd = '''INSERT INTO rrly VALUES(%d, %e, %e, '%s', %e, NULL, 0.1)''' % \
+                      (ix, rr, dd, sed_name, mn)
+
+            c.execute(cmd)
+
+        conn.commit()
+
+        # create a CatalogDBObject class to interface with the dummy database
+        class dummyRRLyDBObject(CatalogDBObject):
+            database = db_name
+            host = None
+            driver = 'sqlite'
+            tableid = 'rrly'
+            raColName = 'ra'
+            decColName = 'dec'
+            idColKey = 'id'
+            objid = 'dummyRRLy'
+            skipRegistration = True
+            objectTypeId = 99
+
+            columns = [('raJ2000', 'ra*PI()/180.0', float),
+                       ('decJ2000', 'dec*PI()/180.0', float)]
+
+        star_db = dummyRRLyDBObject()
+
+        # verify that the LightCurveGenerator finds the two variable stars
+        lc_gen = StellarLightCurveGenerator(star_db, self.opsimDb)
+        ptngs = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        lc_dict, truth_dict = lc_gen.light_curves_from_pointings(ptngs)
+        self.assertEqual(len(lc_dict), 2)
+
+        if os.path.exists(db_name):
+            os.unlink(db_name)
+
+        # verify that an InstanceCatalog finds all 4 stars
+        dummy_cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests')
+        dummy_cat_name = os.path.join(dummy_cat_name, 'scratchSpace')
+        dummy_cat_name = os.path.join(dummy_cat_name, 'stellar_constraint_control.txt')
+
+        obs = ptngs[0][0]
+        cat = stellarControlCatalog(star_db, obs_metadata=obs)
+        cat.write_catalog(dummy_cat_name)
+        with open(dummy_cat_name, 'r') as input_file:
+            lines = input_file.readlines()
+            self.assertEqual(len(lines), 5)
+
+        if os.path.exists(dummy_cat_name):
+            os.unlink(dummy_cat_name)
 
 
 class AgnLightCurveTest(unittest.TestCase):
@@ -504,6 +628,26 @@ class AgnLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
 
+    def test_limited_agn_light_curves(self):
+        """
+        Test that we can select only a limited number of agn light curves
+        per field of view
+        """
+
+        lc_limit = 2
+        raRange = (78.0, 82.0)
+        decRange = (-69.0, -65.0)
+        bandpass = 'g'
+
+        lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        self.assertEqual(len(pointings), 1)
+
+        control_lc, truth = lc_gen.light_curves_from_pointings(pointings)
+        test_lc, truth = lc_gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
+        self.assertGreater(len(control_lc), len(test_lc))
+        self.assertEqual(len(test_lc), lc_limit)
+
     def test_multiband_light_curves(self):
         """
         Check that multi-band light curves are returned correctly.
@@ -548,6 +692,120 @@ class AgnLightCurveTest(unittest.TestCase):
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+    def test_agn_constraint(self):
+        """
+        Test that the light curve generator correctly ignores objects
+        with varParamStr == None
+
+        We do this by generating a database of two galaxies with AGN-like
+        varParamStr and two stars with no varParamStr. We run this database
+        through a LightCurveGenerator and an InstanceCatalog.  We verify that
+        the LightCurveGenerator finds 2 AGN while the InstanceCatalog finds
+        4 stars.
+        """
+
+        rng = np.random.RandomState(83)
+
+        raRange = (80.8, 83.8)
+        decRange = (-71.0, -69.0)
+        bandpass = 'g'
+
+        agn_sed_name = "agn.spec"
+        sed_name = "Burst.10E10.1Z.spec.gz"
+
+        varparams = {'varMethodName': 'applyAgn',
+                     'pars': {'agn_tau': 20.0, 'agn_sfu': 11.0,
+                              'agn_sfg': 12.0, 'agn_sfr': 13.0,
+                              'agn_sfi': 14.0, 'agn_sfz': 15.0,
+                              'agn_sfy': 16.0, 't0_mjd': 49330.0,
+                              'seed': rng.randint(0, 200000)}}
+
+        varParamStr = json.dumps(varparams)
+
+        # create the dummy database
+        db_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
+        db_name = os.path.join(db_name, "scratchSpace", "agn_constraint_cat_sqlite.db")
+
+        if os.path.exists(db_name):
+            os.unlink(db_name)
+
+        conn = sqlite3.connect(db_name)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE agn
+                  (id int, ra real, dec real, redshift real,
+                   sedFilenameDisk text, internalAvDisk real,
+                   magNormDisk real,
+                   sedFilenameBulge text, internalAvBulge real,
+                   magNormBulge real,
+                   sedFilenameAgn text, varParamStr text,
+                   magNormAgn real)''')
+        conn.commit()
+
+        for ix, (rr, dd, zz, avb, mnb, avd, mnd, mnagn) in \
+        enumerate(zip(rng.random_sample(4)*(raRange[1]-raRange[0])+raRange[0],
+                      rng.random_sample(4)*(decRange[1]-decRange[0])+decRange[0],
+                      rng.random_sample(4)*0.5+0.1,
+                      rng.random_sample(4)*0.5+0.1, rng.random_sample(4)*3.0+17.0,
+                      rng.random_sample(4)*0.5+0.1, rng.random_sample(4)*3.0+17.0,
+                      rng.random_sample(4)*3.0+17.0)):
+
+            if ix < 2:
+                cmd = '''INSERT INTO agn VALUES(%d, %e, %e, %e, '%s', %e,
+                         %e, '%s', %e, %e, '%s', '%s', %e)''' % \
+                      (ix, rr, dd, zz, sed_name, avb, mnb, sed_name, avd, mnd,
+                       agn_sed_name, varParamStr, mnagn)
+            else:
+                cmd = '''INSERT INTO agn VALUES(%d, %e, %e, %e, '%s', %e,
+                         %e, '%s', %e, %e, '%s', NULL, %e)''' % \
+                      (ix, rr, dd, zz, sed_name, avb, mnb, sed_name, avd, mnd,
+                       agn_sed_name, mnagn)
+
+            c.execute(cmd)
+
+        conn.commit()
+
+        # create a CatalogDBObject class to interface with the dummy database
+        class dummyAgnDBObject(CatalogDBObject):
+            database = db_name
+            host = None
+            driver = 'sqlite'
+            tableid = 'agn'
+            raColName = 'ra'
+            decColName = 'dec'
+            idColKey = 'id'
+            objid = 'dummyAgn'
+            skipRegistration = True
+            objectTypeId = 99
+
+            columns = [('raJ2000', 'ra*PI()/180.0', float),
+                       ('decJ2000', 'dec*PI()/180.0', float)]
+
+        agn_db = dummyAgnDBObject()
+
+        # verify that the LightCurveGenerator finds the two variable stars
+        lc_gen = AgnLightCurveGenerator(agn_db, self.opsimDb)
+        ptngs = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        lc_dict, truth_dict = lc_gen.light_curves_from_pointings(ptngs)
+        self.assertEqual(len(lc_dict), 2)
+
+        if os.path.exists(db_name):
+            os.unlink(db_name)
+
+        # verify that an InstanceCatalog finds all 4 stars
+        dummy_cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests')
+        dummy_cat_name = os.path.join(dummy_cat_name, 'scratchSpace')
+        dummy_cat_name = os.path.join(dummy_cat_name, 'agn_constraint_control.txt')
+
+        obs = ptngs[0][0]
+        cat = agnControlCatalog(agn_db, obs_metadata=obs)
+        cat.write_catalog(dummy_cat_name)
+        with open(dummy_cat_name, 'r') as input_file:
+            lines = input_file.readlines()
+            self.assertEqual(len(lines), 5)
+
+        if os.path.exists(dummy_cat_name):
+            os.unlink(dummy_cat_name)
 
 
 def suite():

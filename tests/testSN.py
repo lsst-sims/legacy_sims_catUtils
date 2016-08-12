@@ -18,6 +18,13 @@ import sqlite3
 import numpy as np
 import unittest
 
+# External packages used
+# import pandas as pd
+from pandas.util.testing import assert_frame_equal
+import sncosmo
+import astropy
+
+
 # Lsst Sims Dependencies
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
@@ -27,20 +34,28 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catalogs.generation.db import CatalogDBObject, fileDBObject
-import eups
 
 # Routines Being Tested
 from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.mixins import SNIaCatalog
 from lsst.sims.catUtils.utils import SNIaLightCurveGenerator
 
-# External packages used
-# import pandas as pd
-from pandas.util.testing import assert_frame_equal
-import sncosmo
-import astropy
+# 2016 July 28
+# For some reason, the Jenkins slaves used for continuous integration
+# cannot properly load the astropy config directories used by sncosmo.
+# To prevent this from crashing every build, we will test whether
+# the directories can be accessed and, if they cannot, use unittest.skipIf()
+# to skip all of the unit tests in this file.
+from astropy.config import get_config_dir
+
+_skip_sn_tests = False
+try:
+    get_config_dir()
+except:
+    _skip_sn_tests = True
 
 
+@unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNObject_tests(unittest.TestCase):
 
     def setUp(self):
@@ -48,8 +63,6 @@ class SNObject_tests(unittest.TestCase):
         Setup tests
         SN_blank: A SNObject with no MW extinction
         """
-
-        from astropy.config import get_config_dir
 
         mydir = get_config_dir()
         print '==============================='
@@ -95,19 +108,18 @@ class SNObject_tests(unittest.TestCase):
         for key in myDict.keys():
             assert myDict[key] is not None
 
-
     def test_attributeDefaults(self):
         """
         Check the defaults and the setter properties for rectifySED and
         modelOutSideRange
         """
         snobj = SNObject(ra=30., dec=-60., source='salt2')
-        assert snobj.rectifySED == True
-        assert snobj.modelOutSideTemporalRange == 'zero'
+        self.assertTrue(snobj.rectifySED, True)
+        self.assertEqual(snobj.modelOutSideTemporalRange, 'zero')
 
         snobj.rectifySED = False
-        assert snobj.rectifySED == False
-        assert snobj.modelOutSideTemporalRange == 'zero'
+        self.assertFalse(snobj.rectifySED, False)
+        self.assertEqual(snobj.modelOutSideTemporalRange, 'zero')
 
     def test_raisingerror_forunimplementedmodelOutSideRange(self):
         """
@@ -129,10 +141,10 @@ class SNObject_tests(unittest.TestCase):
         checking that this is indeed the case, and checking that they are not
         negative if rectified.
         """
-        
+
         snobj = SNObject(ra=30., dec=-60., source='salt2')
         snobj.set(z=0.96, t0=self.mjdobs, x1=-3., x0=1.8e-6)
-        snobj.rectifySED  = False
+        snobj.rectifySED = False
         times = np.arange(self.mjdobs - 50., self.mjdobs + 150., 1.)
         badTimes = []
         for time in times:
@@ -180,7 +192,7 @@ class SNObject_tests(unittest.TestCase):
             bandpassobject=self.lsstBandPass['r'],
             time=times)
         sncosmo_r = self.SNCosmoModel.bandflux(band=self.SNCosmoBP,
-                                               time=times,  zpsys='ab',
+                                               time=times, zpsys='ab',
                                                zp=0.)
         np.testing.assert_allclose(sncosmo_r, catsim_r)
 
@@ -195,7 +207,7 @@ class SNObject_tests(unittest.TestCase):
             bandpassobject=self.lsstBandPass['r'],
             time=times)
         sncosmo_r = self.SNCosmoModel.bandmag(band=self.SNCosmoBP,
-                                              time=times,  magsys='ab')
+                                              time=times, magsys='ab')
         np.testing.assert_allclose(sncosmo_r, catsim_r)
 
     def test_CompareExtinctedSED2SNCosmo(self):
@@ -229,9 +241,10 @@ class SNObject_tests(unittest.TestCase):
         SNObjectFluxDensity = unextincted_sed.flambda
         np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
                                    rtol=1.0e-7)
+
     def test_redshift(self):
         """
-        test that the redshift method works as expected by checking that 
+        test that the redshift method works as expected by checking that
         if we redshift a SN from its original redshift orig_z to new_z where
         new_z is smaller (larger) than orig_z:
         - 1. x0 increases (decreases)
@@ -268,11 +281,11 @@ class SNObject_tests(unittest.TestCase):
         self.assertEqual(peakabsMag, HiPeakAbsMag)
 
 
+@unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNIaCatalog_tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
 
         # Set directory where scratch work will be done
         cls.madeScratchDir = False
@@ -286,18 +299,17 @@ class SNIaCatalog_tests(unittest.TestCase):
         # ObsMetaData instance with spatial window within which we will
         # put galaxies in a fake galaxy catalog
         cls.obsMetaDataforCat = ObservationMetaData(boundType='circle',
-            boundLength=np.degrees(0.25),
-            pointingRA=np.degrees(0.13),
-            pointingDec=np.degrees(-1.2),
-            bandpassName=['r'], mjd=49350.)
-
+                                                    boundLength=np.degrees(0.25),
+                                                    pointingRA=np.degrees(0.13),
+                                                    pointingDec=np.degrees(-1.2),
+                                                    bandpassName=['r'], mjd=49350.)
 
         # Randomly generate self.size Galaxy positions within the spatial window
         # of obsMetaDataforCat
         cls.dbname = os.path.join(cls.scratchDir, 'galcat.db')
         cls.size = 1000
-        cls.GalaxyPositionSamps = sample_obsmetadata(
-                obsmetadata=cls.obsMetaDataforCat, size=cls.size)
+        cls.GalaxyPositionSamps = sample_obsmetadata(obsmetadata=cls.obsMetaDataforCat,
+                                                     size=cls.size)
 
         # Create a galaxy Table overlapping with the obsMetaData Spatial Bounds
         # using positions from the samples above and a database name given by
@@ -317,7 +329,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             '''
             Create a like CatalogDBObject connecting to a local sqlite database
             '''
-        
+
             objid = 'mytestgals'
             tableid = 'gals'
             idColKey = 'id'
@@ -328,39 +340,39 @@ class SNIaCatalog_tests(unittest.TestCase):
             raColName = 'raJ2000'
             decColName = 'decJ2000'
             driver = 'sqlite'
-        
+
             # columns required to convert the ra, dec values in degrees
             # to radians again
             columns = [('id', 'id', int),
-                       ('raJ2000','raJ2000 * PI()/ 180. '),
-                       ('decJ2000','decJ2000 * PI()/ 180.'),
+                       ('raJ2000', 'raJ2000 * PI()/ 180. '),
+                       ('decJ2000', 'decJ2000 * PI()/ 180.'),
                        ('redshift', 'redshift')]
 
-	# class galCopy(InstanceCatalog):
+        # class galCopy(InstanceCatalog):
         #   column_outputs = ['id', 'raJ2000', 'decJ2000', 'redshift']
-	#   override_formats = {'raJ2000': '%8e', 'decJ2000': '%8e'}
+        #   override_formats = {'raJ2000': '%8e', 'decJ2000': '%8e'}
 
-	cls.galDB = MyGalaxyCatalog(database=cls.dbname)
-	# cls.galphot = galCopy(db_obj=cls.galDB,
-        #  		       obs_metadata=cls.obsMetaDataforCat)
-	# cls.galPhotFname = os.path.join(cls.scratchDir, 'gals.dat')
-	# cls.galphot.write_catalog(cls.galPhotFname)
+        cls.galDB = MyGalaxyCatalog(database=cls.dbname)
+        # cls.galphot = galCopy(db_obj=cls.galDB,
+        #                       obs_metadata=cls.obsMetaDataforCat)
+        # cls.galPhotFname = os.path.join(cls.scratchDir, 'gals.dat')
+        # cls.galphot.write_catalog(cls.galPhotFname)
 
         # Generate a set of Observation MetaData Outputs that overlap
         # the galaxies in space
-        opsimPath = os.path.join(eups.productDir('sims_data'),'OpSimData')
-        opsimDB = os.path.join(opsimPath,'opsimblitz1_1133_sqlite.db')
+        opsimPath = os.path.join(getPackageDir('sims_data'), 'OpSimData')
+        opsimDB = os.path.join(opsimPath, 'opsimblitz1_1133_sqlite.db')
 
-        generator = ObservationMetaDataGenerator()
+        generator = ObservationMetaDataGenerator(database=opsimDB)
         cls.obsMetaDataResults = generator.getObservationMetaData(limit=100,
-                                                    fieldRA=(5.0, 8.0), 
-                                                    fieldDec=(-85.,-60.),
-                                                    expMJD=(49300., 49400.),
-                                                    boundLength=0.15,
-                                                    boundType='circle')
+                                                                  fieldRA=(5.0, 8.0),
+                                                                  fieldDec=(-85., -60.),
+                                                                  expMJD=(49300., 49400.),
+                                                                  boundLength=0.15,
+                                                                  boundType='circle')
 
         # cls.obsMetaDataResults has obsMetaData corresponding to 15 pointings
-        # This is tested in test_obsMetaDataGeneration 
+        # This is tested in test_obsMetaDataGeneration
 
 #        v = zip(*map(cls.coords, cls.obsMetaDataResults))
 
@@ -372,8 +384,6 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        ax2.axvline(0., color='k', lw=2.)
 #        ax2.axvline(2. * np.pi, color='k', lw=2.)
 #        fig2.savefig(os.path.join(cls.scratchDir, 'matchPointings.pdf'))
-
-
 
         #print 'cls.obsMetaDataforCat'
         #print cls.obsMetaDataforCat.summary
@@ -394,16 +404,16 @@ class SNIaCatalog_tests(unittest.TestCase):
         # self.catalogList = self._writeManySNCatalogs()
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
                                 obs_metadata=cls.obsMetaDataResults[6],
-                                column_outputs=['t0', 'flux_u', 'flux_g', \
-                                                'flux_r', 'flux_i', 'flux_z',\
-                                                'flux_y', 'mag_u', 'mag_g',\
-                                                'mag_r', 'mag_i', 'mag_z', \
-                                                'mag_y', 'adu_u', 'adu_g',\
-                                                'adu_r', 'adu_i', 'adu_z', \
-                                                'adu_y','mwebv'])
-	sncatalog.suppressDimSN = True
+                                column_outputs=['t0', 'flux_u', 'flux_g',
+                                                'flux_r', 'flux_i', 'flux_z',
+                                                'flux_y', 'mag_u', 'mag_g',
+                                                'mag_r', 'mag_i', 'mag_z',
+                                                'mag_y', 'adu_u', 'adu_g',
+                                                'adu_r', 'adu_i', 'adu_z',
+                                                'adu_y', 'mwebv'])
+        sncatalog.suppressDimSN = True
         sncatalog.midSurveyTime = sncatalog.mjdobs - 20.
-	sncatalog.snFrequency = 1.0
+        sncatalog.snFrequency = 1.0
         cls.fullCatalog = cls.scratchDir + '/testSNCatalogTest.dat'
         sncatalog.write_catalog(cls.fullCatalog)
 
@@ -417,7 +427,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         """
 
         with open(self.fullCatalog, 'r') as f:
-            numLines =  sum(1 for _ in f)
+            numLines = sum(1 for _ in f)
 
         self.assertGreater(numLines, 1)
 
@@ -427,8 +437,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         import pandas as pd
         from pandas.util.testing import assert_frame_equal
         dfs = []
-        _ = map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
-                fnamelist)
+        map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
+            fnamelist)
         all_lcsDumped = pd.concat(dfs)
         all_lcsDumped.rename(columns={'#snid': 'snid'}, inplace=True)
         all_lcsDumped['snid'] = all_lcsDumped['snid'].astype(int)
@@ -442,7 +452,7 @@ class SNIaCatalog_tests(unittest.TestCase):
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
-        different pointings leading to different instance catalogs, the 
+        different pointings leading to different instance catalogs, the
         values of properties remain the same.
         """
         lcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
@@ -450,7 +460,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         props = ['snid', 'snra', 'sndec', 'z', 'x0', 'x1', 'c',
                  'cosmologicalDistanceModulus', 'mwebv']
         s = "Testing Equality across {0:2d} pointings for reported properties"
-        s += " of SN {1:8d} of the property " 
+        s += " of SN {1:8d} of the property "
         for key in lcs.groups.keys():
             df = lcs.get_group(key)
             for prop in props:
@@ -460,7 +470,7 @@ class SNIaCatalog_tests(unittest.TestCase):
     # Skip the following test using the command below if we integrate into
     # tests before pandas is in
     #@unittest.skip('depends on  pandas')
-    def test_redrawingCatalog(self): 
+    def test_redrawingCatalog(self):
         """
         test that drawing the same catalog
         """
@@ -476,16 +486,14 @@ class SNIaCatalog_tests(unittest.TestCase):
         newlcs = self.buildLCfromInstanceCatFilenames(fnameList)
         oldlcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
 
-
         for key in oldlcs.groups.keys():
             df_old = oldlcs.get_group(key)
             df_old.sort(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
             df_new.sort(['time', 'band'], inplace=True)
-            s = "Testing equality for SNID {0:8d} with {1:2d} datapoints" 
+            s = "Testing equality for SNID {0:8d} with {1:2d} datapoints"
             print(s.format(df_new.snid.iloc[0], len(df_old)))
             assert_frame_equal(df_new, df_old)
-
 
     @classmethod
     def tearDownClass(cls):
@@ -503,55 +511,29 @@ class SNIaCatalog_tests(unittest.TestCase):
         numObs = len(self.obsMetaDataResults)
         self.assertEqual(numObs, 15)
 
-
-
     @staticmethod
-    def coords(x): 
+    def coords(x):
             return np.radians(x.summary['unrefractedRA']),\
                 np.radians(x.summary['unrefractedDec'])
-
-
-    @staticmethod
-    def cleanDB(dbname, verbose=True):
-        '''
-        Deletes the database dbname from the disk.
-        Parameters
-        ----------
-        dbname: string, mandatory
-            name (abs path) of the database to be deleted
-        verbose: Bool, optional, defaults to True
-    
-        '''
-    
-        if os.path.exists(dbname):
-            if verbose:
-                print "deleting database ", dbname
-            os.unlink(dbname)
-        else:
-            if verbose:
-                print 'database ', dbname, ' does not exist'
 
     @classmethod
     def _writeManySNCatalogs(cls, obsMetaDataResults, suffix=''):
 
-        
         fnameList = []
         for obsindex, obsMetaData in enumerate(obsMetaDataResults):
 
-            bandpass =  obsMetaData.bandpass
-            cols = ['t0', 'mwebv', 'time', 'band', 'flux', 'flux_err',\
+            cols = ['t0', 'mwebv', 'time', 'band', 'flux', 'flux_err',
                     'mag', 'mag_err', 'cosmologicalDistanceModulus']
             newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData,
                                      column_outputs=cols)
-            newCatalog.midSurveyTime= 49350
+            newCatalog.midSurveyTime = 49350
             newCatalog.averageRate = 1.
             newCatalog.suppressDimSN = False
             s = "{0:d}".format(obsindex)
-            fname = os.path.join(cls.scratchDir, "SNCatalog_" +  s + suffix)
+            fname = os.path.join(cls.scratchDir, "SNCatalog_" + s + suffix)
             newCatalog.write_catalog(fname)
             fnameList.append(fname)
         return fnameList
-
 
     @classmethod
     def _createFakeGalaxyDB(cls):
@@ -563,7 +545,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         Parameters
         ----------
-        
+
         '''
         dbname = cls.dbname
         samps = cls.GalaxyPositionSamps
@@ -571,23 +553,24 @@ class SNIaCatalog_tests(unittest.TestCase):
         cls.cleanDB(dbname)
         conn = sqlite3.connect(dbname)
         curs = conn.cursor()
-        curs.execute('CREATE TABLE if not exists gals (id INT, raJ2000 FLOAT, decJ2000 FLOAT, redshift FLOAT)')
-    
+        curs.execute('CREATE TABLE if not exists gals '
+                     '(id INT, raJ2000 FLOAT, decJ2000 FLOAT, redshift FLOAT)')
+
         seed = 1
         np.random.seed(seed)
-    
+
         for count in range(size):
             id = 1000000 + count
-    
+
             # Main Database should have values in degrees
             ra = samps[0][count]
             dec = samps[1][count]
             redshift = np.random.uniform()
             row = tuple([id, ra, dec, redshift])
             exec_str = cls.insertfromdata(tablename='gals', records=row,
-                                      multiple=False)
+                                          multiple=False)
             curs.execute(exec_str, row)
-    
+
         conn.commit()
         conn.close()
         return samps
@@ -600,19 +583,19 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        field of view by picking the area enclosed in
 #        obsmetadata.unrefractedRA \pm obsmetadata.boundLength
 #        obsmetadata.unrefractedDec \pm obsmetadata.boundLength
-#    
+#
 #        Parameters
 #        ----------
 #        obsmetadata: instance of
 #            `sims.catalogs.generation.db.ObservationMetaData`
-#    
+#
 #        size: integer, optional, defaults to 1
 #            number of samples
-#    
-#    
+#
+#
 #        Returns
 #        -------
-#    
+#
 #        tuple of ravals, decvalues
 #        '''
 #        mydict = obsmetadata.summary
@@ -631,15 +614,15 @@ class SNIaCatalog_tests(unittest.TestCase):
 #    def samplePatchOnSphere(phi, theta, delta, size):
 #        """
 #        Samples of corrdinates in spherical coordinates (\phi,\theta)
-#        of length size, uniformly distributed in the region 
-#        in 
-#        Uniformly distributes samples on a spherical patch between 
+#        of length size, uniformly distributed in the region
+#        in
+#        Uniformly distributes samples on a spherical patch between
 #        phi \pm delta and theta \pm delta.
-#        
+#
 #        Parameters
 #        ----------
 #        phi: float, mandatory, radians
-#            center of the spherical patch in ra with range 
+#            center of the spherical patch in ra with range
 #        theta: float, mandatory, radians
 #        delta: float, mandatory, radians
 #        size: int, mandatory
@@ -648,18 +631,18 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        np.random.seed(1)
 #        u = np.random.uniform(size=size)
 #        v = np.random.uniform(size=size)
-#    
+#
 #        # phivals = delta * (2. * u - 1) + phi
 #        phivals = 2. * delta* u + (phi - delta )
 #        phivals = np.where ( phivals >= 0., phivals, phivals + 2. * np.pi)
-#        
+#
 #        # use conventions in spherical coordinates
 #        theta = np.pi/2.0 - theta
 #        # thetavals = 2. * delta* v + (theta - delta )
 #        # thetavals = np.where ( thetavals < np.pi , thetavals, thetavals - np.pi)
 #        # thetavals = np.where ( thetavals > - np.pi , thetavals, thetavals + np.pi)
-#        
-#        
+#
+#
 #        thetamax = theta + delta
 #        thetamin = theta - delta
 #        # CDF is cos(thetamin) - cos(theta) / cos(thetamin) - cos(thetamax)
@@ -667,7 +650,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        thetavals = np.arccos(-v * a + np.cos(thetamin))
 #
 #        # Get back to -pi/2 to pi/2 range of decs
-#        thetavals = np.pi/2.0 - thetavals 
+#        thetavals = np.pi/2.0 - thetavals
 #
 #        return phivals, thetavals
 
@@ -681,7 +664,7 @@ class SNIaCatalog_tests(unittest.TestCase):
             name (abs path) of the database to be deleted
         verbose: Bool, optional, defaults to True
         """
-    
+
         if os.path.exists(dbname):
             if verbose:
                 print "deleting database ", dbname
@@ -716,31 +699,33 @@ class SNIaLightCurveControlCatalog(SNIaCatalog):
     _midSurveyTime = 49000.0
     _snFrequency = 0.001
 
+
+@unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNIaLightCurveTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
 
         rng = np.random.RandomState(99)
-        n_sne=100
-        ra_list = rng.random_sample(n_sne)*7.0+78.0
+        n_sne = 100
+        ra_list = rng.random_sample(n_sne)*7.0 + 78.0
         dec_list = rng.random_sample(n_sne)*4.0 - 69.0
         zz_list = rng.random_sample(n_sne)*1.0+0.05
 
         cls.input_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
         cls.input_cat_name = os.path.join(cls.input_cat_name, "scratchSpace", "sne_input_cat.txt")
 
-        with open(cls.input_cat_name,"w") as output_file:
+        with open(cls.input_cat_name, "w") as output_file:
             for ix in range(n_sne):
                 output_file.write("%d;%.12f;%.12f;%.12f;%.12f;%.12f\n"
-                % (ix+1, ra_list[ix], dec_list[ix],
-                   np.radians(ra_list[ix]), np.radians(dec_list[ix]),
-                   zz_list[ix]))
+                                  % (ix+1, ra_list[ix], dec_list[ix],
+                                     np.radians(ra_list[ix]), np.radians(dec_list[ix]),
+                                     zz_list[ix]))
 
-        dtype=np.dtype([('id', np.int),
-                        ('raDeg', np.float), ('decDeg', np.float),
-                        ('raJ2000', np.float), ('decJ2000', np.float),
-                        ('redshift', np.float)])
+        dtype = np.dtype([('id', np.int),
+                          ('raDeg', np.float), ('decDeg', np.float),
+                          ('raJ2000', np.float), ('decJ2000', np.float),
+                          ('redshift', np.float)])
 
         cls.db = fileDBObject(cls.input_cat_name, delimiter=';',
                               runtable='test', dtype=dtype,
@@ -753,12 +738,10 @@ class SNIaLightCurveTest(unittest.TestCase):
         cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
         cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.input_cat_name):
             os.unlink(cls.input_cat_name)
-
 
     def test_sne_light_curves(self):
         """
@@ -773,8 +756,8 @@ class SNIaLightCurveTest(unittest.TestCase):
         bandpass = 'r'
 
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
-        gen.sn_universe._midSurveyTime=49000.0
-        gen.sn_universe._snFrequency=0.001
+        gen.sn_universe._midSurveyTime = 49000.0
+        gen.sn_universe._snFrequency = 0.001
         self.assertGreater(len(pointings), 1)
         lc_dict, truth = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
@@ -784,7 +767,7 @@ class SNIaLightCurveTest(unittest.TestCase):
             for obs in group:
                 cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
                 for sn in cat.iter_catalog():
-                    if sn[1]>0.0:
+                    if sn[1] > 0.0:
                         lc = lc_dict[sn[0]][bandpass]
                         dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                         self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
@@ -807,8 +790,8 @@ class SNIaLightCurveTest(unittest.TestCase):
         bandpass = 'r'
 
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
-        gen.sn_universe._midSurveyTime=49000.0
-        gen.sn_universe._snFrequency=0.001
+        gen.sn_universe._midSurveyTime = 49000.0
+        gen.sn_universe._snFrequency = 0.001
         self.assertGreater(len(pointings), 1)
         lc_dict, truth = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
@@ -820,8 +803,8 @@ class SNIaLightCurveTest(unittest.TestCase):
             for obs in group:
                 cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
                 for sn in cat.iter_catalog():
-                    if sn[1]>0.0:
-                        if sn[3]>z_cut:
+                    if sn[1] > 0.0:
+                        if sn[3] > z_cut:
                             self.assertNotIn(sn[0], lc_dict)
                             over_z += 1
                         else:
@@ -829,10 +812,10 @@ class SNIaLightCurveTest(unittest.TestCase):
                             dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
                             self.assertLess(np.abs(lc['mjd'][dex] - obs.mjd.TAI), 1.0e-7)
                             self.assertLess(np.abs(lc['flux'][dex] - sn[1]), 1.0e-7)
-                            self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7,msg='%e vs %e' % (lc['error'][dex],sn[2]))
+                            self.assertLess(np.abs(lc['error'][dex] - sn[2]),
+                                            1.0e-7, msg='%e vs %e' % (lc['error'][dex], sn[2]))
 
         self.assertGreater(over_z, 0)
-
 
     def test_sne_multiband_light_curves(self):
         """
@@ -846,8 +829,8 @@ class SNIaLightCurveTest(unittest.TestCase):
         decRange = (-69.0, -65.0)
 
         pointings = gen.get_pointings(raRange, decRange, bandpass=('r', 'z'))
-        gen.sn_universe._midSurveyTime=49000.0
-        gen.sn_universe._snFrequency=0.001
+        gen.sn_universe._midSurveyTime = 49000.0
+        gen.sn_universe._snFrequency = 0.001
         self.assertGreater(len(pointings), 1)
         lc_dict, truth = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 0)
@@ -866,7 +849,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         for obs in control_obs_r:
             cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
             for sn in cat.iter_catalog():
-                if sn[1]>0.0:
+                if sn[1] > 0.0:
                     ct_r += 1
                     lc = lc_dict[sn[0]]['r']
                     dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
@@ -880,7 +863,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         for obs in control_obs_z:
             cat = SNIaLightCurveControlCatalog(self.db, obs_metadata=obs)
             for sn in cat.iter_catalog():
-                if sn[1]>0.0:
+                if sn[1] > 0.0:
                     ct_z += 1
                     lc = lc_dict[sn[0]]['z']
                     dex = np.argmin(np.abs(lc['mjd'] - obs.mjd.TAI))
@@ -889,6 +872,24 @@ class SNIaLightCurveTest(unittest.TestCase):
                     self.assertLess(np.abs(lc['error'][dex] - sn[2]), 1.0e-7)
 
         self.assertGreater(ct_z, 0)
+
+    def test_limit_sne_light_curves(self):
+        """
+        Test that we can limit the number of light curves returned per field of view
+        """
+        lc_limit = 2
+        gen = SNIaLightCurveGenerator(self.db, self.opsimDb)
+        gen.sn_universe._midSurveyTime = 49000.0
+        gen.sn_universe._snFrequency = 0.001
+
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+
+        pointings = gen.get_pointings(raRange, decRange, bandpass=('r', 'z'))
+
+        control_lc, truth = gen.light_curves_from_pointings(pointings)
+        test_lc, truth = gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
+        self.assertGreater(len(control_lc), len(test_lc))
 
 
 def suite():

@@ -214,6 +214,11 @@ class LightCurveGenerator(object):
 
         self._catalogdb = catalogdb
 
+        # optional constraint on query to catalog database
+        # (usually 'varParamStr IS NOT NULL')
+        if not hasattr(self, '_constraint'):
+            self._constraint = None
+
     def _filter_chunk(self, chunk):
         return chunk
 
@@ -309,11 +314,20 @@ class LightCurveGenerator(object):
 
         return obs_groups_out
 
-    def _get_query_from_group(self, grp, chunk_size):
+    def _get_query_from_group(self, grp, chunk_size, lc_per_field=None):
         """
         Take a group of ObervationMetaData that all point to the same region
         of the sky.  Query the CatSim database for all of the celestial objects
         in that region, and return it as an iterator over database rows.
+
+        grp is a list of ObservationMetaData that all point at the same field
+        on the sky.
+
+        chunk_size is an int specifying th largest chunk of database rows
+        to be held in memory atthe same time.
+
+        lc_per_field specifies the maximum number of light curves to return
+        per field of view (None implies no constraint).
         """
 
         cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
@@ -322,7 +336,8 @@ class LightCurveGenerator(object):
 
         query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                 obs_metadata=cat.obs_metadata,
-                                                constraint=cat.constraint,
+                                                constraint=self._constraint,
+                                                limit=lc_per_field,
                                                 chunk_size=chunk_size)
 
         return query_result
@@ -399,7 +414,7 @@ class LightCurveGenerator(object):
 
             _sed_cache = {}  # before moving on to the next chunk of objects
 
-    def light_curves_from_pointings(self, pointings, chunk_size=100000):
+    def light_curves_from_pointings(self, pointings, chunk_size=100000, lc_per_field=None):
         """
         Generate light curves for all of the objects in a particular region
         of sky in a particular bandpass.
@@ -416,6 +431,10 @@ class LightCurveGenerator(object):
         objects to pull in from the database at a time.  Note: the larger
         this is, the faster the LightCurveGenerator will run, because it
         will be handling more objects in memory at once.
+
+        lc_per_field (optional; default None) is an int specifying the maximum
+        number of light curves to return per field of view (None implies no
+        constraint).
 
         Output:
         -------
@@ -467,7 +486,7 @@ class LightCurveGenerator(object):
             print('starting query')
 
             t_before_query = time.time()
-            query_result = self._get_query_from_group(grp, chunk_size)
+            query_result = self._get_query_from_group(grp, chunk_size, lc_per_field=lc_per_field)
 
             print('query took ', time.time()-t_before_query)
 
@@ -513,6 +532,7 @@ class StellarLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _stellarLightCurveCatalog
+        self._constraint = 'varParamStr IS NOT NULL'
         super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
 
 
@@ -535,4 +555,5 @@ class AgnLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _agnLightCurveCatalog
+        self._constraint = 'varParamStr IS NOT NULL'
         super(AgnLightCurveGenerator, self).__init__(*args, **kwargs)
