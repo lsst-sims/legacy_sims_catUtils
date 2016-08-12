@@ -320,6 +320,12 @@ class LightCurveGenerator(object):
         of the sky.  Query the CatSim database for all of the celestial objects
         in that region, and return it as an iterator over database rows.
 
+        grp is a list of ObservationMetaData that all point at the same field
+        on the sky.
+
+        chunk_size is an int specifying th largest chunk of database rows
+        to be held in memory atthe same time.
+
         lc_per_field specifies the maximum number of light curves to return
         per field of view (None implies no constraint).
         """
