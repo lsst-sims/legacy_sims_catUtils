@@ -63,7 +63,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                           "This will limit the number of candidate galaxies queried from the "
                           "CatSim database per field-of-view.  Because supernovae are randomly "
                           "populated in those galaxies, there is no guarantee that the galaxies "
-                          "queried will have supernovae in them.  If the galaxies you actuall "
+                          "queried will have supernovae in them.  If the galaxies you actually "
                           "query do not host supernovae, you could get fewer light curves than "
                           "you expect.")
 
