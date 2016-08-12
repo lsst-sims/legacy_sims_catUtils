@@ -1,6 +1,6 @@
 import os
 import copy
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyTileObj, GalaxyAgnObj, \
                                                  GalaxyDiskObj, GalaxyBulgeObj
 

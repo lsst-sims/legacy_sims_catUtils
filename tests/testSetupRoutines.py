@@ -5,8 +5,8 @@ import unittest
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.generation.db import CatalogDBObject
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.db import CatalogDBObject
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.utils import setupPhotometryCatalog

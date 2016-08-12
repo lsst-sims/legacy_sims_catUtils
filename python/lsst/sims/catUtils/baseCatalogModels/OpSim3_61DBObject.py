@@ -1,4 +1,4 @@
-from lsst.sims.catalogs.generation.db import DBObject
+from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 from .BaseCatalogModels import BaseCatalogConfig
 from lsst.utils import getPackageDir

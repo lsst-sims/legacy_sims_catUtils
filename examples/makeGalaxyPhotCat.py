@@ -1,4 +1,4 @@
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm

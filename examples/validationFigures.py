@@ -1,7 +1,7 @@
 import numpy
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catUtils import ValidationUtils, SersicUtils
 import argparse
 

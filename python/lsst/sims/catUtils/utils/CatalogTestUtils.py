@@ -9,7 +9,8 @@ import os
 import sqlite3
 import json
 from lsst.utils import getPackageDir
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import register_method, register_class, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
 from lsst.sims.photUtils import BandpassDict, SedList

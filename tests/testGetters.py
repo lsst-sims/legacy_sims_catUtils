@@ -4,9 +4,9 @@ import unittest
 
 import lsst.utils
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+from lsst.sims.catalogs.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyTileDBObj
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcMagError_sed

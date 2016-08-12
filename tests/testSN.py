@@ -33,7 +33,7 @@ from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import spatiallySample_obsmetadata as sample_obsmetadata
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.catalogs.generation.db import CatalogDBObject, fileDBObject
+from lsst.sims.catalogs.db import CatalogDBObject, fileDBObject
 
 # Routines Being Tested
 from lsst.sims.catUtils.supernovae import SNObject
@@ -587,7 +587,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 #        Parameters
 #        ----------
 #        obsmetadata: instance of
-#            `sims.catalogs.generation.db.ObservationMetaData`
+#            `sims.catalogs.db.ObservationMetaData`
 #
 #        size: integer, optional, defaults to 1
 #            number of samples

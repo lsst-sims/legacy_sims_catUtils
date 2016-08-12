@@ -5,8 +5,8 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
-                                                makeStarTestDB, makeGalTestDB, getOneChunk
+from lsst.sims.catalogs.utils import myTestGals, myTestStars, \
+                                     makeStarTestDB, makeGalTestDB, getOneChunk
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap

@@ -15,7 +15,7 @@ from lsst.sims.photUtils import PhotometricParameters
 # SSM catalog modules
 from lsst.sims.catUtils.baseCatalogModels import SolarSystemObj
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM, CameraCoords, ObsMetadataBase
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 # For camera.
 from lsst.obs.lsstSim import LsstSimMapper
 

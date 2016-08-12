@@ -18,7 +18,7 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, calcSNR_m5, PhotometricParameters, magErrorFromSNR, \
                                 BandpassDict
 from lsst.sims.utils import defaultSpecMap
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import SedList
 
 __all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars", "PhotometrySSM"]

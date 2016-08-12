@@ -1,6 +1,6 @@
 import warnings
 import os
-from lsst.sims.catalogs.generation.db import CatalogDBObject,  ChunkIterator
+from lsst.sims.catalogs.db import CatalogDBObject,  ChunkIterator
 from sqlalchemy.sql import select, func, column
 import lsst.pex.config as pexConfig
 from lsst.utils import getPackageDir

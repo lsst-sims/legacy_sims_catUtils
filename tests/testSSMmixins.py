@@ -6,8 +6,9 @@ import numpy as np
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.generation.db import fileDBObject
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
+from lsst.sims.catalogs.db import fileDBObject
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import compound
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM
 from lsst.sims.photUtils import BandpassDict, SedList, PhotometricParameters
 from lsst.sims.utils import _observedFromICRS

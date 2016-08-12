@@ -3,9 +3,10 @@ import os
 import numpy
 import unittest
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.utils import makeStarTestDB, myTestStars
-from lsst.sims.catalogs.generation.utils import makeGalTestDB, myTestGals
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
+from lsst.sims.catalogs.utils import makeStarTestDB, myTestStars
+from lsst.sims.catalogs.utils import makeGalTestDB, myTestGals
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils import BandpassDict
 

@@ -2,12 +2,12 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import numpy
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
                                      testGalaxyBulgeDBObj, testGalaxyAgnDBObj
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
                                                          PhoSimCatalogZPoint
-from lsst.sims.catalogs.generation.utils import makePhoSimTestDB
+from lsst.sims.catalogs.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
