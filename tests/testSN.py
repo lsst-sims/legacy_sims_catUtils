@@ -26,7 +26,7 @@ import astropy
 
 
 # Lsst Sims Dependencies
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.photUtils import BandpassDict
@@ -53,6 +53,10 @@ try:
     get_config_dir()
 except:
     _skip_sn_tests = True
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 
 @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
@@ -892,17 +896,9 @@ class SNIaLightCurveTest(unittest.TestCase):
         self.assertGreater(len(control_lc), len(test_lc))
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(SNObject_tests)
-    suites += unittest.makeSuite(SNIaCatalog_tests)
-    suites += unittest.makeSuite(SNIaLightCurveTest)
-    return unittest.TestSuite(suites)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-
-def run(shouldExit=False):
-    utilsTests.run(suite(), shouldExit)
-
-if __name__ == '__main__':
-    run(True)
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()
