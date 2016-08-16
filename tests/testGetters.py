@@ -245,14 +245,3 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-#def suite():
-#    utilsTests.init()
-#    suites = []
-#    suites += unittest.makeSuite(testPhotometricUncertaintyGetters)
-#
-#    return unittest.TestSuite(suites)
-#
-#def run(shouldExit = False):
-#    utilsTests.run(suite(), shouldExit)
-#if __name__ == "__main__":
-#    run(True)

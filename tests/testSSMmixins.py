@@ -2,6 +2,7 @@ from __future__ import with_statement
 import unittest
 import os
 import numpy as np
+import lsst
 
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
@@ -295,16 +296,9 @@ class SSMastrometryTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(SSMphotometryTest)
-    suites += unittest.makeSuite(SSMastrometryTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
