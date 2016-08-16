@@ -1,5 +1,6 @@
 import unittest
 import numpy
+import lsst
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
@@ -75,15 +76,21 @@ class testCatalogBounds(unittest.TestCase):
             self.assertGreater(max(result['decJ2000']), numpy.radians(decCenter-length))
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(testCatalogBounds)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit=False):
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
+# def suite():
+#     utilsTests.init()
+#     suites = []
+#     suites += unittest.makeSuite(testCatalogBounds)
+#     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
+#     return unittest.TestSuite(suites)
+# 
+# def run(shouldExit=False):
+#     utilsTests.run(suite(), shouldExit)
+# 
+# if __name__ == "__main__":
+#     run(True)
