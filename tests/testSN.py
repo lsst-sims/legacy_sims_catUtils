@@ -54,9 +54,9 @@ try:
 except:
     _skip_sn_tests = True
 
+
 def setup_module(module):
     lsst.utils.tests.init()
-
 
 
 @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
@@ -165,7 +165,7 @@ class SNObject_tests(unittest.TestCase):
             sed = snobj.SNObjectSED(time=time,
                                     bandpass=self.lsstBandPass['r'])
             self.assertGreaterEqual(sed.calcADU(bandpass=self.lsstBandPass['r'],
-                                    photParams=self.rectify_photParams), 0.)
+                                                photParams=self.rectify_photParams), 0.)
             self.assertFalse(any(sed.flambda < 0.))
 
     def test_ComparebandFluxes2photUtils(self):
@@ -354,15 +354,7 @@ class SNIaCatalog_tests(unittest.TestCase):
                        ('decJ2000', 'decJ2000 * PI()/ 180.'),
                        ('redshift', 'redshift')]
 
-        # class galCopy(InstanceCatalog):
-        #   column_outputs = ['id', 'raJ2000', 'decJ2000', 'redshift']
-        #   override_formats = {'raJ2000': '%8e', 'decJ2000': '%8e'}
-
         cls.galDB = MyGalaxyCatalog(database=cls.dbname)
-        # cls.galphot = galCopy(db_obj=cls.galDB,
-        #                       obs_metadata=cls.obsMetaDataforCat)
-        # cls.galPhotFname = os.path.join(cls.scratchDir, 'gals.dat')
-        # cls.galphot.write_catalog(cls.galPhotFname)
 
         # Generate a set of Observation MetaData Outputs that overlap
         # the galaxies in space
@@ -377,37 +369,7 @@ class SNIaCatalog_tests(unittest.TestCase):
                                                                   boundLength=0.15,
                                                                   boundType='circle')
 
-        # cls.obsMetaDataResults has obsMetaData corresponding to 15 pointings
-        # This is tested in test_obsMetaDataGeneration
 
-#        v = zip(*map(cls.coords, cls.obsMetaDataResults))
-
-#        fig2, ax2 = plt.subplots()
-#        ax2.plot(vals[0][:1000], vals[1][: 1000], '.')
-#        ax2.plot(v[0], v[1], 'ko', markersize=8)
-#        ax2.axhline(-np.pi, color='k', lw=2)
-#        ax2.axhline(np.pi, color='k', lw=2)
-#        ax2.axvline(0., color='k', lw=2.)
-#        ax2.axvline(2. * np.pi, color='k', lw=2.)
-#        fig2.savefig(os.path.join(cls.scratchDir, 'matchPointings.pdf'))
-
-        #print 'cls.obsMetaDataforCat'
-        #print cls.obsMetaDataforCat.summary
-
-        #print 'obsMetaDataResults'
-
-#         obsMetaDataList = []
-#         for obsMetaData in tmpobsMetaDataResults:
-#             obsMetaDataList.append(ObservationMetaData(boundType='circle',
-#                                    boundLength=np.degrees(0.05),
-#                                    unrefractedRA=np.degrees(0.13),
-#                                    unrefractedDec=np.degrees(-1.2),
-#                                    bandpassName=obsMetaData.bandpass,
-#                                    mjd=obsMetaData.mjd))
-
-        # cls.obsMetaDataResults = tmpobsMetaDataResults# pobsMetaDataList
-
-        # self.catalogList = self._writeManySNCatalogs()
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
                                 obs_metadata=cls.obsMetaDataResults[6],
                                 column_outputs=['t0', 'flux_u', 'flux_g',
@@ -504,13 +466,6 @@ class SNIaCatalog_tests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.cleanDB(cls.dbname)
-        # for fname in cls.fnameList:
-        #   os.remove(fname)
-        # os.remove(cls.galPhotFname)
-        # os.remove(cls.fullCatalog)
-        # If scratch directory was created remove it
-        #if cls.madeScratchDir:
-        #    os.rmdir(cls.scratchDir)
 
     def test_obsMetaDataGeneration(self):
 
@@ -519,8 +474,8 @@ class SNIaCatalog_tests(unittest.TestCase):
 
     @staticmethod
     def coords(x):
-            return np.radians(x.summary['unrefractedRA']),\
-                np.radians(x.summary['unrefractedDec'])
+        return np.radians(x.summary['unrefractedRA']),\
+            np.radians(x.summary['unrefractedDec'])
 
     @classmethod
     def _writeManySNCatalogs(cls, obsMetaDataResults, suffix=''):
@@ -582,83 +537,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         return samps
 
 
-#    @staticmethod
-#    def sample_obsmetadata(obsmetadata, size=1):
-#        '''
-#        Sample a square patch on the sphere overlapping obsmetadata
-#        field of view by picking the area enclosed in
-#        obsmetadata.unrefractedRA \pm obsmetadata.boundLength
-#        obsmetadata.unrefractedDec \pm obsmetadata.boundLength
-#
-#        Parameters
-#        ----------
-#        obsmetadata: instance of
-#            `sims.catalogs.db.ObservationMetaData`
-#
-#        size: integer, optional, defaults to 1
-#            number of samples
-#
-#
-#        Returns
-#        -------
-#
-#        tuple of ravals, decvalues
-#        '''
-#        mydict = obsmetadata.summary
-#        phi = np.radians(mydict['pointingRA'])
-#        theta = np.radians(mydict['pointingDec'])
-#        equalrange = np.radians(mydict['boundLength'])
-#        ravals, thetavals = SNIaCatalog_tests.samplePatchOnSphere(phi=phi,
-#                                                     theta=theta,
-#                                                     delta=equalrange,
-#                                                     size=size)
-#        return ravals, thetavals
-#
-#
-#
-#    @staticmethod
-#    def samplePatchOnSphere(phi, theta, delta, size):
-#        """
-#        Samples of corrdinates in spherical coordinates (\phi,\theta)
-#        of length size, uniformly distributed in the region
-#        in
-#        Uniformly distributes samples on a spherical patch between
-#        phi \pm delta and theta \pm delta.
-#
-#        Parameters
-#        ----------
-#        phi: float, mandatory, radians
-#            center of the spherical patch in ra with range
-#        theta: float, mandatory, radians
-#        delta: float, mandatory, radians
-#        size: int, mandatory
-#            number of samples
-#        """
-#        np.random.seed(1)
-#        u = np.random.uniform(size=size)
-#        v = np.random.uniform(size=size)
-#
-#        # phivals = delta * (2. * u - 1) + phi
-#        phivals = 2. * delta* u + (phi - delta )
-#        phivals = np.where ( phivals >= 0., phivals, phivals + 2. * np.pi)
-#
-#        # use conventions in spherical coordinates
-#        theta = np.pi/2.0 - theta
-#        # thetavals = 2. * delta* v + (theta - delta )
-#        # thetavals = np.where ( thetavals < np.pi , thetavals, thetavals - np.pi)
-#        # thetavals = np.where ( thetavals > - np.pi , thetavals, thetavals + np.pi)
-#
-#
-#        thetamax = theta + delta
-#        thetamin = theta - delta
-#        # CDF is cos(thetamin) - cos(theta) / cos(thetamin) - cos(thetamax)
-#        a = np.cos(thetamin) - np.cos(thetamax)
-#        thetavals = np.arccos(-v * a + np.cos(thetamin))
-#
-#        # Get back to -pi/2 to pi/2 range of decs
-#        thetavals = np.pi/2.0 - thetavals
-#
-#        return phivals, thetavals
 
     @staticmethod
     def cleanDB(dbname, verbose=True):
@@ -695,7 +573,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         else:
             lst = records
         s = 'INSERT INTO ' + str(tablename) + ' VALUES '
-        s += "( " + ", ".join(["?"]*len(lst)) + ")"
+        s += "( " + ", ".join(["?"] * len(lst)) + ")"
         return s
 
 
@@ -714,9 +592,9 @@ class SNIaLightCurveTest(unittest.TestCase):
 
         rng = np.random.RandomState(99)
         n_sne = 100
-        ra_list = rng.random_sample(n_sne)*7.0 + 78.0
-        dec_list = rng.random_sample(n_sne)*4.0 - 69.0
-        zz_list = rng.random_sample(n_sne)*1.0+0.05
+        ra_list = rng.random_sample(n_sne) * 7.0 + 78.0
+        dec_list = rng.random_sample(n_sne) * 4.0 - 69.0
+        zz_list = rng.random_sample(n_sne) * 1.0 + 0.05
 
         cls.input_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
         cls.input_cat_name = os.path.join(cls.input_cat_name, "scratchSpace", "sne_input_cat.txt")
@@ -724,7 +602,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         with open(cls.input_cat_name, "w") as output_file:
             for ix in range(n_sne):
                 output_file.write("%d;%.12f;%.12f;%.12f;%.12f;%.12f\n"
-                                  % (ix+1, ra_list[ix], dec_list[ix],
+                                  % (ix + 1, ra_list[ix], dec_list[ix],
                                      np.radians(ra_list[ix]), np.radians(dec_list[ix]),
                                      zz_list[ix]))
 
