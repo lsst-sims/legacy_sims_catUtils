@@ -120,7 +120,7 @@ class SNObject_tests(unittest.TestCase):
         modelOutSideRange
         """
         snobj = SNObject(ra=30., dec=-60., source='salt2')
-        self.assertTrue(snobj.rectifySED, True)
+        self.assertEqual(snobj.rectifySED, True)
         self.assertEqual(snobj.modelOutSideTemporalRange, 'zero')
 
         snobj.rectifySED = False
