@@ -2,6 +2,7 @@ from __future__ import with_statement
 import os
 import numpy
 import unittest
+import lsst
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.utils import makeStarTestDB, myTestStars
 from lsst.sims.catalogs.utils import makeGalTestDB, myTestGals
@@ -255,14 +256,20 @@ class VariabilityDesignTest(unittest.TestCase):
                                        10)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(VariabilityDesignTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
+# def suite():
+#     utilsTests.init()
+#     suites = []
+#     suites += unittest.makeSuite(VariabilityDesignTest)
+#     return unittest.TestSuite(suites)
+# 
+# def run(shouldExit = False):
+#     utilsTests.run(suite(),shouldExit)
+# 
+# if __name__ == "__main__":
+#     run(True)
