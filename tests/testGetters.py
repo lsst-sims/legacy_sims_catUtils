@@ -2,8 +2,8 @@ import os
 import numpy
 import unittest
 
-import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst
+# import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -239,14 +239,20 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         self.assertGreater(ct, 0)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(testPhotometricUncertaintyGetters)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
+#def suite():
+#    utilsTests.init()
+#    suites = []
+#    suites += unittest.makeSuite(testPhotometricUncertaintyGetters)
+#
+#    return unittest.TestSuite(suites)
+#
+#def run(shouldExit = False):
+#    utilsTests.run(suite(), shouldExit)
+#if __name__ == "__main__":
+#    run(True)

@@ -4,7 +4,8 @@ import os
 import json
 import sqlite3
 import numpy as np
-import lsst.utils.tests as utilsTests
+import lsst
+# import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
 from lsst.sims.catalogs.db import fileDBObject
@@ -809,18 +810,9 @@ class AgnLightCurveTest(unittest.TestCase):
             os.unlink(dummy_cat_name)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(StellarLightCurveTest)
-    suites += unittest.makeSuite(AgnLightCurveTest)
-
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
