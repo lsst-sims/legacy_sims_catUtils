@@ -36,8 +36,7 @@ class SNFunctionality(object):
     # based SN model as defined in sncosmo
     column_outputs = ['snid', 'snra', 'sndec', 'z', 't0', 'c', 'x1', 'x0']
 
-    lsstmwebv = EBVbase()
-
+    _lsstmwebv = None
     suppressHighzSN = True
     maxTimeSNVisible = 100.
     maxz = 1.2
@@ -125,9 +124,11 @@ class SNFunctionality(object):
 
 
     def get_EBV(self):
-        return np.array(self.lsstmwebv.calculateEbv(equatorialCoordinates=
-                                                    np.array([self.column_by_name('raJ2000'),
-                                                              self.column_by_name('decJ2000')])))
+        if self._lsstmwebv is None:
+            self._lsstmwebv = EBVbase()
+        return np.array(self._lsstmwebv.calculateEbv(equatorialCoordinates=
+                                                     np.array([self.column_by_name('raJ2000'),
+                                                               self.column_by_name('decJ2000')])))
 
     def get_time(self):
 
