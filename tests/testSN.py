@@ -101,7 +101,9 @@ class SNObject_tests(unittest.TestCase):
                                           name='lsst_r')
 
     def tearDown(self):
-        pass
+        del self.SNCosmoBP
+        del self.SN_blank
+        del self.SN_extincted
 
     def test_SNstatenotEmpty(self):
         """
