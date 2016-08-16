@@ -2,6 +2,7 @@ import numpy
 
 import os
 import unittest
+import lsst
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
@@ -454,14 +455,9 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             if os.path.exists(baseName):
                 os.unlink(baseName)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(InstanceCatalogSetupUnittest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
