@@ -7,8 +7,8 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catUtils.mixins import PhotometryStars, PhotometrySSM, \
-                                      PhotometryGalaxies
+from lsst.sims.catUtils.mixins import (PhotometryStars, PhotometrySSM,
+                                       PhotometryGalaxies)
 
 
 def setup_module(module):
@@ -16,31 +16,31 @@ def setup_module(module):
 
 
 class baselineStarCatalog(InstanceCatalog, PhotometryStars):
-    column_outputs= ['raJ2000', 'decJ2000',
-                    'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-                    'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
-                    'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+    column_outputs = ['raJ2000', 'decJ2000',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+                      'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class uStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'lsst_u', 'sigma_lsst_u']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'lsst_g', 'lsst_z',
                       'sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzUncertaintyStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class IndexTestCaseStars(unittest.TestCase):
@@ -80,12 +80,10 @@ class IndexTestCaseStars(unittest.TestCase):
         cat.write_catalog(cls.catName)
         cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.catName):
             os.unlink(cls.catName)
-
 
     def test_u_star_catalog(self):
         """
@@ -116,7 +114,6 @@ class IndexTestCaseStars(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_gz_star_catalog(self):
         """
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
@@ -146,12 +143,13 @@ class IndexTestCaseStars(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_gz_uncertainty_star_catalog(self):
         """
-        Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
+        Test that a catalog which only cares about g and z uncertainties
+        does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
+        catName = os.path.join(getPackageDir('sims_catUtils'),
+                               'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzUncertaintyStarCatalog.column_outputs])
 
         cat = gzUncertaintyStarCatalog(self.db, obs_metadata=self.obs)
@@ -178,30 +176,30 @@ class IndexTestCaseStars(unittest.TestCase):
 
 
 class baselineSSMCatalog(InstanceCatalog, PhotometrySSM):
-    column_outputs= ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-                    'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
-                    'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+    column_outputs = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+                      'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class uSSMCatalog(InstanceCatalog, PhotometrySSM):
     column_outputs = ['lsst_u', 'sigma_lsst_u']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzSSMCatalog(InstanceCatalog, PhotometrySSM):
     column_outputs = ['lsst_g', 'lsst_z',
                       'sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzUncertaintySSMCatalog(InstanceCatalog, PhotometrySSM):
     column_outputs = ['sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class IndexTestCaseSSM(unittest.TestCase):
@@ -240,12 +238,10 @@ class IndexTestCaseSSM(unittest.TestCase):
         cat.write_catalog(cls.catName)
         cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.catName):
             os.unlink(cls.catName)
-
 
     def test_u_ssm_catalog(self):
         """
@@ -274,7 +270,6 @@ class IndexTestCaseSSM(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_gz_ssm_catalog(self):
         """
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
@@ -302,12 +297,13 @@ class IndexTestCaseSSM(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_gz_uncertainty_ssm_catalog(self):
         """
-        Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
+        Test that a catalog which only cares about g and z uncertainties
+        does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
+        catName = os.path.join(getPackageDir('sims_catUtils'),
+                               'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzUncertaintySSMCatalog.column_outputs])
 
         cat = gzUncertaintySSMCatalog(self.db, obs_metadata=self.obs)
@@ -345,14 +341,15 @@ class baselineGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
                       'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
+
 
 class uGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     column_outputs = ['uBulge', 'uDisk', 'uAgn', 'lsst_u',
                       'sigma_uBulge', 'sigma_uDisk', 'sigma_uAgn',
                       'sigma_lsst_u']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
@@ -363,7 +360,7 @@ class gzGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'sigma_zBulge', 'sigma_zDisk', 'sigma_zAgn',
                       'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class IndexTestCaseGalaxies(unittest.TestCase):
@@ -396,12 +393,12 @@ class IndexTestCaseGalaxies(unittest.TestCase):
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
         inputFile = os.path.join(inputDir, 'IndicesTestCatalogGalaxies.txt')
         cls.db = fileDBObject(inputFile, dtype=dtype, runtable='test',
-                               idColKey='id')
+                              idColKey='id')
 
         cls.db.objectTypeId = 44
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                'scratchSpace', 'galaxyPhotIndicesBaseline.txt')
+                               'scratchSpace', 'galaxyPhotIndicesBaseline.txt')
 
         cat = baselineGalaxyCatalog(cls.db, obs_metadata=cls.obs)
         cat.write_catalog(catName)
@@ -412,7 +409,6 @@ class IndexTestCaseGalaxies(unittest.TestCase):
 
         if os.path.exists(catName):
             os.unlink(catName)
-
 
     def test_u_catalog(self):
         """
