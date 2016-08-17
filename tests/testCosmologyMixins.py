@@ -1,7 +1,7 @@
 import os
 import unittest
 import lsst.utils.tests
-import numpy
+import numpy as np
 
 from lsst.sims.photUtils import CosmologyObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -36,7 +36,7 @@ class absoluteGalaxyCatalog(testGalaxies):
         Must set this to zero rather than `None` so that PhotometryGalaxies
         does not apply cosmological dimming
         """
-        return numpy.zeros(len(self.column_by_name('galid')))
+        return np.zeros(len(self.column_by_name('galid')))
 
 
 class CosmologyMixinUnitTest(unittest.TestCase):
