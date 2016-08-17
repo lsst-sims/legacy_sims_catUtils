@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os
 import unittest
 import lsst.utils.tests
-import lsst.utils
+from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
@@ -88,7 +88,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
-        catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
+        catName = os.path.join(getPackageDir('sims_catUtils'),
                                'tests', 'scratchSpace', 'phoSimTestCatalog.txt')
 
         testBulge.write_catalog(catName)
@@ -110,7 +110,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
 
         # first, generate the catalog without a CompoundInstanceCatalog
-        single_catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'),
+        single_catName = os.path.join(getPackageDir('sims_catUtils'),
                                       'tests', 'scratchSpace', 'phoSimTestCatalog_single.txt')
 
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
@@ -153,7 +153,7 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         self.assertEqual(len(compoundCatalog._dbObjectGroupList[0]), 3)
 
-        compound_catName = os.path.join(lsst.utils.getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+        compound_catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                         'phoSimTestCatalog_compound.txt')
 
         compoundCatalog.write_catalog(compound_catName)
