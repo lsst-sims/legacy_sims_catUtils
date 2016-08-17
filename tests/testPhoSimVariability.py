@@ -1,6 +1,6 @@
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import numpy
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
@@ -12,6 +12,10 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 class PhoSimPointVariable(PhoSimCatalogPoint, VariabilityStars, TestVariabilityMixin):
@@ -113,14 +117,9 @@ class PhoSimVariabilityTest(unittest.TestCase):
             self.assertAlmostEqual(bb[0], tt[4], 10)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(PhoSimVariabilityTest)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
