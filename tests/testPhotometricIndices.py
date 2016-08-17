@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
@@ -9,6 +9,11 @@ from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometrySSM, \
                                       PhotometryGalaxies
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class baselineStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs= ['raJ2000', 'decJ2000',
@@ -532,17 +537,9 @@ class IndexTestCaseGalaxies(unittest.TestCase):
             os.unlink(catName)
 
 
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(IndexTestCaseStars)
-    suites += unittest.makeSuite(IndexTestCaseSSM)
-    suites += unittest.makeSuite(IndexTestCaseGalaxies)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
