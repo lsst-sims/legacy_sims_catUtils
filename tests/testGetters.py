@@ -2,8 +2,7 @@ import os
 import numpy
 import unittest
 
-import lsst
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.catalogs.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
