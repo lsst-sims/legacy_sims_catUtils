@@ -242,10 +242,10 @@ class photometryUnitTest(unittest.TestCase):
             test = phot.sum_magnitudes(bulge=bb, disk=dd, agn=aa)
             if ix<7:
                 self.assertAlmostEqual(test, truth, 10)
-                self.assertFalse(np.isnan(test))
+                self.assertFalse(np.isnan(test), msg='test is NaN; should not be')
             else:
-                self.assertTrue(np.isnan(test))
-                self.assertTrue(np.isnan(truth))
+                np.testing.assert_equal(test, np.NaN)
+                np.testing.assert_equal(truth, np.NaN)
 
     def testSumMagnitudesCatalog(self):
         """
@@ -461,7 +461,7 @@ class photometryUnitTest(unittest.TestCase):
             agnMagList = []
             if line['bulgeName'] == 'None':
                 for bp in keys:
-                    self.assertTrue(np.isnan(line['%sBulge' % bp]))
+                    np.testing.assert_equal(line['%sBulge' % bp], np.NaN)
                     bulgeMagList.append(np.NaN)
             else:
                 ct += 1
@@ -480,7 +480,7 @@ class photometryUnitTest(unittest.TestCase):
 
             if line['diskName'] == 'None':
                 for bp in keys:
-                    self.assertTrue(np.isnan(line['%sDisk' % bp]))
+                    np.assert_equal(line['%sDisk' % bp], np.NaN)
                     diskMagList.append(np.NaN)
             else:
                 ct += 1
@@ -499,7 +499,7 @@ class photometryUnitTest(unittest.TestCase):
 
             if line['agnName'] == 'None':
                 for bp in keys:
-                    self.assertTrue(np.isnan(line['%sAgn' % bp]))
+                    np.testing.assert_true(line['%sAgn' % bp], np.NaN)
                     agnMagList.append(np.NaN)
             else:
                 ct += 1
@@ -520,7 +520,7 @@ class photometryUnitTest(unittest.TestCase):
 
             for testMag, bpName in zip(totalMags, keys):
                 if np.isnan(line['%sTotal' % bpName]):
-                    self.assertTrue(np.isnan(testMag))
+                    np.testing.assert_equal(testMag, np.NaN)
                 else:
                     self.assertAlmostEqual(testMag, line['%sTotal' % bpName],10)
 
@@ -657,12 +657,12 @@ class photometryUnitTest(unittest.TestCase):
         testSed.readSED_flambda(starName)
         indices = [1,3]
         mags = starPhot.magListForSed(testSed, indices=indices)
-        self.assertTrue(np.isnan(mags[0]))
-        self.assertFalse(np.isnan(mags[1]))
-        self.assertTrue(np.isnan(mags[2]))
-        self.assertFalse(np.isnan(mags[3]))
-        self.assertTrue(np.isnan(mags[4]))
-        self.assertTrue(np.isnan(mags[5]))
+        np.testing.assert_equal(mags[0], np.NaN)
+        self.assertFalse(np.isnan(mags[1]), msg='mags[1] is NaN; should not be')
+        np.testing.assert_equal(mags[2], np.NaN)
+        self.assertFalse(np.isnan(mags[3]), msg='mags[3] is NaN; should not be')
+        np.testing.assert_equal(mags[4], np.NaN)
+        np.testing.assert_equal(mags[5], np.NaN)
         self.assertEqual(len(mags), 6)
 
 
