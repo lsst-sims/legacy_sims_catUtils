@@ -14,6 +14,11 @@ from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM
 from lsst.sims.photUtils import BandpassDict, SedList, PhotometricParameters
 from lsst.sims.utils import _observedFromICRS
 
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class LSST_SSM_photCat(InstanceCatalog, PhotometrySSM):
     column_outputs = ['id', 'lsst_u' ,'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
 
