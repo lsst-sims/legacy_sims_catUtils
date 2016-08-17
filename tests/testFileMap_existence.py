@@ -12,10 +12,15 @@ sims_sed_library was loaded.
 
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class FileMapTest(unittest.TestCase):
 
@@ -115,17 +120,10 @@ class FileMapTest(unittest.TestCase):
         self.verifyFile('Exp.40E08.02Z.spec', 'galaxySED')
         self.verifyFile('Burst.40E08.002Z.spec', 'galaxySED')
 
-def suite():
-    """Returns a suite containing all the test cases in this module."""
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(FileMapTest)
 
-    return unittest.TestSuite(suites)
-
-def run(shouldExit=False):
-    """Run the tests"""
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
