@@ -1,6 +1,6 @@
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import numpy
 
 from lsst.sims.photUtils import CosmologyObject
@@ -10,6 +10,11 @@ from lsst.sims.catalogs.utils import myTestGals, makeGalTestDB
 
 from lsst.sims.catUtils.utils import testGalaxies
 from lsst.sims.catUtils.mixins import CosmologyMixin
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class cosmologicalGalaxyCatalog(testGalaxies, CosmologyMixin):
     column_outputs = ['galid','lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -95,14 +100,10 @@ class CosmologyMixinUnitTest(unittest.TestCase):
             for i in range(1,25):
                 self.assertAlmostEqual(cosmoRow[i], controlRow[i] + modulus, 6)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(CosmologyMixinUnitTest)
-    return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
