@@ -3,12 +3,11 @@ import unittest
 import lsst.utils.tests
 import numpy as np
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
-                                     testGalaxyBulgeDBObj, testGalaxyAgnDBObj
-from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
-                                                         PhoSimCatalogZPoint
+from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
+                                      testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
+from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
+                                                          PhoSimCatalogZPoint)
 from lsst.sims.catalogs.utils import makePhoSimTestDB
-from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
@@ -61,7 +60,6 @@ class PhoSimVariabilityTest(unittest.TestCase):
         cls.agnDB = testGalaxyAgnDBObj(driver='sqlite', database=cls.dbName)
         cls.starDB = testStarsDBObj(driver='sqlite', database=cls.dbName)
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.dbName):
@@ -107,7 +105,6 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
             self.assertAlmostEqual(bb[0], tt[4], 10)
-
 
     def testDisks(self):
         baseline = DiskControlCatalog(self.diskDB, obs_metadata=self.obs_metadata)
