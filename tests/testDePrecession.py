@@ -22,7 +22,7 @@ class DePrecessionTest(unittest.TestCase):
 
         Also verify that the observed boresite gets de-precessed correctly
         """
-        np.random.seed(12)
+        rng = np.random.RandomState(12)
         n_samples = 5
         pra = 34.0
         pdec = 65.0
@@ -39,8 +39,8 @@ class DePrecessionTest(unittest.TestCase):
         dec_list = []
         ra_list.append(raObs[0])
         dec_list.append(decObs[0])
-        for rr, dd in zip(np.random.random_sample(n_samples)*2.0*np.pi,
-                          (np.random.random_sample(n_samples)-0.5)*np.pi):
+        for rr, dd in zip(rng.random_sample(n_samples)*2.0*np.pi,
+                          (rng.random_sample(n_samples)-0.5)*np.pi):
 
             ra_list.append(rr)
             dec_list.append(dd)
