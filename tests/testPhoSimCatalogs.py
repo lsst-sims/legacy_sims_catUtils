@@ -1,7 +1,7 @@
 from __future__ import with_statement
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.utils
 from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
@@ -10,6 +10,10 @@ from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
                                                           PhoSimCatalogZPoint)
 from lsst.sims.catalogs.utils import makePhoSimTestDB
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 class PhoSimCatalogTest(unittest.TestCase):
@@ -176,17 +180,9 @@ class PhoSimCatalogTest(unittest.TestCase):
             os.unlink(single_catName)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(PhoSimCatalogTest)
-
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
-
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
