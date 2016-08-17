@@ -1,5 +1,5 @@
 import os
-import numpy
+import numpy as np
 import unittest
 
 import lsst.utils.tests
@@ -140,7 +140,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             fNorm = starSed.calcFluxNorm(line[15], imsimband)
             starSed.multiplyFluxNorm(fNorm)
 
-            aV = numpy.float(line[16])
+            aV = np.float(line[16])
             a_int, b_int = starSed.setupCCMab()
             starSed.addCCMDust(a_int, b_int, A_v=aV)
 
@@ -210,8 +210,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             diskSed.resampleSED(wavelen_match=bulgeSed.wavelen)
             agnSed.resampleSED(wavelen_match=bulgeSed.wavelen)
 
-            numpy.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
-            numpy.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)
+            np.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
+            np.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)
 
             fl = bulgeSed.flambda + diskSed.flambda + agnSed.flambda
 
