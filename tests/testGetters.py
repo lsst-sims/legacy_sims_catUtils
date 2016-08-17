@@ -13,6 +13,11 @@ from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.photUtils.utils import setM5
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class testStarCatalog(InstanceCatalog, PhotometryStars):
 
     column_outputs = ['raJ2000', 'decJ2000',
