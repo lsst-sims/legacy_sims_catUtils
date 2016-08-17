@@ -1,5 +1,5 @@
 from __future__ import with_statement
-import numpy
+import numpy as np
 
 import os
 import unittest
@@ -196,56 +196,56 @@ class photometryUnitTest(unittest.TestCase):
         """
         mm_0 = 22.0
 
-        bulge = 15.0*numpy.ones(8)
+        bulge = 15.0*np.ones(8)
 
-        disk = 15.2*numpy.ones(8)
+        disk = 15.2*np.ones(8)
 
-        agn = 15.4*numpy.ones(8)
+        agn = 15.4*np.ones(8)
 
-        bulge[0] = numpy.NaN
-        disk[1] = numpy.NaN
-        agn[2] = numpy.NaN
+        bulge[0] = np.NaN
+        disk[1] = np.NaN
+        agn[2] = np.NaN
 
-        bulge[3] = numpy.NaN
-        disk[3] = numpy.NaN
+        bulge[3] = np.NaN
+        disk[3] = np.NaN
 
-        bulge[4] = numpy.NaN
-        agn[4] = numpy.NaN
+        bulge[4] = np.NaN
+        agn[4] = np.NaN
 
-        disk[5] = numpy.NaN
-        agn[5] = numpy.NaN
+        disk[5] = np.NaN
+        agn[5] = np.NaN
 
-        bulge[7] = numpy.NaN
-        disk[7] = numpy.NaN
-        agn[7] = numpy.NaN
+        bulge[7] = np.NaN
+        disk[7] = np.NaN
+        agn[7] = np.NaN
 
-        bulge_flux = numpy.power(10.0, -0.4*(bulge-mm_0))
-        disk_flux = numpy.power(10.0, -0.4*(disk-mm_0))
-        agn_flux = numpy.power(10.0, -0.4*(agn-mm_0))
+        bulge_flux = np.power(10.0, -0.4*(bulge-mm_0))
+        disk_flux = np.power(10.0, -0.4*(disk-mm_0))
+        agn_flux = np.power(10.0, -0.4*(agn-mm_0))
 
-        answer = numpy.zeros(8)
-        answer[0] = -2.5*numpy.log10(disk_flux[0]+agn_flux[0]) + mm_0
-        answer[1] = -2.5*numpy.log10(bulge_flux[1]+agn_flux[1]) + mm_0
-        answer[2] = -2.5*numpy.log10(bulge_flux[2]+disk_flux[2]) + mm_0
-        answer[3] = -2.5*numpy.log10(agn_flux[3]) + mm_0
-        answer[4] = -2.5*numpy.log10(disk_flux[4]) + mm_0
-        answer[5] = -2.5*numpy.log10(bulge_flux[5]) + mm_0
-        answer[6] = -2.5*numpy.log10(bulge_flux[6]+disk_flux[6]+agn_flux[6]) + mm_0
-        answer[7] = numpy.NaN
+        answer = np.zeros(8)
+        answer[0] = -2.5*np.log10(disk_flux[0]+agn_flux[0]) + mm_0
+        answer[1] = -2.5*np.log10(bulge_flux[1]+agn_flux[1]) + mm_0
+        answer[2] = -2.5*np.log10(bulge_flux[2]+disk_flux[2]) + mm_0
+        answer[3] = -2.5*np.log10(agn_flux[3]) + mm_0
+        answer[4] = -2.5*np.log10(disk_flux[4]) + mm_0
+        answer[5] = -2.5*np.log10(bulge_flux[5]) + mm_0
+        answer[6] = -2.5*np.log10(bulge_flux[6]+disk_flux[6]+agn_flux[6]) + mm_0
+        answer[7] = np.NaN
 
         phot = PhotometryGalaxies()
         test = phot.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
 
-        numpy.testing.assert_array_almost_equal(test, answer, decimal=10)
+        np.testing.assert_array_almost_equal(test, answer, decimal=10)
 
         for ix, (bb, dd, aa, truth) in enumerate(zip(bulge, disk, agn, answer)):
             test = phot.sum_magnitudes(bulge=bb, disk=dd, agn=aa)
             if ix<7:
                 self.assertAlmostEqual(test, truth, 10)
-                self.assertFalse(numpy.isnan(test))
+                self.assertFalse(np.isnan(test))
             else:
-                self.assertTrue(numpy.isnan(test))
-                self.assertTrue(numpy.isnan(truth))
+                self.assertTrue(np.isnan(test))
+                self.assertTrue(np.isnan(truth))
 
     def testSumMagnitudesCatalog(self):
         """
@@ -267,42 +267,42 @@ class photometryUnitTest(unittest.TestCase):
         test_cat=galaxiesWithHoles(self.galaxy,obs_metadata=obs_metadata)
         test_cat.write_catalog(catName)
 
-        dtype = numpy.dtype([
-                            ('raJ2000', numpy.float),
-                            ('decJ2000', numpy.float),
-                            ('u', numpy.float), ('g', numpy.float), ('r', numpy.float),
-                            ('i', numpy.float), ('z', numpy.float), ('y', numpy.float),
-                            ('ub', numpy.float), ('gb', numpy.float), ('rb', numpy.float),
-                            ('ib', numpy.float), ('zb', numpy.float), ('yb', numpy.float),
-                            ('ud', numpy.float), ('gd', numpy.float), ('rd', numpy.float),
-                            ('id', numpy.float), ('zd', numpy.float), ('yd', numpy.float),
-                            ('ua', numpy.float), ('ga', numpy.float), ('ra', numpy.float),
-                            ('ia', numpy.float), ('za', numpy.float), ('ya', numpy.float)
+        dtype = np.dtype([
+                            ('raJ2000', np.float),
+                            ('decJ2000', np.float),
+                            ('u', np.float), ('g', np.float), ('r', np.float),
+                            ('i', np.float), ('z', np.float), ('y', np.float),
+                            ('ub', np.float), ('gb', np.float), ('rb', np.float),
+                            ('ib', np.float), ('zb', np.float), ('yb', np.float),
+                            ('ud', np.float), ('gd', np.float), ('rd', np.float),
+                            ('id', np.float), ('zd', np.float), ('yd', np.float),
+                            ('ua', np.float), ('ga', np.float), ('ra', np.float),
+                            ('ia', np.float), ('za', np.float), ('ya', np.float)
                             ])
 
 
 
-        data = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
+        data = np.genfromtxt(catName, dtype=dtype, delimiter=', ')
         self.assertGreater(len(data), 16)
         phot = PhotometryGalaxies()
 
         test = phot.sum_magnitudes(bulge=data['ub'], disk=data['ud'], agn=data['ua'])
-        numpy.testing.assert_array_almost_equal(test, data['u'], decimal=10)
+        np.testing.assert_array_almost_equal(test, data['u'], decimal=10)
 
         test = phot.sum_magnitudes(bulge=data['gb'], disk=data['gd'], agn=data['ga'])
-        numpy.testing.assert_array_almost_equal(test, data['g'], decimal=10)
+        np.testing.assert_array_almost_equal(test, data['g'], decimal=10)
 
         test = phot.sum_magnitudes(bulge=data['rb'], disk=data['rd'], agn=data['ra'])
-        numpy.testing.assert_array_almost_equal(test, data['r'], decimal=10)
+        np.testing.assert_array_almost_equal(test, data['r'], decimal=10)
 
         test = phot.sum_magnitudes(bulge=data['ib'], disk=data['id'], agn=data['ia'])
-        numpy.testing.assert_array_almost_equal(test, data['i'], decimal=10)
+        np.testing.assert_array_almost_equal(test, data['i'], decimal=10)
 
         test = phot.sum_magnitudes(bulge=data['zb'], disk=data['zd'], agn=data['za'])
-        numpy.testing.assert_array_almost_equal(test, data['z'], decimal=10)
+        np.testing.assert_array_almost_equal(test, data['z'], decimal=10)
 
         test = phot.sum_magnitudes(bulge=data['yb'], disk=data['yd'], agn=data['ya'])
-        numpy.testing.assert_array_almost_equal(test, data['y'], decimal=10)
+        np.testing.assert_array_almost_equal(test, data['y'], decimal=10)
 
         # make sure that there were some NaNs for our catalog to deal with (but that they were not
         # all NaNs
@@ -311,7 +311,7 @@ class photometryUnitTest(unittest.TestCase):
                      data['ud'], data['gd'], data['rd'], data['id'], data['zd'], data['yd'],
                      data['ua'], data['ga'], data['ra'], data['ia'], data['za'], data['ya']]:
 
-            ctNans = len(numpy.where(numpy.isnan(line))[0])
+            ctNans = len(np.where(np.isnan(line))[0])
             self.assertGreater(ctNans, 0)
             self.assertLess(ctNans, len(line))
 
@@ -368,7 +368,7 @@ class photometryUnitTest(unittest.TestCase):
         ss=test_cat.sedMasterList[0]
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
-        mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+        mags = -2.5*np.log10(np.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
         self.assertEqual(len(mags), len(test_cat.cartoonBandpassDict))
         self.assertGreater(len(mags), 0)
         for j in range(len(mags)):
@@ -399,42 +399,42 @@ class photometryUnitTest(unittest.TestCase):
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(catName)
 
-        dtype = numpy.dtype([
-                             ('galid', numpy.int),
-                             ('ra', numpy.float),
-                             ('dec', numpy.float),
-                             ('uTotal', numpy.float),
-                             ('gTotal', numpy.float),
-                             ('rTotal', numpy.float),
-                             ('iTotal', numpy.float),
-                             ('zTotal', numpy.float),
-                             ('uBulge', numpy.float),
-                             ('gBulge', numpy.float),
-                             ('rBulge', numpy.float),
-                             ('iBulge', numpy.float),
-                             ('zBulge', numpy.float),
-                             ('uDisk', numpy.float),
-                             ('gDisk', numpy.float),
-                             ('rDisk', numpy.float),
-                             ('iDisk', numpy.float),
-                             ('zDisk', numpy.float),
-                             ('uAgn', numpy.float),
-                             ('gAgn', numpy.float),
-                             ('rAgn', numpy.float),
-                             ('iAgn', numpy.float),
-                             ('zAgn', numpy.float),
+        dtype = np.dtype([
+                             ('galid', np.int),
+                             ('ra', np.float),
+                             ('dec', np.float),
+                             ('uTotal', np.float),
+                             ('gTotal', np.float),
+                             ('rTotal', np.float),
+                             ('iTotal', np.float),
+                             ('zTotal', np.float),
+                             ('uBulge', np.float),
+                             ('gBulge', np.float),
+                             ('rBulge', np.float),
+                             ('iBulge', np.float),
+                             ('zBulge', np.float),
+                             ('uDisk', np.float),
+                             ('gDisk', np.float),
+                             ('rDisk', np.float),
+                             ('iDisk', np.float),
+                             ('zDisk', np.float),
+                             ('uAgn', np.float),
+                             ('gAgn', np.float),
+                             ('rAgn', np.float),
+                             ('iAgn', np.float),
+                             ('zAgn', np.float),
                              ('bulgeName', str, 200),
-                             ('bulgeNorm', numpy.float),
-                             ('bulgeAv', numpy.float),
+                             ('bulgeNorm', np.float),
+                             ('bulgeAv', np.float),
                              ('diskName', str, 200),
-                             ('diskNorm', numpy.float),
-                             ('diskAv', numpy.float),
+                             ('diskNorm', np.float),
+                             ('diskAv', np.float),
                              ('agnName', str, 200),
-                             ('agnNorm', numpy.float),
-                             ('redshift', numpy.float)
+                             ('agnNorm', np.float),
+                             ('redshift', np.float)
                             ])
 
-        catData = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
+        catData = np.genfromtxt(catName, dtype=dtype, delimiter=', ')
 
         self.assertGreater(len(catData), 0)
 
@@ -461,8 +461,8 @@ class photometryUnitTest(unittest.TestCase):
             agnMagList = []
             if line['bulgeName'] == 'None':
                 for bp in keys:
-                    self.assertTrue(numpy.isnan(line['%sBulge' % bp]))
-                    bulgeMagList.append(numpy.NaN)
+                    self.assertTrue(np.isnan(line['%sBulge' % bp]))
+                    bulgeMagList.append(np.NaN)
             else:
                 ct += 1
                 dummySed = Sed()
@@ -480,8 +480,8 @@ class photometryUnitTest(unittest.TestCase):
 
             if line['diskName'] == 'None':
                 for bp in keys:
-                    self.assertTrue(numpy.isnan(line['%sDisk' % bp]))
-                    diskMagList.append(numpy.NaN)
+                    self.assertTrue(np.isnan(line['%sDisk' % bp]))
+                    diskMagList.append(np.NaN)
             else:
                 ct += 1
                 dummySed = Sed()
@@ -499,8 +499,8 @@ class photometryUnitTest(unittest.TestCase):
 
             if line['agnName'] == 'None':
                 for bp in keys:
-                    self.assertTrue(numpy.isnan(line['%sAgn' % bp]))
-                    agnMagList.append(numpy.NaN)
+                    self.assertTrue(np.isnan(line['%sAgn' % bp]))
+                    agnMagList.append(np.NaN)
             else:
                 ct += 1
                 dummySed = Sed()
@@ -514,13 +514,13 @@ class photometryUnitTest(unittest.TestCase):
                     self.assertAlmostEqual(mag, line['%sAgn' % bpName], 10)
                     agnMagList.append(mag)
 
-            totalMags = PhotometryGalaxies().sum_magnitudes(bulge=numpy.array(bulgeMagList),
-                                                            disk=numpy.array(diskMagList),
-                                                            agn=numpy.array(agnMagList))
+            totalMags = PhotometryGalaxies().sum_magnitudes(bulge=np.array(bulgeMagList),
+                                                            disk=np.array(diskMagList),
+                                                            agn=np.array(agnMagList))
 
             for testMag, bpName in zip(totalMags, keys):
-                if numpy.isnan(line['%sTotal' % bpName]):
-                    self.assertTrue(numpy.isnan(testMag))
+                if np.isnan(line['%sTotal' % bpName]):
+                    self.assertTrue(np.isnan(testMag))
                 else:
                     self.assertAlmostEqual(testMag, line['%sTotal' % bpName],10)
 
@@ -535,7 +535,7 @@ class photometryUnitTest(unittest.TestCase):
         even when it is not calculating all of the magnitudes in the getter
         """
 
-        baselineDtype = numpy.dtype([('id',int),
+        baselineDtype = np.dtype([('id',int),
                                      ('raObserved', float), ('decObserved', float),
                                      ('magNorm', float),
                                      ('cartoon_u', float), ('cartoon_g',float),
@@ -548,7 +548,7 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists(baselineCatName):
             os.unlink(baselineCatName)
 
-        testDtype = numpy.dtype([('id',int),
+        testDtype = np.dtype([('id',int),
                                  ('raObserved',float), ('decObserved',float),
                                  ('cartoon_i',float)])
 
@@ -564,25 +564,25 @@ class photometryUnitTest(unittest.TestCase):
 
         baseline_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
-        baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+        baselineData = np.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
         self.assertGreater(len(baselineData), 0)
 
         test_cat=cartoonStarsOnlyI(self.star, obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(testCatName)
-        testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
 
-        testDtype = numpy.dtype([('id',int),
+        testDtype = np.dtype([('id',int),
                                  ('raObserved',float), ('decObserved',float),
                                  ('cartoon_i',float), ('cartoon_z',float)])
 
 
         test_cat=cartoonStarsIZ(self.star, obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(testCatName)
-        testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         for b, t in zip(baselineData, testData):
@@ -601,7 +601,7 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists(baselineCatName):
             os.unlink(baselineCatName)
 
-        baselineDtype = numpy.dtype([('galid', int),
+        baselineDtype = np.dtype([('galid', int),
                                      ('raObserved', float),
                                      ('decObserved', float),
                                      ('ctotal_u', float),
@@ -616,7 +616,7 @@ class photometryUnitTest(unittest.TestCase):
 
         baseline_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
-        baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+        baselineData = np.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
         self.assertGreater(len(baselineData), 0)
 
         testCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
@@ -625,7 +625,7 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists(testCatName):
             os.unlink(testCatName)
 
-        testDtype = numpy.dtype([('galid', int),
+        testDtype = np.dtype([('galid', int),
                                  ('raObserved', float),
                                  ('decObserved', float),
                                  ('ctotal_i', float),
@@ -633,7 +633,7 @@ class photometryUnitTest(unittest.TestCase):
 
         test_cat = cartoonGalaxiesIG(self.galaxy, obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog(testCatName)
-        testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         for b,t in zip(baselineData, testData):
@@ -657,12 +657,12 @@ class photometryUnitTest(unittest.TestCase):
         testSed.readSED_flambda(starName)
         indices = [1,3]
         mags = starPhot.magListForSed(testSed, indices=indices)
-        self.assertTrue(numpy.isnan(mags[0]))
-        self.assertFalse(numpy.isnan(mags[1]))
-        self.assertTrue(numpy.isnan(mags[2]))
-        self.assertFalse(numpy.isnan(mags[3]))
-        self.assertTrue(numpy.isnan(mags[4]))
-        self.assertTrue(numpy.isnan(mags[5]))
+        self.assertTrue(np.isnan(mags[0]))
+        self.assertFalse(np.isnan(mags[1]))
+        self.assertTrue(np.isnan(mags[2]))
+        self.assertFalse(np.isnan(mags[3]))
+        self.assertTrue(np.isnan(mags[4]))
+        self.assertTrue(np.isnan(mags[5]))
         self.assertEqual(len(mags), 6)
 
 
