@@ -207,78 +207,78 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata, dbConnection=self.starDBObj,
                                      catalogClass=testStarCatalog)
 
-        self.assertTrue('lsst_g' in cat.iter_column_names())
-        self.assertFalse('lsst_u' in cat.iter_column_names())
-        self.assertFalse('lsst_r' in cat.iter_column_names())
-        self.assertFalse('lsst_i' in cat.iter_column_names())
-        self.assertFalse('lsst_z' in cat.iter_column_names())
-        self.assertFalse('lsst_y' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_g' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_u' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_r' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_i' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_z' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_y' in cat.iter_column_names())
+        self.assertIn('lsst_g', cat.iter_column_names())
+        self.assertNotIn('lsst_u', cat.iter_column_names())
+        self.assertNotIn('lsst_r', cat.iter_column_names())
+        self.assertNotIn('lsst_i', cat.iter_column_names())
+        self.assertNotIn('lsst_z', cat.iter_column_names())
+        self.assertNotIn('lsst_y', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_g', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_u', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_r', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_i', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_z', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_y', cat.iter_column_names())
 
         cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata, dbConnection=self.starDBObj,
                                      catalogClass=testStarCatalog, uncertainty=True)
 
-        self.assertTrue('lsst_g' in cat.iter_column_names())
-        self.assertFalse('lsst_u' in cat.iter_column_names())
-        self.assertFalse('lsst_r' in cat.iter_column_names())
-        self.assertFalse('lsst_i' in cat.iter_column_names())
-        self.assertFalse('lsst_z' in cat.iter_column_names())
-        self.assertFalse('lsst_y' in cat.iter_column_names())
-        self.assertTrue('sigma_lsst_g' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_u' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_r' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_i' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_z' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_y' in cat.iter_column_names())
+        self.assertIn('lsst_g', cat.iter_column_names())
+        self.assertNotIn('lsst_u', cat.iter_column_names())
+        self.assertNotIn('lsst_r', cat.iter_column_names())
+        self.assertNotIn('lsst_i', cat.iter_column_names())
+        self.assertNotIn('lsst_z', cat.iter_column_names())
+        self.assertNotIn('lsst_y', cat.iter_column_names())
+        self.assertIn('sigma_lsst_g', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_u', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_r', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_i', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_z', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_y', cat.iter_column_names())
 
         #test case with two bandpasses
         cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
                                      dbConnection=self.starDBObj, catalogClass=testStarCatalog)
 
-        self.assertTrue('lsst_g' in cat.iter_column_names())
-        self.assertTrue('lsst_i' in cat.iter_column_names())
-        self.assertFalse('lsst_u' in cat.iter_column_names())
-        self.assertFalse('lsst_r' in cat.iter_column_names())
-        self.assertFalse('lsst_z' in cat.iter_column_names())
-        self.assertFalse('lsst_y' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_g' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_u' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_r' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_i' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_z' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_y' in cat.iter_column_names())
+        self.assertIn('lsst_g', cat.iter_column_names())
+        self.assertIn('lsst_i', cat.iter_column_names())
+        self.assertNotIn('lsst_u', cat.iter_column_names())
+        self.assertNotIn('lsst_r', cat.iter_column_names())
+        self.assertNotIn('lsst_z', cat.iter_column_names())
+        self.assertNotIn('lsst_y', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_g', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_u', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_r', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_i', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_z', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_y', cat.iter_column_names())
 
         cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
                                      dbConnection=self.starDBObj, catalogClass=testStarCatalog,
                                      uncertainty=True)
 
-        self.assertTrue('lsst_g' in cat.iter_column_names())
-        self.assertTrue('lsst_i' in cat.iter_column_names())
-        self.assertFalse('lsst_u' in cat.iter_column_names())
-        self.assertFalse('lsst_r' in cat.iter_column_names())
-        self.assertFalse('lsst_z' in cat.iter_column_names())
-        self.assertFalse('lsst_y' in cat.iter_column_names())
-        self.assertTrue('sigma_lsst_g' in cat.iter_column_names())
-        self.assertTrue('sigma_lsst_i' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_u' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_r' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_z' in cat.iter_column_names())
-        self.assertFalse('sigma_lsst_y' in cat.iter_column_names())
+        self.assertIn('lsst_g', cat.iter_column_names())
+        self.assertIn('lsst_i', cat.iter_column_names())
+        self.assertNotIn('lsst_u', cat.iter_column_names())
+        self.assertNotIn('lsst_r', cat.iter_column_names())
+        self.assertNotIn('lsst_z', cat.iter_column_names())
+        self.assertNotIn('lsst_y', cat.iter_column_names())
+        self.assertIn('sigma_lsst_g', cat.iter_column_names())
+        self.assertIn('sigma_lsst_i', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_u', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_r', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_z', cat.iter_column_names())
+        self.assertNotIn('sigma_lsst_y', cat.iter_column_names())
 
         #make sure that class default columns did not get overwritten
         cat = testStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata)
 
-        self.assertFalse('lsst_u' in cat.iter_column_names())
-        self.assertFalse('lsst_g' in cat.iter_column_names())
-        self.assertFalse('lsst_r' in cat.iter_column_names())
-        self.assertFalse('lsst_i' in cat.iter_column_names())
-        self.assertFalse('lsst_z' in cat.iter_column_names())
-        self.assertFalse('lsst_y' in cat.iter_column_names())
+        self.assertNotIn('lsst_u', cat.iter_column_names())
+        self.assertNotIn('lsst_g', cat.iter_column_names())
+        self.assertNotIn('lsst_r', cat.iter_column_names())
+        self.assertNotIn('lsst_i', cat.iter_column_names())
+        self.assertNotIn('lsst_z', cat.iter_column_names())
+        self.assertNotIn('lsst_y', cat.iter_column_names())
 
 
 
@@ -339,7 +339,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                        msg = '%s single column; %.12e != %.12e' % (msgr, b['lsst_g'], t['lsst_g']))
                 ct +=1
 
-            self.assertTrue(ct>0)
+            self.assertGreater(ct, 0)
 
             testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                      ('lsst_g', numpy.float), ('lsst_i', numpy.float)])
@@ -358,7 +358,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                        msg = '%s double column; %.12e != %.12e ' % (msgr, b['lsst_i'], t['lsst_i']))
                 ct += 1
 
-            self.assertTrue(ct>0)
+            self.assertGreater(ct, 0)
 
             if os.path.exists(testName):
                 os.unlink(testName)
@@ -428,7 +428,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                        msg = '%s sigle column; %.12e != %.12e ' % (msgr, b['sigma_lsst_i'], t['sigma_lsst_g']))
                 ct +=1
 
-            self.assertTrue(ct>0)
+            self.assertGreater(ct, 0)
 
             testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                      ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float),
@@ -453,7 +453,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                        msg = '%s double column; %.12e != %.12e ' % (msgr, b['sigma_lsst_i'], t['sigma_lsst_i']))
                 ct +=1
 
-            self.assertTrue(ct>0)
+            self.assertGreater(ct, 0)
 
             if os.path.exists(testName):
                 os.unlink(testName)
