@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.db import fileDBObject
@@ -11,6 +11,11 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils import BandpassDict, Bandpass, Sed, PhotometricParameters, calcMagError_m5
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class PhotometryCartoon(object):
 
@@ -175,14 +180,9 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
             self.assertGreater(np.abs(lsst_gmagError-gmagError), 0.01)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(CartoonUncertaintyTestCase)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
