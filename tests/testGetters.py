@@ -26,6 +26,7 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
                       'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm', 'galacticAv']
 
+
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
 
     column_outputs = ['raJ2000', 'decJ2000',
@@ -45,6 +46,7 @@ class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'magNormBulge', 'magNormDisk', 'magNormAgn',
                       'internalAvBulge', 'internalAvDisk', 'redshift']
 
+
 class testPhotometricUncertaintyGetters(unittest.TestCase):
     """
     This class will test that the getters for photometric uncertainties
@@ -56,7 +58,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        lsstDefaults=LSSTdefaults()
+        lsstDefaults = LSSTdefaults()
         cls.dbName = 'uncertaintyTestDB.db'
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
@@ -65,13 +67,11 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         bandpass = ['u', 'g', 'r', 'i', 'z', 'y']
         m5 = lsstDefaults._m5.values()
 
-        cls.obs_metadata = ObservationMetaData(
-                                              pointingRA = default_obs_metadata.pointingRA,
-                                              pointingDec = default_obs_metadata.pointingDec,
-                                              rotSkyPos = default_obs_metadata.rotSkyPos,
-                                              bandpassName = bandpass,
-                                              m5 = m5
-                                              )
+        cls.obs_metadata = ObservationMetaData(pointingRA = default_obs_metadata.pointingRA,
+                                               pointingDec = default_obs_metadata.pointingDec,
+                                               rotSkyPos = default_obs_metadata.rotSkyPos,
+                                               bandpassName = bandpass,
+                                               m5 = m5)
 
         cls.obs_metadata.setBandpassM5andSeeing(bandpassName=bandpass, m5=m5)
         cls.driver = 'sqlite'
@@ -95,7 +95,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             finalComponents = []
             for c in components:
                 finalComponents.append(os.path.join(getPackageDir('throughputs'), 'baseline', c))
-            finalComponents.append(os.path.join(getPackageDir('throughputs'), 'baseline', 'filter_%s.dat' %b))
+            finalComponents.append(os.path.join(getPackageDir('throughputs'),
+                                                'baseline', 'filter_%s.dat' % b))
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(finalComponents)
             cls.hardwareBandpasses.append(bandpassDummy)
