@@ -256,11 +256,11 @@ class SSMastrometryTest(unittest.TestCase):
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
 
-        np.random.seed(42)
+        rng = np.random.RandomState(42)
         nTests = 5
-        raList = np.random.random_sample(nTests)*2.0*np.pi
-        decList = (np.random.random_sample(nTests)-0.5)*np.pi
-        mjdList = np.random.random_sample(nTests)*5000.0 + 53850.0
+        raList = rng.random_sample(nTests)*2.0*np.pi
+        decList = (rng.random_sample(nTests)-0.5)*np.pi
+        mjdList = rng.random_sample(nTests)*5000.0 + 53850.0
         for raPointing, decPointing, mjd in zip(raList, decList, mjdList):
             obs = ObservationMetaData(pointingRA=raPointing, pointingDec=decPointing, mjd=mjd)
 
