@@ -3,7 +3,7 @@ import numpy
 
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.utils import myTestGals, myTestStars, \
                                      makeStarTestDB, makeGalTestDB, getOneChunk
@@ -20,6 +20,10 @@ from lsst.sims.catUtils.utils import cartoonStars, cartoonGalaxies, testStars, t
                                      cartoonStarsOnlyI, cartoonStarsIZ, \
                                      cartoonGalaxiesIG, galaxiesWithHoles
 from lsst.sims.catUtils.mixins import PhotometryBase, PhotometryStars, PhotometryGalaxies
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 class variabilityUnitTest(unittest.TestCase):
@@ -694,18 +698,9 @@ class UncertaintyMixinTest(unittest.TestCase):
             self.totalBandpasses.append(bandpassDummy)
 
 
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(variabilityUnitTest)
-    suites += unittest.makeSuite(photometryUnitTest)
-    suites += unittest.makeSuite(UncertaintyMixinTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
