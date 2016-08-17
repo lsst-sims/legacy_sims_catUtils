@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os, sys
 import traceback
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 import numpy as np
 # Observation metadata modules
@@ -20,6 +20,10 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.obs.lsstSim import LsstSimMapper
 
 import time
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 def dtime(time_prev):
@@ -183,16 +187,9 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
             os.unlink(output_cat)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(createSSMSourceCatalogsTest)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
-
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
