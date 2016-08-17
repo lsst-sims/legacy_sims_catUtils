@@ -1,6 +1,6 @@
 import unittest
 import os
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
@@ -15,6 +15,10 @@ try:
     _example_db = GalaxyBulgeObj()
 except:
     _is_connected = False
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 class BulgeDiskCatalog(InstanceCatalog):
@@ -171,14 +175,9 @@ class CompoundCatalogTest(unittest.TestCase):
             os.unlink(testFileName)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(CompoundCatalogTest)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
