@@ -337,7 +337,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                                              boundLength=0.9)
         ct = 0
         for obs_metadata in results:
-            self.assertTrue(isinstance(obs_metadata.bounds, CircleBounds))
+            self.assertTrue(isinstance(obs_metadata.bounds, CircleBounds),
+                            msg='obs_metadata.bounds is not an intance of '
+                            'CircleBounds')
 
             # include some wiggle room, in case ObservationMetaData needs to
             # adjust the boundLength to accommodate the transformation between
@@ -372,7 +374,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             for obs_metadata in results:
                 RAdeg = obs_metadata.pointingRA
                 DECdeg = obs_metadata.pointingDec
-                self.assertTrue(isinstance(obs_metadata.bounds, BoxBounds))
+                self.assertTrue(isinstance(obs_metadata.bounds, BoxBounds),
+                                msg='obs_metadata.bounds is not an instance of '
+                                'BoxBounds')
 
                 self.assertAlmostEqual(obs_metadata.bounds.RAminDeg, RAdeg-dra, 10)
 
