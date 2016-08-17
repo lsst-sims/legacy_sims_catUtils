@@ -1,5 +1,6 @@
 from __future__ import with_statement
-import os, sys
+import os
+import sys
 import traceback
 import unittest
 import lsst.utils.tests
@@ -86,6 +87,7 @@ class ssmCatCamera(ssmCat):
 
 ######
 
+
 class createSSMSourceCatalogsTest(unittest.TestCase):
 
     def test_ssm_catalog_creation(self):
@@ -113,7 +115,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
         write_mode = 'w'
 
         try:
-            #ssmObj = NEOObj()
             ssmObj = SolarSystemObj()
 
             if os.path.exists(output_cat):
@@ -138,7 +139,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 obs.phoSimMetaData = phoSimMetaDict
 
                 mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
-                #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
                 photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0],
                                                    nexp=1, bandpass=obs.bandpass)
                 mySsmDb.photParams = photParams
