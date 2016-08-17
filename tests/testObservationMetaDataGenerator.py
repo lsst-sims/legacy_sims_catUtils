@@ -3,7 +3,7 @@ import os
 import unittest
 import sqlite3
 import numpy as np
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
 from lsst.sims.utils import ObservationMetaData
@@ -11,6 +11,10 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catUtils.utils import testGalaxyBulgeDBObj
 from lsst.sims.catalogs.utils import makePhoSimTestDB
 from lsst.utils import getPackageDir
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 def get_val_from_obs(tag, obs):
@@ -95,6 +99,9 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                               'OpSimData/opsimblitz1_1133_sqlite.db')
         self.gen = ObservationMetaDataGenerator(database=dbPath,
                                                 driver='sqlite')
+
+    def tearDown(self):
+        del self.gen
 
     def testExceptions(self):
         """
@@ -468,6 +475,9 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
     def setUp(self):
         self.obs_meta_gen = ObservationMetaDataGenerator(database=self.opsim_db_name)
 
+    def tearDown(self):
+        del self.obs_meta_gen
+
     def testSpatialQuery(self):
         """
         Test that when we run a spatial query on the mock opsim database, we get expected results.
@@ -534,16 +544,9 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
             os.unlink(opsim_db_name)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ObservationMetaDataGeneratorTest)
-    suites += unittest.makeSuite(ObsMetaDataGenMockOpsimTest)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
