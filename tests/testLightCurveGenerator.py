@@ -42,10 +42,8 @@ class agnControlCatalog(InstanceCatalog,
 
     @compound("mag", "sigma_mag")
     def get_phot(self):
-        return np.array([
-                         self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
-                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)
-                        ])
+        return np.array([self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
+                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)])
 
 
 class StellarLightCurveTest(unittest.TestCase):
@@ -514,8 +512,7 @@ class AgnLightCurveTest(unittest.TestCase):
                                      'agn_sfg': sfgList[ix], 'agn_sfr': sfrList[ix],
                                      'agn_sfi': sfiList[ix], 'agn_sfz': sfzList[ix],
                                      'agn_sfy': sfyList[ix], 't0_mjd': mjdList[ix],
-                                     'seed': rng.randint(0, 200000)
-                                    }}
+                                     'seed': rng.randint(0, 200000)}}
 
                 paramStr = json.dumps(varParam)
 
