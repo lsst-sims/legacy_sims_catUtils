@@ -9,7 +9,7 @@ from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
-from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
+from lsst.sims.catUtils.mixins import PhotometryStars
 from lsst.sims.photUtils import BandpassDict, Bandpass, Sed, PhotometricParameters, calcMagError_m5
 
 
@@ -22,21 +22,22 @@ class PhotometryCartoon(object):
     @compound('cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z')
     def get_cartoon_mags(self):
         if not hasattr(self, 'cartoonBandpassDict'):
-            self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(
-                                                     bandpassNames = ['u', 'g', 'r', 'i', 'z'],
-                                                     bandpassDir = os.path.join(getPackageDir('sims_photUtils'), 'tests',
-                                                                               'cartoonSedTestData'),
-                                                     bandpassRoot = 'test_bandpass_'
-                                                     )
+
+            bandpassDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
+
+            self.cartoonBandpassDict = \
+            BandpassDict.loadTotalBandpassesFromFiles(bandpassNames = ['u', 'g', 'r', 'i', 'z'],
+                                                      bandpassDir = bandpassDir,
+                                                      bandpassRoot = 'test_bandpass_')
 
         return self._magnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames)
 
-
     @compound('sigma_cartoon_u', 'sigma_cartoon_g', 'sigma_cartoon_r', 'sigma_cartoon_i', 'sigma_cartoon_z')
     def get_cartoon_uncertainty(self):
-        return self._magnitudeUncertaintyGetter(['cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z'],
+        return self._magnitudeUncertaintyGetter(['cartoon_u', 'cartoon_g', 'cartoon_r',
+                                                 'cartoon_i', 'cartoon_z'],
                                                 ['c_u', 'c_g', 'c_r', 'c_i', 'c_z', 'c_y'],
-                                                 'cartoonBandpassDict')
+                                                'cartoonBandpassDict')
 
 
 class CartoonStars(InstanceCatalog, PhotometryStars, PhotometryCartoon):
@@ -56,21 +57,21 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
         self.normband = Bandpass()
         self.normband.imsimBandpass()
         self.uband = Bandpass()
-        self.uband.readThroughput(os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData', 'test_bandpass_u.dat'))
+        self.uband.readThroughput(os.path.join(getPackageDir('sims_photUtils'), 'tests',
+                                  'cartoonSedTestData', 'test_bandpass_u.dat'))
         self.gband = Bandpass()
-        self.gband.readThroughput(os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData', 'test_bandpass_g.dat'))
+        self.gband.readThroughput(os.path.join(getPackageDir('sims_photUtils'), 'tests',
+                                  'cartoonSedTestData', 'test_bandpass_g.dat'))
 
     def test_stars(self):
-        obs = ObservationMetaData(bandpassName=['c_u', 'c_g'],
-                                  m5=[25.0, 26.0])
-        db_dtype = np.dtype([
-                           ('id', np.int),
-                           ('raJ2000', np.float),
-                           ('decJ2000', np.float),
-                           ('sedFilename', str, 100),
-                           ('magNorm', np.float),
-                           ('galacticAv', np.float)
-                           ])
+        obs = ObservationMetaData(bandpassName=['c_u', 'c_g'], m5=[25.0, 26.0])
+
+        db_dtype = np.dtype([('id', np.int),
+                             ('raJ2000', np.float),
+                             ('decJ2000', np.float),
+                             ('sedFilename', str, 100),
+                             ('magNorm', np.float),
+                             ('galacticAv', np.float)])
 
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
         inputFile = os.path.join(inputDir, 'IndicesTestCatalogStars.txt')
@@ -106,7 +107,6 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
             self.assertAlmostEqual(umagError, controlData['sigma_cartoon_u'][ix], 3)
             self.assertAlmostEqual(gmagError, controlData['sigma_cartoon_g'][ix], 3)
 
-
     def test_mixed_stars(self):
         """
         Here we will test the (somewhat absurd) case of a catalog with two different bandpasses
@@ -124,20 +124,19 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
         # so that, in the unit test, we can be sure that the correct values
         # are being used for the correct getters
 
-        db_dtype = np.dtype([
-                           ('id', np.int),
-                           ('raJ2000', np.float),
-                           ('decJ2000', np.float),
-                           ('sedFilename', str, 100),
-                           ('magNorm', np.float),
-                           ('galacticAv', np.float)
-                           ])
+        db_dtype = np.dtype([('id', np.int),
+                             ('raJ2000', np.float),
+                             ('decJ2000', np.float),
+                             ('sedFilename', str, 100),
+                             ('magNorm', np.float),
+                             ('galacticAv', np.float)])
 
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
         inputFile = os.path.join(inputDir, 'IndicesTestCatalogStars.txt')
         db = fileDBObject(inputFile, dtype=db_dtype, runtable='test', idColKey='id')
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'cartoonStarCat.txt')
-        cat = CartoonStars(db, obs_metadata=obs, column_outputs=['lsst_u', 'lsst_g', 'sigma_lsst_u', 'sigma_lsst_g'])
+        cat = CartoonStars(db, obs_metadata=obs, column_outputs=['lsst_u', 'lsst_g',
+                                                                 'sigma_lsst_u', 'sigma_lsst_g'])
         cat.write_catalog(catName)
 
         dtype = np.dtype([(name, np.float) for name in cat._column_outputs])
@@ -171,8 +170,10 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
             self.assertAlmostEqual(umagError, controlData['sigma_cartoon_u'][ix], 3)
             self.assertAlmostEqual(gmagError, controlData['sigma_cartoon_g'][ix], 3)
 
-            lsst_umagError, gamma = calcMagError_m5(lsst_umag, lsst_u_band, obs.m5['u'], PhotometricParameters())
-            lsst_gmagError, gamma = calcMagError_m5(lsst_gmag, lsst_g_band, obs.m5['g'], PhotometricParameters())
+            lsst_umagError, gamma = calcMagError_m5(lsst_umag, lsst_u_band,
+                                                    obs.m5['u'], PhotometricParameters())
+            lsst_gmagError, gamma = calcMagError_m5(lsst_gmag, lsst_g_band,
+                                                    obs.m5['g'], PhotometricParameters())
 
             self.assertAlmostEqual(lsst_umagError, controlData['sigma_lsst_u'][ix], 3)
             self.assertAlmostEqual(lsst_gmagError, controlData['sigma_lsst_g'][ix], 3)
