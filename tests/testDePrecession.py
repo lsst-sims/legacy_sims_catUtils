@@ -1,10 +1,15 @@
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.sims.utils import ObservationMetaData, _observedFromICRS
 from lsst.sims.utils import haversine, arcsecFromRadians
 from lsst.sims.catUtils.mixins import PhoSimAstrometryBase
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class DePrecessionTest(unittest.TestCase):
 
@@ -60,15 +65,9 @@ class DePrecessionTest(unittest.TestCase):
                     self.assertAlmostEqual(dd1, dd2, delta=6)
 
 
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(DePrecessionTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit=False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
