@@ -203,8 +203,8 @@ class SSMphotometryTest(unittest.TestCase):
         dmagDetectControl = 1.25*np.log10(1.0 + a_det*xsq/(1.0+b_det*x))
 
         # Check against precalculated numbers, just to verify units/conversions, etc.
-        self.assertTrue(abs(dmagTrailControl[-1] - 0.0219) < 0.01)
-        self.assertTrue(abs(dmagDetectControl[-1] - 0.01594) < 0.01)
+        self.assertLess(abs(dmagTrailControl[-1] - 0.0219), 0.01)
+        self.assertLess(abs(dmagDetectControl[-1] - 0.01594), 0.01)
 
         np.testing.assert_array_almost_equal(dmagTrailControl, testData['dmagTrail'], 10)
         np.testing.assert_array_almost_equal(dmagDetectControl, testData['dmagDetect'], 10)
