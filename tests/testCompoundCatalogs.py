@@ -103,10 +103,10 @@ class CompoundCatalogTest(unittest.TestCase):
         testFile.close()
 
         for line in control:
-            self.assertTrue(line in test)
+            self.assertIn(line, test)
 
         for line in test:
-            self.assertTrue(line in control)
+            self.assertIn(line, control)
 
         if os.path.exists(controlFileName):
             os.unlink(controlFileName)
@@ -163,10 +163,10 @@ class CompoundCatalogTest(unittest.TestCase):
         testFile.close()
 
         for line in control:
-            self.assertTrue(line in test)
+            self.assertIn(line, test)
 
         for line in test:
-            self.assertTrue(line in control)
+            self.assertIn(line, control)
 
         if os.path.exists(controlFileName):
             os.unlink(controlFileName)
