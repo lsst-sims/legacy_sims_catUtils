@@ -10,6 +10,13 @@ from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, 
 
 from lsst.sims.catalogs.definitions import InstanceCatalog, CompoundInstanceCatalog
 
+_is_connected = True
+try:
+    _example_db = GalaxyBulgeObj()
+except:
+    _is_connected = False
+
+
 class BulgeDiskCatalog(InstanceCatalog):
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
@@ -46,7 +53,7 @@ class CompoundCatalogTest(unittest.TestCase):
         self.baseDir = os.path.join(getPackageDir('sims_catUtils'), \
                                     'tests', 'scratchSpace')
 
-    @unittest.expectedFailure
+    @unittest.skipIf(not _is_connected, "We are not connected to fatboy")
     def testGalaxyCatalog(self):
         """
         Test GalaxyTileCompoundObj by creating a catalog of galaxy bulges, disks,
@@ -61,7 +68,7 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-45.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=-45.0,
                                   boundType='circle', boundLength=0.05)
 
         dbBulge = GalaxyBulgeObj()
@@ -76,15 +83,8 @@ class CompoundCatalogTest(unittest.TestCase):
         catDisk.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
         catAgn.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
 
-
-        # You need to reinstantiate the catalogs because the process of writing them
-        # above stripped galtileid from their _active_columns, which is the only way
-        # CompoundInstanceCatalog can know that it needs to worry about galtileid
-        catBulge = BulgeDiskCatalog(dbBulge, obs_metadata=obs)
-        catDisk = BulgeDiskCatalog(dbDisk, obs_metadata=obs)
-        catAgn = AgnCatalog(dbAgn, obs_metadata=obs)
-
-        totalCat = CompoundInstanceCatalog([catBulge, catDisk, catAgn],
+        totalCat = CompoundInstanceCatalog([BulgeDiskCatalog, BulgeDiskCatalog, AgnCatalog],
+                                           [GalaxyDiskObj, GalaxyBulgeObj, GalaxyAgnObj],
                                            obs_metadata=obs,
                                            compoundDBclass=GalaxyTileCompoundObj)
 
@@ -110,7 +110,7 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-    @unittest.expectedFailure
+    @unittest.skipIf(not _is_connected, "We are not connected to fatboy")
     def testGalaxyAndStarCatalog(self):
         """
         Test GalaxyTileCompoundObj by creating a catalog of galaxy bulges, disks,
@@ -125,7 +125,7 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-45.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=-45.0,
                                   boundType='circle', boundLength=0.05)
 
         dbBulge = GalaxyBulgeObj()
@@ -143,16 +143,8 @@ class CompoundCatalogTest(unittest.TestCase):
         catAgn.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
         catStar.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
 
-
-        # You need to reinstantiate the catalogs because the process of writing them
-        # above stripped galtileid from their _active_columns, which is the only way
-        # CompoundInstanceCatalog can know that it needs to worry about galtileid
-        catBulge = BulgeDiskCatalog(dbBulge, obs_metadata=obs)
-        catDisk = BulgeDiskCatalog(dbDisk, obs_metadata=obs)
-        catAgn = AgnCatalog(dbAgn, obs_metadata=obs)
-        catStar = StarCatalog(dbStar, obs_metadata=obs)
-
-        totalCat = CompoundInstanceCatalog([catBulge, catDisk, catAgn, catStar],
+        totalCat = CompoundInstanceCatalog([BulgeDiskCatalog, BulgeDiskCatalog, StarCatalog, AgnCatalog],
+                                           [GalaxyBulgeObj, GalaxyDiskObj, StarObj, GalaxyAgnObj],
                                            obs_metadata=obs,
                                            compoundDBclass=GalaxyTileCompoundObj)
 
