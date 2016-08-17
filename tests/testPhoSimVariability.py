@@ -80,7 +80,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
             self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
-            self.assertTrue(np.abs(bb[1]) > 0.0)
+            self.assertGreater(np.abs(bb[1]), 0.0)
 
     def testStars(self):
         """
@@ -95,7 +95,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
             self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
-            self.assertTrue(np.abs(bb[1]) > 0.0)
+            self.assertGreater(np.abs(bb[1]), 0.0)
 
     def testBulges(self):
         """
