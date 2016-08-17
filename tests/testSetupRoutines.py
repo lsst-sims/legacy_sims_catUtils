@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 import os
 import unittest
@@ -79,7 +79,7 @@ class testGalaxyDBObject(CatalogDBObject):
     decColName = 'dec'
     objectTypeId = 51
 
-    columns = [('galtileid', None, numpy.int64),
+    columns = [('galtileid', None, np.int64),
             ('galid', None, str, 30),
             ('raJ2000', 'ra*PI()/180.'),
             ('decJ2000', 'dec*PI()/180.'),
@@ -311,14 +311,14 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             os.unlink(baseName)
 
 
-        basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                 ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float),
-                                 ('lsst_i', numpy.float), ('sigma_lsst_i', numpy.float)])
+        basedtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
+                                 ('lsst_g', np.float), ('sigma_lsst_g', np.float),
+                                 ('lsst_i', np.float), ('sigma_lsst_i', np.float)])
 
         for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
 
-            testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                 ('lsst_g', numpy.float)])
+            testdtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
+                                 ('lsst_g', np.float)])
 
 
             testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata,
@@ -328,8 +328,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             testCat.write_catalog(testName)
             baselineCat.write_catalog(baseName)
 
-            testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
-            baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            baseData = np.genfromtxt(baseName, dtype=basedtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             self.assertGreater(len(baseData), 0)
 
@@ -341,14 +341,14 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             self.assertGreater(ct, 0)
 
-            testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                     ('lsst_g', numpy.float), ('lsst_i', numpy.float)])
+            testdtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
+                                     ('lsst_g', np.float), ('lsst_i', np.float)])
 
             testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
                                              dbConnection=dbo,
                                              catalogClass=testCatClass)
             testCat.write_catalog(testName)
-            testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
@@ -398,9 +398,9 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         if os.path.exists(baseName):
             os.unlink(baseName)
 
-        basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                 ('lsst_g', numpy.float), ('lsst_i', numpy.float),
-                                 ('sigma_lsst_g',numpy.float), ('sigma_lsst_i', numpy.float)])
+        basedtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
+                                 ('lsst_g', np.float), ('lsst_i', np.float),
+                                 ('sigma_lsst_g',np.float), ('sigma_lsst_i', np.float)])
 
         for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
 
@@ -409,14 +409,14 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              catalogClass=testCatClass,
                                              uncertainty=True)
 
-            testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                     ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float)])
+            testdtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
+                                     ('lsst_g', np.float), ('sigma_lsst_g', np.float)])
 
             testCat.write_catalog(testName)
             baselineCat.write_catalog(baseName)
 
-            testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
-            baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            baseData = np.genfromtxt(baseName, dtype=basedtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             self.assertGreater(len(baseData), 0)
 
@@ -430,16 +430,16 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
             self.assertGreater(ct, 0)
 
-            testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                     ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float),
-                                     ('lsst_i', numpy.float), ('sigma_lsst_i', numpy.float)])
+            testdtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
+                                     ('lsst_g', np.float), ('sigma_lsst_g', np.float),
+                                     ('lsst_i', np.float), ('sigma_lsst_i', np.float)])
 
             testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
                                              dbConnection=dbo,
                                              catalogClass=testCatClass,
                                              uncertainty=True)
             testCat.write_catalog(testName)
-            testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
