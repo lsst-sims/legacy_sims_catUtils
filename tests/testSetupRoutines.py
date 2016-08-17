@@ -13,6 +13,11 @@ from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.utils import setupPhotometryCatalog
 from lsst.sims.catUtils.utils import makeStarDatabase, makeGalaxyDatabase
 
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class testStarCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     """
     A class with no photometry columns.  Meant to be passed to setupPhotometryCatalog
