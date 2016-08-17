@@ -4,9 +4,9 @@ import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, \
-                                                 GalaxyAgnObj, GalaxyTileCompoundObj, \
-                                                 StarObj
+from lsst.sims.catUtils.baseCatalogModels import (GalaxyBulgeObj, GalaxyDiskObj,
+                                                  GalaxyAgnObj, GalaxyTileCompoundObj,
+                                                  StarObj)
 
 from lsst.sims.catalogs.definitions import InstanceCatalog, CompoundInstanceCatalog
 
@@ -24,23 +24,21 @@ def setup_module(module):
 class BulgeDiskCatalog(InstanceCatalog):
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
-                     'componentra', 'componentdec',
-                     'magNorm', 'sedFilename',
-                     'majorAxis', 'minorAxis',
-                     'positionAngle',
-                     'halfLightRadius',
-                     'internalExtinctionModel',
-                     'internalAv', 'internalRv',
-                     ]
+                      'componentra', 'componentdec',
+                      'magNorm', 'sedFilename',
+                      'majorAxis', 'minorAxis',
+                      'positionAngle',
+                      'halfLightRadius',
+                      'internalExtinctionModel',
+                      'internalAv', 'internalRv']
 
 
 class AgnCatalog(InstanceCatalog):
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
-                      'componentra','componentdec',
+                      'componentra', 'componentdec',
                       'magNorm', 'sedFilename',
-                      'variabilityParameters',
-                      ]
+                      'variabilityParameters']
 
 
 class StarCatalog(InstanceCatalog):
@@ -51,10 +49,11 @@ class StarCatalog(InstanceCatalog):
                       'parallax', 'galacticAv', 'radialVelocity',
                       'variabilityParameters', 'sedFilename']
 
+
 class CompoundCatalogTest(unittest.TestCase):
 
     def setUp(self):
-        self.baseDir = os.path.join(getPackageDir('sims_catUtils'), \
+        self.baseDir = os.path.join(getPackageDir('sims_catUtils'),
                                     'tests', 'scratchSpace')
 
     @unittest.skipIf(not _is_connected, "We are not connected to fatboy")
