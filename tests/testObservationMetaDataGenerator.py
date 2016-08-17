@@ -499,7 +499,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         Test that an exception is raised if you try to SELECT pointings on a column that does not exist
         """
         with self.assertRaises(RuntimeError) as context:
-            results = self.obs_meta_gen.getObservationMetaData(rotSkyPos=(27.0, 112.0))
+            self.obs_meta_gen.getObservationMetaData(rotSkyPos=(27.0, 112.0))
         self.assertIn("You have asked ObservationMetaDataGenerator to SELECT",
                       context.exception.args[0])
 
@@ -540,7 +540,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         incomplete_obs_gen = ObservationMetaDataGenerator(database=opsim_db_name)
 
         with self.assertRaises(RuntimeError) as context:
-            results = incomplete_obs_gen.getObservationMetaData(telescopeFilter='r')
+            incomplete_obs_gen.getObservationMetaData(telescopeFilter='r')
         self.assertIn("ObservationMetaDataGenerator requires that the database",
                       context.exception.args[0])
 
