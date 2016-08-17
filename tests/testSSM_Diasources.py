@@ -84,56 +84,6 @@ class ssmCatCamera(ssmCat):
 
 class createSSMSourceCatalogsTest(unittest.TestCase):
 
-
-    def setUp(self):
-
-        self.camera = ssmCatCamera(ssmObj, obs_metadata=self.obs)
-        
-        t = time.time()
-        # Fake opsim data.
-        database = os.path.join(getPackageDir('SIMS_DATA'), 'OpSimData/opsimblitz1_1133_sqlite.db')
-        generator = ObservationMetaDataGenerator(database=database, driver='sqlite')
-
-        night = 20
-        query = 'select min(expMJD), max(expMJD) from summary where night=%d' % (night)
-        res = generator.opsimdb.execute_arbitrary(query)
-        expMJD_min = res[0][0]
-        expMJD_max = res[0][1]
-
-        obsMetaDataResults = generator.getObservationMetaData(expMJD=(expMJD_min, expMJD_max),
-                                                              limit=3, boundLength=2.2)
-        dt, t = dtime(t)
-        night = 20
-        query = 'select min(expMJD), max(expMJD) from summary where night=%d' % (night)
-        res = generator.opsimdb.execute_arbitrary(query)
-        expMJD_min = res[0][0]
-        expMJD_max = res[0][1]
-
-        self.obsValues = []
-    
-        for obsMeta in obsMetaDataResults:
-            # But moving objects databases are not currently complete for all years.
-            # Push forward to night=747.
-            # (note that we need the phosim dictionary as well)
-            newMJD = obsMeta.mjd.TAI + (747 - 20)
-            phoSimMetaDict = {'exptime': [30]}
-            obs = ObservationMetaData(mjd=newMJD,
-                                      pointingRA=obsMeta.pointingRA,
-                                      pointingDec=obsMeta.pointingDec,
-                                      bandpassName=obsMeta.bandpass,
-                                      rotSkyPos=obsMeta.rotSkyPos,
-                                      m5=obsMeta.m5[obsMeta.bandpass],
-                                      seeing=obsMeta.seeing[obsMeta.bandpass],
-                                      boundLength=obsMeta.boundLength,
-                                      boundType=obsMeta.boundType)
-            obs.phoSimMetaData = phoSimMetaDict
-            self.obsValues.append(obs)
-                mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
-                #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
-                photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0],
-                                                   nexp=1, bandpass=obs.bandpass)
-                mySsmDb.photParams = photParams
-
     def test_ssm_catalog_creation(self):
 
         output_cat = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'catsim_ssm_test')
@@ -152,7 +102,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
         obsMetaDataResults = generator.getObservationMetaData(expMJD=(expMJD_min, expMJD_max),
                                                               limit=3, boundLength=2.2)
 
-        # obs.phoSimMetaData = phoSimMetaDict
         dt, t = dtime(t)
         print 'To query opsim database: %f seconds' % (dt)
 
@@ -197,9 +146,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                     with open(output_cat, 'r') as input_file:
                         lines = input_file.readlines()
                         self.assertGreater(len(lines), 1)
-                    del(mySsmDb)
-                    del(ssmObj)
-                    print(' ran through this')
                 except:
                     # This is because the solar system object 'tables'
                     # don't actually connect to tables on fatboy; they just
@@ -220,8 +166,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
 
                 if os.path.exists(output_cat):
                     os.unlink(output_cat)
-                del(mySsmDb)
-                del(ssmObj)
 
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
@@ -237,26 +181,18 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
 
         if os.path.exists(output_cat):
             os.unlink(output_cat)
-        del(mySsmDb)
-        del(ssmObj)
 
-import lsst
-class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
-    pass
+
+def suite():
+    utilsTests.init()
+    suites = []
+    suites += unittest.makeSuite(createSSMSourceCatalogsTest)
+    return unittest.TestSuite(suites)
+
+
+def run(shouldExit = False):
+    utilsTests.run(suite(), shouldExit)
+
 
 if __name__ == "__main__":
-    lsst.utils.tests.init()
-    unittest.main()
-# def suite():
-#     utilsTests.init()
-#     suites = []
-#     suites += unittest.makeSuite(createSSMSourceCatalogsTest)
-#     return unittest.TestSuite(suites)
-# 
-# 
-# def run(shouldExit = False):
-#     utilsTests.run(suite(), shouldExit)
-# 
-# 
-# if __name__ == "__main__":
-#     run(True)
+    run(True)
