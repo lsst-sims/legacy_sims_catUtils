@@ -9,8 +9,18 @@ from lsst.sims.utils import haversine
 #The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
 
+_testSpatialConstraints_is_connected = True
+
+try:
+    _test_db = bcm.GalaxyObj()
+except:
+    _testSpatialConstraints_is_connected= False
+
+
+
 class testCatalogBounds(unittest.TestCase):
-    @unittest.expectedFailure
+    @unittest.skipIf(not _testSpatialConstraints_is_connected,
+                     "We are not connnected to fatboy")
     def testCircleBounds(self):
         """Test Sql Server circular search region.
         exepectedFailure used despite expectation of success
@@ -36,11 +46,12 @@ class testCatalogBounds(unittest.TestCase):
 
             #confirm radius > distance from all points to center
             self.assertGreater(obs_metadata.bounds.radius + 1.e-4,
-                           max(haversine(numpy.radians(obs_metadata.unrefractedRA),
-                                                      numpy.radians(obs_metadata.unrefractedDec),
+                           max(haversine(numpy.radians(obs_metadata.pointingRA),
+                                                      numpy.radians(obs_metadata.pointingDec),
                                                       result['raJ2000'], result['decJ2000'])))
 
-    @unittest.expectedFailure
+    @unittest.skipIf(not _testSpatialConstraints_is_connected,
+                     "We are not connected to fatboy")
     def testBoxBounds(self):
         """Test Sql Server rectangular search region (ra/dec cuts).
         exepectedFailure used despite expectation of success
@@ -58,7 +69,9 @@ class testCatalogBounds(unittest.TestCase):
             length = numpy.degrees(circ_bounds.radius)
             raCenter = numpy.degrees(circ_bounds.RA)+length
             decCenter = numpy.degrees(circ_bounds.DEC)+length
-            obs_metadata = ObservationMetaData(boundType='box',unrefractedRA=raCenter,unrefractedDec=decCenter,
+            obs_metadata = ObservationMetaData(boundType='box',
+                                               pointingRA=raCenter,
+                                               pointingDec=decCenter,
                                                boundLength=length,
                                                mjd=51000., bandpassName='i')
             dbobj = objcls(verbose=False)
