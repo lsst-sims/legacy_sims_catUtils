@@ -508,7 +508,7 @@ class VariabilityTest(unittest.TestCase):
 
         expectedMessage = "Your InstanceCatalog does not contain a variability method"
         expectedMessage += " corresponding to 'testVar'"
-        self.assertTrue(context.exception.message==expectedMessage)
+        self.assertEqual(context.exception.message, expectedMessage)
 
         if os.path.exists('hybridTestCatalog.dat'):
             os.unlink('hybridTestCatalog.dat')
@@ -522,12 +522,12 @@ class VariabilityTest(unittest.TestCase):
         """
 
         for m1 in StellarVariabilityCatalog._methodRegistry:
-            self.assertTrue(m1 in StellarVariabilityCatalogWithTest._methodRegistry)
-            self.assertTrue(m1 in OtherVariabilityCatalogWithTest._methodRegistry)
+            self.assertIn(m1, StellarVariabilityCatalogWithTest._methodRegistry)
+            self.assertIn(m1, OtherVariabilityCatalogWithTest._methodRegistry)
 
-        self.assertTrue('testVar' in StellarVariabilityCatalogWithTest._methodRegistry)
-        self.assertTrue('testVar' in OtherVariabilityCatalogWithTest._methodRegistry)
-        self.assertFalse('testVar' in StellarVariabilityCatalog._methodRegistry)
+        self.assertIn('testVar', StellarVariabilityCatalogWithTest._methodRegistry)
+        self.assertIn('testVar', OtherVariabilityCatalogWithTest._methodRegistry)
+        self.assertNotIn('testVar', StellarVariabilityCatalog._methodRegistry)
 
 
     def testMflares(self):
