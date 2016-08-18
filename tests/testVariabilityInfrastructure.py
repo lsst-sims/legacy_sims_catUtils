@@ -45,7 +45,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
         self._loadSedList(self.variabilityBandpassDict.wavelenMatch)
         if not hasattr(self, '_sedList'):
-            return np.ones((6,0))
+            return np.ones((6, 0))
 
         return self._magnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames)
 
@@ -78,7 +78,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
     def get_filenames(self):
         ra = self.column_by_name('raJ2000')
 
-        galaxy_seds = ['Const.80E07.02Z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+        galaxy_seds = ['Const.80E07.02Z.spec', 'Inst.80E07.002Z.spec', 'Burst.19E07.0005Z.spec']
         agn_sed = 'agn.spec'
 
         agnSeds = []
@@ -91,7 +91,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         return np.array([bulgeSeds, diskSeds, agnSeds])
 
     @compound('test_bulge_u', 'test_bulge_g', 'test_bulge_r',
-              'test_bulge_i' ,'test_bulge_z', 'test_bulge_y')
+              'test_bulge_i', 'test_bulge_z', 'test_bulge_y')
     def get_test_bulge_mags(self):
 
         if not hasattr(self, 'testBandpassDict'):
@@ -99,7 +99,6 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
 
         return self._magnitudeGetter('bulge', self.testBandpassDict,
                                      self.get_test_bulge_mags._colnames)
-
 
     @compound('test_disk_u', 'test_disk_g', 'test_disk_r',
               'test_disk_i', 'test_disk_z', 'test_disk_y')
@@ -111,7 +110,6 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         return self._magnitudeGetter('disk', self.testBandpassDict,
                                      self.get_test_disk_mags._colnames)
 
-
     @compound('test_agn_u', 'test_agn_g', 'test_agn_r',
               'test_agn_i', 'test_agn_z', 'test_agn_y')
     def get_test_agn_mags(self):
@@ -121,7 +119,6 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
 
         return self._magnitudeGetter('agn', self.testBandpassDict,
                                      self.get_test_agn_mags._colnames)
-
 
     @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y')
     def get_test_total_mags(self):
@@ -144,6 +141,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
 
 class GalaxyVariabilityCatalogClass(GalaxyBaselineCatalogClass, FakeGalaxyVariabilityMixin):
     pass
+
 
 class VariabilityDesignTest(unittest.TestCase):
     """
@@ -185,7 +183,6 @@ class VariabilityDesignTest(unittest.TestCase):
         del self.starDB
         del self.galaxyDB
 
-
     def testStellarVariabilityInfrastructure(self):
         """
         Test that the variability design was correctly implemented
@@ -205,7 +202,6 @@ class VariabilityDesignTest(unittest.TestCase):
             self.assertAlmostEqual(vv[5], bb[5], 10)
             self.assertAlmostEqual(vv[6], bb[6], 10)
 
-
     def testGalaxyVariabilityInfrastructure(self):
         """
         Test that the variability design was correctly implemented in
@@ -219,7 +215,7 @@ class VariabilityDesignTest(unittest.TestCase):
                    'test_disk_u', 'test_disk_g', 'test_disk_r', 'test_disk_i',
                    'test_disk_z', 'test_disk_y',
                    'test_agn_u', 'test_agn_g', 'test_agn_r',
-                   'test_agn_i', 'test_agn_z','test_agn_y']
+                   'test_agn_i', 'test_agn_z', 'test_agn_y']
 
         baseline = GalaxyBaselineCatalogClass(self.galaxyDB, column_outputs=outputs)
         variable = GalaxyVariabilityCatalogClass(self.galaxyDB, column_outputs=outputs)
@@ -231,20 +227,20 @@ class VariabilityDesignTest(unittest.TestCase):
         for bb, vv in zip(baseline.iter_catalog(), variable.iter_catalog()):
             self.assertEqual(bb[0], vv[0])
 
-            #test that the variable components are altered
-            #the way they ought to be
+            # test that the variable components are altered
+            # the way they ought to be
             self.assertAlmostEqual(bb[19]+1.0, vv[19], 10)
             self.assertAlmostEqual(bb[20]+2.0, vv[20], 10)
             self.assertAlmostEqual(bb[21]+3.0, vv[21], 10)
             self.assertAlmostEqual(bb[7]+4.0, vv[7], 10)
             self.assertAlmostEqual(bb[16]+5.0, vv[16], 10)
 
-            #test that the components which do not vary are equal
-            for ix in range(7,25):
+            # test that the components which do not vary are equal
+            for ix in range(7, 25):
                 if ix not in variable_indices:
                     self.assertAlmostEqual(bb[ix], vv[ix], 10)
 
-            #test that the total magnitudes are correctly calculated
+            # test that the total magnitudes are correctly calculated
             for ix in range(6):
 
                 self.assertAlmostEqual(bb[ix+1],
