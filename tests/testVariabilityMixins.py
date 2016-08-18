@@ -1,11 +1,10 @@
 from __future__ import with_statement
 import os
 import unittest
-import lsst
-import lsst.utils.tests as utilsTests
 import numpy
 import sqlite3
 import json
+import lsst.utils.tests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -14,6 +13,11 @@ from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 
 from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 def makeMflareTable(size=10, **kwargs):
     """
@@ -682,17 +686,3 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-# def suite():
-#     utilsTests.init()
-#     suites = []
-#     suites += unittest.makeSuite(VariabilityTest)
-#     suites += unittest.makeSuite(AgnCacheTest)
-#     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-#     return unittest.TestSuite(suites)
-# 
-# def run(shouldExit = False):
-#     utilsTests.run(suite(),shouldExit)
-# 
-# if __name__ == "__main__":
-#     run(True)
-# 
