@@ -2,14 +2,18 @@ from __future__ import with_statement
 import os
 import numpy
 import unittest
-import lsst
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.catalogs.utils import makeStarTestDB, myTestStars
 from lsst.sims.catalogs.utils import makeGalTestDB, myTestGals
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils import BandpassDict
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class FakeStellarVariabilityMixin(object):
 
@@ -262,14 +266,3 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-# def suite():
-#     utilsTests.init()
-#     suites = []
-#     suites += unittest.makeSuite(VariabilityDesignTest)
-#     return unittest.TestSuite(suites)
-# 
-# def run(shouldExit = False):
-#     utilsTests.run(suite(),shouldExit)
-# 
-# if __name__ == "__main__":
-#     run(True)
