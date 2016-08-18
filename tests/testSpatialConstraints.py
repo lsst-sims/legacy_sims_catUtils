@@ -1,7 +1,7 @@
 import unittest
 import numpy
 import lsst
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import haversine
@@ -16,6 +16,9 @@ try:
 except:
     _testSpatialConstraints_is_connected= False
 
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 class testCatalogBounds(unittest.TestCase):
@@ -97,15 +100,3 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-# def suite():
-#     utilsTests.init()
-#     suites = []
-#     suites += unittest.makeSuite(testCatalogBounds)
-#     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-#     return unittest.TestSuite(suites)
-# 
-# def run(shouldExit=False):
-#     utilsTests.run(suite(), shouldExit)
-# 
-# if __name__ == "__main__":
-#     run(True)
