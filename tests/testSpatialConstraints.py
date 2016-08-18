@@ -19,8 +19,9 @@ except:
 
 
 class testCatalogBounds(unittest.TestCase):
-    @unittest.skipIf(not _testSpatialConstraints_is_connected,
-                     "We are not connnected to fatboy")
+    #@unittest.skipIf(not _testSpatialConstraints_is_connected,
+    #                 "We are not connnected to fatboy")
+    @unittest.skip('will fail until we have restored SSO tables on fatboy')
     def testCircleBounds(self):
         """Test Sql Server circular search region.
         exepectedFailure used despite expectation of success
@@ -50,8 +51,9 @@ class testCatalogBounds(unittest.TestCase):
                                                       numpy.radians(obs_metadata.pointingDec),
                                                       result['raJ2000'], result['decJ2000'])))
 
-    @unittest.skipIf(not _testSpatialConstraints_is_connected,
-                     "We are not connected to fatboy")
+    #@unittest.skipIf(not _testSpatialConstraints_is_connected,
+    #                 "We are not connected to fatboy")
+    @unittest.skip('will fail until we have restored SSO tables on fatboy')
     def testBoxBounds(self):
         """Test Sql Server rectangular search region (ra/dec cuts).
         exepectedFailure used despite expectation of success
