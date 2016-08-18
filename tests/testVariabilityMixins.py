@@ -24,6 +24,8 @@ def makeMflareTable(size=10, **kwargs):
     Make a test database to serve information to the flare test
     """
 
+    rng = np.random.RandomState(110)
+
     #a haphazard sample of mdwarf SEDs
     sedFiles = ['m2.0Full.dat', 'm5.1Full.dat', 'm4.9Full.dat']
 
@@ -40,9 +42,9 @@ def makeMflareTable(size=10, **kwargs):
         raise RuntimeError("Error creating database.")
 
     for i in xrange(size):
-        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[rng.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyMflare',
-           'pars':{'t0':48000.0, 'lcfilename':lcFiles[np.random.randint(0,len(lcFiles))], 'dt':0.00069444418, 'length': 1825}}
+           'pars':{'t0':48000.0, 'lcfilename':lcFiles[rng.randint(0,len(lcFiles))], 'dt':0.00069444418, 'length': 1825}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO mFlare VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -71,12 +73,12 @@ def makeRRlyTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    mjDisplacement = (np.random.sample(size)-50.0)*50.0
+    rng = np.random.RandomState(32)
+    mjDisplacement = (rng.random_sample(size)-50.0)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[rng.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyRRly',
-           'pars':{'tStartMjd':48000.0+mjDisplacement[i], 'filename':lcFiles[np.random.randint(0,len(lcFiles))]}}
+           'pars':{'tStartMjd':48000.0+mjDisplacement[i], 'filename':lcFiles[rng.randint(0,len(lcFiles))]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
@@ -106,13 +108,13 @@ def makeCepheidTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    periods = np.random.sample(size)*50.0
-    mjDisplacement = (np.random.sample(size)-0.5)*50.0
+    rng = np.random.RandomState(32)
+    periods = rng.random_sample(size)*50.0
+    mjDisplacement = (rng.random_sample(size)-0.5)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[rng.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyCepheid',
-           'pars':{'period':periods[i], 'lcfile':lcFiles[np.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+           'pars':{'period':periods[i], 'lcfile':lcFiles[rng.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -137,13 +139,13 @@ def makeEbTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    periods = np.random.sample(size)*50.0
-    mjDisplacement = (np.random.sample(size)-0.5)*50.0
+    rng = np.random.RandomState(32)
+    periods = rng.random_sample(size)*50.0
+    mjDisplacement = (rng.random_sample(size)-0.5)*50.0
     for i in xrange(size):
         sedFile = 'sed_flat_norm.txt'
         varParam = {'varMethodName':'applyEb',
-           'pars':{'period':periods[i], 'lcfile':lcFiles[np.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+           'pars':{'period':periods[i], 'lcfile':lcFiles[rng.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -170,10 +172,10 @@ def makeMicrolensingTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    that = np.random.sample(size)*40.0+40.0
-    umin = np.random.sample(size)
-    mjDisplacement = np.random.sample(size)*50.0
+    rng = np.random.RandomState(32)
+    that = rng.random_sample(size)*40.0+40.0
+    umin = rng.random_sample(size)
+    mjDisplacement = rng.random_sample(size)*50.0
     for i in xrange(size):
         sedFile = sedFiles[0]
         varParam = {'varMethodName':method[i%len(method)],
@@ -208,12 +210,12 @@ def makeBHMicrolensingTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    mjDisplacement = np.random.sample(size)*5.0*365.25
+    rng = np.random.RandomState(32)
+    mjDisplacement = rng.random_sample(size)*5.0*365.25
     for i in xrange(size):
-        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[rng.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyBHMicrolens',
-           'pars':{'filename':lcFiles[np.random.randint(0,len(lcFiles))], 't0':52000.0-mjDisplacement[i]}}
+           'pars':{'filename':lcFiles[rng.randint(0,len(lcFiles))], 't0':52000.0-mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -238,17 +240,17 @@ def makeAmcvnTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    doesBurst = np.random.randint(0,1,size=size)
-    burst_freq = np.random.randint(10,150,size=size)
+    rng = np.random.RandomState(32)
+    doesBurst = rng.randint(0,1,size=size)
+    burst_freq = rng.randint(10,150,size=size)
     burst_scale = 115
-    amp_burst = np.random.sample(size)*8.0
-    color_excess_during_burst = np.random.sample(size)*0.2-0.4
-    amplitude = np.random.sample(size)*0.2
-    period = np.random.sample(size)*200.0
-    mjDisplacement = np.random.sample(size)*50.0
+    amp_burst = rng.random_sample(size)*8.0
+    color_excess_during_burst = rng.random_sample(size)*0.2-0.4
+    amplitude = rng.random_sample(size)*0.2
+    period = rng.random_sample(size)*200.0
+    mjDisplacement = rng.random_sample(size)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[rng.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyAmcvn',
            'pars':{'does_burst':int(doesBurst[i]), #have to cast to int from np.int for json
                    'burst_freq':int(burst_freq[i]),
@@ -286,32 +288,32 @@ def makeAgnTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    agn_tau = np.random.sample(size)*100.0+100.0
-    agn_sfu = np.random.sample(size)*2.0
-    agn_sfg = np.random.sample(size)*2.0
-    agn_sfr = np.random.sample(size)*2.0
-    agn_sfi = np.random.sample(size)*2.0
-    agn_sfz = np.random.sample(size)*2.0
-    agn_sfy = np.random.sample(size)*2.0
-    mjDisplacement = np.random.sample(size)*5.0
-    avBulge = np.random.sample(size)*0.5+2.6
-    avDisk = np.random.sample(size)*0.5+2.6
-    redshift = np.random.sample(size)*0.5
+    rng = np.random.RandomState(32)
+    agn_tau = rng.random_sample(size)*100.0+100.0
+    agn_sfu = rng.random_sample(size)*2.0
+    agn_sfg = rng.random_sample(size)*2.0
+    agn_sfr = rng.random_sample(size)*2.0
+    agn_sfi = rng.random_sample(size)*2.0
+    agn_sfz = rng.random_sample(size)*2.0
+    agn_sfy = rng.random_sample(size)*2.0
+    mjDisplacement = rng.random_sample(size)*5.0
+    avBulge = rng.random_sample(size)*0.5+2.6
+    avDisk = rng.random_sample(size)*0.5+2.6
+    redshift = rng.random_sample(size)*0.5
     for i in xrange(size):
         varParam = {'varMethodName':'applyAgn',
            'pars':{'agn_tau':agn_tau[i], 'agn_sfu':agn_sfu[i], 'agn_sfg':agn_sfg[i],
                     'agn_sfr':agn_sfr[i], 'agn_sfi':agn_sfi[i], 'agn_sfz':agn_sfz[i],
                     'agn_sfy':agn_sfy[i], 't0_mjd':48000.0+mjDisplacement[i],
-                    'seed':np.random.randint(0,200000)}}
+                    'seed':rng.randint(0,200000)}}
 
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO agn VALUES (%i, %i, %f, %f, %f, '%s', '%s', '%s', '%s')''' % \
                (i, i, avBulge[i], avDisk[i], redshift[i],
                paramStr,
-               sedFiles[np.random.randint(0,len(sedFiles))],
-               sedFiles[np.random.randint(0,len(sedFiles))],
+               sedFiles[rng.randint(0,len(sedFiles))],
+               sedFiles[rng.randint(0,len(sedFiles))],
                'agn.spec')
 
         c.execute(qstr)
@@ -342,11 +344,11 @@ def makeHybridTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    np.random.seed(32)
-    periods = np.random.sample(size)*50.0
-    mjDisplacement = (np.random.sample(size)-0.5)*50.0
+    rng = np.random.RandomState(32)
+    periods = rng.random_sample(size)*50.0
+    mjDisplacement = (rng.random_sample(size)-0.5)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[rng.randint(0,len(sedFiles))]
         if i%3 ==0:
             # just to make sure that Variability mixins no how to andle
             # objects with no variability
@@ -354,7 +356,7 @@ def makeHybridTable(size=100, **kwargs):
             paramStr = None
         elif i%2 == 0:
             varParam = {'varMethodName':'applyCepheid',
-               'pars':{'period':periods[i], 'lcfile':lcFiles[np.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+               'pars':{'period':periods[i], 'lcfile':lcFiles[rng.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         else:
             varParam = {'varMethodName':'testVar',
                         'pars':{'period':5.0, 'amplitude':2.0}}
