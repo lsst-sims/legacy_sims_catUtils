@@ -1,7 +1,7 @@
 from __future__ import with_statement
 import os
 import unittest
-import numpy
+import numpy as np
 import sqlite3
 import json
 import lsst.utils.tests
@@ -40,9 +40,9 @@ def makeMflareTable(size=10, **kwargs):
         raise RuntimeError("Error creating database.")
 
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyMflare',
-           'pars':{'t0':48000.0, 'lcfilename':lcFiles[numpy.random.randint(0,len(lcFiles))], 'dt':0.00069444418, 'length': 1825}}
+           'pars':{'t0':48000.0, 'lcfilename':lcFiles[np.random.randint(0,len(lcFiles))], 'dt':0.00069444418, 'length': 1825}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO mFlare VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -71,12 +71,12 @@ def makeRRlyTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    mjDisplacement = (numpy.random.sample(size)-50.0)*50.0
+    np.random.seed(32)
+    mjDisplacement = (np.random.sample(size)-50.0)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyRRly',
-           'pars':{'tStartMjd':48000.0+mjDisplacement[i], 'filename':lcFiles[numpy.random.randint(0,len(lcFiles))]}}
+           'pars':{'tStartMjd':48000.0+mjDisplacement[i], 'filename':lcFiles[np.random.randint(0,len(lcFiles))]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
@@ -106,13 +106,13 @@ def makeCepheidTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    periods = numpy.random.sample(size)*50.0
-    mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
+    np.random.seed(32)
+    periods = np.random.sample(size)*50.0
+    mjDisplacement = (np.random.sample(size)-0.5)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyCepheid',
-           'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+           'pars':{'period':periods[i], 'lcfile':lcFiles[np.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -137,13 +137,13 @@ def makeEbTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    periods = numpy.random.sample(size)*50.0
-    mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
+    np.random.seed(32)
+    periods = np.random.sample(size)*50.0
+    mjDisplacement = (np.random.sample(size)-0.5)*50.0
     for i in xrange(size):
         sedFile = 'sed_flat_norm.txt'
         varParam = {'varMethodName':'applyEb',
-           'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+           'pars':{'period':periods[i], 'lcfile':lcFiles[np.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -170,10 +170,10 @@ def makeMicrolensingTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    that = numpy.random.sample(size)*40.0+40.0
-    umin = numpy.random.sample(size)
-    mjDisplacement = numpy.random.sample(size)*50.0
+    np.random.seed(32)
+    that = np.random.sample(size)*40.0+40.0
+    umin = np.random.sample(size)
+    mjDisplacement = np.random.sample(size)*50.0
     for i in xrange(size):
         sedFile = sedFiles[0]
         varParam = {'varMethodName':method[i%len(method)],
@@ -208,12 +208,12 @@ def makeBHMicrolensingTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    mjDisplacement = numpy.random.sample(size)*5.0*365.25
+    np.random.seed(32)
+    mjDisplacement = np.random.sample(size)*5.0*365.25
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyBHMicrolens',
-           'pars':{'filename':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':52000.0-mjDisplacement[i]}}
+           'pars':{'filename':lcFiles[np.random.randint(0,len(lcFiles))], 't0':52000.0-mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
@@ -238,19 +238,19 @@ def makeAmcvnTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    doesBurst = numpy.random.randint(0,1,size=size)
-    burst_freq = numpy.random.randint(10,150,size=size)
+    np.random.seed(32)
+    doesBurst = np.random.randint(0,1,size=size)
+    burst_freq = np.random.randint(10,150,size=size)
     burst_scale = 115
-    amp_burst = numpy.random.sample(size)*8.0
-    color_excess_during_burst = numpy.random.sample(size)*0.2-0.4
-    amplitude = numpy.random.sample(size)*0.2
-    period = numpy.random.sample(size)*200.0
-    mjDisplacement = numpy.random.sample(size)*50.0
+    amp_burst = np.random.sample(size)*8.0
+    color_excess_during_burst = np.random.sample(size)*0.2-0.4
+    amplitude = np.random.sample(size)*0.2
+    period = np.random.sample(size)*200.0
+    mjDisplacement = np.random.sample(size)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyAmcvn',
-           'pars':{'does_burst':int(doesBurst[i]), #have to cast to int from numpy.int for json
+           'pars':{'does_burst':int(doesBurst[i]), #have to cast to int from np.int for json
                    'burst_freq':int(burst_freq[i]),
                    'burst_scale':burst_scale,
                    'amp_burst':amp_burst[i],
@@ -286,32 +286,32 @@ def makeAgnTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    agn_tau = numpy.random.sample(size)*100.0+100.0
-    agn_sfu = numpy.random.sample(size)*2.0
-    agn_sfg = numpy.random.sample(size)*2.0
-    agn_sfr = numpy.random.sample(size)*2.0
-    agn_sfi = numpy.random.sample(size)*2.0
-    agn_sfz = numpy.random.sample(size)*2.0
-    agn_sfy = numpy.random.sample(size)*2.0
-    mjDisplacement = numpy.random.sample(size)*5.0
-    avBulge = numpy.random.sample(size)*0.5+2.6
-    avDisk = numpy.random.sample(size)*0.5+2.6
-    redshift = numpy.random.sample(size)*0.5
+    np.random.seed(32)
+    agn_tau = np.random.sample(size)*100.0+100.0
+    agn_sfu = np.random.sample(size)*2.0
+    agn_sfg = np.random.sample(size)*2.0
+    agn_sfr = np.random.sample(size)*2.0
+    agn_sfi = np.random.sample(size)*2.0
+    agn_sfz = np.random.sample(size)*2.0
+    agn_sfy = np.random.sample(size)*2.0
+    mjDisplacement = np.random.sample(size)*5.0
+    avBulge = np.random.sample(size)*0.5+2.6
+    avDisk = np.random.sample(size)*0.5+2.6
+    redshift = np.random.sample(size)*0.5
     for i in xrange(size):
         varParam = {'varMethodName':'applyAgn',
            'pars':{'agn_tau':agn_tau[i], 'agn_sfu':agn_sfu[i], 'agn_sfg':agn_sfg[i],
                     'agn_sfr':agn_sfr[i], 'agn_sfi':agn_sfi[i], 'agn_sfz':agn_sfz[i],
                     'agn_sfy':agn_sfy[i], 't0_mjd':48000.0+mjDisplacement[i],
-                    'seed':numpy.random.randint(0,200000)}}
+                    'seed':np.random.randint(0,200000)}}
 
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO agn VALUES (%i, %i, %f, %f, %f, '%s', '%s', '%s', '%s')''' % \
                (i, i, avBulge[i], avDisk[i], redshift[i],
                paramStr,
-               sedFiles[numpy.random.randint(0,len(sedFiles))],
-               sedFiles[numpy.random.randint(0,len(sedFiles))],
+               sedFiles[np.random.randint(0,len(sedFiles))],
+               sedFiles[np.random.randint(0,len(sedFiles))],
                'agn.spec')
 
         c.execute(qstr)
@@ -342,11 +342,11 @@ def makeHybridTable(size=100, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    numpy.random.seed(32)
-    periods = numpy.random.sample(size)*50.0
-    mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
+    np.random.seed(32)
+    periods = np.random.sample(size)*50.0
+    mjDisplacement = (np.random.sample(size)-0.5)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        sedFile = sedFiles[np.random.randint(0,len(sedFiles))]
         if i%3 ==0:
             # just to make sure that Variability mixins no how to andle
             # objects with no variability
@@ -354,7 +354,7 @@ def makeHybridTable(size=100, **kwargs):
             paramStr = None
         elif i%2 == 0:
             varParam = {'varMethodName':'applyCepheid',
-               'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
+               'pars':{'period':periods[i], 'lcfile':lcFiles[np.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         else:
             varParam = {'varMethodName':'testVar',
                         'pars':{'period':5.0, 'amplitude':2.0}}
@@ -634,7 +634,7 @@ class AgnCacheTest(unittest.TestCase):
         of outputs are identical.
         """
 
-        rng = numpy.random.RandomState(8374)
+        rng = np.random.RandomState(8374)
 
         var = Variability()
 
@@ -659,7 +659,7 @@ class AgnCacheTest(unittest.TestCase):
             param_list.append(params)
 
         mjd_list = rng.random_sample(100)*10000.0+50000.0
-        mjd_list = numpy.sort(mjd_list)
+        mjd_list = np.sort(mjd_list)
 
         caching_output = []
 
@@ -677,7 +677,7 @@ class AgnCacheTest(unittest.TestCase):
                 for kk in dd:
                     uncached_output.append(dd[kk])
 
-        numpy.testing.assert_array_almost_equal(numpy.array(caching_output), numpy.array(uncached_output), decimal=10)
+        np.testing.assert_array_almost_equal(np.array(caching_output), np.array(uncached_output), decimal=10)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
