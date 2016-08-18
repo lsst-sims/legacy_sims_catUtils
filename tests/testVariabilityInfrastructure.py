@@ -1,6 +1,6 @@
 from __future__ import with_statement
 import os
-import numpy
+import numpy as np
 import unittest
 import lsst.utils.tests
 from lsst.sims.catalogs.utils import makeStarTestDB, myTestStars
@@ -20,9 +20,9 @@ class FakeStellarVariabilityMixin(object):
     @compound('delta_test_u', 'delta_test_g', 'delta_test_r')
     def get_variability(self):
         ra = self.column_by_name('raJ2000')
-        return numpy.array([4.0*numpy.ones(len(ra)),
-                            10.0*numpy.ones(len(ra)),
-                            20.0*numpy.ones(len(ra))])
+        return np.array([4.0*np.ones(len(ra)),
+                         10.0*np.ones(len(ra)),
+                         20.0*np.ones(len(ra))])
 
 
 class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
@@ -36,7 +36,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
                      'bergeron_6500_85.dat_6700']
 
         ra = self.column_by_name('raJ2000')
-        return numpy.array([star_seds[i%3] for i in range(len(ra))])
+        return np.array([star_seds[i%3] for i in range(len(ra))])
 
     @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y')
     def get_test_mags(self):
@@ -45,7 +45,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
         self._loadSedList(self.variabilityBandpassDict.wavelenMatch)
         if not hasattr(self, '_sedList'):
-            return numpy.ones((6,0))
+            return np.ones((6,0))
 
         return self._magnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames)
 
@@ -60,11 +60,11 @@ class FakeGalaxyVariabilityMixin(object):
               'delta_test_bulge_u', 'delta_test_disk_i')
     def get_variability(self):
         ra = self.column_by_name('raJ2000')
-        return numpy.array([1.0*numpy.ones(len(ra)),
-                            2.0*numpy.ones(len(ra)),
-                            3.0*numpy.ones(len(ra)),
-                            4.0*numpy.ones(len(ra)),
-                            5.0*numpy.ones(len(ra))])
+        return np.array([1.0*np.ones(len(ra)),
+                         2.0*np.ones(len(ra)),
+                         3.0*np.ones(len(ra)),
+                         4.0*np.ones(len(ra)),
+                         5.0*np.ones(len(ra))])
 
 
 class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
@@ -72,7 +72,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
     @compound('internalAvBulge', 'internalAvDisk')
     def get_internalAv(self):
         ra = self.column_by_name('raJ2000')
-        return numpy.array([2.5*numpy.ones(len(ra)), 2.5*numpy.ones(len(ra))])
+        return np.array([2.5*np.ones(len(ra)), 2.5*np.ones(len(ra))])
 
     @compound('sedFilenameBulge', 'sedFilenameDisk', 'sedFilenameAgn')
     def get_filenames(self):
@@ -88,7 +88,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         bulgeSeds = [galaxy_seds[(ii+1)%3] for ii in range(len(ra))]
         diskSeds = [galaxy_seds[ii%3] for ii in range(len(ra))]
 
-        return numpy.array([bulgeSeds, diskSeds, agnSeds])
+        return np.array([bulgeSeds, diskSeds, agnSeds])
 
     @compound('test_bulge_u', 'test_bulge_g', 'test_bulge_r',
               'test_bulge_i' ,'test_bulge_z', 'test_bulge_y')
@@ -130,7 +130,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         output = []
         for columnName in self.get_test_total_mags._colnames:
             if columnName not in self._actually_calculated_columns:
-                sub_list = [numpy.NaN]*numObj
+                sub_list = [np.NaN]*numObj
             else:
                 bandpass = columnName[-1]
                 bulge = self.column_by_name('test_bulge_%s' % bandpass)
@@ -139,7 +139,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
                 sub_list = self.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
 
             output.append(sub_list)
-        return numpy.array(output)
+        return np.array(output)
 
 
 class GalaxyVariabilityCatalogClass(GalaxyBaselineCatalogClass, FakeGalaxyVariabilityMixin):
