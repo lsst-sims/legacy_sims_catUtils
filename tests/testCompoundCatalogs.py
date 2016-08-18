@@ -10,11 +10,11 @@ from lsst.sims.catUtils.baseCatalogModels import (GalaxyBulgeObj, GalaxyDiskObj,
 
 from lsst.sims.catalogs.definitions import InstanceCatalog, CompoundInstanceCatalog
 
-_is_connected = True
+_testCompoundCatalogs_is_connected = True
 try:
     _example_db = GalaxyBulgeObj()
 except:
-    _is_connected = False
+    _testCompoundCatalogs_is_connected = False
 
 
 def setup_module(module):
@@ -56,7 +56,8 @@ class CompoundCatalogTest(unittest.TestCase):
         self.baseDir = os.path.join(getPackageDir('sims_catUtils'),
                                     'tests', 'scratchSpace')
 
-    @unittest.skipIf(not _is_connected, "We are not connected to fatboy")
+    @unittest.skipIf(not _testCompoundCatalogs_is_connected,
+                     "We are not connected to fatboy")
     def testGalaxyCatalog(self):
         """
         Test GalaxyTileCompoundObj by creating a catalog of galaxy bulges, disks,
@@ -113,7 +114,8 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-    @unittest.skipIf(not _is_connected, "We are not connected to fatboy")
+    @unittest.skipIf(not _testCompoundCatalogs_is_connected,
+                     "We are not connected to fatboy")
     def testGalaxyAndStarCatalog(self):
         """
         Test GalaxyTileCompoundObj by creating a catalog of galaxy bulges, disks,
