@@ -266,12 +266,12 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertAlmostEqual(xxra, xx, 5)
                 self.assertAlmostEqual(yyra, yy, 5)
             else:
-                self.assertTrue(np.isnan(xx))
-                self.assertTrue(np.isnan(yy))
-                self.assertTrue(np.isnan(xxra))
-                self.assertTrue(np.isnan(yyra))
-                self.assertTrue(np.isnan(xxtest))
-                self.assertTrue(np.isnan(yytest))
+                np.testing.assert_equal(xx, np.NaN)
+                np.testing.assert_equal(yy, np.NaN)
+                np.testing.assert_equal(xxra, np.NaN)
+                np.testing.assert_equal(yyra, np.NaN)
+                np.testing.assert_equal(xxtest, np.NaN)
+                np.testing.assert_equal(yytest, np.NaN)
 
         nameTest = chipNameFromPupilCoords(pupilTest[0], pupilTest[1],
                                            camera=self.cat.camera)
@@ -285,8 +285,8 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertEqual(ntest, ncontrol)
                 self.assertEqual(nra, ncontrol)
             else:
-                self.assertTrue(ntest is None)
-                self.assertTrue(nra is None)
+                self.assertIsNone(ntest)
+                self.assertIsNone(nra)
 
         if os.path.exists(catName):
             os.unlink(catName)
