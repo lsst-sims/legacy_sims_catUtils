@@ -4,7 +4,7 @@ import os
 import unittest
 import math
 import palpy as pal
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -17,6 +17,10 @@ from lsst.sims.catalogs.utils import (myTestStars, makeStarTestDB,
                                       myTestGals, makeGalTestDB)
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, CameraCoords
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 class AstrometryTestStars(myTestStars):
@@ -335,15 +339,9 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink(parallaxName)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(astrometryUnitTest)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
