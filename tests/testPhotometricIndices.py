@@ -1,41 +1,48 @@
 import os
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catUtils.mixins import PhotometryStars, PhotometrySSM, \
-                                      PhotometryGalaxies
+from lsst.sims.catUtils.mixins import (PhotometryStars, PhotometrySSM,
+                                       PhotometryGalaxies)
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class baselineStarCatalog(InstanceCatalog, PhotometryStars):
-    column_outputs= ['raJ2000', 'decJ2000',
-                    'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-                    'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
-                    'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+    catalog_type = __file__ + 'baseline_star_catalog'
 
-    default_formats = {'f':'%.13f'}
+    column_outputs = ['raJ2000', 'decJ2000',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+                      'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+
+    default_formats = {'f': '%.13f'}
 
 
 class uStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'lsst_u', 'sigma_lsst_u']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'lsst_g', 'lsst_z',
                       'sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzUncertaintyStarCatalog(InstanceCatalog, PhotometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class IndexTestCaseStars(unittest.TestCase):
@@ -75,12 +82,10 @@ class IndexTestCaseStars(unittest.TestCase):
         cat.write_catalog(cls.catName)
         cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.catName):
             os.unlink(cls.catName)
-
 
     def test_u_star_catalog(self):
         """
@@ -97,20 +102,19 @@ class IndexTestCaseStars(unittest.TestCase):
         np.testing.assert_array_almost_equal(self.controlData['lsst_u'], testData['lsst_u'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_u'], testData['sigma_lsst_u'], 10)
 
-        self.assertTrue('lsst_g' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_g' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_z' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_z' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertNotIn('lsst_g', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_g', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_z', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_z', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
-
 
     def test_gz_star_catalog(self):
         """
@@ -129,24 +133,25 @@ class IndexTestCaseStars(unittest.TestCase):
         np.testing.assert_array_almost_equal(self.controlData['lsst_z'], testData['lsst_z'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
 
-        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertNotIn('lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_gz_uncertainty_star_catalog(self):
         """
-        Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
+        Test that a catalog which only cares about g and z uncertainties
+        does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
+        catName = os.path.join(getPackageDir('sims_catUtils'),
+                               'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzUncertaintyStarCatalog.column_outputs])
 
         cat = gzUncertaintyStarCatalog(self.db, obs_metadata=self.obs)
@@ -157,46 +162,46 @@ class IndexTestCaseStars(unittest.TestCase):
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
 
-        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_g' in cat._actually_calculated_columns)
-        self.assertTrue('lsst_z' in cat._actually_calculated_columns)
+        self.assertNotIn('lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
+        self.assertIn('lsst_g', cat._actually_calculated_columns)
+        self.assertIn('lsst_z', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
 
 
 class baselineSSMCatalog(InstanceCatalog, PhotometrySSM):
-    column_outputs= ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
-                    'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
-                    'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
+    column_outputs = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                      'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+                      'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class uSSMCatalog(InstanceCatalog, PhotometrySSM):
     column_outputs = ['lsst_u', 'sigma_lsst_u']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzSSMCatalog(InstanceCatalog, PhotometrySSM):
     column_outputs = ['lsst_g', 'lsst_z',
                       'sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzUncertaintySSMCatalog(InstanceCatalog, PhotometrySSM):
     column_outputs = ['sigma_lsst_g', 'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class IndexTestCaseSSM(unittest.TestCase):
@@ -235,12 +240,10 @@ class IndexTestCaseSSM(unittest.TestCase):
         cat.write_catalog(cls.catName)
         cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.catName):
             os.unlink(cls.catName)
-
 
     def test_u_ssm_catalog(self):
         """
@@ -255,20 +258,19 @@ class IndexTestCaseSSM(unittest.TestCase):
         np.testing.assert_array_almost_equal(self.controlData['lsst_u'], testData['lsst_u'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_u'], testData['sigma_lsst_u'], 10)
 
-        self.assertTrue('lsst_g' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_g' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_z' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_z' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertNotIn('lsst_g', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_g', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_z', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_z', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
-
 
     def test_gz_ssm_catalog(self):
         """
@@ -285,24 +287,25 @@ class IndexTestCaseSSM(unittest.TestCase):
         np.testing.assert_array_almost_equal(self.controlData['lsst_z'], testData['lsst_z'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
 
-        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertNotIn('lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_gz_uncertainty_ssm_catalog(self):
         """
-        Test that a catalog which only cares about g and z uncertainties does not calculate any other magnitudes
+        Test that a catalog which only cares about g and z uncertainties
+        does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
+        catName = os.path.join(getPackageDir('sims_catUtils'),
+                               'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzUncertaintySSMCatalog.column_outputs])
 
         cat = gzUncertaintySSMCatalog(self.db, obs_metadata=self.obs)
@@ -311,16 +314,16 @@ class IndexTestCaseSSM(unittest.TestCase):
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
 
-        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_g' in cat._actually_calculated_columns)
-        self.assertTrue('lsst_z' in cat._actually_calculated_columns)
+        self.assertNotIn('lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
+        self.assertIn('lsst_g', cat._actually_calculated_columns)
+        self.assertIn('lsst_z', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -340,14 +343,15 @@ class baselineGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
                       'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
+
 
 class uGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     column_outputs = ['uBulge', 'uDisk', 'uAgn', 'lsst_u',
                       'sigma_uBulge', 'sigma_uDisk', 'sigma_uAgn',
                       'sigma_lsst_u']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class gzGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
@@ -358,7 +362,7 @@ class gzGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'sigma_zBulge', 'sigma_zDisk', 'sigma_zAgn',
                       'sigma_lsst_z']
 
-    default_formats = {'f':'%.13f'}
+    default_formats = {'f': '%.13f'}
 
 
 class IndexTestCaseGalaxies(unittest.TestCase):
@@ -391,12 +395,12 @@ class IndexTestCaseGalaxies(unittest.TestCase):
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
         inputFile = os.path.join(inputDir, 'IndicesTestCatalogGalaxies.txt')
         cls.db = fileDBObject(inputFile, dtype=dtype, runtable='test',
-                               idColKey='id')
+                              idColKey='id')
 
         cls.db.objectTypeId = 44
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                'scratchSpace', 'galaxyPhotIndicesBaseline.txt')
+                               'scratchSpace', 'galaxyPhotIndicesBaseline.txt')
 
         cat = baselineGalaxyCatalog(cls.db, obs_metadata=cls.obs)
         cat.write_catalog(catName)
@@ -407,7 +411,6 @@ class IndexTestCaseGalaxies(unittest.TestCase):
 
         if os.path.exists(catName):
             os.unlink(catName)
-
 
     def test_u_catalog(self):
         """
@@ -428,46 +431,46 @@ class IndexTestCaseGalaxies(unittest.TestCase):
             np.testing.assert_array_almost_equal(testData[name],
                                                  self.controlData[name], 10)
 
-        self.assertTrue('gBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('rBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('iBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('zBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('yBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('gDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('rDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('iDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('zDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('yDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('gAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('rAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('iAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('zAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('yAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_g' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_z' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_gBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_rBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_iBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_zBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_yBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_gDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_rDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_iDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_zDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_yDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_gAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_rAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_iAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_zAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_yAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_g' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_z' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertNotIn('gBulge', cat._actually_calculated_columns)
+        self.assertNotIn('rBulge', cat._actually_calculated_columns)
+        self.assertNotIn('iBulge', cat._actually_calculated_columns)
+        self.assertNotIn('zBulge', cat._actually_calculated_columns)
+        self.assertNotIn('yBulge', cat._actually_calculated_columns)
+        self.assertNotIn('gDisk', cat._actually_calculated_columns)
+        self.assertNotIn('rDisk', cat._actually_calculated_columns)
+        self.assertNotIn('iDisk', cat._actually_calculated_columns)
+        self.assertNotIn('zDisk', cat._actually_calculated_columns)
+        self.assertNotIn('yDisk', cat._actually_calculated_columns)
+        self.assertNotIn('gAgn', cat._actually_calculated_columns)
+        self.assertNotIn('rAgn', cat._actually_calculated_columns)
+        self.assertNotIn('iAgn', cat._actually_calculated_columns)
+        self.assertNotIn('zAgn', cat._actually_calculated_columns)
+        self.assertNotIn('yAgn', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_g', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_z', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_gBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_rBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_iBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_zBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_yBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_gDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_rDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_iDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_zDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_yDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_gAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_rAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_iAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_zAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_yAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_g', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_z', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -495,54 +498,46 @@ class IndexTestCaseGalaxies(unittest.TestCase):
             np.testing.assert_array_almost_equal(testData[name],
                                                  self.controlData[name], 10)
 
-        self.assertTrue('uBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('rBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('iBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('yBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('uDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('rDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('iDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('yDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('uAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('rAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('iAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('yAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('lsst_y' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_uBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_rBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_iBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_yBulge' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_uDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_rDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_iDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_yDisk' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_uAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_rAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_iAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_yAgn' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_u' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_r' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_i' not in cat._actually_calculated_columns)
-        self.assertTrue('sigma_lsst_y' not in cat._actually_calculated_columns)
+        self.assertNotIn('uBulge', cat._actually_calculated_columns)
+        self.assertNotIn('rBulge', cat._actually_calculated_columns)
+        self.assertNotIn('iBulge', cat._actually_calculated_columns)
+        self.assertNotIn('yBulge', cat._actually_calculated_columns)
+        self.assertNotIn('uDisk', cat._actually_calculated_columns)
+        self.assertNotIn('rDisk', cat._actually_calculated_columns)
+        self.assertNotIn('iDisk', cat._actually_calculated_columns)
+        self.assertNotIn('yDisk', cat._actually_calculated_columns)
+        self.assertNotIn('uAgn', cat._actually_calculated_columns)
+        self.assertNotIn('rAgn', cat._actually_calculated_columns)
+        self.assertNotIn('iAgn', cat._actually_calculated_columns)
+        self.assertNotIn('yAgn', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('lsst_y', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_uBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_rBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_iBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_yBulge', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_uDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_rDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_iDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_yDisk', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_uAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_rAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_iAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_yAgn', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_u', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
+        self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
         if os.path.exists(catName):
             os.unlink(catName)
 
 
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(IndexTestCaseStars)
-    suites += unittest.makeSuite(IndexTestCaseSSM)
-    suites += unittest.makeSuite(IndexTestCaseGalaxies)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

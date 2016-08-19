@@ -1,9 +1,9 @@
 import os
-import numpy
+import numpy as np
 import unittest
 
-import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
+from lsst.utils import getPackageDir
 from lsst.sims.catalogs.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -14,14 +14,22 @@ from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.photUtils.utils import setM5
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 
-class testStarCatalog(InstanceCatalog, PhotometryStars):
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
+class testStarCatalog(InstanceCatalog, PhotometryStars):
+    catalog_type = __file__ + 'test_star_catalog'
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
                       'sigma_lsst_z', 'sigma_lsst_y', 'sedFilename', 'magNorm', 'galacticAv']
 
+
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
+    catalog_type = __file__ + "test_galaxy_catalog"
+
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -40,6 +48,7 @@ class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
                       'magNormBulge', 'magNormDisk', 'magNormAgn',
                       'internalAvBulge', 'internalAvDisk', 'redshift']
 
+
 class testPhotometricUncertaintyGetters(unittest.TestCase):
     """
     This class will test that the getters for photometric uncertainties
@@ -51,7 +60,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        lsstDefaults=LSSTdefaults()
+        lsstDefaults = LSSTdefaults()
         cls.dbName = 'uncertaintyTestDB.db'
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
@@ -60,13 +69,11 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         bandpass = ['u', 'g', 'r', 'i', 'z', 'y']
         m5 = lsstDefaults._m5.values()
 
-        cls.obs_metadata = ObservationMetaData(
-                                              pointingRA = default_obs_metadata.pointingRA,
-                                              pointingDec = default_obs_metadata.pointingDec,
-                                              rotSkyPos = default_obs_metadata.rotSkyPos,
-                                              bandpassName = bandpass,
-                                              m5 = m5
-                                              )
+        cls.obs_metadata = ObservationMetaData(pointingRA = default_obs_metadata.pointingRA,
+                                               pointingDec = default_obs_metadata.pointingDec,
+                                               rotSkyPos = default_obs_metadata.rotSkyPos,
+                                               bandpassName = bandpass,
+                                               m5 = m5)
 
         cls.obs_metadata.setBandpassM5andSeeing(bandpassName=bandpass, m5=m5)
         cls.driver = 'sqlite'
@@ -82,22 +89,24 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         for b in cls.bandpasses:
             bandpassDummy = Bandpass()
-            bandpassDummy.readThroughput(os.path.join(lsst.utils.getPackageDir('throughputs'),
+            bandpassDummy.readThroughput(os.path.join(getPackageDir('throughputs'),
                                                       'baseline', 'total_%s.dat' % b))
             cls.totalBandpasses.append(bandpassDummy)
 
         for b in cls.bandpasses:
             finalComponents = []
             for c in components:
-                finalComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', c))
-            finalComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'filter_%s.dat' %b))
+                finalComponents.append(os.path.join(getPackageDir('throughputs'), 'baseline', c))
+            finalComponents.append(os.path.join(getPackageDir('throughputs'),
+                                                'baseline', 'filter_%s.dat' % b))
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(finalComponents)
             cls.hardwareBandpasses.append(bandpassDummy)
 
         for i in range(len(cls.bandpasses)):
             sedDummy = Sed()
-            sedDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
+            sedDummy.readSED_flambda(os.path.join(getPackageDir('throughputs'),
+                                                  'baseline', 'darksky.dat'))
             normalizedSedDummy = setM5(cls.obs_metadata.m5[cls.bandpasses[i]], sedDummy,
                                        cls.totalBandpasses[i], cls.hardwareBandpasses[i],
                                        FWHMeff=lsstDefaults.FWHMeff(cls.bandpasses[i]),
@@ -124,28 +133,27 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         lsstDefaults = LSSTdefaults()
         starDB = testStarsDBObj(driver=self.driver, host=self.host, database=self.dbName)
         starCat = testStarCatalog(starDB, obs_metadata=self.obs_metadata)
-        phot = PhotometryStars()
 
         ct = 0
         for line in starCat.iter_catalog():
             starSed = Sed()
-            starSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
+            starSed.readSED_flambda(os.path.join(getPackageDir('sims_sed_library'),
                                                  defaultSpecMap[line[14]]))
             imsimband = Bandpass()
             imsimband.imsimBandpass()
             fNorm = starSed.calcFluxNorm(line[15], imsimband)
             starSed.multiplyFluxNorm(fNorm)
 
-            aV = numpy.float(line[16])
+            aV = np.float(line[16])
             a_int, b_int = starSed.setupCCMab()
             starSed.addCCMDust(a_int, b_int, A_v=aV)
 
             for i in range(len(self.bandpasses)):
                 controlSigma = calcMagError_sed(starSed, self.totalBandpasses[i],
-                                             self.skySeds[i],
-                                             self.hardwareBandpasses[i],
-                                             FWHMeff=lsstDefaults.FWHMeff(self.bandpasses[i]),
-                                             photParams=PhotometricParameters())
+                                                self.skySeds[i],
+                                                self.hardwareBandpasses[i],
+                                                FWHMeff=lsstDefaults.FWHMeff(self.bandpasses[i]),
+                                                photParams=PhotometricParameters())
 
                 testSigma = line[8+i]
                 self.assertAlmostEqual(controlSigma, testSigma, 4)
@@ -157,7 +165,6 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
         Test in the case of a catalog of galaxies
         """
         lsstDefaults = LSSTdefaults()
-        phot = PhotometryGalaxies()
         galDB = testGalaxyTileDBObj(driver=self.driver, host=self.host, database=self.dbName)
         galCat = testGalaxyCatalog(galDB, obs_metadata=self.obs_metadata)
         imsimband = Bandpass()
@@ -175,19 +182,19 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             redshift = line[58]
 
             bulgeSed = Sed()
-            bulgeSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
+            bulgeSed.readSED_flambda(os.path.join(getPackageDir('sims_sed_library'),
                                      defaultSpecMap[bulgeSedName]))
-            fNorm=bulgeSed.calcFluxNorm(magNormBulge, imsimband)
+            fNorm = bulgeSed.calcFluxNorm(magNormBulge, imsimband)
             bulgeSed.multiplyFluxNorm(fNorm)
 
             diskSed = Sed()
-            diskSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
+            diskSed.readSED_flambda(os.path.join(getPackageDir('sims_sed_library'),
                                     defaultSpecMap[diskSedName]))
             fNorm = diskSed.calcFluxNorm(magNormDisk, imsimband)
             diskSed.multiplyFluxNorm(fNorm)
 
             agnSed = Sed()
-            agnSed.readSED_flambda(os.path.join(lsst.utils.getPackageDir('sims_sed_library'),
+            agnSed.readSED_flambda(os.path.join(getPackageDir('sims_sed_library'),
                                    defaultSpecMap[agnSedName]))
             fNorm = agnSed.calcFluxNorm(magNormAgn, imsimband)
             agnSed.multiplyFluxNorm(fNorm)
@@ -206,8 +213,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             diskSed.resampleSED(wavelen_match=bulgeSed.wavelen)
             agnSed.resampleSED(wavelen_match=bulgeSed.wavelen)
 
-            numpy.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
-            numpy.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)
+            np.testing.assert_almost_equal(bulgeSed.wavelen, diskSed.wavelen)
+            np.testing.assert_almost_equal(bulgeSed.wavelen, agnSed.wavelen)
 
             fl = bulgeSed.flambda + diskSed.flambda + agnSed.flambda
 
@@ -216,21 +223,21 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             sedList = [totalSed, bulgeSed, diskSed, agnSed]
 
             for i, spectrum in enumerate(sedList):
-                if i==0:
+                if i == 0:
                     msgroot = 'failed on total'
-                elif i==1:
+                elif i == 1:
                     msgroot = 'failed on bulge'
-                elif i==2:
+                elif i == 2:
                     msgroot = 'failed on disk'
-                elif i==3:
+                elif i == 3:
                     msgroot = 'failed on agn'
 
                 for j, b in enumerate(self.bandpasses):
                     controlSigma = calcMagError_sed(spectrum, self.totalBandpasses[j],
-                                             self.skySeds[j],
-                                             self.hardwareBandpasses[j],
-                                             FWHMeff=lsstDefaults.FWHMeff(b),
-                                             photParams=PhotometricParameters())
+                                                    self.skySeds[j],
+                                                    self.hardwareBandpasses[j],
+                                                    FWHMeff=lsstDefaults.FWHMeff(b),
+                                                    photParams=PhotometricParameters())
 
                     testSigma = line[26+(i*6)+j]
                     msg = '%e neq %e; ' % (testSigma, controlSigma) + msgroot
@@ -239,14 +246,10 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         self.assertGreater(ct, 0)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(testPhotometricUncertaintyGetters)
 
-    return unittest.TestSuite(suites)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

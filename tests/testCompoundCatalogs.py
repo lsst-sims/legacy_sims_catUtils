@@ -1,38 +1,50 @@
 import unittest
 import os
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj, GalaxyDiskObj, \
-                                                 GalaxyAgnObj, GalaxyTileCompoundObj, \
-                                                 StarObj
+from lsst.sims.catUtils.baseCatalogModels import (GalaxyBulgeObj, GalaxyDiskObj,
+                                                  GalaxyAgnObj, GalaxyTileCompoundObj,
+                                                  StarObj)
 
 from lsst.sims.catalogs.definitions import InstanceCatalog, CompoundInstanceCatalog
 
+_testCompoundCatalogs_is_connected = True
+try:
+    _example_db = GalaxyBulgeObj()
+except:
+    _testCompoundCatalogs_is_connected = False
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class BulgeDiskCatalog(InstanceCatalog):
+    catalog_type = __file__ + 'bulge_disk_catalog'
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
-                     'componentra', 'componentdec',
-                     'magNorm', 'sedFilename',
-                     'majorAxis', 'minorAxis',
-                     'positionAngle',
-                     'halfLightRadius',
-                     'internalExtinctionModel',
-                     'internalAv', 'internalRv',
-                     ]
+                      'componentra', 'componentdec',
+                      'magNorm', 'sedFilename',
+                      'majorAxis', 'minorAxis',
+                      'positionAngle',
+                      'halfLightRadius',
+                      'internalExtinctionModel',
+                      'internalAv', 'internalRv']
 
 
 class AgnCatalog(InstanceCatalog):
+    catalog_type = __file__ + 'agn_catalog'
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
-                      'componentra','componentdec',
+                      'componentra', 'componentdec',
                       'magNorm', 'sedFilename',
-                      'variabilityParameters',
-                      ]
+                      'variabilityParameters']
 
 
 class StarCatalog(InstanceCatalog):
+    catalog_type = __file__ + 'star_catalog'
     cannot_be_null = ['sedFilename']
     column_outputs = ['id', 'raJ2000', 'decJ2000',
                       'glon', 'glat', 'magNorm',
@@ -40,13 +52,15 @@ class StarCatalog(InstanceCatalog):
                       'parallax', 'galacticAv', 'radialVelocity',
                       'variabilityParameters', 'sedFilename']
 
+
 class CompoundCatalogTest(unittest.TestCase):
 
     def setUp(self):
-        self.baseDir = os.path.join(getPackageDir('sims_catUtils'), \
+        self.baseDir = os.path.join(getPackageDir('sims_catUtils'),
                                     'tests', 'scratchSpace')
 
-    @unittest.expectedFailure
+    @unittest.skipIf(not _testCompoundCatalogs_is_connected,
+                     "We are not connected to fatboy")
     def testGalaxyCatalog(self):
         """
         Test GalaxyTileCompoundObj by creating a catalog of galaxy bulges, disks,
@@ -61,7 +75,7 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-45.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=-45.0,
                                   boundType='circle', boundLength=0.05)
 
         dbBulge = GalaxyBulgeObj()
@@ -76,15 +90,8 @@ class CompoundCatalogTest(unittest.TestCase):
         catDisk.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
         catAgn.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
 
-
-        # You need to reinstantiate the catalogs because the process of writing them
-        # above stripped galtileid from their _active_columns, which is the only way
-        # CompoundInstanceCatalog can know that it needs to worry about galtileid
-        catBulge = BulgeDiskCatalog(dbBulge, obs_metadata=obs)
-        catDisk = BulgeDiskCatalog(dbDisk, obs_metadata=obs)
-        catAgn = AgnCatalog(dbAgn, obs_metadata=obs)
-
-        totalCat = CompoundInstanceCatalog([catBulge, catDisk, catAgn],
+        totalCat = CompoundInstanceCatalog([BulgeDiskCatalog, BulgeDiskCatalog, AgnCatalog],
+                                           [GalaxyDiskObj, GalaxyBulgeObj, GalaxyAgnObj],
                                            obs_metadata=obs,
                                            compoundDBclass=GalaxyTileCompoundObj)
 
@@ -99,10 +106,10 @@ class CompoundCatalogTest(unittest.TestCase):
         testFile.close()
 
         for line in control:
-            self.assertTrue(line in test)
+            self.assertIn(line, test)
 
         for line in test:
-            self.assertTrue(line in control)
+            self.assertIn(line, control)
 
         if os.path.exists(controlFileName):
             os.unlink(controlFileName)
@@ -110,7 +117,8 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-    @unittest.expectedFailure
+    @unittest.skipIf(not _testCompoundCatalogs_is_connected,
+                     "We are not connected to fatboy")
     def testGalaxyAndStarCatalog(self):
         """
         Test GalaxyTileCompoundObj by creating a catalog of galaxy bulges, disks,
@@ -125,7 +133,7 @@ class CompoundCatalogTest(unittest.TestCase):
         if os.path.exists(testFileName):
             os.unlink(testFileName)
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-45.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=-45.0,
                                   boundType='circle', boundLength=0.05)
 
         dbBulge = GalaxyBulgeObj()
@@ -143,16 +151,8 @@ class CompoundCatalogTest(unittest.TestCase):
         catAgn.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
         catStar.write_catalog(controlFileName, write_mode='a', write_header=False, chunk_size=10000)
 
-
-        # You need to reinstantiate the catalogs because the process of writing them
-        # above stripped galtileid from their _active_columns, which is the only way
-        # CompoundInstanceCatalog can know that it needs to worry about galtileid
-        catBulge = BulgeDiskCatalog(dbBulge, obs_metadata=obs)
-        catDisk = BulgeDiskCatalog(dbDisk, obs_metadata=obs)
-        catAgn = AgnCatalog(dbAgn, obs_metadata=obs)
-        catStar = StarCatalog(dbStar, obs_metadata=obs)
-
-        totalCat = CompoundInstanceCatalog([catBulge, catDisk, catAgn, catStar],
+        totalCat = CompoundInstanceCatalog([BulgeDiskCatalog, BulgeDiskCatalog, StarCatalog, AgnCatalog],
+                                           [GalaxyBulgeObj, GalaxyDiskObj, StarObj, GalaxyAgnObj],
                                            obs_metadata=obs,
                                            compoundDBclass=GalaxyTileCompoundObj)
 
@@ -167,10 +167,10 @@ class CompoundCatalogTest(unittest.TestCase):
         testFile.close()
 
         for line in control:
-            self.assertTrue(line in test)
+            self.assertIn(line, test)
 
         for line in test:
-            self.assertTrue(line in control)
+            self.assertIn(line, control)
 
         if os.path.exists(controlFileName):
             os.unlink(controlFileName)
@@ -179,14 +179,9 @@ class CompoundCatalogTest(unittest.TestCase):
             os.unlink(testFileName)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(CompoundCatalogTest)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

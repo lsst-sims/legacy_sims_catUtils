@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import traceback
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.db import CatalogDBObject
@@ -12,6 +12,10 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.exampleCatalogDefinitions import ObsStarCatalogBase
 # The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 def failedOnFatboy(tracebackList):
@@ -41,8 +45,8 @@ def failedOnFatboy(tracebackList):
     return False
 
 
-class TestCat(InstanceCatalog):
-    catalog_type = 'unit_test_catalog'
+class DummyCat(InstanceCatalog):
+    catalog_type = __file__ + 'unit_test_catalog'
     column_outputs = ['raJ2000', 'decJ2000']
 
 
@@ -107,10 +111,10 @@ class basicAccessTest(unittest.TestCase):
                 raise RuntimeError("No results for %s defined in %s"%(objname,
                                    inspect.getsourcefile(dbobj.__class__)))
             if objname.startswith('galaxy'):
-                TestCat.column_outputs = ['galid', 'raJ2000', 'decJ2000']
+                DummyCat.column_outputs = ['galid', 'raJ2000', 'decJ2000']
             else:
-                TestCat.column_outputs = ['raJ2000', 'decJ2000']
-            cat = dbobj.getCatalog('unit_test_catalog', obs_metadata)
+                DummyCat.column_outputs = ['raJ2000', 'decJ2000']
+            cat = dbobj.getCatalog(__file__+'unit_test_catalog', obs_metadata)
             if os.path.exists(catName):
                 os.unlink(catName)
             try:
@@ -347,18 +351,9 @@ class basicAccessTest(unittest.TestCase):
                 print nn
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(basicAccessTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
-
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

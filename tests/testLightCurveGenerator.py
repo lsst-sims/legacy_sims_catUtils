@@ -4,7 +4,8 @@ import os
 import json
 import sqlite3
 import numpy as np
-import lsst.utils.tests as utilsTests
+import lsst
+# import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
 from lsst.sims.catalogs.db import fileDBObject
@@ -24,6 +25,7 @@ from lsst.sims.catUtils.utils import AgnLightCurveGenerator
 
 class stellarControlCatalog(InstanceCatalog,
                             PhotometryStars, VariabilityStars):
+    catalog_type = __file__ + 'stellar_control_catalog'
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000", "mag", "sigma_mag"]
 
@@ -37,14 +39,13 @@ class stellarControlCatalog(InstanceCatalog,
 class agnControlCatalog(InstanceCatalog,
                         PhotometryGalaxies, VariabilityGalaxies):
 
+    catalog_type = __file__ + 'agn_control_catalog'
     column_outputs = ["uniqueId", "raJ2000", "decJ2000", "mag", "sigma_mag"]
 
     @compound("mag", "sigma_mag")
     def get_phot(self):
-        return np.array([
-                         self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
-                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)
-                        ])
+        return np.array([self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
+                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)])
 
 
 class StellarLightCurveTest(unittest.TestCase):
@@ -513,8 +514,7 @@ class AgnLightCurveTest(unittest.TestCase):
                                      'agn_sfg': sfgList[ix], 'agn_sfr': sfrList[ix],
                                      'agn_sfi': sfiList[ix], 'agn_sfz': sfzList[ix],
                                      'agn_sfy': sfyList[ix], 't0_mjd': mjdList[ix],
-                                     'seed': rng.randint(0, 200000)
-                                    }}
+                                     'seed': rng.randint(0, 200000)}}
 
                 paramStr = json.dumps(varParam)
 
@@ -809,18 +809,10 @@ class AgnLightCurveTest(unittest.TestCase):
             os.unlink(dummy_cat_name)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(StellarLightCurveTest)
-    suites += unittest.makeSuite(AgnLightCurveTest)
-
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

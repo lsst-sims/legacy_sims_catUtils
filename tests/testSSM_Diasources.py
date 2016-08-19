@@ -1,8 +1,9 @@
 from __future__ import with_statement
-import os, sys
+import os
+import sys
 import traceback
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 import numpy as np
 # Observation metadata modules
@@ -20,6 +21,10 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.obs.lsstSim import LsstSimMapper
 
 import time
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
 
 
 def dtime(time_prev):
@@ -65,6 +70,8 @@ basic_columns = ['objid', 'expMJD', 'raJ2000', 'decJ2000', 'velRa', 'velDec',
 
 
 class ssmCat(InstanceCatalog, PhotometrySSM, AstrometrySSM, ObsMetadataBase, CameraCoords):
+    catalog_type = __file__ + 'ssm_cat'
+
     column_outputs = basic_columns
     cannot_be_null = ['visibility']
     transformations = {'raJ2000': np.degrees, 'decJ2000': np.degrees,
@@ -73,6 +80,8 @@ class ssmCat(InstanceCatalog, PhotometrySSM, AstrometrySSM, ObsMetadataBase, Cam
 
 
 class ssmCatCamera(ssmCat):
+    catalog_type = __file__ + 'ssm_cat_camera'
+
     column_outputs = basic_columns + ['chipName']
     camera = LsstSimMapper().camera
     cannot_be_null = ['visibility', 'chipName']
@@ -81,6 +90,7 @@ class ssmCatCamera(ssmCat):
     default_formats = {'f': '%.13f'}
 
 ######
+
 
 class createSSMSourceCatalogsTest(unittest.TestCase):
 
@@ -109,7 +119,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
         write_mode = 'w'
 
         try:
-            #ssmObj = NEOObj()
             ssmObj = SolarSystemObj()
 
             if os.path.exists(output_cat):
@@ -134,7 +143,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 obs.phoSimMetaData = phoSimMetaDict
 
                 mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
-                #mySsmDb = ssmCat(ssmObj, obs_metadata = obs)
                 photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0],
                                                    nexp=1, bandpass=obs.bandpass)
                 mySsmDb.photParams = photParams
@@ -183,16 +191,9 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
             os.unlink(output_cat)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(createSSMSourceCatalogsTest)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
-
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

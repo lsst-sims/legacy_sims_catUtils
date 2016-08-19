@@ -1,40 +1,49 @@
 import os
 import unittest
-import lsst.utils.tests as utilsTests
-import numpy
+import lsst.utils.tests
+import numpy as np
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj, \
-                                     testGalaxyBulgeDBObj, testGalaxyAgnDBObj
-from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D, PhoSimCatalogPoint, \
-                                                         PhoSimCatalogZPoint
+from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
+                                      testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
+from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
+                                                          PhoSimCatalogZPoint)
 from lsst.sims.catalogs.utils import makePhoSimTestDB
-from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class PhoSimPointVariable(PhoSimCatalogPoint, VariabilityStars, TestVariabilityMixin):
+    catalog_type = __file__ + 'pho_sim_point_variable'
     pass
 
 
 class PhoSimZPointVariable(PhoSimCatalogZPoint, VariabilityStars, TestVariabilityMixin):
+    catalog_type = __file__ + 'pho_sim_z_point_variable'
     pass
 
 
 class AgnControlCatalog(InstanceCatalog, VariabilityGalaxies, TestVariabilityMixin, AstrometryGalaxies):
+    catalog_type = __file__ + "agn_control_catalog"
     column_outputs = ['magNorm', 'delta_rAgn']
 
 
 class BulgeControlCatalog(InstanceCatalog, AstrometryGalaxies):
+    catalog_type = __file__ + "bulge_control_catalog"
     column_outputs = ['magNorm']
 
 
 class DiskControlCatalog(InstanceCatalog, AstrometryGalaxies):
+    catalog_type = __file__ + "disk_control_catalog"
     column_outputs = ['magNorm']
 
 
 class StarControlCatalog(InstanceCatalog, AstrometryStars, VariabilityStars, TestVariabilityMixin):
+    catalog_type = __file__ + "star_control_catalog"
     column_outputs = ['magNorm', 'delta_lsst_r']
 
 
@@ -57,7 +66,6 @@ class PhoSimVariabilityTest(unittest.TestCase):
         cls.agnDB = testGalaxyAgnDBObj(driver='sqlite', database=cls.dbName)
         cls.starDB = testStarsDBObj(driver='sqlite', database=cls.dbName)
 
-
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(cls.dbName):
@@ -76,7 +84,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
             self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
-            self.assertTrue(numpy.abs(bb[1]) > 0.0)
+            self.assertGreater(np.abs(bb[1]), 0.0)
 
     def testStars(self):
         """
@@ -91,7 +99,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
             self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
-            self.assertTrue(numpy.abs(bb[1]) > 0.0)
+            self.assertGreater(np.abs(bb[1]), 0.0)
 
     def testBulges(self):
         """
@@ -104,7 +112,6 @@ class PhoSimVariabilityTest(unittest.TestCase):
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
             self.assertAlmostEqual(bb[0], tt[4], 10)
 
-
     def testDisks(self):
         baseline = DiskControlCatalog(self.diskDB, obs_metadata=self.obs_metadata)
         test = PhoSimCatalogSersic2D(self.diskDB, obs_metadata=self.obs_metadata)
@@ -113,14 +120,9 @@ class PhoSimVariabilityTest(unittest.TestCase):
             self.assertAlmostEqual(bb[0], tt[4], 10)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(PhoSimVariabilityTest)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(), shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

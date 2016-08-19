@@ -1,37 +1,43 @@
 import os
 import unittest
-import lsst.utils.tests as utilsTests
-import numpy
+import lsst.utils.tests
+import numpy as np
 
 from lsst.sims.photUtils import CosmologyObject
-from lsst.sims.catalogs.definitions import InstanceCatalog
 
 from lsst.sims.catalogs.utils import myTestGals, makeGalTestDB
 
 from lsst.sims.catUtils.utils import testGalaxies
 from lsst.sims.catUtils.mixins import CosmologyMixin
 
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class cosmologicalGalaxyCatalog(testGalaxies, CosmologyMixin):
-    column_outputs = ['galid','lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+    catalog_type = __file__ + 'cosmo_galaxy_catalog'
+    column_outputs = ['galid', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
                       'redshift', 'cosmologicalDistanceModulus']
 
+
 class absoluteGalaxyCatalog(testGalaxies):
-    column_outputs = ['galid','lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+    catalog_type = __file__ + 'abs_galaxy_catalog'
+    column_outputs = ['galid', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
                       'redshift']
-
 
     def get_cosmologicalDistanceModulus(self):
         """
         Must set this to zero rather than `None` so that PhotometryGalaxies
         does not apply cosmological dimming
         """
-        return numpy.zeros(len(self.column_by_name('galid')))
+        return np.zeros(len(self.column_by_name('galid')))
 
 
 class CosmologyMixinUnitTest(unittest.TestCase):
@@ -44,7 +50,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dbName = 'cosmologyTestDB.db'
-        cls.dbSize=100
+        cls.dbSize = 100
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
         makeGalTestDB(size=cls.dbSize, seedVal=1, filename=cls.dbName)
@@ -92,17 +98,13 @@ class CosmologyMixinUnitTest(unittest.TestCase):
             self.assertEqual(cosmoRow[0], controlRow[0])
             self.assertEqual(cosmoRow[25], controlRow[25])
             self.assertEqual(cosmoRow[26], modulus)
-            for i in range(1,25):
+            for i in range(1, 25):
                 self.assertAlmostEqual(cosmoRow[i], controlRow[i] + modulus, 6)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(CosmologyMixinUnitTest)
-    return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

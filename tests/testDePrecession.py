@@ -1,13 +1,17 @@
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.sims.utils import ObservationMetaData, _observedFromICRS
 from lsst.sims.utils import haversine, arcsecFromRadians
 from lsst.sims.catUtils.mixins import PhoSimAstrometryBase
 
-class DePrecessionTest(unittest.TestCase):
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
+class DePrecessionTest(unittest.TestCase):
 
     def test_de_precession(self):
         """
@@ -17,7 +21,7 @@ class DePrecessionTest(unittest.TestCase):
 
         Also verify that the observed boresite gets de-precessed correctly
         """
-        np.random.seed(12)
+        rng = np.random.RandomState(12)
         n_samples = 5
         pra = 34.0
         pdec = 65.0
@@ -34,8 +38,8 @@ class DePrecessionTest(unittest.TestCase):
         dec_list = []
         ra_list.append(raObs[0])
         dec_list.append(decObs[0])
-        for rr, dd in zip(np.random.random_sample(n_samples)*2.0*np.pi,
-                          (np.random.random_sample(n_samples)-0.5)*np.pi):
+        for rr, dd in zip(rng.random_sample(n_samples)*2.0*np.pi,
+                          (rng.random_sample(n_samples)-0.5)*np.pi):
 
             ra_list.append(rr)
             dec_list.append(dd)
@@ -45,7 +49,7 @@ class DePrecessionTest(unittest.TestCase):
 
         raDecTransformed = PhoSimAstrometryBase()._dePrecess(ra_list, dec_list, obs)
         dd = arcsecFromRadians(haversine(np.radians(pra), np.radians(pdec),
-                                          raDecTransformed[0][0], raDecTransformed[1][0]))
+                               raDecTransformed[0][0], raDecTransformed[1][0]))
         self.assertLess(dd, 1.0e-6)
         dd0 = arcsecFromRadians(haversine(raObs[0], decObs[0], np.radians(pra), np.radians(pdec)))
         self.assertLess(dd, dd0)
@@ -60,15 +64,9 @@ class DePrecessionTest(unittest.TestCase):
                     self.assertAlmostEqual(dd1, dd2, delta=6)
 
 
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(DePrecessionTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit=False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

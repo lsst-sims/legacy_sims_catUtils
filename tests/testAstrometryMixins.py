@@ -4,7 +4,7 @@ import os
 import unittest
 import math
 import palpy as pal
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -19,6 +19,10 @@ import lsst.afw.cameraGeom.testUtils as camTestUtils
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, CameraCoords
 
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class AstrometryTestStars(myTestStars):
     database = 'AstrometryTestStarDatabase.db'
 
@@ -28,6 +32,7 @@ class AstrometryTestGalaxies(myTestGals):
 
 
 class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
+    catalog_type = __file__ + 'parallax_test_catalog'
     column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
                       'properMotionRa', 'properMotionDec',
                       'radialVelocity', 'parallax']
@@ -45,7 +50,7 @@ class testCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
     A (somewhat meaningless) instance catalog class that will allow us
     to run the astrometry routines for testing purposes
     """
-    catalog_type = 'test_stars'
+    catalog_type = __file__ + 'test_stars'
     column_outputs = ['id', 'raICRS', 'decICRS',
                       'x_pupil', 'y_pupil',
                       'chipName', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane']
@@ -261,12 +266,12 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertAlmostEqual(xxra, xx, 5)
                 self.assertAlmostEqual(yyra, yy, 5)
             else:
-                self.assertTrue(np.isnan(xx))
-                self.assertTrue(np.isnan(yy))
-                self.assertTrue(np.isnan(xxra))
-                self.assertTrue(np.isnan(yyra))
-                self.assertTrue(np.isnan(xxtest))
-                self.assertTrue(np.isnan(yytest))
+                np.testing.assert_equal(xx, np.NaN)
+                np.testing.assert_equal(yy, np.NaN)
+                np.testing.assert_equal(xxra, np.NaN)
+                np.testing.assert_equal(yyra, np.NaN)
+                np.testing.assert_equal(xxtest, np.NaN)
+                np.testing.assert_equal(yytest, np.NaN)
 
         nameTest = chipNameFromPupilCoords(pupilTest[0], pupilTest[1],
                                            camera=self.cat.camera)
@@ -280,8 +285,8 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertEqual(ntest, ncontrol)
                 self.assertEqual(nra, ncontrol)
             else:
-                self.assertTrue(ntest is None)
-                self.assertTrue(nra is None)
+                self.assertIsNone(ntest)
+                self.assertIsNone(nra)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -334,15 +339,9 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink(parallaxName)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(astrometryUnitTest)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
