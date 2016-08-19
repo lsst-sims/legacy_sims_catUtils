@@ -20,6 +20,8 @@ class SearchReversion(CatalogDBObject):
     test will not have.
     """
 
+    skipRegistration = True
+
     def _get_column_query(self, *args, **kwargs):
         return CatalogDBObject._get_column_query(self,*args, **kwargs)
 
