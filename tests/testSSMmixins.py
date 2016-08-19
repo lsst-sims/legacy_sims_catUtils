@@ -20,12 +20,16 @@ def setup_module(module):
 
 
 class LSST_SSM_photCat(InstanceCatalog, PhotometrySSM):
+    catalog_type = __file__ + 'lsst_ssm_phot_cat'
+
     column_outputs = ['id', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
 
     default_formats = {'f': '%.13f'}
 
 
 class Compound_SSM_photCat(InstanceCatalog, PhotometrySSM):
+    catalog_type = __file__ + 'compound_ssm_phot_cat'
+
     column_outputs = ['id', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z']
 
@@ -47,6 +51,8 @@ class Compound_SSM_photCat(InstanceCatalog, PhotometrySSM):
 
 
 class SSM_dmagCat(InstanceCatalog, PhotometrySSM):
+    catalog_type = __file__ + 'ssm_dmag_cat'
+
     column_outputs = ['id', 'dmagTrailing', 'dmagDetection']
 
     default_formats = {'f': '%.13f'}

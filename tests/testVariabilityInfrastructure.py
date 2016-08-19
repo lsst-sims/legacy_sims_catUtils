@@ -27,6 +27,8 @@ class FakeStellarVariabilityMixin(object):
 
 class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
+    catalog_type = __file__ + 'stellar_baseline_catalog'
+
     default_columns = [('galacticAv', 0.1, float)]
 
     def get_sedFilename(self):
@@ -51,6 +53,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
 
 
 class StellarVariabilityCatalogClass(StellarBaselineCatalogClass, FakeStellarVariabilityMixin):
+    catalog_type = __file__ + 'stellar_variability_catalog_class'
     pass
 
 
@@ -68,6 +71,8 @@ class FakeGalaxyVariabilityMixin(object):
 
 
 class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
+
+    catalog_type = __file__ + 'galaxy_baseline_catalog_class'
 
     @compound('internalAvBulge', 'internalAvDisk')
     def get_internalAv(self):
@@ -140,6 +145,9 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
 
 
 class GalaxyVariabilityCatalogClass(GalaxyBaselineCatalogClass, FakeGalaxyVariabilityMixin):
+
+    catalog_type = __file__ + 'galaxy_variability_catalog_class'
+
     pass
 
 

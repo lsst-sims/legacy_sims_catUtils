@@ -578,7 +578,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
 
 class SNIaLightCurveControlCatalog(SNIaCatalog):
-
+    catalog_type = __file__ + 'sn_ia_lc_cat'
     column_outputs = ['uniqueId', 'flux', 'flux_err', 'redshift']
     _midSurveyTime = 49000.0
     _snFrequency = 0.001

@@ -41,6 +41,7 @@ class PhotometryCartoon(object):
 
 
 class CartoonStars(InstanceCatalog, PhotometryStars, PhotometryCartoon):
+    catalog_type = __file__ + 'cartoon_stars'
     column_outputs = ['cartoon_u', 'cartoon_g',
                       'sigma_cartoon_u', 'sigma_cartoon_g']
 

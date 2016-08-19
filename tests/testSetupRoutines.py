@@ -23,6 +23,7 @@ class testStarCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     A class with no photometry columns.  Meant to be passed to setupPhotometryCatalog
     where it will be given photometry columns
     """
+    catalog_type = __file__ + "test_star_catalog"
     column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f': '%.12e'}
 
@@ -31,6 +32,7 @@ class baselineStarCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     """
     Baseline photometry catalog against which to compare testStarCatalog
     """
+    catalog_type = __file__ + 'baseline_star_catalog'
     column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f': '%.12e'}
 
@@ -40,6 +42,7 @@ class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies)
     A class with no photometry columns.  Meant to be passed to setupPhotometryCatalog
     where it will be given photometry columns
     """
+    catalog_type = __file__ + 'test_galaxy_catalog'
     column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f': '%.12e'}
 
@@ -48,6 +51,7 @@ class baselineGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, PhotometryGalax
     """
     Baseline photometry catalog against which to compare testGalaxyCatalog
     """
+    catalog_type = __file__ + 'baseline_galaxy_catalog'
     column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f': '%.12e'}
 

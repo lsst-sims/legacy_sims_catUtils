@@ -378,7 +378,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
 
 
 class testCatalog(InstanceCatalog,AstrometryStars,VariabilityStars,testDefaults):
-    catalog_type = 'MISC'
+    catalog_type = __file__ + 'MISC'
     default_columns=[('expmjd',5000.0,float)]
 
     def db_required_columns(self):
@@ -390,7 +390,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,VariabilityStars,car
     A catalog of stars relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
     """
-    catalog_type = 'cartoonStars'
+    catalog_type = __file__ + 'cartoonStars'
     column_outputs=['id','raObserved','decObserved','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
 
@@ -406,7 +406,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,VariabilityStars,car
                        ('glat', 30., float), ('galacticAv', 0.1, float), ('galacticRv', 3.1, float)]
 
 class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityStars, PhotometryStars):
-    catalog_type = 'cartoonStarsOnlyI'
+    catalog_type = __file__ + 'cartoonStarsOnlyI'
     column_outputs = ['id','raObserved','decObserved','cartoon_i']
 
     #I need to give it the name of an actual SED file that spans the expected wavelength range
@@ -438,7 +438,7 @@ class cartoonGalaxies(InstanceCatalog, AstrometryGalaxies, EBVmixin, Variability
     A catalog of galaxies relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
     """
-    catalog_type = 'cartoonGalaxies'
+    catalog_type = __file__ + 'cartoonGalaxies'
     column_outputs=['galid', 'raObserved', 'decObserved',
                     'ctotal_u', 'ctotal_g', 'ctotal_r', 'ctotal_i', 'ctotal_z',
                     'cbulge_u', 'cbulge_g', 'cbulge_r', 'cbulge_i', 'cbulge_z',
@@ -467,7 +467,7 @@ class cartoonGalaxies(InstanceCatalog, AstrometryGalaxies, EBVmixin, Variability
 
 class cartoonGalaxiesIG(InstanceCatalog, AstrometryGalaxies, EBVmixin, VariabilityGalaxies, cartoonPhotometryGalaxies):
 
-    catalog_type = 'cartoonGalaxiesIG'
+    catalog_type = __file__ + 'cartoonGalaxiesIG'
     column_outputs=['galid','raObserved','decObserved','ctotal_i','ctotal_g']
 
     #I need to give it the name of an actual SED file that spans the expected wavelength range
@@ -553,7 +553,7 @@ class testStars(InstanceCatalog, EBVmixin, VariabilityStars, TestVariabilityMixi
     """
     A generic catalog of stars
     """
-    catalog_type = 'test_stars'
+    catalog_type = __file__ + 'test_stars'
     column_outputs=['id','raJ2000','decJ2000','magNorm',\
     'lsst_u','sigma_lsst_u',
     'lsst_g','sigma_lsst_g',\
@@ -570,7 +570,7 @@ class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,TestVariabilityM
     """
     A generic catalog of galaxies
     """
-    catalog_type = 'test_galaxies'
+    catalog_type = __file__ + 'test_galaxies'
     column_outputs=['galid','raJ2000','decJ2000',\
         'redshift',
         'magNormAgn', 'magNormBulge', 'magNormDisk', \

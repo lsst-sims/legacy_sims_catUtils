@@ -20,7 +20,7 @@ def setup_module(module):
 
 
 class testStarCatalog(InstanceCatalog, PhotometryStars):
-
+    catalog_type = __file__ + 'test_star_catalog'
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r', 'sigma_lsst_i',
@@ -28,6 +28,8 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
 
 
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
+    catalog_type = __file__ + "test_galaxy_catalog"
+
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',

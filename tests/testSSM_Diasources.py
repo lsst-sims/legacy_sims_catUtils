@@ -70,6 +70,8 @@ basic_columns = ['objid', 'expMJD', 'raJ2000', 'decJ2000', 'velRa', 'velDec',
 
 
 class ssmCat(InstanceCatalog, PhotometrySSM, AstrometrySSM, ObsMetadataBase, CameraCoords):
+    catalog_type = __file__ + 'ssm_cat'
+
     column_outputs = basic_columns
     cannot_be_null = ['visibility']
     transformations = {'raJ2000': np.degrees, 'decJ2000': np.degrees,
@@ -78,6 +80,8 @@ class ssmCat(InstanceCatalog, PhotometrySSM, AstrometrySSM, ObsMetadataBase, Cam
 
 
 class ssmCatCamera(ssmCat):
+    catalog_type = __file__ + 'ssm_cat_camera'
+
     column_outputs = basic_columns + ['chipName']
     camera = LsstSimMapper().camera
     cannot_be_null = ['visibility', 'chipName']

@@ -46,7 +46,7 @@ def failedOnFatboy(tracebackList):
 
 
 class DummyCat(InstanceCatalog):
-    catalog_type = 'unit_test_catalog'
+    catalog_type = __file__ + 'unit_test_catalog'
     column_outputs = ['raJ2000', 'decJ2000']
 
 
@@ -114,7 +114,7 @@ class basicAccessTest(unittest.TestCase):
                 DummyCat.column_outputs = ['galid', 'raJ2000', 'decJ2000']
             else:
                 DummyCat.column_outputs = ['raJ2000', 'decJ2000']
-            cat = dbobj.getCatalog('unit_test_catalog', obs_metadata)
+            cat = dbobj.getCatalog(__file__+'unit_test_catalog', obs_metadata)
             if os.path.exists(catName):
                 os.unlink(catName)
             try:

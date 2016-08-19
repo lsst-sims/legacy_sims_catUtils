@@ -16,6 +16,8 @@ def setup_module(module):
 
 
 class baselineStarCatalog(InstanceCatalog, PhotometryStars):
+    catalog_type = __file__ + 'baseline_star_catalog'
+
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',

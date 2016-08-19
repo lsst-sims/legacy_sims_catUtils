@@ -448,27 +448,27 @@ class agnDB(variabilityDB):
 
 
 class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, VariabilityStars):
-    catalog_type = 'stellarVariabilityCatalog'
+    catalog_type = __file__ + 'stellarVariabilityCatalog'
     column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
     default_columns = [('magNorm', 14.0, float)]
 
 
 class StellarVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars,
                                         VariabilityStars, TestVariabilityMixin):
-    catalog_type = 'testVariabilityCatalog'
+    catalog_type = __file__ + 'testVariabilityCatalog'
     column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
     default_columns = [('magNorm', 14.0, float)]
 
 
 class OtherVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars,
                                       TestVariabilityMixin, VariabilityStars):
-    catalog_type = 'otherVariabilityCatalog'
+    catalog_type = __file__ + 'other_variability_catalog'
     column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
     default_columns = [('magNorm', 14.0, float)]
 
 
 class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, VariabilityGalaxies):
-    catalog_type = 'galaxyVariabilityCatalog'
+    catalog_type = __file__ + 'galaxyVariabilityCatalog'
     column_outputs = ['varsimobjid', 'sedFilenameAgn', 'lsstUdiff', 'delta_uAgn']
     default_columns = [('magNormAgn', 14.0, float),
                        ('magNormDisk', 14.0, float),
@@ -517,14 +517,14 @@ class VariabilityTest(unittest.TestCase):
         """
         makeHybridTable()
         myDB = CatalogDBObject.from_objid('hybridTest')
-        myCatalog = myDB.getCatalog('testVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('hybridTestCatalog.dat'):
             os.unlink('hybridTestCatalog.dat')
 
         # make sure order of mixin inheritance does not matter
-        myCatalog = myDB.getCatalog('otherVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = OtherVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('hybridTestCatalog.dat'):
@@ -532,7 +532,7 @@ class VariabilityTest(unittest.TestCase):
 
         # make sure that, if a catalog does not contain a variability method,
         # an error is thrown; verify that it contains the correct error message
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         with self.assertRaises(RuntimeError) as context:
             myCatalog.write_catalog('hybridTestCatalog.dat')
 
@@ -561,7 +561,7 @@ class VariabilityTest(unittest.TestCase):
     def testMflares(self):
         makeMflareTable()
         myDB = CatalogDBObject.from_objid('mflareTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('mFlareTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('mFlareTestCatalog.dat'):
@@ -570,7 +570,7 @@ class VariabilityTest(unittest.TestCase):
     def testRRlyrae(self):
         makeRRlyTable()
         myDB = CatalogDBObject.from_objid('rrlyTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('rrlyTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('rrlyTestCatalog.dat'):
@@ -579,7 +579,7 @@ class VariabilityTest(unittest.TestCase):
     def testCepheids(self):
         makeCepheidTable()
         myDB = CatalogDBObject.from_objid('cepheidTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('cepheidTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('cepheidTestCatalog.dat'):
@@ -588,7 +588,7 @@ class VariabilityTest(unittest.TestCase):
     def testEb(self):
         makeEbTable()
         myDB = CatalogDBObject.from_objid('ebTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('ebTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('ebTestCatalog.dat'):
@@ -604,7 +604,7 @@ class VariabilityTest(unittest.TestCase):
 
         makeMicrolensingTable()
         myDB = CatalogDBObject.from_objid('microlensTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('microlensTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('microlensTestCatalog.dat'):
@@ -620,7 +620,7 @@ class VariabilityTest(unittest.TestCase):
 
         makeBHMicrolensingTable()
         myDB = CatalogDBObject.from_objid('bhmicrolensTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('bhmicrolensTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('bhmicrolensTestCatalog.dat'):
@@ -636,7 +636,7 @@ class VariabilityTest(unittest.TestCase):
 
         makeAmcvnTable()
         myDB = CatalogDBObject.from_objid('amcvnTest')
-        myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('amcvnTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('amcvnTestCatalog.dat'):
@@ -646,7 +646,7 @@ class VariabilityTest(unittest.TestCase):
 
         makeAgnTable()
         myDB = CatalogDBObject.from_objid('agnTest')
-        myCatalog = myDB.getCatalog('galaxyVariabilityCatalog', obs_metadata=self.obs_metadata)
+        myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('agnTestCatalog.dat', chunk_size=1000)
 
         if os.path.exists('agnTestCatalog.dat'):

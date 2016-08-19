@@ -28,6 +28,7 @@ class AstrometryTestGalaxies(myTestGals):
 
 
 class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
+    catalog_type = __file__ + 'parallax_test_catalog'
     column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
                       'properMotionRa', 'properMotionDec',
                       'radialVelocity', 'parallax']
@@ -45,7 +46,7 @@ class testCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
     A (somewhat meaningless) instance catalog class that will allow us
     to run the astrometry routines for testing purposes
     """
-    catalog_type = 'test_stars'
+    catalog_type = __file__ + 'test_stars'
     column_outputs = ['id', 'raICRS', 'decICRS',
                       'x_pupil', 'y_pupil',
                       'chipName', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane']

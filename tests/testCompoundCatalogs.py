@@ -22,6 +22,7 @@ def setup_module(module):
 
 
 class BulgeDiskCatalog(InstanceCatalog):
+    catalog_type = __file__ + 'bulge_disk_catalog'
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
                       'componentra', 'componentdec',
@@ -34,6 +35,7 @@ class BulgeDiskCatalog(InstanceCatalog):
 
 
 class AgnCatalog(InstanceCatalog):
+    catalog_type = __file__ + 'agn_catalog'
     cannot_be_null = ['sedFilename']
     column_outputs = ['galtileid', 'raJ2000', 'decJ2000',
                       'componentra', 'componentdec',
@@ -42,6 +44,7 @@ class AgnCatalog(InstanceCatalog):
 
 
 class StarCatalog(InstanceCatalog):
+    catalog_type = __file__ + 'star_catalog'
     cannot_be_null = ['sedFilename']
     column_outputs = ['id', 'raJ2000', 'decJ2000',
                       'glon', 'glat', 'magNorm',

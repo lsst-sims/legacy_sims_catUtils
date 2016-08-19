@@ -25,6 +25,7 @@ from lsst.sims.catUtils.utils import AgnLightCurveGenerator
 
 class stellarControlCatalog(InstanceCatalog,
                             PhotometryStars, VariabilityStars):
+    catalog_type = __file__ + 'stellar_control_catalog'
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000", "mag", "sigma_mag"]
 
@@ -38,6 +39,7 @@ class stellarControlCatalog(InstanceCatalog,
 class agnControlCatalog(InstanceCatalog,
                         PhotometryGalaxies, VariabilityGalaxies):
 
+    catalog_type = __file__ + 'agn_control_catalog'
     column_outputs = ["uniqueId", "raJ2000", "decJ2000", "mag", "sigma_mag"]
 
     @compound("mag", "sigma_mag")

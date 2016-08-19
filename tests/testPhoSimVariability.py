@@ -18,26 +18,32 @@ def setup_module(module):
 
 
 class PhoSimPointVariable(PhoSimCatalogPoint, VariabilityStars, TestVariabilityMixin):
+    catalog_type = __file__ + 'pho_sim_point_variable'
     pass
 
 
 class PhoSimZPointVariable(PhoSimCatalogZPoint, VariabilityStars, TestVariabilityMixin):
+    catalog_type = __file__ + 'pho_sim_z_point_variable'
     pass
 
 
 class AgnControlCatalog(InstanceCatalog, VariabilityGalaxies, TestVariabilityMixin, AstrometryGalaxies):
+    catalog_type = __file__ + "agn_control_catalog"
     column_outputs = ['magNorm', 'delta_rAgn']
 
 
 class BulgeControlCatalog(InstanceCatalog, AstrometryGalaxies):
+    catalog_type = __file__ + "bulge_control_catalog"
     column_outputs = ['magNorm']
 
 
 class DiskControlCatalog(InstanceCatalog, AstrometryGalaxies):
+    catalog_type = __file__ + "disk_control_catalog"
     column_outputs = ['magNorm']
 
 
 class StarControlCatalog(InstanceCatalog, AstrometryStars, VariabilityStars, TestVariabilityMixin):
+    catalog_type = __file__ + "star_control_catalog"
     column_outputs = ['magNorm', 'delta_lsst_r']
 
 
