@@ -294,13 +294,8 @@ class SNIaCatalog_tests(unittest.TestCase):
     def setUpClass(cls):
 
         # Set directory where scratch work will be done
-        cls.madeScratchDir = False
-        cls.scratchDir = 'scratchSpace'
-
-        # Setup a directory in which test data will be made
-        if not os.path.exists(cls.scratchDir):
-            os.makedirs(cls.scratchDir)
-            cls.madeScratchDir = True
+        cls.scratchDir = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                                      'scratchSpace')
 
         # ObsMetaData instance with spatial window within which we will
         # put galaxies in a fake galaxy catalog
@@ -321,7 +316,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         # using positions from the samples above and a database name given by
         # self.dbname
         vals = cls._createFakeGalaxyDB()
-        with open('valsFromTest.dat', 'w') as f:
+        cls.valName = os.path.join(cls.scratchDir, 'valsFromTest.dat')
+        with open(cls.valName, 'w') as f:
             for i, v in enumerate(vals[0]):
                 f.write(str(np.radians(vals[0][i])) + '  ' + str(np.radians(vals[1][i])) + '\n')
 
@@ -388,6 +384,19 @@ class SNIaCatalog_tests(unittest.TestCase):
         # Create a SNCatalog based on GalDB, and having times of explosions
         #     overlapping the times in obsMetaData
         cls.fnameList = cls._writeManySNCatalogs(cls.obsMetaDataResults)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.cleanDB(cls.dbname)
+        if os.path.exists(cls.valName):
+            os.unlink(cls.valName)
+
+        for fname in cls.fnameList:
+            if os.path.exists(fname):
+                os.unlink(fname)
+
+        if os.path.exists(cls.fullCatalog):
+            os.unlink(cls.fullCatalog)
 
     def test_writingfullCatalog(self):
         """
@@ -463,9 +472,10 @@ class SNIaCatalog_tests(unittest.TestCase):
             print(s.format(df_new.snid.iloc[0], len(df_old)))
             assert_frame_equal(df_new, df_old)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.cleanDB(cls.dbname)
+        for fname in fnameList:
+            if os.path.exists(fname):
+                os.unlink(fname)
+
 
     def test_obsMetaDataGeneration(self):
 
