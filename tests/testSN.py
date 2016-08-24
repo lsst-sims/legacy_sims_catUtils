@@ -365,7 +365,6 @@ class SNIaCatalog_tests(unittest.TestCase):
                                                                   boundLength=0.15,
                                                                   boundType='circle')
 
-
         sncatalog = SNIaCatalog(db_obj=cls.galDB,
                                 obs_metadata=cls.obsMetaDataResults[6],
                                 column_outputs=['t0', 'flux_u', 'flux_g',
@@ -412,7 +411,6 @@ class SNIaCatalog_tests(unittest.TestCase):
     def buildLCfromInstanceCatFilenames(fnamelist):
         # External packages used
         import pandas as pd
-        from pandas.util.testing import assert_frame_equal
         dfs = []
         map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
             fnamelist)
@@ -423,9 +421,6 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         return lcs
 
-    # Skip the following test using the command below if we integrate into
-    # tests before pandas is in
-    #@unittest.skip('depends on pandas')
     def test_drawReproducibility(self):
         """
         Check that when the same SN (ie. with same snid) is observed with
@@ -444,9 +439,6 @@ class SNIaCatalog_tests(unittest.TestCase):
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
                 np.testing.assert_equal(len(df[prop].unique()), 1)
 
-    # Skip the following test using the command below if we integrate into
-    # tests before pandas is in
-    #@unittest.skip('depends on  pandas')
     def test_redrawingCatalog(self):
         """
         test that drawing the same catalog
@@ -454,7 +446,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         from random import shuffle
         import copy
 
-        test_description = 'Compare second draws of catalog to initial draw'
         obsMetaDataResults = copy.deepcopy(self.obsMetaDataResults)
         shuffle(obsMetaDataResults)
         fnameList = self._writeManySNCatalogs(obsMetaDataResults,
@@ -475,7 +466,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         for fname in fnameList:
             if os.path.exists(fname):
                 os.unlink(fname)
-
 
     def test_obsMetaDataGeneration(self):
 
@@ -545,8 +535,6 @@ class SNIaCatalog_tests(unittest.TestCase):
         conn.commit()
         conn.close()
         return samps
-
-
 
     @staticmethod
     def cleanDB(dbname, verbose=True):
