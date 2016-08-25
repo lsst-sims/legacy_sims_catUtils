@@ -386,6 +386,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.galDB
         cls.cleanDB(cls.dbname)
         if os.path.exists(cls.valName):
             os.unlink(cls.valName)
