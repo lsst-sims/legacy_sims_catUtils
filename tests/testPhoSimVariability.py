@@ -68,6 +68,10 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.bulgeDB
+        del cls.diskDB
+        del cls.agnDB
+        del cls.starDB
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
 
