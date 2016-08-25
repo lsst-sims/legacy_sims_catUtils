@@ -43,7 +43,10 @@ class PhoSimCatalogTest(unittest.TestCase):
                                'Opsim_altitude %.9g\n' % alt]
 
     def tearDown(self):
-
+        del self.starDB
+        del self.bulgeDB
+        del self.diskDB
+        del self.agnDB
         if os.path.exists('PhoSimTestDatabase.db'):
             os.unlink('PhoSimTestDatabase.db')
 
