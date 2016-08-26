@@ -70,8 +70,8 @@ class ObservationMetaDataGenerator(object):
         self.database = database
         self._seeing_column = 'FWHMeff'
 
-        # a dict keyed on the user interface (i.e. args to getObservationMetaData)
-        # names of OpSim data columns.  Returns a tuple that is the
+        # a dict keyed on the user interface names of the OpSimdata columns
+        # (i.e. the args to getObservationMetaData).  Returns a tuple that is the
         # (name of data column in OpSim, transformation to go from user interface to OpSim units,
         # dtype in OpSim)
         self._user_interface_to_opsim = {'obsHistID': ('obsHistID', None, np.int64),
