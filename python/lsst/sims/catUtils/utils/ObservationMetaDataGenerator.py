@@ -107,7 +107,8 @@ class ObservationMetaDataGenerator(object):
                                          'visitTime': ('visitTime', None, float),
                                          'finRank': ('finRank', None, float),
                                          'FWHMgeom': ('FWHMgeom', None, float),
-                                         # do not include FWHMeff; that is detected by self._set_seeing_column()
+                                         # do not include FWHMeff; that is detected by
+                                         # self._set_seeing_column()
                                          'transparency': ('transparency', None, float),
                                          'vSkyBright': ('vSkyBright', None, float),
                                          'rotTelPos': ('rotTelPos', None, float),
@@ -126,21 +127,6 @@ class ObservationMetaDataGenerator(object):
                                          'slewTime': ('slewTime', None, float),
                                          'ditheredRA': ('ditheredRA', None, float),
                                          'ditheredDec': ('ditheredDec', None, float)}
-
-        # a dict keyed on the OpSim names for data columns that returns a tuple that
-        # is (PhoSim name of column, transformation needed to go from OpSim to PhoSim)
-        self._opsim_to_phosim = {'obsHistID': ('obshistid', None),
-                                 'expDate': ('seed', None),
-                                 'moonRA': ('moonra', np.degrees),
-                                 'moonDec': ('moondec', np.degrees),
-                                 'filter': ('filter', None),
-                                 'rawSeeing': ('seeing', None),
-                                 'sunAlt': ('sunalt', np.degrees),
-                                 'moonAlt': ('moonalt', np.degrees),
-                                 'dist2Moon': ('dist2moon', np.degrees),
-                                 'moonPhase': ('moonphase', None),
-                                 'visitExpTime': ('vistime', None),
-                                 'rotSkyPos': ('rotskypos', np.degrees)}
 
         if self.database is None:
             return
@@ -230,7 +216,15 @@ class ObservationMetaDataGenerator(object):
 
         for column in self._user_interface_to_opsim:
             transform = self._user_interface_to_opsim[column]
-            value = eval(column)
+
+            # this try/except block is because there will be columns in the OpSim Summary
+            # table (and thus in self._user_interface_to_opsim) which the
+            # ObservationMetaDataGenerator is not designed to query on
+            try:
+                value = eval(column)
+            except:
+                value = None
+
             if value is not None:
                 if column not in self.active_columns:
                     raise RuntimeError("You have asked ObservationMetaDataGenerator to SELECT pointings on"
@@ -321,22 +315,8 @@ class ObservationMetaDataGenerator(object):
                                    "pointings include the coluns:\nfieldRA (in radians)"
                                    "\nfieldDec (in radians)\nexpMJD\nfilter")
 
-        # convert list of tuples of the form (Name, (value, dtype)) to
-        # an ordered Dict
-        phosimDict = dict([(self._opsim_to_phosim[col][0], pointing[col])
-                           for col in self._opsim_to_phosim
-                           if (col in pointing_column_names and
-                               col not in
-                               ('fieldRA', 'fieldDec', 'expMJD',
-                                'filter', 'fiveSigmaDepth',
-                                'filtSkyBrightness', self._seeing_column,
-                                'rotSkyPos', 'altitude', 'azimuth',
-                                'airmass'))])
-
-        for col in self._opsim_to_phosim:
-            transform = self._opsim_to_phosim[col]
-            if transform[0] in phosimDict and transform[1] is not None:
-                phosimDict[transform[0]] = transform[1](phosimDict[transform[0]])
+        # construct a raw dict of all of the OpSim columns associated with this pointing
+        raw_dict = dict([(col, pointing[col]) for col in pointing_column_names])
 
         obs = ObservationMetaData(pointingRA=np.degrees(pointing['fieldRA']),
                                   pointingDec=np.degrees(pointing['fieldDec']),
@@ -354,7 +334,7 @@ class ObservationMetaDataGenerator(object):
         if 'rotSkyPos' in pointing_column_names:
             obs.rotSkyPos = np.degrees(pointing['rotSkyPos'])
 
-        obs.phoSimMetaData = phosimDict
+        obs.OpsimMetaData = raw_dict
 
         return obs
 
