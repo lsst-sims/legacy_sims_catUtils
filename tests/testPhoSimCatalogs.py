@@ -1,5 +1,6 @@
 from __future__ import with_statement
 import os
+import numpy as np
 import unittest
 import lsst.utils.tests
 from lsst.utils import getPackageDir
@@ -10,6 +11,14 @@ from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
                                                           PhoSimCatalogZPoint)
 from lsst.sims.catalogs.utils import makePhoSimTestDB
+
+
+test_header_map = {'dist2moon': ('dist2moon', np.degrees),
+                   'moonalt': ('moonalt', np.degrees),
+                   'moondec': ('moondec', np.degrees),
+                   'moonra': ('moonra', np.degrees),
+                   'rottelpos': ('rottelpos', np.degrees),
+                   'sunalt': ('sunalt', np.degrees)}
 
 
 def setup_module(module):
@@ -28,17 +37,17 @@ class PhoSimCatalogTest(unittest.TestCase):
         alt, az, pa = altAzPaFromRaDec(self.obs_metadata.pointingRA,
                                        self.obs_metadata.pointingDec,
                                        self.obs_metadata, includeRefraction=False)
-        self.control_header = ['moondec %.9g\n' % self.obs_metadata.phoSimMetaData['moondec'],
-                               'rottelpos %.9g\n' % self.obs_metadata.phoSimMetaData['rottelpos'],
+        self.control_header = ['moondec %.9g\n' % np.degrees(self.obs_metadata.OpsimMetaData['moondec']),
+                               'rottelpos %.9g\n' % np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']),
                                'declination %.9g\n' % self.obs_metadata.pointingDec,
-                               'moonalt %.9g\n' % self.obs_metadata.phoSimMetaData['moonalt'],
+                               'moonalt %.9g\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonalt']),
                                'rotskypos %.9g\n' % self.obs_metadata.rotSkyPos,
-                               'moonra %.9g\n' % self.obs_metadata.phoSimMetaData['moonra'],
-                               'sunalt %.9g\n' % self.obs_metadata.phoSimMetaData['sunalt'],
+                               'moonra %.9g\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonra']),
+                               'sunalt %.9g\n' % np.degrees(self.obs_metadata.OpsimMetaData['sunalt']),
                                'mjd %.9g\n' % self.obs_metadata.mjd.TAI,
                                'azimuth %.9g\n' % az,
                                'rightascension %.9g\n' % self.obs_metadata.pointingRA,
-                               'dist2moon %.9g\n' % self.obs_metadata.phoSimMetaData['dist2moon'],
+                               'dist2moon %.9g\n' % np.degrees(self.obs_metadata.OpsimMetaData['dist2moon']),
                                'filter %d\n' % filter_translation[self.obs_metadata.bandpass],
                                'altitude %.9g\n' % alt]
 
@@ -94,6 +103,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         catName = os.path.join(getPackageDir('sims_catUtils'),
                                'tests', 'scratchSpace', 'phoSimTestCatalog.txt')
 
+        testBulge.phoSimHeaderMap = test_header_map
         testBulge.write_catalog(catName)
         testDisk.write_catalog(catName, write_header=False, write_mode='a')
         testAgn.write_catalog(catName, write_header=False, write_mode='a')
@@ -121,6 +131,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
+        testBulge.phoSimHeaderMap = test_header_map
         testBulge.write_catalog(single_catName)
         testDisk.write_catalog(single_catName, write_header=False, write_mode='a')
         testAgn.write_catalog(single_catName, write_header=False, write_mode='a')
@@ -159,6 +170,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         compound_catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                         'phoSimTestCatalog_compound.txt')
 
+        compoundCatalog.phoSimHeaderMap = test_header_map
         compoundCatalog.write_catalog(compound_catName)
 
         # verify that the compound catalog is what we expect

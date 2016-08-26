@@ -9,14 +9,33 @@ from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
-           "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap"]
+           "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap",
+           "DefaultPhoSimHeaderMap"]
 
 
 PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
                         dirDict={'(^lte)': 'starSED/phoSimMLT'})
 
 
-def write_phoSim_header(obs, file_handle):
+# This is a dict of transformations mapping from data in OpSim to header
+# values expected by PhoSim.  The dict is keyed on the names of OpSim
+# columns (stored in the ObservationMetaData's OpsimMetaData property).
+# The values of the dict are tuples containing the name of the
+# variable expected by PhoSim and any transformation needed to go between
+# the units stored in OpSim and the units expected by PhoSim.
+DefaultPhoSimHeaderMap = {'rotSkyPos': ('rotskypos', None),
+                          'rotTelPos': ('rottelpos', np.degrees),
+                          'obsHistID': ('obshistid', None),
+                          'moonRA': ('moonra', np.degrees),
+                          'moonDec': ('moondec', np.degrees),
+                          'moonPhase': ('moonphase', None),
+                          'dist2moon': ('dist2Moon', np.degrees),
+                          'sunAlt': ('sunalt', np.degrees),
+                          'rawSeeing': ('seeing', None),
+                         ' visitExpTime': ('vistime', None)}
+
+
+def write_phoSim_header(obs, file_handle, phosim_header_map):
     """
     Write the data contained in an ObservationMetaData as a header in a
     PhoSim InstanceCatalog.
@@ -25,6 +44,53 @@ def write_phoSim_header(obs, file_handle):
 
     file_handle points to the catalog being written.
     """
+
+    if phosim_header_map is None and obs.OpsimMetaData is not None:
+        raw_opsim_contents = ""
+        sorted_opsim_metadata = obs.OpsimMetaData.keys()
+        sorted_opsim_metadata.sort()
+        for tag in sorted_opsim_metadata:
+            raw_opsim_contents += "%s\n" % tag
+
+        raise RuntimeError("You have tried to write a PhoSim InstanceCatalog without specifying "
+                           "a phoSimHeaderMap in your call to write_catalog().\n"
+                           "\n"
+                           "A phoSimHeaderMap is a dict that maps between columns stored in the "
+                           "OpSim database from which an ObservationMetaData was created and "
+                           "header parameters expected by PhoSim.  The dict is keyed on the names "
+                           "of parameters stored in OpSim.  Its values are tuples consisting of "
+                           "the name of the parameter as expected by PhoSim and any transformation "
+                           "necessary to convert between the units stored in OpSim and the units "
+                           "expected by PhoSim.\n"
+                           "\n"
+                           "To add a phoSimHeaderMap, simple assign it to the 'phoSimHeaderMap' "
+                           "member variable of your catalog with (for instance):\n"
+                           "\n"
+                           "myCat.phoSimHeaderMap = my_phosim_header_map\n"
+                           "\n"
+                           "Before calling write_catalog()\n"
+                           "\n"
+                           "The header parameters expected by PhoSim can be found at\n"
+                           "\n"
+                           "https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog\n"
+                           "\n"
+                           "The contents of the OpSim database's Summary table can be found at\n"
+                           "\n"
+                           "https://www.lsst.org/scientists/simulations/opsim/summary-table-column-descriptions-v335\n"
+                           "\n"
+                           "If you do not wish to use any of these columns, you can just specify an empty "
+                           "dict in the constructor for your InstanceCatalog class.  If you want to use "
+                           "a sensible default mapping, use the DefaultPhoSimHeaderMap imported from "
+                           "lsst.sims.catUtils.exampleCatalogDefinitions\n"
+                           "\n"
+                           "Note: do not specify ra, dec, alt, az, mjd, filter, or rotSkyPos in your "
+                           "phoSimHeaderMap.  These are handled directly by the ObservationMetaData "
+                           "to ensure self-consistency.\n"
+                           "\n"
+                           "For reference, the OpSim columns you can choose to map (i.e. those contained "
+                           "in your ObservationMetaData) are:\n\n"
+                           + raw_opsim_contents)
+
     try:
         file_handle.write('rightascension %.9g\n' % obs.pointingRA)
         file_handle.write('declination %.9g\n' % obs.pointingDec)
@@ -43,16 +109,14 @@ def write_phoSim_header(obs, file_handle):
         print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
         raise
 
-    already_written = ('rightascension', 'declination',
-                       'mjd', 'altitude', 'azimuth',
-                       'filter','rotskypos')
-
-    for kk in obs._phoSimMetadata:
-        if kk in already_written:
-            raise RuntimeError("This ObservationMetaData has conflicting values for "
-                               "%s" % kk)
-
-        file_handle.write('%s %.9g\n' % (kk, obs._phoSimMetadata[kk]))
+    # sort the header map keys so that PhoSim headers generated with the same
+    # map always have parameters in the same order.
+    sorted_header_keys = phosim_header_map.keys()
+    sorted_header_keys.sort()
+    for kk in sorted_header_keys:
+            file_handle.write('%s %.9g\n' %
+                              (phosim_header_map[kk][0],
+                               phosim_header_map[kk][1](obs.OpsimMetaData[kk])))
 
 
 class PhosimInputBase(InstanceCatalog):
@@ -105,7 +169,10 @@ class PhosimInputBase(InstanceCatalog):
             return magNorm
 
     def write_header(self, file_handle):
-        write_phoSim_header(self.obs_metadata, file_handle)
+        if not hasattr(self, 'phoSimHeaderMap'):
+            self.phoSimHeaderMap = None
+
+        write_phoSim_header(self.obs_metadata, file_handle, self.phoSimHeaderMap)
 
 
 class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
