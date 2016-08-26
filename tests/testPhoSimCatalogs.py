@@ -27,20 +27,20 @@ class PhoSimCatalogTest(unittest.TestCase):
         filter_translation = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
         alt, az, pa = altAzPaFromRaDec(self.obs_metadata.pointingRA,
                                        self.obs_metadata.pointingDec,
-                                       self.obs_metadata)
-        self.control_header = ['Opsim_moondec %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moondec'],
-                               'Opsim_rottelpos %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_rottelpos'],
-                               'Unrefracted_Dec %.9g\n' % self.obs_metadata.pointingDec,
-                               'Opsim_moonalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonalt'],
-                               'Opsim_rotskypos %.9g\n' % self.obs_metadata.rotSkyPos,
-                               'Opsim_moonra %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonra'],
-                               'Opsim_sunalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_sunalt'],
-                               'Opsim_expmjd %.9g\n' % self.obs_metadata.mjd.TAI,
-                               'Opsim_azimuth %.9g\n' % az,
-                               'Unrefracted_RA %.9g\n' % self.obs_metadata.pointingRA,
-                               'Opsim_dist2moon %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_dist2moon'],
-                               'Opsim_filter %d\n' % filter_translation[self.obs_metadata.bandpass],
-                               'Opsim_altitude %.9g\n' % alt]
+                                       self.obs_metadata, includeRefraction=False)
+        self.control_header = ['moondec %.9g\n' % self.obs_metadata.phoSimMetaData['moondec'],
+                               'rottelpos %.9g\n' % self.obs_metadata.phoSimMetaData['rottelpos'],
+                               'declination %.9g\n' % self.obs_metadata.pointingDec,
+                               'moonalt %.9g\n' % self.obs_metadata.phoSimMetaData['moonalt'],
+                               'rotskypos %.9g\n' % self.obs_metadata.rotSkyPos,
+                               'moonra %.9g\n' % self.obs_metadata.phoSimMetaData['moonra'],
+                               'sunalt %.9g\n' % self.obs_metadata.phoSimMetaData['sunalt'],
+                               'mjd %.9g\n' % self.obs_metadata.mjd.TAI,
+                               'azimuth %.9g\n' % az,
+                               'rightascension %.9g\n' % self.obs_metadata.pointingRA,
+                               'dist2moon %.9g\n' % self.obs_metadata.phoSimMetaData['dist2moon'],
+                               'filter %d\n' % filter_translation[self.obs_metadata.bandpass],
+                               'altitude %.9g\n' % alt]
 
     def tearDown(self):
         del self.starDB

@@ -26,18 +26,16 @@ def write_phoSim_header(obs, file_handle):
     file_handle points to the catalog being written.
     """
     try:
-        file_handle.write('Unrefracted_RA %.9g\n' % obs.pointingRA)
-        file_handle.write('Unrefracted_Dec %.9g\n' % obs.pointingDec)
-        file_handle.write('Opsim_expmjd %.9g\n' % obs.mjd.TAI)
-        alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
-        file_handle.write('Opsim_altitude %.9g\n' % alt)
-        file_handle.write('Opsim_azimuth %.9g\n' % az)
-        airmass = 1.0/np.cos(0.5*np.pi-np.radians(alt))
-        file_handle.write('airmass %.9g\n' % airmass)
-        file_handle.write('Opsim_filter %d\n' %
+        file_handle.write('rightascension %.9g\n' % obs.pointingRA)
+        file_handle.write('declination %.9g\n' % obs.pointingDec)
+        file_handle.write('mjd %.9g\n' % obs.mjd.TAI)
+        alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs, includeRefraction=False)
+        file_handle.write('altitude %.9g\n' % alt)
+        file_handle.write('azimuth %.9g\n' % az)
+        file_handle.write('filter %d\n' %
                           {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}[obs.bandpass])
 
-        file_handle.write('Opsim_rotskypos %.9g\n' % obs.rotSkyPos)
+        file_handle.write('rotskypos %.9g\n' % obs.rotSkyPos)
     except:
         print "\n\n"
         print "The ObservationMetaData you tried to write a PhoSim header from"
@@ -45,10 +43,9 @@ def write_phoSim_header(obs, file_handle):
         print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
         raise
 
-    already_written = ('Unrefracted_RA', 'Unrefracted_Dec',
-                       'Opsim_expmjd', 'Opsim_altitude',
-                       'Opsim_azimuth', 'airmass', 'Opsim_filter',
-                       'Opsim_rotskypos')
+    already_written = ('rightascension', 'declination',
+                       'mjd', 'altitude', 'azimuth',
+                       'filter','rotskypos')
 
     for kk in obs._phoSimMetadata:
         if kk in already_written:

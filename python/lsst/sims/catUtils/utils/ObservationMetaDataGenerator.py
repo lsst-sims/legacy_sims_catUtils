@@ -98,17 +98,18 @@ class ObservationMetaDataGenerator(object):
 
         # a dict keyed on the OpSim names for data columns that returns a tuple that
         # is (PhoSim name of column, transformation needed to go from OpSim to PhoSim)
-        self._opsim_to_phosim = {'obsHistID': ('Opsim_obshistid', None),
-                                 'expDate': ('SIM_SEED', None),
-                                 'moonRA': ('Opsim_moonra', np.degrees),
-                                 'moonDec': ('Opsim_moondec', np.degrees),
-                                 'filter': ('Opsim_filter', None),
-                                 'rawSeeing': ('Opsim_rawseeing', None),
-                                 'sunAlt': ('Opsim_sunalt', np.degrees),
-                                 'moonAlt': ('Opsim_moonalt', np.degrees),
-                                 'dist2Moon': ('Opsim_dist2moon', np.degrees),
-                                 'moonPhase': ('Opsim_moonphase', None),
-                                 'visitExpTime': ('exptime', None)}
+        self._opsim_to_phosim = {'obsHistID': ('obshistid', None),
+                                 'expDate': ('seed', None),
+                                 'moonRA': ('moonra', np.degrees),
+                                 'moonDec': ('moondec', np.degrees),
+                                 'filter': ('filter', None),
+                                 'rawSeeing': ('seeing', None),
+                                 'sunAlt': ('sunalt', np.degrees),
+                                 'moonAlt': ('moonalt', np.degrees),
+                                 'dist2Moon': ('dist2moon', np.degrees),
+                                 'moonPhase': ('moonphase', None),
+                                 'visitExpTime': ('vistime', None),
+                                 'rotSkyPos': ('rotskypos', np.degrees)}
 
         if self.database is None:
             return
