@@ -154,6 +154,39 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+    def testBlankHeaderMap(self):
+        """
+        Test behavior of a blank header map
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        testBulge.phoSimHeaderMap = {}
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'blank_header_map_catalog.txt')
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        # verify that only the default header parameters are included in the
+        # PhoSimInstanceCatalog, even though obs_metadata has a non-None
+        # OpsimMetaData
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertEqual(len(input_header), 7)
+        self.assertGreater(len(self.obs_metadata.OpsimMetaData), 0)
+
     def testCompoundCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
