@@ -167,7 +167,7 @@ class ObservationMetaDataGenerator(object):
                         moonPhase=None, expMJD=None, altitude=None,
                         azimuth=None, visitExpTime=None, airmass=None,
                         skyBrightness=None, m5=None, boundType='circle',
-                        boundLength=0.1, limit=None):
+                        boundLength=1.75, limit=None):
         """
         This method will query the summary table in the `self.opsimdb` database
         according to constraints specified in the input ranges and return a
@@ -378,7 +378,7 @@ class ObservationMetaDataGenerator(object):
                                rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
                                visitExpTime=None, airmass=None, skyBrightness=None,
-                               m5=None, boundType='circle', boundLength=0.1, limit=None):
+                               m5=None, boundType='circle', boundLength=1.75, limit=None):
 
         """
         This method will query the OpSim database summary table according to user-specified
