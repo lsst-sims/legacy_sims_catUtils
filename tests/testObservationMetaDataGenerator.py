@@ -401,8 +401,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         expected header entries are there.
         """
 
-        dbName = 'obsMetaDataGeneratorTest.db'
-        catName = 'testPhoSimFromObsMetaDataGenerator.txt'
+        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                                   'scratchSpace')
+        dbName = os.path.join(scratch_dir, 'obsMetaDataGeneratorTest.db')
+        catName = os.path.join(scratch_dir, 'testPhoSimFromObsMetaDataGenerator.txt')
         if os.path.exists(dbName):
             os.unlink(dbName)
         makePhoSimTestDB(filename=dbName)
