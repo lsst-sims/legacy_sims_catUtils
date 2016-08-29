@@ -187,6 +187,27 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertEqual(len(input_header), 7)
         self.assertGreater(len(self.obs_metadata.OpsimMetaData), 0)
 
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def testNoHeaderMap(self):
+        """
+        Test that the correct error is raised if no header map is specified
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'no_header_map_catalog.txt')
+
+        with self.assertRaises(RuntimeError) as context:
+            testBulge.write_catalog(catName)
+
+        self.assertIn("without specifying a phoSimHeaderMap",
+                      context.exception.args[0])
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
     def testCompoundCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
