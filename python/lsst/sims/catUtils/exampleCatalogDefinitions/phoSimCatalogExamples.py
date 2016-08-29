@@ -114,9 +114,11 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
     sorted_header_keys = phosim_header_map.keys()
     sorted_header_keys.sort()
     for kk in sorted_header_keys:
-            file_handle.write('%s %.9g\n' %
-                              (phosim_header_map[kk][0],
-                               phosim_header_map[kk][1](obs.OpsimMetaData[kk])))
+            if phosim_header_map[kk][1] is not None:
+                val = phosim_header_map[kk][1](obs.OpsimMetaData[kk])
+            else:
+                val = obs.OpsimMetaData[kk]
+            file_handle.write('%s %.9g\n' % (phosim_header_map[kk][0], val))
 
 
 class PhosimInputBase(InstanceCatalog):

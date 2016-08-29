@@ -114,6 +114,46 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
+    def testHeaderMap(self):
+        """
+        Test the behavior of the phoSimHeaderMap
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        testBulge.phoSimHeaderMap = {'dist2moon': ('lunar_distance', None),
+                                     'rottelpos': ('rotation_of_the_telescope', np.degrees)}
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'header_map_catalog.txt')
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertIn('lunar_distance', input_header)
+        self.assertAlmostEqual(float(input_header['lunar_distance']),
+                               self.obs_metadata.OpsimMetaData['dist2moon'], 6)
+        self.assertIn('rotation_of_the_telescope', input_header)
+        self.assertAlmostEqual(float(input_header['rotation_of_the_telescope']),
+                               np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']),
+                               delta=1.0e-6*np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']))
+        self.assertEqual(len(input_header), 9)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
     def testCompoundCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
