@@ -90,6 +90,53 @@ class PhoSimCatalogTest(unittest.TestCase):
 
             self.assertEqual(cat.specFileMap[test_name], defaultSpecMap[test_name])
 
+    def test_incomplete_obs(self):
+        """
+        Test that an exception gets raised if you try to make a PhoSim InstanceCatalog
+        with an ObservationMetaData that lacks RA, Dec, mjd, bandpass, or rotSkyPos
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'bad_obs_test_phosim_cat.txt')
+        obs = ObservationMetaData(pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0, bandpassName='u')
+        with self.assertRaises(TypeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=19.0, mjd=43000.0, rotSkyPos=19.0, bandpassName='u')
+        with self.assertRaises(TypeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, rotSkyPos=19.0, bandpassName='u')
+        with self.assertRaises(RuntimeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, bandpassName='u')
+        with self.assertRaises(TypeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0)
+        with self.assertRaises(KeyError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0,
+                                  bandpassName='u')
+
+        cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+        cat.phoSimHeaderMap = {}
+        cat.write_catalog(catName)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
     def testCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
