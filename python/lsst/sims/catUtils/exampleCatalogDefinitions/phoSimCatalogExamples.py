@@ -70,6 +70,7 @@ def evaluate_phosim_header(param, phosim_header_map, obs):
 
     return phosim_header_map[param]
 
+
 def write_phoSim_header(obs, file_handle, phosim_header_map):
     """
     Write the data contained in an ObservationMetaData as a header in a
@@ -126,7 +127,10 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
                            "\n"
                            "For reference, the OpSim columns you can choose to map (i.e. those contained "
                            "in your ObservationMetaData) are:\n\n" +
-                           raw_opsim_contents)
+                           raw_opsim_contents +
+                           "\n(Even if your ObservationMetaData contains no extra OpSim Columns "
+                           "you may wish to consider adding default PhoSim parameters through "
+                           "the phoSimHeaderMap)")
 
     try:
 

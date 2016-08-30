@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 import lsst.utils.tests
 from lsst.utils import getPackageDir
-from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec
+from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec, ObservationMetaData
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
@@ -203,6 +203,21 @@ class PhoSimCatalogTest(unittest.TestCase):
             testBulge.write_catalog(catName)
 
         self.assertIn("without specifying a phoSimHeaderMap",
+                      context.exception.args[0])
+
+        # now make sure that the exception is raised, even if ObservationMetaData
+        # does not have an OpsimMetaData
+        obs = ObservationMetaData(pointingRA=35.0, pointingDec=-23.0,
+                                  mjd=43900.0, rotSkyPos=22.0,
+                                  boundType='circle', boundLength=1.75)
+
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=obs)
+        with self.assertRaises(RuntimeError) as context:
+            testBulge.write_catalog(catName)
+
+        self.assertIn("without specifying a phoSimHeaderMap",
+                      context.exception.args[0])
+        self.assertIn("you may wish to consider adding default PhoSim parameters",
                       context.exception.args[0])
 
         if os.path.exists(catName):
