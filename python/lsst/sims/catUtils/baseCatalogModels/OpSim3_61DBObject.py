@@ -48,9 +48,9 @@ class OpSim3_61DBObject(DBObject):
                    ('dist2Moon','dist2moon'),
                    ('moonPhase','moonphase'),
                    ('expMJD','expmjd'),
-                   ('visitExpTime','exptime'),
                    ('airmass', 'airmass'),
-                   ('filter', 'filter')]
+                   ('filter', 'filter'),
+                   ('visitExpTime', 'exptime-4.0', float)]
 
     #columnTypes is a dict indicating the data types
     #of the columns referred to in columnNames.
