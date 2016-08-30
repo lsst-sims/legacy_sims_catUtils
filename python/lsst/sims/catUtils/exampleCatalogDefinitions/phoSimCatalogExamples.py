@@ -18,23 +18,57 @@ PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
 
 
 # This is a dict of transformations mapping from data in OpSim to header
-# values expected by PhoSim.  The dict is keyed on the names of OpSim
-# columns (stored in the ObservationMetaData's OpsimMetaData property).
-# The values of the dict are tuples containing the name of the
-# variable expected by PhoSim and any transformation needed to go between
-# the units stored in OpSim and the units expected by PhoSim.
-DefaultPhoSimHeaderMap = {'rotTelPos': ('rottelpos', np.degrees),
-                          'obsHistID': ('obshistid', None),
-                          'moonRA': ('moonra', np.degrees),
-                          'moonDec': ('moondec', np.degrees),
-                          'moonPhase': ('moonphase', None),
-                          'moonAlt': ('moonalt', np.degrees),
-                          'dist2Moon': ('dist2Moon', np.degrees),
-                          'sunAlt': ('sunalt', np.degrees),
-                          'rawSeeing': ('seeing', None),
-                          'visitExpTime': ('vistime', lambda x : x+3.0),
-                          'nsnap': ('nsnap', None)}
+# values expected by PhoSim.  The dict is keyed on the names of PhoSim
+# parameters.  The values of the dict are either straight values, in which
+# case those values are written to the PhoSim InstanceCatalog header, or tuples
+# containing the name of the OpSim column which should be use to calculate
+# the PhoSim parameter and any transformation needed to go from OpSim
+# units to PhoSim units.
+DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
+                          'obshistid': ('obsHistID', None),
+                          'moonra': ('moonRA', np.degrees),
+                          'moondec': ('moonDec', np.degrees),
+                          'moonphase': ('moonPhase', None),
+                          'moonalt': ('moonAlt', np.degrees),
+                          'dist2moon': ('dist2Moon', np.degrees),
+                          'sunalt': ('sunAlt', np.degrees),
+                          'seeing': ('rawSeeing', None),
+                          'vistime': ('visitExpTime', lambda x: x+3.0),
+                          'nsnap': 2,
+                          'seed': ('obsHistID', None)}
 
+
+def evaluate_phosim_header(param, phosim_header_map, obs):
+    """
+    Find the value of a PhoSim header parameter given a PhoSimHeaderMap,
+    and an ObservationMetaData
+
+    @param [in] param is the name of the header parameter desired.
+
+    @param [in] phosim_header_map is a phoSimHeaderMap dict
+
+    @param [in] obs is an ObservationMetaData
+
+    @param [out] returns the value of the PhoSim header parameter
+    """
+
+    if param not in phosim_header_map:
+        return None
+
+    if isinstance(phosim_header_map[param], tuple):
+        transform = phosim_header_map[param]
+        if obs.OpsimMetaData is None:
+            return None
+
+        if transform[0] not in obs.OpsimMetaData:
+            return None
+
+        if transform[1] is None:
+            return obs.OpsimMetaData[transform[0]]
+
+        return transform[1](obs.OpsimMetaData[transform[0]])
+
+    return phosim_header_map[param]
 
 def write_phoSim_header(obs, file_handle, phosim_header_map):
     """
@@ -46,23 +80,26 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
     file_handle points to the catalog being written.
     """
 
-    if phosim_header_map is None and obs.OpsimMetaData is not None:
+    if phosim_header_map is None:
         raw_opsim_contents = ""
-        sorted_opsim_metadata = obs.OpsimMetaData.keys()
-        sorted_opsim_metadata.sort()
-        for tag in sorted_opsim_metadata:
-            raw_opsim_contents += "%s\n" % tag
+
+        if obs.OpsimMetaData is not None:
+            sorted_opsim_metadata = obs.OpsimMetaData.keys()
+            sorted_opsim_metadata.sort()
+            for tag in sorted_opsim_metadata:
+                raw_opsim_contents += "%s\n" % tag
 
         raise RuntimeError("You have tried to write a PhoSim InstanceCatalog without specifying "
                            "a phoSimHeaderMap in your call to write_catalog().\n"
                            "\n"
                            "A phoSimHeaderMap is a dict that maps between columns stored in the "
                            "OpSim database from which an ObservationMetaData was created and "
-                           "header parameters expected by PhoSim.  The dict is keyed on the names "
-                           "of parameters stored in OpSim.  Its values are tuples consisting of "
-                           "the name of the parameter as expected by PhoSim and any transformation "
-                           "necessary to convert between the units stored in OpSim and the units "
-                           "expected by PhoSim.\n"
+                           "header parameters expected by PhoSim.  The dict is keyed on the names of PhoSim "
+                           "parameters.  The values of the dict are either straight values, in which "
+                           "case those values are written to the PhoSim InstanceCatalog header, or tuples "
+                           "containing the name of the OpSim column which should be use to calculate "
+                           "the PhoSim parameter and any transformation needed to go from OpSim "
+                           "units to PhoSim units (the transform is 'None' if no transform is needed).\n"
                            "\n"
                            "To add a phoSimHeaderMap, simple assign it to the 'phoSimHeaderMap' "
                            "member variable of your catalog with (for instance):\n"
@@ -97,12 +134,9 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
         # in our two-snap model).  OpSim gives the MJD at the start of the visit.
         # below we calculate the change in MJD necessary to transform the OpSim value
         # into the PhoSim value
-        if 'visitExpTime' in obs.OpsimMetaData and 'visitExpTime' in phosim_header_map:
-            if phosim_header_map['visitExpTime'][1] is not None:
-                delta_t = 0.5*phosim_header_map['visitExpTime'][1](obs.OpsimMetaData['visitExpTime'])
-            else:
-                delta_t = 0.5*(obs.OpsimMetaData['visitExpTime'] + 3.0)
-                # 3.0 being 1 second to close the shutter; 2 seconds for readout
+        vistime = evaluate_phosim_header('vistime', phosim_header_map, obs)
+        if vistime is not None:
+            delta_t = 0.5*vistime
         else:
             delta_t = 16.5  # half of the default 33 seconds
 
@@ -123,34 +157,25 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
         print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
         raise
 
-    # map the other OpSim meta data to expected PhoSim arguments
-    if obs.OpsimMetaData is not None:
+    # sort the header map keys so that PhoSim headers generated with the same
+    # map always have parameters in the same order.
+    sorted_header_keys = phosim_header_map.keys()
+    sorted_header_keys.sort()
 
-        # sort the header map keys so that PhoSim headers generated with the same
-        # map always have parameters in the same order.
-        sorted_header_keys = phosim_header_map.keys()
-        sorted_header_keys.sort()
+    if 'obsHistID' in obs.OpsimMetaData:
+        file_handle.write('seed %d\n' % obs.OpsimMetaData['obsHistID'])
 
-        if 'obsHistID' in obs.OpsimMetaData:
-            file_handle.write('seed %d\n' % obs.OpsimMetaData['obsHistID'])
-
-        for kk in sorted_header_keys:
-           if kk in obs.OpsimMetaData:
-                if phosim_header_map[kk][1] is not None:
-                    val = phosim_header_map[kk][1](obs.OpsimMetaData[kk])
-                else:
-                    val = obs.OpsimMetaData[kk]
-
-                name = phosim_header_map[kk][0]
-
-                if isinstance(val, float) or isinstance(val, np.float):
-                    file_handle.write('%s %.7f\n' % (name, val))
-                elif isinstance(val, int) or isinstance(val, np.int):
-                    file_handle.write('%s %d\n' % (name, val))
-                elif isinstance(val, long):
-                    file_handle.write('%s %ld\n' % (name, val))
-                else:
-                    file_handle.write('%s %s\n' % (name, str(val)))
+    for name in sorted_header_keys:
+        val = evaluate_phosim_header(name, phosim_header_map, obs)
+        if name is not None:
+            if isinstance(val, float) or isinstance(val, np.float):
+                file_handle.write('%s %.7f\n' % (name, val))
+            elif isinstance(val, int) or isinstance(val, np.int):
+                file_handle.write('%s %d\n' % (name, val))
+            elif isinstance(val, long):
+                file_handle.write('%s %ld\n' % (name, val))
+            else:
+                file_handle.write('%s %s\n' % (name, str(val)))
 
 
 class PhosimInputBase(InstanceCatalog):

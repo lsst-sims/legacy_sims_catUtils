@@ -119,8 +119,8 @@ class PhoSimCatalogTest(unittest.TestCase):
         Test the behavior of the phoSimHeaderMap
         """
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
-        testBulge.phoSimHeaderMap = {'dist2moon': ('lunar_distance', None),
-                                     'rottelpos': ('rotation_of_the_telescope', np.degrees)}
+        testBulge.phoSimHeaderMap = {'lunar_distance': ('dist2moon', None),
+                                     'rotation_of_the_telescope': ('rottelpos', np.degrees)}
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                'header_map_catalog.txt')
