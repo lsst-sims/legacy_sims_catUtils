@@ -158,7 +158,7 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
         print "\n\n"
         print "The ObservationMetaData you tried to write a PhoSim header from"
         print "lacks one of the required parameters"
-        print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
+        print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)\n"
         raise
 
     # sort the header map keys so that PhoSim headers generated with the same
