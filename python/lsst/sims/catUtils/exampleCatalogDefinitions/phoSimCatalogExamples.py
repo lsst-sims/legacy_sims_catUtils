@@ -146,7 +146,7 @@ class PhosimInputBase(InstanceCatalog):
         return np.array(['object' for i in chunkiter], dtype=(str, 6))
 
     def get_sedFilepath(self):
-        return np.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
+        return np.array([self.specFileMap[k] if k in self.specFileMap else None
                          for k in self.column_by_name('sedFilename')])
 
     def get_spatialmodel(self):
