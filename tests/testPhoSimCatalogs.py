@@ -263,7 +263,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(catName):
             os.unlink(catName)
 
-
     def test_non_existent_values_in_header_map(self):
         """
         Test that header params that are defined in the header map but not
@@ -271,7 +270,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
         test_header_map = {'lunar_distance': ('dist2moon', None),
                            'nsnap': 3,
-                           'nonesense': ('gobbledygook', lambda x : 2.0*x)}
+                           'nonesense': ('gobbledygook', lambda x: 2.0*x)}
 
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
         testBulge.phoSimHeaderMap = test_header_map
@@ -334,7 +333,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertIn('nsnap', input_header)
         self.assertEqual(int(input_header['nsnap']), 3)
         self.assertEqual(len(input_header), 8)
-
 
         if os.path.exists(catName):
             os.unlink(catName)
