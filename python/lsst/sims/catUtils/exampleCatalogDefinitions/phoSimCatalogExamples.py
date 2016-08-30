@@ -23,16 +23,16 @@ PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
 # The values of the dict are tuples containing the name of the
 # variable expected by PhoSim and any transformation needed to go between
 # the units stored in OpSim and the units expected by PhoSim.
-DefaultPhoSimHeaderMap = {'rotSkyPos': ('rotskypos', None),
-                          'rotTelPos': ('rottelpos', np.degrees),
+DefaultPhoSimHeaderMap = {'rotTelPos': ('rottelpos', np.degrees),
                           'obsHistID': ('obshistid', None),
                           'moonRA': ('moonra', np.degrees),
                           'moonDec': ('moondec', np.degrees),
                           'moonPhase': ('moonphase', None),
-                          'dist2moon': ('dist2Moon', np.degrees),
+                          'moonAlt': ('moonalt', np.degrees),
+                          'dist2Moon': ('dist2Moon', np.degrees),
                           'sunAlt': ('sunalt', np.degrees),
                           'rawSeeing': ('seeing', None),
-                         ' visitExpTime': ('vistime', None)}
+                          'visitTime': ('vistime', None)}
 
 
 def write_phoSim_header(obs, file_handle, phosim_header_map):
