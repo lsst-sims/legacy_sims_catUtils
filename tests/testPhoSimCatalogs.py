@@ -170,7 +170,7 @@ class PhoSimCatalogTest(unittest.TestCase):
                                      'rotation_of_the_telescope': ('rottelpos', np.degrees)}
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'header_map_catalog.txt')
+                               'header_map_phosim_catalog.txt')
         testBulge.write_catalog(catName)
 
         with open(catName, 'r') as input_file:
@@ -209,7 +209,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge.phoSimHeaderMap = {}
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'blank_header_map_catalog.txt')
+                               'blank_header_map_phosim_catalog.txt')
         testBulge.write_catalog(catName)
 
         with open(catName, 'r') as input_file:
@@ -244,7 +244,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'no_header_map_catalog.txt')
+                               'no_header_map_phosim_catalog.txt')
 
         with self.assertRaises(RuntimeError) as context:
             testBulge.write_catalog(catName)
@@ -281,7 +281,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge.phoSimHeaderMap = test_header_map
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'default_value_header_map_catalog.txt')
+                               'default_value_header_map_phosim_catalog.txt')
         testBulge.write_catalog(catName)
 
         with open(catName, 'r') as input_file:
@@ -323,7 +323,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge.phoSimHeaderMap = test_header_map
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'nonexistent_value_header_map_catalog.txt')
+                               'nonexistent_value_header_map_phosim_catalog.txt')
         testBulge.write_catalog(catName)
 
         with open(catName, 'r') as input_file:
@@ -356,9 +356,6 @@ class PhoSimCatalogTest(unittest.TestCase):
                                   boundType='circle', boundLength=1.0)
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=obs)
         testBulge.phoSimHeaderMap = test_header_map
-
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'nonexistnet_value_header_map_catalog.txt')
         testBulge.write_catalog(catName)
 
         with open(catName, 'r') as input_file:
