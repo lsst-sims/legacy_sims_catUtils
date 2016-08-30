@@ -9,7 +9,8 @@ from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import OpSim3_61DBObject
 from lsst.sims.catUtils.exampleCatalogDefinitions.phoSimCatalogExamples import \
-        PhoSimCatalogPoint, PhoSimCatalogSersic2D, PhoSimCatalogZPoint
+        PhoSimCatalogPoint, PhoSimCatalogSersic2D, PhoSimCatalogZPoint, \
+        DefaultPhoSimHeaderMap
 
 from lsst.sims.catUtils.baseCatalogModels import *
 
@@ -22,7 +23,9 @@ doHeader= True
 for starName in starObjNames:
     stars = CatalogDBObject.from_objid(starName)
     star_phoSim=PhoSimCatalogPoint(stars,obs_metadata=obs_metadata) #the class for phoSim input files
+
                                                                 #containing point sources
+    star_phoSim.phoSimHeaderMap = DefaultPhoSimHeaderMap
     if (doHeader):
         with open("phoSim_example.txt","w") as fh:
             star_phoSim.write_header(fh)

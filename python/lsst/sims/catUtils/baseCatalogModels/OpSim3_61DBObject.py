@@ -30,37 +30,32 @@ class OpSim3_61DBObject(DBObject):
     raColName = 'fieldra*180./PI()'
     decColName = 'fielddec*180./PI()'
 
-    #columnNames maps column names as stored in the database
-    #to column names as are required by PhoSim.
-    #For each tuple, the first string is the name
-    #required by PhoSim.  The second string is
-    #the name stored in the database
-    columnNames = [('Opsim_obshistid','obshistid'),
-               ('SIM_SEED','expdate'),
-               ('pointingRA','fieldra'),
-               ('pointingDec','fielddec'),
-               ('Opsim_moonra','moonra'),
-               ('Opsim_moondec','moondec'),
-               ('Opsim_rotskypos','rotskypos'),
-               ('Opsim_rottelpos','rottelpos'),
-               ('Opsim_filter','filter'),
-               ('Opsim_rawseeing','rawseeing'),
-               ('Opsim_sunalt','sunalt'),
-               ('Opsim_moonalt','moonalt'),
-               ('Opsim_dist2moon','dist2moon'),
-               ('Opsim_moonphase','moonphase'),
-               ('Opsim_expmjd','expmjd'),
-               ('Opsim_altitude','altitude'),
-               ('Opsim_azimuth','azimuth'),
-               ('exptime','exptime'),
-               ('airmass','airmass')]
+    # columnNames maps column names as stored in the OpSim3_61 database
+    # to column names as they occur in the OpSim v3.3.5 summary table
+    columnNames = [('obsHistID','obshistid'),
+                   ('SIM_SEED','expdate'),
+                   ('pointingRA','fieldra'),
+                   ('pointingDec','fielddec'),
+                   ('moonRA','moonra'),
+                   ('moonDec','moondec'),
+                   ('rotSkyPos','rotskypos'),
+                   ('rotTelPos','rottelpos'),
+                   ('rawSeeing','rawseeing'),
+                   ('sunAlt','sunalt'),
+                   ('moonAlt','moonalt'),
+                   ('dist2Moon','dist2moon'),
+                   ('moonPhase','moonphase'),
+                   ('expMJD','expmjd'),
+                   ('visitExpTime','exptime'),
+                   ('airmass', 'airmass'),
+                   ('filter', 'filter')]
 
     #columnTypes is a dict indicating the data types
     #of the columns referred to in columnNames.
     #columns not mentioned are floats
     columnTypes ={'SIM_SEED':int,
-                  'Opsim_filter':(str,1),
-                  'Opsim_obshistid':numpy.int64}
+                  'filter':(str,1),
+                  'obshistID':numpy.int64}
 
     def __init__(self, driver=None, host=None, port=None, database=None):
         super(OpSim3_61DBObject, self).__init__(driver=driver, host=host, port=port, database=database)
@@ -129,8 +124,10 @@ class OpSim3_61DBObject(DBObject):
 
         result = self.execute_arbitrary(query, dtype=dtype)
 
-        ra = result['pointingRA'][0]
-        dec = result['pointingDec'][0]
+        ra = numpy.degrees(result['pointingRA'][0])
+        dec = numpy.degrees(result['pointingDec'][0])
+        rotSkyPos = numpy.degrees(result['rotSkyPos'][0])
+        mjd = result['expMJD'][0]
 
         #because makeCircBounds defaults to True, check whether the user is
         #requesting boxBounds before deciding to instantiate
@@ -147,6 +144,12 @@ class OpSim3_61DBObject(DBObject):
         else:
             raise ValueErr("Need either makeBoxBounds or makeCircBounds")
 
-        return ObservationMetaData(boundType=boundType,
-                                   boundLength=boundLength,
-                                   phoSimMetaData=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  rotSkyPos=rotSkyPos, mjd=mjd,
+                                  bandpassName=result['filter'][0],
+                                  boundType=boundType, boundLength=boundLength)
+
+        raw_opsim_dict = dict([(k, result[k][0]) for k in result.dtype.names])
+        obs.OpsimMetaData = raw_opsim_dict
+
+        return obs
