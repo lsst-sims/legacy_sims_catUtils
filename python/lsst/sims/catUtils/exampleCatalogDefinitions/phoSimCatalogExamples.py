@@ -166,9 +166,6 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
     sorted_header_keys = phosim_header_map.keys()
     sorted_header_keys.sort()
 
-    if 'obsHistID' in obs.OpsimMetaData:
-        file_handle.write('seed %d\n' % obs.OpsimMetaData['obsHistID'])
-
     for name in sorted_header_keys:
         val = evaluate_phosim_header(name, phosim_header_map, obs)
         if val is not None:
