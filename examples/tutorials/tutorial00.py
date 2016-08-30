@@ -3,7 +3,7 @@ This is a version of tutorial00.ipynb without the
 running commentary
 """
 
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catUtils.baseCatalogModels import *
 
 myGalaxyDB = CatalogDBObject.from_objid('galaxyTiled')

@@ -4,10 +4,11 @@ running commentary
 """
 
 import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import *
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached, compound
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import cached, compound
 
 class TutorialCatalog(InstanceCatalog):
 
