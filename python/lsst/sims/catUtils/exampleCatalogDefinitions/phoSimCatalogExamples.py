@@ -94,7 +94,7 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
     try:
         file_handle.write('rightascension %.9g\n' % obs.pointingRA)
         file_handle.write('declination %.9g\n' % obs.pointingDec)
-        file_handle.write('mjd %.9g\n' % obs.mjd.TAI)
+        file_handle.write('mjd %.6f\n' % obs.mjd.UTC)
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs, includeRefraction=False)
         file_handle.write('altitude %.9g\n' % alt)
         file_handle.write('azimuth %.9g\n' % az)
