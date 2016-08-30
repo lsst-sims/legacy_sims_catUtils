@@ -92,16 +92,16 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
                            + raw_opsim_contents)
 
     try:
-        file_handle.write('rightascension %.9g\n' % obs.pointingRA)
-        file_handle.write('declination %.9g\n' % obs.pointingDec)
-        file_handle.write('mjd %.6f\n' % obs.mjd.UTC)
+        file_handle.write('rightascension %.7f\n' % obs.pointingRA)
+        file_handle.write('declination %.7f\n' % obs.pointingDec)
+        file_handle.write('mjd %.7f\n' % obs.mjd.TAI)
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs, includeRefraction=False)
-        file_handle.write('altitude %.9g\n' % alt)
-        file_handle.write('azimuth %.9g\n' % az)
+        file_handle.write('altitude %.7f\n' % alt)
+        file_handle.write('azimuth %.7f\n' % az)
         file_handle.write('filter %d\n' %
                           {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}[obs.bandpass])
 
-        file_handle.write('rotskypos %.9g\n' % obs.rotSkyPos)
+        file_handle.write('rotskypos %.7f\n' % obs.rotSkyPos)
     except:
         print "\n\n"
         print "The ObservationMetaData you tried to write a PhoSim header from"
@@ -118,7 +118,17 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
                 val = phosim_header_map[kk][1](obs.OpsimMetaData[kk])
             else:
                 val = obs.OpsimMetaData[kk]
-            file_handle.write('%s %.9g\n' % (phosim_header_map[kk][0], val))
+
+            name = phosim_header_map[kk][0]
+
+            if isinstance(val, float) or isinstance(val, np.float):
+                file_handle.write('%s %.7f\n' % (name, val))
+            elif isinstance(val, int) or isinstance(val, np.int):
+                file_handle.write('%s %d\n' % (name, val))
+            elif isinstance(val, long):
+                file_handle.write('%s %ld\n' % (name, val))
+            else:
+                file_handle.write('%s %s\n' % (name, str(val)))
 
 
 class PhosimInputBase(InstanceCatalog):
