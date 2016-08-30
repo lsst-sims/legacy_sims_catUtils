@@ -17,7 +17,11 @@ from lsst.sims.catUtils.baseCatalogModels import *
 starObjNames = ['msstars', 'bhbstars', 'wdstars', 'rrlystars', 'cepheidstars']
 
 obsMD = OpSim3_61DBObject()
-obs_metadata = obsMD.getObservationMetaData(88625744, 0.05, makeCircBounds = True)
+obs_list = obsMD.getObservationMetaData((23.0, -50.0), 2.0,
+                                        fovRadius=0.1, makeCircBounds = True)
+
+obs_metadata = obs_list[0]
+print type(obs_metadata.OpsimMetaData['obsHistID'])
 
 doHeader= True
 for starName in starObjNames:
