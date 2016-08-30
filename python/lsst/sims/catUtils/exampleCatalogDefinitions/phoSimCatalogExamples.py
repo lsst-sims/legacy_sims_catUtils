@@ -108,27 +108,31 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
         print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
         raise
 
-    # sort the header map keys so that PhoSim headers generated with the same
-    # map always have parameters in the same order.
-    sorted_header_keys = phosim_header_map.keys()
-    sorted_header_keys.sort()
-    for kk in sorted_header_keys:
-        if kk in obs.OpsimMetaData:
-            if phosim_header_map[kk][1] is not None:
-                val = phosim_header_map[kk][1](obs.OpsimMetaData[kk])
-            else:
-                val = obs.OpsimMetaData[kk]
+    # map the other OpSim meta data to expected PhoSim arguments
+    if obs.OpsimMetaData is not None:
 
-            name = phosim_header_map[kk][0]
+        # sort the header map keys so that PhoSim headers generated with the same
+        # map always have parameters in the same order.
+        sorted_header_keys = phosim_header_map.keys()
+        sorted_header_keys.sort()
 
-            if isinstance(val, float) or isinstance(val, np.float):
-                file_handle.write('%s %.7f\n' % (name, val))
-            elif isinstance(val, int) or isinstance(val, np.int):
-                file_handle.write('%s %d\n' % (name, val))
-            elif isinstance(val, long):
-                file_handle.write('%s %ld\n' % (name, val))
-            else:
-                file_handle.write('%s %s\n' % (name, str(val)))
+        for kk in sorted_header_keys:
+           if kk in obs.OpsimMetaData:
+                if phosim_header_map[kk][1] is not None:
+                    val = phosim_header_map[kk][1](obs.OpsimMetaData[kk])
+                else:
+                    val = obs.OpsimMetaData[kk]
+
+                name = phosim_header_map[kk][0]
+
+                if isinstance(val, float) or isinstance(val, np.float):
+                    file_handle.write('%s %.7f\n' % (name, val))
+                elif isinstance(val, int) or isinstance(val, np.int):
+                    file_handle.write('%s %d\n' % (name, val))
+                elif isinstance(val, long):
+                    file_handle.write('%s %ld\n' % (name, val))
+                else:
+                    file_handle.write('%s %s\n' % (name, str(val)))
 
 
 class PhosimInputBase(InstanceCatalog):
