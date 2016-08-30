@@ -87,8 +87,8 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
                            "to ensure self-consistency.\n"
                            "\n"
                            "For reference, the OpSim columns you can choose to map (i.e. those contained "
-                           "in your ObservationMetaData) are:\n\n"
-                           + raw_opsim_contents)
+                           "in your ObservationMetaData) are:\n\n" +
+                           raw_opsim_contents)
 
     try:
         file_handle.write('rightascension %.7f\n' % obs.pointingRA)
