@@ -44,7 +44,7 @@ class PhoSimCatalogTest(unittest.TestCase):
                                'rotskypos %.7f\n' % self.obs_metadata.rotSkyPos,
                                'moonra %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonra']),
                                'sunalt %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['sunalt']),
-                               'mjd %.7f\n' % self.obs_metadata.mjd.TAI,
+                               'mjd %.7f\n' % (self.obs_metadata.mjd.TAI+16.5/86400.0),
                                'azimuth %.7f\n' % az,
                                'rightascension %.7f\n' % self.obs_metadata.pointingRA,
                                'dist2moon %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['dist2moon']),

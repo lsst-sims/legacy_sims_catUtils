@@ -32,7 +32,8 @@ DefaultPhoSimHeaderMap = {'rotTelPos': ('rottelpos', np.degrees),
                           'dist2Moon': ('dist2Moon', np.degrees),
                           'sunAlt': ('sunalt', np.degrees),
                           'rawSeeing': ('seeing', None),
-                          'visitTime': ('vistime', None)}
+                          'visitExpTime': ('vistime', lambda x : x+3.0),
+                          'nsnap': ('nsnap', None)}
 
 
 def write_phoSim_header(obs, file_handle, phosim_header_map):
@@ -91,9 +92,23 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
                            raw_opsim_contents)
 
     try:
+
+        # PhoSim wants the MJD at the middle of the visit (i.e. between the two exposures
+        # in our two-snap model).  OpSim gives the MJD at the start of the visit.
+        # below we calculate the change in MJD necessary to transform the OpSim value
+        # into the PhoSim value
+        if 'visitExpTime' in obs.OpsimMetaData and 'visitExpTime' in phosim_header_map:
+            if phosim_header_map['visitExpTime'][1] is not None:
+                delta_t = 0.5*phosim_header_map['visitExpTime'][1](obs.OpsimMetaData['visitExpTime'])
+            else:
+                delta_t = 0.5*(obs.OpsimMetaData['visitExpTime'] + 3.0)
+                # 3.0 being 1 second to close the shutter; 2 seconds for readout
+        else:
+            delta_t = 16.5  # half of the default 33 seconds
+
         file_handle.write('rightascension %.7f\n' % obs.pointingRA)
         file_handle.write('declination %.7f\n' % obs.pointingDec)
-        file_handle.write('mjd %.7f\n' % obs.mjd.TAI)
+        file_handle.write('mjd %.7f\n' % (obs.mjd.TAI + delta_t/86400.0))
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs, includeRefraction=False)
         file_handle.write('altitude %.7f\n' % alt)
         file_handle.write('azimuth %.7f\n' % az)
