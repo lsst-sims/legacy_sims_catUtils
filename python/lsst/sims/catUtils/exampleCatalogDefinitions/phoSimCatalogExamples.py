@@ -171,7 +171,7 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
 
     for name in sorted_header_keys:
         val = evaluate_phosim_header(name, phosim_header_map, obs)
-        if name is not None:
+        if val is not None:
             if isinstance(val, float) or isinstance(val, np.float):
                 file_handle.write('%s %.7f\n' % (name, val))
             elif isinstance(val, int) or isinstance(val, np.int):
