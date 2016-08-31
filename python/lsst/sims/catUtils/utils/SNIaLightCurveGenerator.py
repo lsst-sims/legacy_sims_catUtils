@@ -74,7 +74,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
     class _filterCatalogClass(_sniaLightCurveCatalog):
         column_outputs = ["uniqueId", "t0"]
 
-    def _light_curves_from_query(self, cat_dict, query_result, grp):
+    def _light_curves_from_query(self, cat_dict, query_result, grp, lc_per_field=None):
 
         t_dict = {}
         gamma_dict = {}
