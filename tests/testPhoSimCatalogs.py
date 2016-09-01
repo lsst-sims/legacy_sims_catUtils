@@ -167,7 +167,8 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
         testBulge.phoSimHeaderMap = {'lunar_distance': ('dist2moon', None),
-                                     'rotation_of_the_telescope': ('rottelpos', np.degrees)}
+                                     'rotation_of_the_telescope': ('rottelpos', np.degrees),
+                                     'other_rotation': ('rottelpos', lambda x: x*x)}
 
         catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                'header_map_phosim_catalog.txt')
@@ -196,7 +197,11 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertAlmostEqual(float(input_header['rotation_of_the_telescope']),
                                np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']),
                                delta=1.0e-6*np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']))
-        self.assertEqual(len(input_header), 9)
+        self.assertIn('other_rotation', input_header)
+        self.assertAlmostEqual(float(input_header['other_rotation']),
+                               self.obs_metadata.OpsimMetaData['rottelpos']**2,
+                               delta=1.0e-6*self.obs_metadata.OpsimMetaData['rottelpos']**2)
+        self.assertEqual(len(input_header), 10)
 
         if os.path.exists(catName):
             os.unlink(catName)
