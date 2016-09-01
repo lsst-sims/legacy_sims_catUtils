@@ -773,6 +773,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         control_lc, truth = gen.light_curves_from_pointings(pointings)
         test_lc, truth = gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
         self.assertGreater(len(control_lc), len(test_lc))
+        self.assertLessEqual(len(test_lc), lc_limit*len(pointings))
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

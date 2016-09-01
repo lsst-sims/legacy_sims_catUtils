@@ -71,6 +71,15 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                                                chunk_size=chunk_size,
                                                                lc_per_field=lc_per_field)
 
+    def _get_query_from_group(self, grp, chunk_size, lc_per_field=None):
+        """
+        Override _get_query_from_group.  The probabilistic nature of SNe requires
+        that we always actually do the query with lc_per_field=None (since we can't be
+        guaranteed that any given galaxy, though it contains a SN, will have an SN that
+        is going off during our time of interest).
+        """
+        return LightCurveGenerator._get_query_from_group(self, grp, chunk_size, lc_per_field=None)
+
     class _filterCatalogClass(_sniaLightCurveCatalog):
         column_outputs = ["uniqueId", "t0"]
 
@@ -114,7 +123,13 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
         dummy_sed = Sed()
 
+        n_actual_sn = 0  # how many SN have we actually delivered?
+
         for chunk in query_result:
+
+            if lc_per_field is not None and n_actual_sn >= lc_per_field:
+                break
+
             t_start_chunk = time.time()
             for sn in cat.iter_catalog(query_cache=[chunk]):
                 sn_rng = self.sn_universe.getSN_rng(sn[1])
@@ -146,6 +161,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                             gamma_active = gamma_list[active_dexes]
 
                             if len(t_active) > 0:
+
                                 wave_ang = bandpass.wavelen*10.0
                                 mask = np.logical_and(wave_ang > snobj.minwave(),
                                                       wave_ang < snobj.maxwave())
@@ -173,6 +189,10 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
                                                              gamma=gamma_active[acceptable])
 
                                 if len(acceptable) > 0:
+
+                                    n_actual_sn += 1
+                                    if lc_per_field is not None and n_actual_sn > lc_per_field:
+                                        break
 
                                     if sn[0] not in self.truth_dict:
                                         self.truth_dict[sn[0]] = {}
