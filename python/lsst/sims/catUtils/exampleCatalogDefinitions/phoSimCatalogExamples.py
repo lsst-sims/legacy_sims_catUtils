@@ -24,6 +24,13 @@ PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
 # containing the name of the OpSim column which should be use to calculate
 # the PhoSim parameter and any transformation needed to go from OpSim
 # units to PhoSim units.
+#
+# PhoSim header parameters are documented here
+# https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+#
+# OpSim columns are documented here
+# https://www.lsst.org/scientists/simulations/opsim/summary-table-column-descriptions-v335
+#
 DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
                           'obshistid': ('obsHistID', None),
                           'moonra': ('moonRA', np.degrees),
