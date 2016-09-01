@@ -18,10 +18,14 @@ camera = mapper.camera
 epoch = 2000.0
 
 #generate an ObservationMetaData object based on an actual OpSim pointing
-obshistid = 88625744
+
 radiusDegrees = 3.0
 OpSimDB = OpSim3_61DBObject()
-obs_metadata = OpSimDB.getObservationMetaData(obshistid, radiusDegrees, makeCircBounds=True)
+obs_metadata_list = OpSimDB.getObservationMetaData((88.0, -40.0), 5.0,
+                                                   fovRadius=radiusDegrees,
+                                                   makeCircBounds=True)
+
+obs_metadata = obs_metadata_list[0]
 
 #generate some random RA and Dec to find chips for
 nsamples = 10

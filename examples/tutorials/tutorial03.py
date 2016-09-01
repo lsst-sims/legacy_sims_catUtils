@@ -3,11 +3,12 @@ This is a version of tutorial03.ipynb without the running commentary
 """
 
 import numpy
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import haversine
 from lsst.sims.catUtils.baseCatalogModels import *
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import cached
 from lsst.sims.catUtils.mixins import AstrometryStars, PhotometryStars
 
 class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
@@ -18,7 +19,7 @@ class TutorialCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     #sims_catUtils/python/lsst/sims/catUtils/mixins/PhotometryMixin.py
     #
     #to see where raObserved and decObserved come from, see the AstrometryStars class in
-    #sims_catUtils/python/lsst/sims/catUtils/AstrometryMixin.py
+    #sims_catUtils/python/lsst/sims/catUtils/mixins/AstrometryMixin.py
 
 
     #transform all of the angles into degrees

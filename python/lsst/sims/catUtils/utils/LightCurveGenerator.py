@@ -149,7 +149,7 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
         PhotometryGalaxies.
 
         Otherwise, it will read self._sedList from the cache.
-        That way, the photometry getters defined in PhotometryStars will
+        That way, the photometry getters defined in PhotometryGalaxies will
         not read in SEDs that have already been cached.
         """
 

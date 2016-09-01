@@ -1,15 +1,24 @@
 from __future__ import with_statement
 import os
+import numpy as np
 import unittest
 import lsst.utils.tests
 from lsst.utils import getPackageDir
-from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec
+from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec, ObservationMetaData
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
                                                           PhoSimCatalogZPoint)
 from lsst.sims.catalogs.utils import makePhoSimTestDB
+
+
+test_header_map = {'dist2moon': ('dist2moon', np.degrees),
+                   'moonalt': ('moonalt', np.degrees),
+                   'moondec': ('moondec', np.degrees),
+                   'moonra': ('moonra', np.degrees),
+                   'rottelpos': ('rottelpos', np.degrees),
+                   'sunalt': ('sunalt', np.degrees)}
 
 
 def setup_module(module):
@@ -27,20 +36,20 @@ class PhoSimCatalogTest(unittest.TestCase):
         filter_translation = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
         alt, az, pa = altAzPaFromRaDec(self.obs_metadata.pointingRA,
                                        self.obs_metadata.pointingDec,
-                                       self.obs_metadata)
-        self.control_header = ['Opsim_moondec %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moondec'],
-                               'Opsim_rottelpos %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_rottelpos'],
-                               'Unrefracted_Dec %.9g\n' % self.obs_metadata.pointingDec,
-                               'Opsim_moonalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonalt'],
-                               'Opsim_rotskypos %.9g\n' % self.obs_metadata.rotSkyPos,
-                               'Opsim_moonra %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_moonra'],
-                               'Opsim_sunalt %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_sunalt'],
-                               'Opsim_expmjd %.9g\n' % self.obs_metadata.mjd.TAI,
-                               'Opsim_azimuth %.9g\n' % az,
-                               'Unrefracted_RA %.9g\n' % self.obs_metadata.pointingRA,
-                               'Opsim_dist2moon %.9g\n' % self.obs_metadata.phoSimMetaData['Opsim_dist2moon'],
-                               'Opsim_filter %d\n' % filter_translation[self.obs_metadata.bandpass],
-                               'Opsim_altitude %.9g\n' % alt]
+                                       self.obs_metadata, includeRefraction=False)
+        self.control_header = ['moondec %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moondec']),
+                               'rottelpos %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']),
+                               'declination %.7f\n' % self.obs_metadata.pointingDec,
+                               'moonalt %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonalt']),
+                               'rotskypos %.7f\n' % self.obs_metadata.rotSkyPos,
+                               'moonra %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonra']),
+                               'sunalt %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['sunalt']),
+                               'mjd %.7f\n' % (self.obs_metadata.mjd.TAI+16.5/86400.0),
+                               'azimuth %.7f\n' % az,
+                               'rightascension %.7f\n' % self.obs_metadata.pointingRA,
+                               'dist2moon %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['dist2moon']),
+                               'filter %d\n' % filter_translation[self.obs_metadata.bandpass],
+                               'altitude %.7f\n' % alt]
 
     def tearDown(self):
         del self.starDB
@@ -81,6 +90,53 @@ class PhoSimCatalogTest(unittest.TestCase):
 
             self.assertEqual(cat.specFileMap[test_name], defaultSpecMap[test_name])
 
+    def test_incomplete_obs(self):
+        """
+        Test that an exception gets raised if you try to make a PhoSim InstanceCatalog
+        with an ObservationMetaData that lacks RA, Dec, mjd, bandpass, or rotSkyPos
+        """
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'bad_obs_test_phosim_cat.txt')
+        obs = ObservationMetaData(pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0, bandpassName='u')
+        with self.assertRaises(TypeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=19.0, mjd=43000.0, rotSkyPos=19.0, bandpassName='u')
+        with self.assertRaises(TypeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, rotSkyPos=19.0, bandpassName='u')
+        with self.assertRaises(RuntimeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, bandpassName='u')
+        with self.assertRaises(TypeError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0)
+        with self.assertRaises(KeyError):
+            cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+            cat.phoSimHeaderMap = {}
+            cat.write_catalog(catName)
+
+        obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0,
+                                  bandpassName='u')
+
+        cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
+        cat.phoSimHeaderMap = {}
+        cat.write_catalog(catName)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
     def testCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
@@ -94,12 +150,238 @@ class PhoSimCatalogTest(unittest.TestCase):
         catName = os.path.join(getPackageDir('sims_catUtils'),
                                'tests', 'scratchSpace', 'phoSimTestCatalog.txt')
 
+        testBulge.phoSimHeaderMap = test_header_map
         testBulge.write_catalog(catName)
         testDisk.write_catalog(catName, write_header=False, write_mode='a')
         testAgn.write_catalog(catName, write_header=False, write_mode='a')
         testStar.write_catalog(catName, write_header=False, write_mode='a')
 
         self.verify_catalog(catName)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def testHeaderMap(self):
+        """
+        Test the behavior of the phoSimHeaderMap
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        testBulge.phoSimHeaderMap = {'lunar_distance': ('dist2moon', None),
+                                     'rotation_of_the_telescope': ('rottelpos', np.degrees),
+                                     'other_rotation': ('rottelpos', lambda x: x*x)}
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'header_map_phosim_catalog.txt')
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertIn('lunar_distance', input_header)
+        self.assertAlmostEqual(float(input_header['lunar_distance']),
+                               self.obs_metadata.OpsimMetaData['dist2moon'], 6)
+        self.assertIn('rotation_of_the_telescope', input_header)
+        self.assertAlmostEqual(float(input_header['rotation_of_the_telescope']),
+                               np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']),
+                               delta=1.0e-6*np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']))
+        self.assertIn('other_rotation', input_header)
+        self.assertAlmostEqual(float(input_header['other_rotation']),
+                               self.obs_metadata.OpsimMetaData['rottelpos']**2,
+                               delta=1.0e-6*self.obs_metadata.OpsimMetaData['rottelpos']**2)
+        self.assertEqual(len(input_header), 10)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def testBlankHeaderMap(self):
+        """
+        Test behavior of a blank header map
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        testBulge.phoSimHeaderMap = {}
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'blank_header_map_phosim_catalog.txt')
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        # verify that only the default header parameters are included in the
+        # PhoSimInstanceCatalog, even though obs_metadata has a non-None
+        # OpsimMetaData
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertEqual(len(input_header), 7)
+        self.assertGreater(len(self.obs_metadata.OpsimMetaData), 0)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def testNoHeaderMap(self):
+        """
+        Test that the correct error is raised if no header map is specified
+        """
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'no_header_map_phosim_catalog.txt')
+
+        with self.assertRaises(RuntimeError) as context:
+            testBulge.write_catalog(catName)
+
+        self.assertIn("without specifying a phoSimHeaderMap",
+                      context.exception.args[0])
+
+        # now make sure that the exception is raised, even if ObservationMetaData
+        # does not have an OpsimMetaData
+        obs = ObservationMetaData(pointingRA=35.0, pointingDec=-23.0,
+                                  mjd=43900.0, rotSkyPos=22.0,
+                                  boundType='circle', boundLength=1.75)
+
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=obs)
+        with self.assertRaises(RuntimeError) as context:
+            testBulge.write_catalog(catName)
+
+        self.assertIn("without specifying a phoSimHeaderMap",
+                      context.exception.args[0])
+        self.assertIn("you may wish to consider adding default PhoSim parameters",
+                      context.exception.args[0])
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def test_default_values_in_header_map(self):
+        """
+        Test that default PhoSim header values in the header map get appropriately applied
+        """
+        test_header_map = {'lunar_distance': ('dist2moon', None),
+                           'nsnap': 3}
+
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        testBulge.phoSimHeaderMap = test_header_map
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'default_value_header_map_phosim_catalog.txt')
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertIn('lunar_distance', input_header)
+        self.assertAlmostEqual(float(input_header['lunar_distance']),
+                               self.obs_metadata.OpsimMetaData['dist2moon'], 6)
+        self.assertIn('nsnap', input_header)
+        self.assertEqual(int(input_header['nsnap']), 3)
+        self.assertEqual(len(input_header), 9)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
+
+    def test_non_existent_values_in_header_map(self):
+        """
+        Test that header params that are defined in the header map but not
+        in OpsimMetaData are ommitted from the header
+        """
+        test_header_map = {'lunar_distance': ('dist2moon', None),
+                           'nsnap': 3,
+                           'nonesense': ('gobbledygook', lambda x: 2.0*x)}
+
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        testBulge.phoSimHeaderMap = test_header_map
+
+        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                               'nonexistent_value_header_map_phosim_catalog.txt')
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertIn('lunar_distance', input_header)
+        self.assertAlmostEqual(float(input_header['lunar_distance']),
+                               self.obs_metadata.OpsimMetaData['dist2moon'], 6)
+        self.assertIn('nsnap', input_header)
+        self.assertEqual(int(input_header['nsnap']), 3)
+        self.assertEqual(len(input_header), 9)
+
+        # now try it with no OpsimMetaData at all
+        obs = ObservationMetaData(pointingRA=23.0, pointingDec=-11.0,
+                                  mjd=43000.0, rotSkyPos=44.0,
+                                  bandpassName='g',
+                                  boundType='circle', boundLength=1.0)
+        testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=obs)
+        testBulge.phoSimHeaderMap = test_header_map
+        testBulge.write_catalog(catName)
+
+        with open(catName, 'r') as input_file:
+            input_header = {}
+            for line in input_file:
+                vv = line.split()
+                if vv[0] != 'object':
+                    input_header[vv[0]] = vv[1]
+                else:
+                    break
+
+        self.assertIn('rightascension', input_header)
+        self.assertIn('declination', input_header)
+        self.assertIn('altitude', input_header)
+        self.assertIn('azimuth', input_header)
+        self.assertIn('filter', input_header)
+        self.assertIn('rotskypos', input_header)
+        self.assertIn('mjd', input_header)
+        self.assertIn('nsnap', input_header)
+        self.assertEqual(int(input_header['nsnap']), 3)
+        self.assertEqual(len(input_header), 8)
 
         if os.path.exists(catName):
             os.unlink(catName)
@@ -121,6 +403,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
+        testBulge.phoSimHeaderMap = test_header_map
         testBulge.write_catalog(single_catName)
         testDisk.write_catalog(single_catName, write_header=False, write_mode='a')
         testAgn.write_catalog(single_catName, write_header=False, write_mode='a')
@@ -159,6 +442,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         compound_catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
                                         'phoSimTestCatalog_compound.txt')
 
+        compoundCatalog.phoSimHeaderMap = test_header_map
         compoundCatalog.write_catalog(compound_catName)
 
         # verify that the compound catalog is what we expect

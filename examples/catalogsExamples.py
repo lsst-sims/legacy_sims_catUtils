@@ -5,7 +5,7 @@ from lsst.sims.utils import ObservationMetaData, SpatialBounds
 import lsst.sims.catUtils.baseCatalogModels as bcm
 from lsst.sims.catUtils.exampleCatalogDefinitions import RefCatalogGalaxyBase, PhoSimCatalogPoint,\
                                                          PhoSimCatalogZPoint, PhoSimCatalogSersic2D
-from lsst.sims.utils import makeObsParamsAzAltTel, makeObsParamsRaDecTel
+from lsst.sims.utils import raDecFromAltAz
 
 def exampleReferenceCatalog():
     """
@@ -42,7 +42,8 @@ def examplePhoSimCatalogs():
 
     """
     obsMD = bcm.OpSim3_61DBObject()
-    obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
+    obs_metadata_list = obsMD.getObservationMetaData((55.0, -20.0), 1.0, fovRadius=0.1, makeCircBounds=True)
+    obs_metadata = obs_metadata_list[0]
     objectDict = {}
     objectDict['testStars'] = {'dbobj':CatalogDBObject.from_objid('msstars'),
                                'constraint':None,
@@ -66,6 +67,8 @@ def examplePhoSimCatalogs():
         t = dbobj.getCatalog(objectDict[objKey]['filetype'],
                              obs_metadata=objectDict[objKey]['obsMetadata'],
                              constraint=objectDict[objKey]['constraint'])
+
+        t.phoSimHeaderMap = {}  # technically only needed for PhoSim InstanceCatalog classes
 
         print
         print "These are the required columns from the database:"
@@ -95,39 +98,42 @@ def examplePhoSimNoOpSim():
     decDeg = -30.
     mjd = 51999.75
 
-    #source code for the method below is found in python.lsst.sims.catUtils.observationMetaDataUtils.py
-    #
-    #basically, it returns a dict of data needed by phoSim to specify a given pointing
-    #(ra and dec of the moon, rotation of the sky relative to the telescope, etc.)
-    md =  makeObsParamsRaDecTel(math.radians(raDeg), math.radians(decDeg), mjd, 'r')
-
     obs_metadata_rd = ObservationMetaData(boundType='circle',
                                           boundLength=0.1,
                                           mjd=mjd,
-                                          phoSimMetaData=md)
-    azRad = math.radians(220.)
-    altRad = math.radians(79.)
-    md = makeObsParamsAzAltTel(azRad, altRad, mjd, 'r')
-    raDeg = math.degrees(md['pointingRA'][0])
-    decDeg = math.degrees(md['pointingDec'][0])
+                                          pointingRA=raDeg,
+                                          pointingDec=decDeg,
+                                          rotSkyPos=22.0,
+                                          bandpassName='g')
+    az = 220.0
+    alt = 79.0
+    mjd = 55958.0
+    obs_dummy = ObservationMetaData(mjd=mjd)
+    ra, dec = raDecFromAltAz(alt, az, obs_dummy)
     obs_metadata_aa = ObservationMetaData(boundType='circle',
                                           boundLength=0.1,
                                           mjd=mjd,
-                                          phoSimMetaData=md)
+                                          rotSkyPos=22.0,
+                                          pointingRA=ra,
+                                          pointingDec=dec,
+                                          bandpassName='g')
 
     dbobj = CatalogDBObject.from_objid('msstars')
     t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_rd)
+    t.phoSimHeaderMap = {}
     t.write_catalog('catalog_test_stars_rd.dat')
     t = dbobj.getCatalog('phoSim_catalog_POINT', obs_metadata= obs_metadata_aa)
+    t.phoSimHeaderMap = {}
     t.write_catalog('catalog_test_stars_aa.dat')
 
-def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
+def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 30.0, radiusDeg = 0.1,
             makeBoxBounds=False, makeCircBounds=True):
     """
     This method will output a catalog of stars based on an OpSim pointing with
     a specific airmass.  It searches OpSim for pointings with the specified airmass
-    and RA, Dec within a box bounded by tol (in degrees).  It creates observation meta
-    data out of the first pointing found and uses that to construct the catalog.
+    and RA, Dec a circle on the sky of radius 'tol' centred on 'ra', 'dec'.
+    It creates observation metadata out of the first pointing found and
+    uses that to construct the catalog.
 
     The catalog is output to stars_airmass_test.dat
     """
@@ -140,13 +146,12 @@ def exampleAirmass(airmass,ra = 0.0, dec = 0.0, tol = 10.0, radiusDeg = 0.1,
     airmassConstraint = "airmass="+str(airmass) #an SQL constraint that the airmass must be equal to
                                                 #the passed value
 
-    skyBounds = SpatialBounds.getSpatialBounds('box', ra, dec, tol) #bounds on region of sky
-
-    query = obsMD.executeConstrainedQuery(skyBounds, constraint=airmassConstraint)
-
     #convert q into observation meta data for use in a catalog
-    obsMetaData = obsMD.getObservationMetaData(query['Opsim_obshistid'][0],radiusDeg,makeBoxBounds=makeBoxBounds,
-                   makeCircBounds=makeCircBounds)
+    obsMetaData_list = obsMD.getObservationMetaData((ra, dec), tol, constraint=airmassConstraint,
+                                                    fovRadius=radiusDeg,makeBoxBounds=makeBoxBounds,
+                                                    makeCircBounds=makeCircBounds)
+
+    obsMetaData = obsMetaData_list[0]
 
     #create and output a reference catalog of stars based on our query to opSim
     dbobj = CatalogDBObject.from_objid('allstars')

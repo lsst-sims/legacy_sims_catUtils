@@ -44,7 +44,7 @@ def makeTestDB(filename='tutorialDatabase.db', size=1000, seedVal=None, **kwargs
     conn.close()
 
 
-from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.catalogs.db import CatalogDBObject
 
 class TutorialDB(CatalogDBObject):
     """
@@ -107,7 +107,8 @@ print '\n'
 
 print 'now we will write a cartoon catalog class to write out this cartoon database'
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, cached
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import cached
 
 class TestCatalog(InstanceCatalog):
     column_outputs = ['col1', 'col2', 'col3', 'col4', 'threeMinusFour']

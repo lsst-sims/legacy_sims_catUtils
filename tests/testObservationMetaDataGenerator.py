@@ -45,18 +45,16 @@ def get_val_from_obs(tag, obs):
     elif tag == 'telescopeFilter':
         return obs.bandpass
 
-    mapping = {'obsHistID': 'Opsim_obshistid',
-               'rawSeeing': 'Opsim_rawseeing',
-               'dist2Moon': 'Opsim_dist2moon',
-               'visitExpTime': 'exptime',
-               'moonAlt': 'Opsim_moonalt',
-               'sunAlt': 'Opsim_sunalt',
-               'expDate': 'SIM_SEED',
-               'moonRA': 'Opsim_moonra',
-               'moonDec': 'Opsim_moondec',
-               'moonPhase': 'Opsim_moonphase'}
+    transforms = {'dist2Moon': np.degrees,
+                  'moonAlt': np.degrees,
+                  'sunAlt': np.degrees,
+                  'moonRA': np.degrees,
+                  'moonDec': np.degrees}
 
-    return obs.phoSimMetaData[mapping[tag]]
+    if tag in transforms:
+        return transforms[tag](obs.OpsimMetaData[tag])
+
+    return obs.OpsimMetaData[tag]
 
 
 def get_val_from_rec(tag, rec):
@@ -89,14 +87,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
     longMessage = True
 
     def setUp(self):
-        # these are the names of header fields that are handled from the standard ObservationMetaData
-        # data, and thus should not be expected to be in the phoSimMetaData
-        self.special_field_names = ('pointingRA', 'pointingDec', 'Opsim_altitude', 'Opsim_azimuth',
-                                    'Opsim_expmjd', 'airmass', 'Opsim_filter', 'Opsim_rotskypos',
-                                    'Unrefracted_RA', 'Unrefracted_Dec')
 
         dbPath = os.path.join(getPackageDir('sims_data'),
                               'OpSimData/opsimblitz1_1133_sqlite.db')
+
         self.gen = ObservationMetaDataGenerator(database=dbPath,
                                                 driver='sqlite')
 
@@ -401,8 +395,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         expected header entries are there.
         """
 
-        dbName = 'obsMetaDataGeneratorTest.db'
-        catName = 'testPhoSimFromObsMetaDataGenerator.txt'
+        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests',
+                                   'scratchSpace')
+        dbName = os.path.join(scratch_dir, 'obsMetaDataGeneratorTest.db')
+        catName = os.path.join(scratch_dir, 'testPhoSimFromObsMetaDataGenerator.txt')
         if os.path.exists(dbName):
             os.unlink(dbName)
         makePhoSimTestDB(filename=dbName)
@@ -411,20 +407,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                              telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
+        testCat.phoSimHeaderMap = {}
         testCat.write_catalog(catName)
-
-        with open(catName) as inputFile:
-            lines = inputFile.readlines()
-            header_entries = []
-            for line in lines:
-                words = line.split()
-                if words[0] == 'object':
-                    break
-                header_entries.append(words[0])
-
-            for column in self.gen._opsim_to_phosim:
-                new_name = self.gen._opsim_to_phosim[column][0]
-                self.assertIn(new_name, header_entries)
 
         if os.path.exists(catName):
             os.unlink(catName)

@@ -7,6 +7,8 @@ import numpy
 import math
 import os
 
+from lsst.sims.utils import CircleBounds
+
 __all__ = ["OpSim3_61DBObject"]
 
 
@@ -27,40 +29,35 @@ class OpSim3_61DBObject(DBObject):
     #: These are interpreted as SQL strings.
     #They are passed to SpatialBounds objects
     #and indicate the RA and Dec columns in degrees
-    raColName = 'fieldra*180./PI()'
-    decColName = 'fielddec*180./PI()'
+    raColName = 'fieldradeg'
+    decColName = 'fielddecdeg'
 
-    #columnNames maps column names as stored in the database
-    #to column names as are required by PhoSim.
-    #For each tuple, the first string is the name
-    #required by PhoSim.  The second string is
-    #the name stored in the database
-    columnNames = [('Opsim_obshistid','obshistid'),
-               ('SIM_SEED','expdate'),
-               ('pointingRA','fieldra'),
-               ('pointingDec','fielddec'),
-               ('Opsim_moonra','moonra'),
-               ('Opsim_moondec','moondec'),
-               ('Opsim_rotskypos','rotskypos'),
-               ('Opsim_rottelpos','rottelpos'),
-               ('Opsim_filter','filter'),
-               ('Opsim_rawseeing','rawseeing'),
-               ('Opsim_sunalt','sunalt'),
-               ('Opsim_moonalt','moonalt'),
-               ('Opsim_dist2moon','dist2moon'),
-               ('Opsim_moonphase','moonphase'),
-               ('Opsim_expmjd','expmjd'),
-               ('Opsim_altitude','altitude'),
-               ('Opsim_azimuth','azimuth'),
-               ('exptime','exptime'),
-               ('airmass','airmass')]
+    # columnNames maps column names as stored in the OpSim3_61 database
+    # to column names as they occur in the OpSim v3.3.5 summary table
+    columnNames = [('obsHistID','obshistid'),
+                   ('SIM_SEED','expdate'),
+                   ('pointingRA','fieldra'),
+                   ('pointingDec','fielddec'),
+                   ('moonRA','moonra'),
+                   ('moonDec','moondec'),
+                   ('rotSkyPos','rotskypos'),
+                   ('rotTelPos','rottelpos'),
+                   ('rawSeeing','rawseeing'),
+                   ('sunAlt','sunalt'),
+                   ('moonAlt','moonalt'),
+                   ('dist2Moon','dist2moon'),
+                   ('moonPhase','moonphase'),
+                   ('expMJD','expmjd'),
+                   ('airmass', 'airmass'),
+                   ('filter', 'filter'),
+                   ('visitExpTime', 'exptime-4.0', float)]
 
     #columnTypes is a dict indicating the data types
     #of the columns referred to in columnNames.
     #columns not mentioned are floats
     columnTypes ={'SIM_SEED':int,
-                  'Opsim_filter':(str,1),
-                  'Opsim_obshistid':numpy.int64}
+                  'filter':(str,1),
+                  'obsHistID':numpy.int64}
 
     def __init__(self, driver=None, host=None, port=None, database=None):
         super(OpSim3_61DBObject, self).__init__(driver=driver, host=host, port=port, database=database)
@@ -107,15 +104,25 @@ class OpSim3_61DBObject(DBObject):
         results = self.execute_arbitrary(query, dtype=dtype)
         return results
 
-    def getObservationMetaData(self, obshistid, radiusDeg, makeCircBounds=True, makeBoxBounds=False):
+    def getObservationMetaData(self, searchCenter, searchRadius, constraint=None,
+                               fovRadius=1.75, makeCircBounds=True, makeBoxBounds=False):
         """
-        This class creates an ObservationMetaData object suitable for generating a PhoSim input
-        catalog based on an actual OpSim pointing.
+        This method will perform a query on the OpSim3_61 for pointings within a given region
+        on the sky.  It will then return a list of ObservationMetaData corresponding to the
+        OpSim pointings returned by that query.
 
-        param [in] obshistid is the obshistid of the pointing to be used
+        param [in] searchCenter is a tuple (RA, Dec) indicating the center of the region
+        of the sky wherein to search for OpSim pointings (in degrees).
 
-        param [in] radiusDeg is the radius (in degrees) of the desired region on the sky.
-        If you have specified a box bounds this will be half the length of each side of the box.
+        param [in] searchRadius is the radius of the region of the sky wherein to search
+        for OpSim pointings (in degrees).
+
+        param [in] constraint an optional constraint on another column.  Should be a string
+        of the form 'airmass=1.1'
+
+        param [in] fovRadius is the radius (in degrees) of the resulting ObservationMetaDatas'
+        fields of view.  If you have specified a box bounds this will be half the length of each
+        side of the box.
 
         param [in] makeCircBounds a boolean telling this method to construct an ObservationMetaData
         for a circular region of the sky centered on the specified OpSim pointing
@@ -124,29 +131,43 @@ class OpSim3_61DBObject(DBObject):
         ObservationMetaData for a square region of the sky centered on the specified
         OpSim pointing
         """
-        query, dtype = self.getBasicQuery()
-        query += ' WHERE obshistid = %i' % obshistid
 
-        result = self.execute_arbitrary(query, dtype=dtype)
+        spatialBound = CircleBounds(numpy.radians(searchCenter[0]), numpy.radians(searchCenter[1]),
+                                    numpy.radians(searchRadius))
 
-        ra = result['pointingRA'][0]
-        dec = result['pointingDec'][0]
+        # get the results of the query as a numpy recarray
+        result = self.executeConstrainedQuery(spatialBound, constraint=constraint)
 
-        #because makeCircBounds defaults to True, check whether the user is
-        #requesting boxBounds before deciding to instantiate
-        #circBounds
+        obs_list = []
+        ra_list = numpy.degrees(result['pointingRA'])
+        dec_list = numpy.degrees(result['pointingDec'])
+        rotSkyPos_list = numpy.degrees(result['rotSkyPos'])
+        for pointing, ra, dec, rotSkyPos in zip(result, ra_list, dec_list, rotSkyPos_list):
 
-        boundType = None
-        boundLength = None
-        if makeBoxBounds:
-            boundType = 'box'
-            boundLength = numpy.array([radiusDeg/math.cos(dec),radiusDeg])
-        elif makeCircBounds:
-            boundType = 'circle'
-            boundLength = radiusDeg
-        else:
-            raise ValueErr("Need either makeBoxBounds or makeCircBounds")
+            mjd = pointing['expMJD']
 
-        return ObservationMetaData(boundType=boundType,
-                                   boundLength=boundLength,
-                                   phoSimMetaData=OrderedDict([(k, (result[k][0], result[k][0].dtype)) for k in result.dtype.names]))
+            #because makeCircBounds defaults to True, check whether the user is
+            #requesting boxBounds before deciding to instantiate
+            #circBounds
+
+            boundType = None
+            boundLength = None
+            if makeBoxBounds:
+                boundType = 'box'
+                boundLength = numpy.array([fovRadius/math.cos(numpy.radians(dec)), fovRadius])
+            elif makeCircBounds:
+                boundType = 'circle'
+                boundLength = fovRadius
+            else:
+                raise ValueErr("Need either makeBoxBounds or makeCircBounds")
+
+            obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                      rotSkyPos=rotSkyPos, mjd=mjd,
+                                      bandpassName=result['filter'][0],
+                                      boundType=boundType, boundLength=boundLength)
+
+            raw_opsim_dict = dict([(k, pointing[k]) for k in result.dtype.names])
+            obs.OpsimMetaData = raw_opsim_dict
+            obs_list.append(obs)
+
+        return obs_list

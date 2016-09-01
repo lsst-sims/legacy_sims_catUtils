@@ -9,14 +9,76 @@ from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
-           "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap"]
+           "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap",
+           "DefaultPhoSimHeaderMap"]
 
 
 PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
                         dirDict={'(^lte)': 'starSED/phoSimMLT'})
 
 
-def write_phoSim_header(obs, file_handle):
+# This is a dict of transformations mapping from data in OpSim to header
+# values expected by PhoSim.  The dict is keyed on the names of PhoSim
+# parameters.  The values of the dict are either straight values, in which
+# case those values are written to the PhoSim InstanceCatalog header, or tuples
+# containing the name of the OpSim column which should be use to calculate
+# the PhoSim parameter and any transformation needed to go from OpSim
+# units to PhoSim units.
+#
+# PhoSim header parameters are documented here
+# https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+#
+# OpSim columns are documented here
+# https://www.lsst.org/scientists/simulations/opsim/summary-table-column-descriptions-v335
+#
+DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
+                          'obshistid': ('obsHistID', None),
+                          'moonra': ('moonRA', np.degrees),
+                          'moondec': ('moonDec', np.degrees),
+                          'moonphase': ('moonPhase', None),
+                          'moonalt': ('moonAlt', np.degrees),
+                          'dist2moon': ('dist2Moon', np.degrees),
+                          'sunalt': ('sunAlt', np.degrees),
+                          'seeing': ('rawSeeing', None),
+                          'vistime': ('visitExpTime', lambda x: x+3.0),
+                          'nsnap': 2,
+                          'seed': ('obsHistID', None)}
+
+
+def evaluate_phosim_header(param, phosim_header_map, obs):
+    """
+    Find the value of a PhoSim header parameter given a PhoSimHeaderMap,
+    and an ObservationMetaData
+
+    @param [in] param is the name of the header parameter desired.
+
+    @param [in] phosim_header_map is a phoSimHeaderMap dict
+
+    @param [in] obs is an ObservationMetaData
+
+    @param [out] returns the value of the PhoSim header parameter
+    """
+
+    if param not in phosim_header_map:
+        return None
+
+    if isinstance(phosim_header_map[param], tuple):
+        transform = phosim_header_map[param]
+        if obs.OpsimMetaData is None:
+            return None
+
+        if transform[0] not in obs.OpsimMetaData:
+            return None
+
+        if transform[1] is None:
+            return obs.OpsimMetaData[transform[0]]
+
+        return transform[1](obs.OpsimMetaData[transform[0]])
+
+    return phosim_header_map[param]
+
+
+def write_phoSim_header(obs, file_handle, phosim_header_map):
     """
     Write the data contained in an ObservationMetaData as a header in a
     PhoSim InstanceCatalog.
@@ -25,37 +87,103 @@ def write_phoSim_header(obs, file_handle):
 
     file_handle points to the catalog being written.
     """
+
+    if phosim_header_map is None:
+        raw_opsim_contents = ""
+
+        if obs.OpsimMetaData is not None:
+            sorted_opsim_metadata = obs.OpsimMetaData.keys()
+            sorted_opsim_metadata.sort()
+            for tag in sorted_opsim_metadata:
+                raw_opsim_contents += "%s\n" % tag
+
+        raise RuntimeError("You have tried to write a PhoSim InstanceCatalog without specifying "
+                           "a phoSimHeaderMap in your call to write_catalog().\n"
+                           "\n"
+                           "A phoSimHeaderMap is a dict that maps between columns stored in the "
+                           "OpSim database from which an ObservationMetaData was created and "
+                           "header parameters expected by PhoSim.  The dict is keyed on the names of PhoSim "
+                           "parameters.  The values of the dict are either straight values, in which "
+                           "case those values are written to the PhoSim InstanceCatalog header, or tuples "
+                           "containing the name of the OpSim column which should be use to calculate "
+                           "the PhoSim parameter and any transformation needed to go from OpSim "
+                           "units to PhoSim units (the transform is 'None' if no transform is needed).\n"
+                           "\n"
+                           "To add a phoSimHeaderMap, simple assign it to the 'phoSimHeaderMap' "
+                           "member variable of your catalog with (for instance):\n"
+                           "\n"
+                           "myCat.phoSimHeaderMap = my_phosim_header_map\n"
+                           "\n"
+                           "Before calling write_catalog()\n"
+                           "\n"
+                           "The header parameters expected by PhoSim can be found at\n"
+                           "\n"
+                           "https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog\n"
+                           "\n"
+                           "The contents of the OpSim database's Summary table can be found at\n"
+                           "\n"
+                           "https://www.lsst.org/scientists/simulations/opsim/summary-table-column-descriptions-v335\n"
+                           "\n"
+                           "If you do not wish to use any of these columns, you can just pass in an empty "
+                           "dict.  If you want to use a pre-made mapping, use the DefaultPhoSimHeaderMap "
+                           "imported from lsst.sims.catUtils.exampleCatalogDefinitions\n"
+                           "\n"
+                           "Note: do not specify ra, dec, alt, az, mjd, filter, or rotSkyPos in your "
+                           "phoSimHeaderMap.  These are handled directly by the ObservationMetaData "
+                           "to ensure self-consistency.\n"
+                           "\n"
+                           "For reference, the OpSim columns you can choose to map (i.e. those contained "
+                           "in your ObservationMetaData) are:\n\n" +
+                           raw_opsim_contents +
+                           "\n(Even if your ObservationMetaData contains no extra OpSim Columns "
+                           "you may wish to consider adding default PhoSim parameters through "
+                           "the phoSimHeaderMap)")
+
     try:
-        file_handle.write('Unrefracted_RA %.9g\n' % obs.pointingRA)
-        file_handle.write('Unrefracted_Dec %.9g\n' % obs.pointingDec)
-        file_handle.write('Opsim_expmjd %.9g\n' % obs.mjd.TAI)
-        alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs)
-        file_handle.write('Opsim_altitude %.9g\n' % alt)
-        file_handle.write('Opsim_azimuth %.9g\n' % az)
-        airmass = 1.0/np.cos(0.5*np.pi-np.radians(alt))
-        file_handle.write('airmass %.9g\n' % airmass)
-        file_handle.write('Opsim_filter %d\n' %
+
+        # PhoSim wants the MJD at the middle of the visit (i.e. between the two exposures
+        # in our two-snap model).  OpSim gives the MJD at the start of the visit.
+        # below we calculate the change in MJD necessary to transform the OpSim value
+        # into the PhoSim value
+        vistime = evaluate_phosim_header('vistime', phosim_header_map, obs)
+        if vistime is not None:
+            delta_t = 0.5*vistime
+        else:
+            delta_t = 16.5  # half of the default 33 seconds
+
+        file_handle.write('rightascension %.7f\n' % obs.pointingRA)
+        file_handle.write('declination %.7f\n' % obs.pointingDec)
+        file_handle.write('mjd %.7f\n' % (obs.mjd.TAI + delta_t/86400.0))
+        alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs, includeRefraction=False)
+        file_handle.write('altitude %.7f\n' % alt)
+        file_handle.write('azimuth %.7f\n' % az)
+        file_handle.write('filter %d\n' %
                           {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}[obs.bandpass])
 
-        file_handle.write('Opsim_rotskypos %.9g\n' % obs.rotSkyPos)
+        file_handle.write('rotskypos %.7f\n' % obs.rotSkyPos)
     except:
         print "\n\n"
         print "The ObservationMetaData you tried to write a PhoSim header from"
         print "lacks one of the required parameters"
-        print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)"
+        print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)\n"
         raise
 
-    already_written = ('Unrefracted_RA', 'Unrefracted_Dec',
-                       'Opsim_expmjd', 'Opsim_altitude',
-                       'Opsim_azimuth', 'airmass', 'Opsim_filter',
-                       'Opsim_rotskypos')
+    # sort the header map keys so that PhoSim headers generated with the same
+    # map always have parameters in the same order.
+    sorted_header_keys = phosim_header_map.keys()
+    sorted_header_keys.sort()
 
-    for kk in obs._phoSimMetadata:
-        if kk in already_written:
-            raise RuntimeError("This ObservationMetaData has conflicting values for "
-                               "%s" % kk)
-
-        file_handle.write('%s %.9g\n' % (kk, obs._phoSimMetadata[kk]))
+    for name in sorted_header_keys:
+        val = evaluate_phosim_header(name, phosim_header_map, obs)
+        if val is not None:
+            if isinstance(val, float) or isinstance(val, np.float):
+                file_handle.write('%s %.7f\n' % (name, val))
+            elif isinstance(val, int) or isinstance(val, np.int):
+                file_handle.write('%s %d\n' % (name, val))
+            elif isinstance(val, long):
+                file_handle.write('%s %ld\n' % (name, val))
+            else:
+                file_handle.write('%s %s\n' % (name, str(val)))
 
 
 class PhosimInputBase(InstanceCatalog):
@@ -73,7 +201,7 @@ class PhosimInputBase(InstanceCatalog):
         return np.array(['object' for i in chunkiter], dtype=(str, 6))
 
     def get_sedFilepath(self):
-        return np.array([self.specFileMap[k] if self.specFileMap.has_key(k) else None
+        return np.array([self.specFileMap[k] if k in self.specFileMap else None
                          for k in self.column_by_name('sedFilename')])
 
     def get_spatialmodel(self):
@@ -108,7 +236,10 @@ class PhosimInputBase(InstanceCatalog):
             return magNorm
 
     def write_header(self, file_handle):
-        write_phoSim_header(self.obs_metadata, file_handle)
+        if not hasattr(self, 'phoSimHeaderMap'):
+            self.phoSimHeaderMap = None
+
+        write_phoSim_header(self.obs_metadata, file_handle, self.phoSimHeaderMap)
 
 
 class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
