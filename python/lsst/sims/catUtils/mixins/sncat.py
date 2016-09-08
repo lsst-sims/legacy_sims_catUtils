@@ -185,10 +185,13 @@ class SNFunctionality(object):
 
         SNobject = SNObject()
 
+        raDeg = np.degrees(ra)                                                                                                                           |    -------------------------------------------------------------------------------------------------------------------------------------------------------
+        decDeg = np.degrees(dec)
+
         sedlist = []
         for i in range(self.numobjs):
             SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=ra[i], dec=dec[i])
+            SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
             SNobject.mwEBVfromMaps()
             sed = SNobject.SNObjectSED(time=self.mjdobs,
                                        bandpass=self.lsstBandpassDict,
@@ -217,36 +220,6 @@ class SNFunctionality(object):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
 
-    def load_SNsed(self):
-        """
-        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
-        the spatio-temporal range specified by obs_metadata
-
-        """
-        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
-            self.column_by_name('x1'),\
-            self.column_by_name('x0'),\
-            self.column_by_name('t0'),\
-            self.column_by_name('redshift'),\
-            self.column_by_name('raJ2000'),\
-            self.column_by_name('decJ2000')
-
-        raDeg = np.degrees(ra)
-        decDeg = np.degrees(dec)
-
-        SNobject = SNObject()
-
-        sedlist = []
-        for i in range(self.numobjs):
-            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
-            SNobject.mwEBVfromMaps()
-            sed = SNobject.SNObjectSED(time=self.mjdobs,
-                                       bandpass=self.lsstBandpassDict,
-                                       applyExitinction=True)
-            sedlist.append(sed)
-
-        return sedlist
 
 
     @compound('flux', 'mag', 'flux_err', 'mag_err')
