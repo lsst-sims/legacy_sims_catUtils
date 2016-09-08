@@ -1,7 +1,7 @@
 import numpy
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.generation.db import CompoundCatalogDBObject
+from lsst.sims.catalogs.db import CompoundCatalogDBObject
 
 __all__ = ['SNObj'] 
 
