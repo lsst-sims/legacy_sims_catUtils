@@ -185,7 +185,7 @@ class SNFunctionality(object):
 
         SNobject = SNObject()
 
-        raDeg = np.degrees(ra)                                                                                                                           |    -------------------------------------------------------------------------------------------------------------------------------------------------------
+        raDeg = np.degrees(ra)
         decDeg = np.degrees(dec)
 
         sedlist = []
