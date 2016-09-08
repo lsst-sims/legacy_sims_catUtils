@@ -17,7 +17,8 @@ from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.supernovae import SNUniverse
 
 
-__all__ = ['SNIaCatalog', 'SNFunctionality']
+__all__ = ['SNIaCatalog', 'SNFunctionality', 'FrozenSNCat']
+## __all__ = ['SNIaCatalog', 'SNFunctionality']
 cosmo = CosmologyMixin()
 
 class SNFunctionality(object):
@@ -31,6 +32,11 @@ class SNFunctionality(object):
     of obtaining its attributes, but as a mixin to classes like SNIaCatalog
     which define these attributes.
     """
+
+    # Write the location of SED file (for example for PhoSim)
+    writeSedFile = False
+    # prefix to use for SED File name
+    prefix = ''
 
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
@@ -57,7 +63,7 @@ class SNFunctionality(object):
 
     _sn_object_cache = None
 
-    @property
+    @astropy.utils.lazyproperty
     def mjdobs(self):
         '''
         The time of observation for the catalog, which is set to be equal
