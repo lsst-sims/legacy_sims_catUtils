@@ -204,14 +204,6 @@ class SNFunctionality(object):
     def numobjs(self):
         return len(self.column_by_name('id'))
 
-
-    def get_EBV(self):
-        if self._lsstmwebv is None:
-            self._lsstmwebv = EBVbase()
-        return np.array(self._lsstmwebv.calculateEbv(equatorialCoordinates=
-                                                     np.array([self.column_by_name('raJ2000'),
-                                                               self.column_by_name('decJ2000')])))
-
     def get_time(self):
 
         return np.repeat(self.mjdobs, self.numobjs)
@@ -220,9 +212,7 @@ class SNFunctionality(object):
         bandname = self.obs_metadata.bandpass
         return np.repeat(bandname, self.numobjs)
 
-
-
-    @compound('flux', 'mag', 'flux_err', 'mag_err')
+    @compound('flux', 'mag', 'flux_err', 'mag_err', 'adu')
     def get_snbrightness(self):
 
         if self._sn_object_cache is None or len(self._sn_object_cache)>1000000:
@@ -246,11 +236,14 @@ class SNFunctionality(object):
         if isinstance(bandname, list):
             raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
+        # Adding photometric parameters
+        _photParams = PhotometricParameters()
 
         # Initialize return array so that it contains the values you would get
         # if you passed through a t0=self.badvalues supernova
         vals = np.array([[0.0]*len(t0), [np.inf]*len(t0),
-                        [np.nan]*len(t0), [np.inf]*len(t0)]).transpose()
+                        [np.nan]*len(t0), [np.inf]*len(t0),
+                        [0.0]*len(t0)]).transpose()
 
         for i in np.where(np.logical_and(np.isfinite(t0), np.abs(self.mjdobs-t0)<self.maxTimeSNVisible))[0]:
 
@@ -287,10 +280,15 @@ class SNFunctionality(object):
                                                           bandname],
                                                       photParams=None,
                                                       magnitude=mag)
+                sed = SNobject.SNObjectSED(time=self.mjdobs,
+                                           bandpass=self.lsstBandpassDict,
+                                           applyExtinction=True)
+                adu = sed.calcADU(bandpass, photParams=_photParams)
                 vals[i, 2] = flux_err
                 vals[i, 3] = mag_err
+                vals[i, 4] = adu
 
-        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
+        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3], vals[:, 4])
 
     @compound('flux_u', 'flux_g', 'flux_r', 'flux_i', 'flux_z', 'flux_y',
               'mag_u', 'mag_g', 'mag_r', 'mag_i', 'mag_z', 'mag_y',
@@ -335,6 +333,12 @@ class SNFunctionality(object):
                 vals[:, 16], vals[:, 17], vals[:, 18])
 
 
+    def get_EBV(self):
+        if self._lsstmwebv is None:
+            self._lsstmwebv = EBVbase()
+        return np.array(self._lsstmwebv.calculateEbv(equatorialCoordinates=
+                                                     np.array([self.column_by_name('raJ2000'),
+                                                               self.column_by_name('decJ2000')])))
 
 ###class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
 ###
