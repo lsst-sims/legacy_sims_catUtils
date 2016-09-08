@@ -116,6 +116,87 @@ class SNFunctionality(object):
         bandPassNames = self.obs_metadata.bandpass
         return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
+    @compound('TsedFilepath', 'TmagNorm')
+    def get_phosimVars(self):
+        """
+        Obtain variables TsedFilepath to be used to obtain unique filenames
+        for each SED for phoSim and TMagNorm which is also used.
+        """
+        # construct the unique filename
+        # method: snid_mjd(to 4 places of decimal)_bandpassname
+        mjd = "_{:0.4f}_".format(self.mjdobs)
+        mjd += self.obs_metadata.bandpass + '.dat'
+        fnames = np.array([self.prefix + 'specFile_' + str(int(elem)) + mjd
+                  for elem in self.column_by_name('snid')], dtype='str')
+
+        c, x1, x0, t0, z  = self.column_by_name('c'),\
+                         self.column_by_name('x1'),\
+                         self.column_by_name('x0'),\
+                         self.column_by_name('t0'),\
+                         self.column_by_name('redshift')
+
+        bp = Bandpass()
+        bp.imsimBandpass()
+
+        magNorms = np.zeros(len(fnames))
+
+        snobject = SNObject()
+        for i in range(len(self.column_by_name('snid'))):
+            if np.isnan(t0[i]):
+                magNorms[i] = np.nan
+                fnames[i] = None
+
+            else:
+                snobject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i],
+                             z=z[i])
+                if snobject.modelOutSideRange == 'zero':
+                    if self.mjdobs > snobject.maxtime() or self.mjdobs < snobject.mintime():
+                        magNorms[i] = np.nan
+                        fnames[i] = None
+
+                # SED in rest frame
+                sed = snobject.SNObjectSourceSED(time=self.mjdobs)
+                try:
+                    magNorms[i] = sed.calcMag(bandpass=bp)
+                except:
+                    # sed.flambda = 1.0e-20 
+                    magNorms[i] = 1000. # sed.calcMag(bandpass=bp)
+
+                if self.writeSedFile:
+                    sed.writeSED(fnames[i])
+
+
+        return (fnames, magNorms)
+
+
+    def load_SNsed(self):
+        """
+        returns a list of SN seds in `lsst.sims.photUtils.Sed` observed within
+        the spatio-temporal range specified by obs_metadata
+
+        """
+        c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
+            self.column_by_name('x1'),\
+            self.column_by_name('x0'),\
+            self.column_by_name('t0'),\
+            self.column_by_name('redshift'),\
+            self.column_by_name('raJ2000'),\
+            self.column_by_name('decJ2000')
+
+        SNobject = SNObject()
+
+        sedlist = []
+        for i in range(self.numobjs):
+            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
+            SNobject.setCoords(ra=ra[i], dec=dec[i])
+            SNobject.mwEBVfromMaps()
+            sed = SNobject.SNObjectSED(time=self.mjdobs,
+                                       bandpass=self.lsstBandpassDict,
+                                       applyExitinction=True)
+            sedlist.append(sed)
+
+        return sedlist
+
     def get_snid(self):
         # Not necessarily unique if the same galaxy hosts two SN
         # Use refIdCol to access the relevant id column of the dbobj
