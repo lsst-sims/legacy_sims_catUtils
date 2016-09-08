@@ -621,6 +621,12 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
 
         vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
 
-        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
+    def get_snid(self):
+        # Not necessarily unique if the same galaxy hosts two SN
+        # Use refIdCol to access the relevant id column of the dbobj
+        # Should revert to galTileID for galaxyTiled catalogDBObj and
+        # id for galaxyObj catalogDBObj
+        # (email from Scott)
+        return self.column_by_name(self.refIdCol)
 
