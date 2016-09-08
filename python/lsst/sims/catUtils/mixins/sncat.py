@@ -197,14 +197,6 @@ class SNFunctionality(object):
 
         return sedlist
 
-    def get_snid(self):
-        # Not necessarily unique if the same galaxy hosts two SN
-        # Use refIdCol to access the relevant id column of the dbobj
-        # Should revert to galTileID for galaxyTiled catalogDBObj and
-        # id for galaxyObj catalogDBObj
-        # (email from Scott)
-        return self.column_by_name(self.refIdCol)
-
     @property
     def numobjs(self):
         return len(self.column_by_name('id'))
