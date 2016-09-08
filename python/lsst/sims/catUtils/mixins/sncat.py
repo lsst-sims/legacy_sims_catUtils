@@ -599,3 +599,71 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
         # (email from Scott)
         return self.column_by_name(self.refIdCol)
 
+class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
+
+    """
+    `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
+    characterized by the  following attributes
+
+    Attributes
+    ----------
+    column_outputs :
+    suppressHighzSN :
+    maxTimeSNVisible :
+    maxz :
+    variables :
+    override_formats :
+    cannot_be_null :
+    mjdobs :
+    badvalues position :
+    3-tuple of floats (ra, dec, redshift), velocity : 3 tuple of floats
+        velocity wrt host galaxy in Km/s, the supernova model (eg. SALT2)
+    and parameters of the supernova model that predict the SED.
+    """
+
+    surveyStartDate = 59580. # For Kraken_1042
+
+    #def get_snid(self):
+
+    #    return self.column_by_name('Tsnid')
+
+
+    @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
+    def get_angularCoordinates(self):
+        '''
+        Obtain the coordinates and velocity of the SN from the host galaxy
+
+        Returns
+        -------
+        `np.ndarray` of coordinara, dec, z, vra, vdec, and vr
+
+        '''
+        snra, sndec, snz = self.column_by_name('raJ2000'),\
+            self.column_by_name('decJ2000'),\
+            self.column_by_name('Tredshift')
+        snvra = np.zeros(self.numobjs)
+        snvdec = np.zeros(self.numobjs)
+        snvr = np.zeros(self.numobjs)
+
+        return (snra, sndec, snz, snvra, snvdec, snvr)
+
+    @compound('c', 'x1', 'x0', 't0')
+    def get_snparams(self):
+
+        c, x1, x0 = self.column_by_name('Tc'), \
+                    self.column_by_name('Tx1'),\
+                    self.column_by_name('Tx0')
+        t0 = self.column_by_name('Tt0') + self.surveyStartDate
+        if self.suppressDimSN :
+            t0 = np.where(np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible,
+                          self.badvalues, t0)
+
+        return (c, x1, x0, t0)
+
+    def get_snid(self):
+        # Not necessarily unique if the same galaxy hosts two SN
+        # Use refIdCol to access the relevant id column of the dbobj
+        # Should revert to galTileID for galaxyTiled catalogDBObj and
+        # id for galaxyObj catalogDBObj
+        # (email from Scott)
+        return self.column_by_name('Tsnid')
