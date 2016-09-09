@@ -1,24 +1,32 @@
 """
-Mixin to InstanceCatalog class to give SN catalogs in catsim
+Mixins for the InstanceCatalog class to provide SN catalogs in catsim. There
+three classes here:
+    - SNFunctionality: provides common functions required by all SN instance
+        catalogs. It does not make sense to instantiate this class, but rather
+        it should be used as a mixin alongside another class.
+    - SNIaCatalog: Dynamically created catalogs by sampling user specified
+        distributions of SN parameters on the fly based on host galaxies on the
+        catsim database.
+    - FrozenSNCat: catalogs that are 'frozen' on the catsim database. For a
+        user to use one of these catalogs, such a catalog would have to be
+        uploaded to catsim.
 """
 import numpy as np
 
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
-from lsst.sims.photUtils import BandpassDict
+from lsst.sims.photUtils import (BandpassDict, Bandpass)
 from lsst.sims.catUtils.mixins import CosmologyMixin
 from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
 from lsst.sims.photUtils import EBVbase
-
-import astropy
-
 from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.supernovae import SNUniverse
+import astropy
+
 
 
 __all__ = ['SNIaCatalog', 'SNFunctionality', 'FrozenSNCat']
-## __all__ = ['SNIaCatalog', 'SNFunctionality']
 cosmo = CosmologyMixin()
 
 class SNFunctionality(object):
@@ -141,7 +149,10 @@ class SNFunctionality(object):
         magNorms = np.zeros(len(fnames))
 
         snobject = SNObject()
+        snobject.rectifySED = True
         for i in range(len(self.column_by_name('snid'))):
+            # if t0 is nan, this was set by the catalog for dim SN, or SN
+            #   outside redshift range, We will not provide a SED file for these
             if np.isnan(t0[i]):
                 magNorms[i] = np.nan
                 fnames[i] = None
@@ -149,7 +160,7 @@ class SNFunctionality(object):
             else:
                 snobject.set(c=c[i], x1=x1[i], x0=x0[i], t0=t0[i],
                              z=z[i])
-                if snobject.modelOutSideRange == 'zero':
+                if snobject.modelOutSideTemporalRange == 'zero':
                     if self.mjdobs > snobject.maxtime() or self.mjdobs < snobject.mintime():
                         magNorms[i] = np.nan
                         fnames[i] = None
@@ -202,7 +213,7 @@ class SNFunctionality(object):
 
     @property
     def numobjs(self):
-        return len(self.column_by_name('id'))
+        return len(self.column_by_name('t0'))
 
     def get_time(self):
 
