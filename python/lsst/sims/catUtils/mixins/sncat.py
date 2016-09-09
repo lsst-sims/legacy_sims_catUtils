@@ -9,7 +9,8 @@ three classes here:
         catsim database.
     - FrozenSNCat: catalogs that are 'frozen' on the catsim database. For a
         user to use one of these catalogs, such a catalog would have to be
-        uploaded to catsim.
+        uploaded to catsim. Examples of such catalogs that are on the catsim
+        database are the tables `TwinkSN` and `TwinkSNKraken`
 """
 import numpy as np
 
