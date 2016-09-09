@@ -213,7 +213,7 @@ class SNFunctionality(object):
 
     @property
     def numobjs(self):
-        return len(self.column_by_name('t0'))
+        return len(self.column_by_name('id'))
 
     def get_time(self):
 
@@ -632,11 +632,8 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
     and parameters of the supernova model that predict the SED.
     """
 
-    surveyStartDate = 59580. # For Kraken_1042
+    surveyStartDate = 59580. # For Kraken_1042 / Minion_1016
 
-    #def get_snid(self):
-
-    #    return self.column_by_name('Tsnid')
 
 
     @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')

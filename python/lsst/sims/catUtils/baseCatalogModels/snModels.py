@@ -9,7 +9,7 @@ class SNObj(BaseCatalogObj):
     objid = 'TwinkUnlensedSN'
     # From now on the tableid should be specified in instantiating the class
     # table = 'TwinkSN' or 'TwinkSNKraken'
-    idColKey = 'snid'
+    idColKey = 'id'
     raColName = 'snra'
     decColName = 'sndec'
     objectTypeId = 42
@@ -38,7 +38,7 @@ class SNObj(BaseCatalogObj):
                ('Tx0', 'x0'),
                ('Tx1', 'x1'),
                ('Tc', 'c'),
-               ('Tsnid', 'snid'),
+               ('Tsnid', 'id'),
                ('Tredshift', 'redshift'),
                ('Tgaltileid', 'galtileid')
               ]
