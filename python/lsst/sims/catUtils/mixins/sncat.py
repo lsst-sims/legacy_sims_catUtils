@@ -600,6 +600,7 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
             self.column_by_name('cosmologicalDistanceModulus')
 
         vals = self.SNparamDistFromHost(hostz, hostid, hostmu)
+        return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
 
     def get_snid(self):
