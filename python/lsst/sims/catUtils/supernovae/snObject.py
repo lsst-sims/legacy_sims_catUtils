@@ -598,38 +598,48 @@ class SNObject(sncosmo.Model):
         source = self.source
 
 
+        # Set the default value of wavelength  input
         if wavelen is None:
-            # use native SALT grid
+            # use native SALT grid in Ang
             wavelen = source._wave
         else:
-            # assume wavelen in nm, convert to Ang
+            # assume input wavelen in nm, convert to Ang
             wavelen *= 10.0
 
-        # The np.nan allows us to request wavelengths beyond the model range
-        # (for example due to the bandpass) and circumvent SNCosmo exceptions
-        # for this problem, and lets us decide what to do with this.
-        flambda = np.zeros(len(wavelen)) * np.nan
+        flambda = np.zeros(len(wavelen))
+        # self.mintime() and self.maxtime() are properties describing
+        # the ranges of SNCosmo.Model in time. Behavior beyond this is 
+        # determined by self.modelOutSideTemporalRange
+        insidephaseRange = (phase < source.maxphase())and(phase > source.minphase())
+        if insidephaseRange:
+            # If SNCosmo is requested a SED value beyond the wavelength range
+            # of model it will crash. Try to prevent that by returning np.nan for
+            # such wavelengths. This will still not help band flux calculations
+            # but helps us get past this stage.
 
-        # Setup wavelen mask beyond which the values are np.nan
-        mask1 = wavelen < self.minwave()
-        mask2 = wavelen > self.maxwave()
-        wavelenmask = ~(mask1 | mask2)
+            flambda = flambda * np.nan
 
-        outsidephaserange = (phase > source.maxphase())or(phase < source.minphase())
-        if self.modelOutSideRange == 'zero':
-            if outsidephaserange:
-                flambda[wavelenmask] = 0.# np.zeros(len(wavelen))
+            mask1 = wavelen > source.minwave()
+            mask2 = wavelen < source.maxwave()
+            mask = mask1 & mask2
+            # Where we have to calculate fluxes because it is not `np.nan`
+            wave = wavelen[mask]
+            flambda[mask] = source.flux(phase, wave)
+        else:
+            if self.modelOutSideTemporalRange == 'zero':
+                flambda = 0.
             else:
-                flambda[wavelenmask] = source.flux(phase,
-                                                   wavelen[wavelenmask])
+                raise NotImplementedError('Only modelOutSideTemporalRange=="zero" implemented')
+
 
         # rectify the flux
         if self.rectifySED:
             flux = np.where(flambda>0., flambda, 0.)
 
 
-        #convert per Ang to per nm
+        # convert per Ang to per nm
         flux *= 10.0
+        # convert ang to nm
         wavelen = wavelen / 10.
         sed = Sed(wavelen=wavelen, flambda=flux)
         # This has the cosmology built in.
