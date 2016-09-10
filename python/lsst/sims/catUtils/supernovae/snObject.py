@@ -590,20 +590,48 @@ class SNObject(sncosmo.Model):
         SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
 
-    def SNObjectSourceSED(self, time, wavelen=None, bandpass=None):
+    def SNObjectSourceSED(self, time, wavelen=None):
         """
+        Return the rest Frame SED of SNObject at the phase corresponding to
+        time, at rest frame wavelengths wavelen. If wavelen is None,
+        then the SED is sampled at the rest frame wavelengths native to the
+        SALT model being used.
+
+        Parameters
+        ----------
+        time : float, mandatory,
+            observer frame time at which the SED has been requested in units
+            of days.
+        wavelen : `np.ndarray`, optional, defaults to native SALT wavelengths
+            array of wavelengths in the rest frame of the supernova in units
+            of nm. If None, this defaults to the wavelengths at which the
+            SALT model is sampled natively.
+        Returns
+        -------
+        `numpy.ndarray` of dtype float.
+
+        .. note: The result should usually match the SALT source spectrum.
+        However, it may be different for the following reasons:
+        1. If the time of observation is outside the model range, the values
+            have to be inserted using additional models. Here only one model
+            is currently implemented, where outside the model range the value
+            is set to 0.
+        2. If the wavelengths are beyond the range of the SALT model, the SED
+            flambda values are set to `np.nan` and these are actually set to 0.
+            if `self.rectifySED = True`
+        3. If the `flambda` values of the SALT model are negative which happens
+            in the less sampled phases of the model, these values are set to 0,
+            if `self.rectifySED` = True.
         """
         phase = (time - self.get('t0')) / (1. + self.get('z'))
-
         source = self.source
-
 
         # Set the default value of wavelength  input
         if wavelen is None:
             # use native SALT grid in Ang
             wavelen = source._wave
         else:
-            # assume input wavelen in nm, convert to Ang
+            #input wavelen in nm, convert to Ang
             wavelen *= 10.0
 
         flambda = np.zeros(len(wavelen))
@@ -627,7 +655,9 @@ class SNObject(sncosmo.Model):
             flambda[mask] = source.flux(phase, wave)
         else:
             if self.modelOutSideTemporalRange == 'zero':
-                flambda = 0.
+                # flambda was initialized as np.zeros before start of
+                # conditional
+                pass
             else:
                 raise NotImplementedError('Only modelOutSideTemporalRange=="zero" implemented')
 
@@ -643,7 +673,6 @@ class SNObject(sncosmo.Model):
         wavelen = wavelen / 10.
         sed = Sed(wavelen=wavelen, flambda=flux)
         # This has the cosmology built in.
-
         return sed
 
     def catsimBandFlux(self, time, bandpassobject):
