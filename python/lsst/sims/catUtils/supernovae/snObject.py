@@ -530,7 +530,7 @@ class SNObject(sncosmo.Model):
         # self.mintime() and self.maxtime() are properties describing
         # the ranges of SNCosmo.Model in time. Behavior beyond this is 
         # determined by self.modelOutSideTemporalRange
-        if (time > self.mintime()) and (time < self.maxtime()):
+        if (time >= self.mintime()) and (time <= self.maxtime()):
             # If SNCosmo is requested a SED value beyond the wavelength range
             # of model it will crash. Try to prevent that by returning np.nan for
             # such wavelengths. This will still not help band flux calculations
@@ -540,8 +540,8 @@ class SNObject(sncosmo.Model):
 
             # Convert to Ang
             wave = wavelen * 10.0
-            mask1 = wave > self.minwave()
-            mask2 = wave < self.maxwave()
+            mask1 = wave >= self.minwave()
+            mask2 = wave <= self.maxwave()
             mask = mask1 & mask2
             wave = wave[mask]
 
@@ -632,13 +632,14 @@ class SNObject(sncosmo.Model):
             wavelen = source._wave
         else:
             #input wavelen in nm, convert to Ang
+            wavelen = wavelen.copy()
             wavelen *= 10.0
 
         flambda = np.zeros(len(wavelen))
         # self.mintime() and self.maxtime() are properties describing
         # the ranges of SNCosmo.Model in time. Behavior beyond this is 
         # determined by self.modelOutSideTemporalRange
-        insidephaseRange = (phase < source.maxphase())and(phase > source.minphase())
+        insidephaseRange = (phase <= source.maxphase())and(phase >= source.minphase())
         if insidephaseRange:
             # If SNCosmo is requested a SED value beyond the wavelength range
             # of model it will crash. Try to prevent that by returning np.nan for
@@ -647,8 +648,8 @@ class SNObject(sncosmo.Model):
 
             flambda = flambda * np.nan
 
-            mask1 = wavelen > source.minwave()
-            mask2 = wavelen < source.maxwave()
+            mask1 = wavelen >= source.minwave()
+            mask2 = wavelen <= source.maxwave()
             mask = mask1 & mask2
             # Where we have to calculate fluxes because it is not `np.nan`
             wave = wavelen[mask]
@@ -665,6 +666,8 @@ class SNObject(sncosmo.Model):
         # rectify the flux
         if self.rectifySED:
             flux = np.where(flambda>0., flambda, 0.)
+        else:
+            flux = flambda
 
 
         # convert per Ang to per nm
