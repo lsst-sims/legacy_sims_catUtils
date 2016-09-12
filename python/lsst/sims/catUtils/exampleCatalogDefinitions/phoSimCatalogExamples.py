@@ -5,7 +5,9 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaDec
 from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
-                                       PhoSimAstrometryGalaxies, PhoSimAstrometrySSM)
+                                       PhoSimAstrometryGalaxies,
+                                       PhoSimAstrometrySSM,
+                                       SNFunctionality)
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
@@ -289,6 +291,21 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
 
     transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
 
+
+class PhoSimCatalogSN(PhoSimCatalogZPoint, SNFunctionality, EBVmixin):
+    catalog_type = 'phoSim_SNcatalog'
+
+    def get_sedFilepath(self):
+        return self.column_by_name('TsedFilepath')
+
+    def get_phoSimMagNorm(self):
+        return self.column_by_name('TmagNorm')
+
+    default_formats = {'S':'%s', 'f':'%.9g', 'i':'%i'}
+
+    spatialModel = "point"
+
+    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
 
