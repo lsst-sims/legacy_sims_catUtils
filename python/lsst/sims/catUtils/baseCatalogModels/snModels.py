@@ -1,3 +1,7 @@
+"""
+The class SNObj is a catalogDB class which can read a table of SALT2
+parameters on the catsim database
+"""
 import numpy
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.utils import ObservationMetaData
