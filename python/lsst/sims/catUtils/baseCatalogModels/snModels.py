@@ -7,9 +7,9 @@ from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import CompoundCatalogDBObject
 
-__all__ = ['SNObj'] 
+__all__ = ['SNDBObj'] 
 
-class SNObj(BaseCatalogObj):
+class SNDBObj(BaseCatalogObj):
     objid = 'TwinkUnlensedSN'
     # From now on the tableid should be specified in instantiating the class
     # table = 'TwinkSN' or 'TwinkSNKraken'
