@@ -343,7 +343,7 @@ class LightCurveGenerator(object):
 
         return query_result
 
-    def _light_curves_from_query(self, cat_dict, query_result, grp):
+    def _light_curves_from_query(self, cat_dict, query_result, grp, lc_per_field=None):
         """
         Read in an iterator over database rows and return light curves for
         all of the objects contained.
@@ -362,6 +362,12 @@ class LightCurveGenerator(object):
         should contain an InstanceCatalog for each bandpass represented in
         grp.
 
+        lc_per_field is an optional int specifying the number of objects per
+        OpSim field to return.  Ordinarily, this is handled at the level of
+        querying the database, but, when querying our tiled galaxy tables,
+        it is impossible to impose a row limit on the query.  Therefore,
+        we may have to place the lc_per_field restriction here.
+
         Output
         ------
         This method does not output anything.  It adds light curves to the
@@ -376,8 +382,21 @@ class LightCurveGenerator(object):
         # photometric uncertainties in each catalog.
         local_gamma_cache = {}
 
+        row_ct = 0
+
         for raw_chunk in query_result:
             chunk = self._filter_chunk(raw_chunk)
+            if lc_per_field is not None:
+
+                if row_ct >= lc_per_field:
+                    break
+
+                if row_ct + len(chunk) > lc_per_field:
+                    chunk = chunk[:lc_per_field-row_ct]
+                    row_ct += len(chunk)
+                else:
+                    row_ct += len(chunk)
+
             if chunk is not None:
                 for ix, obs in enumerate(grp):
                     cat = cat_dict[obs.bandpass]
@@ -491,7 +510,7 @@ class LightCurveGenerator(object):
 
             print('query took ', time.time()-t_before_query)
 
-            self._light_curves_from_query(cat_dict, query_result, grp)
+            self._light_curves_from_query(cat_dict, query_result, grp, lc_per_field=lc_per_field)
 
         output_dict = {}
         for unique_id in self.mjd_dict:

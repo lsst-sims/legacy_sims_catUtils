@@ -487,15 +487,6 @@ class PhotometryGalaxies(PhotometryBase):
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        # totally optional; list the indices in self.lsstBandpassDict
-        # of the columns which will actually be output (so that we don't
-        # spend time calculating things we do not need)
-        indices = [ii for ii, name in enumerate(self.get_lsst_bulge_mags._colnames) \
-                   if name in self._actually_calculated_columns]
-
-        if len(indices)==6:
-            indices = None
-
         # actually calculate the magnitudes
         return self._magnitudeGetter('bulge', self.lsstBandpassDict,
                                      self.get_lsst_bulge_mags._colnames)
@@ -512,15 +503,6 @@ class PhotometryGalaxies(PhotometryBase):
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        # totally optional; list the indices in self.lsstBandpassDict
-        # of the columns which will actually be output (so that we don't
-        # spend time calculating things we do not need)
-        indices = [ii for ii, name in enumerate(self.get_lsst_disk_mags._colnames) \
-                   if name in self._actually_calculated_columns]
-
-        if len(indices)==6:
-            indices = None
-
         # actually calculate the magnitudes
         return self._magnitudeGetter('disk', self.lsstBandpassDict,
                                      self.get_lsst_disk_mags._colnames)
@@ -535,15 +517,6 @@ class PhotometryGalaxies(PhotometryBase):
         # load a BandpassDict of LSST bandpasses, if not done already
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-
-        # totally optional; list the indices in self.lsstBandpassDict
-        # of the columns which will actually be output (so that we don't
-        # spend time calculating things we do not need)
-        indices = [ii for ii, name in enumerate(self.get_lsst_agn_mags._colnames) \
-                   if name in self._actually_calculated_columns]
-
-        if len(indices)==6:
-            indices = None
 
         # actually calculate the magnitudes
         return self._magnitudeGetter('agn', self.lsstBandpassDict,
@@ -612,7 +585,7 @@ class PhotometryStars(PhotometryBase):
                                           galacticAvList=galacticAvList)
 
 
-    def _magnitudeGetter(self, bandpassDict, columnNameList, indices=None):
+    def _magnitudeGetter(self, bandpassDict, columnNameList):
         """
         This method gets the magnitudes for an InstanceCatalog, returning them
         in a 2-D numpy array in which rows correspond to bandpasses and columns
