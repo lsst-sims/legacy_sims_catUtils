@@ -301,7 +301,7 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
 
