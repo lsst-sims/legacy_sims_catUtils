@@ -7,7 +7,7 @@ from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaD
 from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
                                        PhoSimAstrometryGalaxies,
                                        PhoSimAstrometrySSM,
-                                       SNFunctionality)
+                                       FrozenSNCat)
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
@@ -46,6 +46,15 @@ DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
                           'nsnap': 2,
                           'seed': ('obsHistID', None)}
 
+
+DefaultPhoSimInstanceCatalogCols = ('object', 'uniqueID', 'RA', 'DEC'\
+                                    , 'MAG_NORM', 'SED_NAME', 'REDSHIFT'\
+                                    , 'GAMMA1', 'GAMMA2', 'MU', 'DELTA_RA'\
+                                    , 'DELTA_DEC', 'SOURCE_TYPE'\
+                                    , 'source_pars', 'DUST_REST_NAME'\
+                                    , 'dust_pars_1a', 'dust_pars_1b'\
+                                    , 'DUST_LAB_NAME', 'dust_pars_2a'\
+                                    , 'dust_pars_2b') 
 
 def evaluate_phosim_header(param, phosim_header_map, obs):
     """
@@ -288,7 +297,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
     transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
 
 
-class PhoSimCatalogSN(PhoSimCatalogZPoint, SNFunctionality, EBVmixin):
+class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
     catalog_type = 'phoSim_SNcatalog'
 
     def get_sedFilepath(self):
@@ -301,7 +310,7 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, SNFunctionality, EBVmixin):
 
     spatialModel = "point"
 
-    transformations = {'raPhoSim':numpy.degrees, 'decPhoSim':numpy.degrees}
+    transformations = {'raPhoSim':np.degrees, 'decPhoSim':np.degrees}
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
 
