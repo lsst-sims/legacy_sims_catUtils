@@ -7,7 +7,7 @@ from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaD
 from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
                                        PhoSimAstrometryGalaxies,
                                        PhoSimAstrometrySSM,
-                                       SNFunctionality)
+                                       FrozenSNCat)
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
            "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
@@ -288,7 +288,7 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
     transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
 
 
-class PhoSimCatalogSN(PhoSimCatalogZPoint, SNFunctionality, EBVmixin):
+class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
     catalog_type = 'phoSim_SNcatalog'
 
     def get_sedFilepath(self):
