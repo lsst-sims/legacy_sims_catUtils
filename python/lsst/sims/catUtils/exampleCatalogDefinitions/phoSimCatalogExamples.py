@@ -2,7 +2,7 @@
 import numpy as np
 from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catalogs.decorators import compound
+from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaDec
 from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
                                        PhoSimAstrometryGalaxies, PhoSimAstrometrySSM)
@@ -192,22 +192,26 @@ class PhosimInputBase(InstanceCatalog):
 
     specFileMap = PhoSimSpecMap
 
-    cannot_be_null = ['sedFilepath']
+    cannot_be_null = ['sedFilepath', 'sedFilename']
 
     delimiter = " "
 
+    @cached
     def get_prefix(self):
         chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
         return np.array(['object' for i in chunkiter], dtype=(str, 6))
 
+    @cached
     def get_sedFilepath(self):
         return np.array([self.specFileMap[k] if k in self.specFileMap else None
                          for k in self.column_by_name('sedFilename')])
 
+    @cached
     def get_spatialmodel(self):
         chunkiter = xrange(len(self._current_chunk))
         return np.array([self.spatialModel for i in chunkiter], dtype=(str, 8))
 
+    @cached
     def get_phoSimMagNorm(self):
         """
         This getter returns the magnitude normalization expected by PhoSim (the magnitude at
