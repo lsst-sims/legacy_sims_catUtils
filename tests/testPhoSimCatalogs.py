@@ -1,15 +1,19 @@
 from __future__ import with_statement
 import os
 import numpy as np
+import pandas as pd
 import unittest
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec, ObservationMetaData
+
+from lsst.sims.catUtils.baseCatalogModels import SNDBObj
+from lsst.sims.catUtils.mixins import FrozenSNCat
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
-                                                          PhoSimCatalogZPoint)
+                                                          PhoSimCatalogZPoint, PhoSimCatalogSN)
 from lsst.sims.catalogs.utils import makePhoSimTestDB
 
 
@@ -24,6 +28,56 @@ test_header_map = {'dist2moon': ('dist2moon', np.degrees),
 def setup_module(module):
     lsst.utils.tests.init()
 
+class PhoSimCatalogSNTest(unittest.TestCase):
+    
+
+    def setUpClass(self):
+        opsimdb = 'sqlite:///' 
+        opsimdb += '/Users/rbiswas/src/LSST_el_Capitan/sims_catalogs/tests/testData/enigma_1189_micro.db'
+        self.opsimdb = opsimdb
+
+        self.generator = ObservationMetaDataGenerator(database=opsimdb, driver='sqlite')
+
+        degConv = np.array([1., 1./60., 1./3600.])
+        raConv = degConv / 24.0 * 360.
+        centralRA = np.dot(np.array([3., 32., 30]), raConv) #03h 32m 30s
+        centralDec = np.dot(np.array([-28, 6., 0.]), degConv)
+        patchRadius = 0.4 * np.sqrt(2) #np.dot(np.array([0.0, 10.0, 0.]), degConv)
+
+        obsMetaDataResults = self.generator.getObservationMetaData(limit=1000,
+                                                              fieldRA=(centralRA - 2.0, centralRA + 2.0), 
+                                                              fieldDec=(centralDec - 4.0, centralDec + 4.0),
+                                                              expMJD=(49500., 49690.),
+                                                              boundLength=0.05,
+                                                              boundType='circle')
+        self.obsMD = obsMetaDataResults[35]
+        s  = SNDBObj(table='TwinkSN')
+        sncatalog = FrozenSNCat(db_obj=s,
+                                obs_metadata=self.obsMD, 
+                                column_outputs=['snra', 'galtileid', 'sndec',
+                                                'snid', 'x0', 't0', 'flux',
+                                                'flux_err', 'mag', 'mag_err',
+                                                'TmagNorm', 'TsedFilepath',
+                                                'adu'])
+        sncatalog.surveyStartDate = 49500.
+        sncatalog.writeSedFile = True
+        sncatalog.prefix = 'phosim_cat_'
+
+        self.snInstanceCatalogFileName = 'sncat.dat'
+        sncatalog.write_catalog(self.snInstanceCatalogFileName)
+
+        pc = PhoSimCatalogSN(db_obj=s, obs_metadata=self.obsMD)
+        pc.phoSimHeaderMap = DefaultPhoSimHeaderMap
+        pc.writeSedFile = True
+        pc.surveyStartDate = 49500
+        pc.suppressDimSN = True
+        pc.write_catalog('SNOnlyPhoSimCatalog.dat')
+    def read_phosimCatalog(self):
+        import os
+        assert os.path.exists('SNOnlyPhoSimCatalog.dat')
+
+    def tearDown(self):
+        pass
 
 class PhoSimCatalogTest(unittest.TestCase):
 

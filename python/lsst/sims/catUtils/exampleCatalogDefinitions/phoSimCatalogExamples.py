@@ -10,7 +10,7 @@ from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
                                        FrozenSNCat)
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
-           "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
+           "PhoSimCatalogPoint", "PhoSimCatalogZPoint", "PhoSimCatalogSN",
            "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap",
            "DefaultPhoSimHeaderMap"]
 
