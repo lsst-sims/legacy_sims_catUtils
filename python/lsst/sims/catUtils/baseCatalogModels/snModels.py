@@ -2,7 +2,6 @@
 The class SNObj is a catalogDB class which can read a table of SALT2
 parameters on the catsim database
 """
-import numpy
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.utils import ObservationMetaData
 
@@ -44,11 +43,3 @@ class SNDBObj(BaseCatalogObj):
                ('Tredshift', 'redshift'),
                ('Tgaltileid', 'galtileid')
               ]
-
-    
-    def _final_pass(self, results):
-        """This is to map the values from 0 - 2*PI() as ra goes negative currently"""
-        for ra in ('raJ2000','raJ2000Bulge','raJ2000Disk','raJ2000Agn'):
-            if ra in results.dtype.names:
-                results[ra] = results[ra]%(numpy.pi*2.)
-        return results
