@@ -5,7 +5,6 @@ parameters on the catsim database
 import numpy
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.db import CompoundCatalogDBObject
 
 __all__ = ['SNDBObj'] 
 
@@ -35,8 +34,7 @@ class SNDBObj(BaseCatalogObj):
     #: Default map is float.  If the column mapping is the same as the
     # column name, None can be specified
 
-    columns = [#('id', 'snid', int),
-               ('raJ2000', 'snra*PI()/180.'),
+    columns = [('raJ2000', 'snra*PI()/180.'),
                ('decJ2000', 'sndec*PI()/180.'),
                ('Tt0', 't0'),
                ('Tx0', 'x0'),
