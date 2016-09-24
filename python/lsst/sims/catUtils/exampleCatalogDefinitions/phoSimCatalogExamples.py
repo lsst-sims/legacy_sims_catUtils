@@ -308,10 +308,10 @@ class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
     Mixin for PhoSim Instance Catalogs in PhoSim
     """
     catalog_type = 'phoSim_SNcatalog'
-    self.writeSEDFile = True
+    writeSEDFile = True
 
     def get_sedFilepath(self):
-        return self.column_by_name('sedFilepath')
+        return self.column_by_name('TsedFilepath')
 
     def get_phoSimMagNorm(self):
         return self.column_by_name('magNorm')

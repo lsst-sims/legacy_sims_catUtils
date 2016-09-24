@@ -123,7 +123,7 @@ class SNFunctionality(object):
         bandPassNames = self.obs_metadata.bandpass
         return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
-    @compound('sedFilepath', 'magNorm')
+    @compound('TsedFilepath', 'magNorm')
     def get_phosimVars(self):
         """
         Obtain variables sedFilepath to be used to obtain unique filenames
@@ -354,8 +354,8 @@ class SNFunctionality(object):
                 vals[:, 12], vals[:, 13], vals[:, 14], vals[:, 15],
                 vals[:, 16], vals[:, 17], vals[:, 18])
 
-    def get_EBV(self):
-        return self.column_by_name('EBV')
+    #def get_EBV(self):
+    #    return self.column_by_name('EBV')
 
 
 class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
