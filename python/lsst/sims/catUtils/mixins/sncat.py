@@ -1,15 +1,15 @@
 """
 Mixins for the InstanceCatalog class to provide SN catalogs in catsim. There
-three classes here:
+are three classes here:
     - SNFunctionality: provides common functions required by all SN instance
         catalogs. It does not make sense to instantiate this class, but rather
         it should be used as a mixin alongside another class.
     - SNIaCatalog: Dynamically created catalogs by sampling user specified
-        distributions of SN parameters on the fly based on host galaxies on the
+        distributions of SN parameters on the fly based on host galaxies in the
         catsim database.
     - FrozenSNCat: catalogs that are 'frozen' on the catsim database. For a
         user to use one of these catalogs, such a catalog would have to be
-        uploaded to catsim. Examples of such catalogs that are on the catsim
+        uploaded to catsim. Examples of such catalogs that are in the catsim
         database are the tables `TwinkSN` and `TwinkSNKraken`
 """
 import numpy as np
@@ -18,17 +18,15 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import (BandpassDict, Bandpass)
 from lsst.sims.catUtils.mixins import CosmologyMixin
-from lsst.sims.catUtils.mixins import PhotometryBase
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
-from lsst.sims.photUtils import EBVbase
 from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.supernovae import SNUniverse
 import astropy
 
 
-
 __all__ = ['SNIaCatalog', 'SNFunctionality', 'FrozenSNCat']
 cosmo = CosmologyMixin()
+
 
 class SNFunctionality(object):
     """
@@ -45,7 +43,7 @@ class SNFunctionality(object):
     # Write the location of SED file (for example for PhoSim)
     writeSedFile = False
     # prefix to use for SED File name
-    prefix = ''
+    sn_sedfile_prefix = ''
 
     # t_0, c, x_1, x_0 are parameters characterizing a SALT
     # based SN model as defined in sncosmo
@@ -125,24 +123,27 @@ class SNFunctionality(object):
         bandPassNames = self.obs_metadata.bandpass
         return [self.lsstBandpassDict.keys().index(x) for x in bandPassNames]
 
-    @compound('TsedFilepath', 'TmagNorm')
+    @compound('sedFilepath', 'magNorm')
     def get_phosimVars(self):
         """
-        Obtain variables TsedFilepath to be used to obtain unique filenames
-        for each SED for phoSim and TMagNorm which is also used.
+        Obtain variables sedFilepath to be used to obtain unique filenames
+        for each SED for phoSim and MagNorm which is also used. Note that aside
+        from acting as a getter, this also writes spectra to 
+        `self.sn_sedfile_prefix`snid_mjd_band.dat for each observation of
+        interest
         """
         # construct the unique filename
         # method: snid_mjd(to 4 places of decimal)_bandpassname
         mjd = "_{:0.4f}_".format(self.mjdobs)
         mjd += self.obs_metadata.bandpass + '.dat'
-        fnames = np.array([self.prefix + 'specFile_' + str(int(elem)) + mjd
-                  for elem in self.column_by_name('snid')], dtype='str')
+        fnames = np.array([self.sn_sedfile_prefix + str(int(elem)) + mjd
+                          for elem in self.column_by_name('snid')], dtype='str')
 
-        c, x1, x0, t0, z  = self.column_by_name('c'),\
-                         self.column_by_name('x1'),\
-                         self.column_by_name('x0'),\
-                         self.column_by_name('t0'),\
-                         self.column_by_name('redshift')
+        c, x1, x0, t0, z = self.column_by_name('c'),\
+            self.column_by_name('x1'),\
+            self.column_by_name('x0'),\
+            self.column_by_name('t0'),\
+            self.column_by_name('redshift')
 
         bp = Bandpass()
         bp.imsimBandpass()
@@ -171,12 +172,11 @@ class SNFunctionality(object):
                 try:
                     magNorms[i] = sed.calcMag(bandpass=bp)
                 except:
-                    # sed.flambda = 1.0e-20 
-                    magNorms[i] = 1000. # sed.calcMag(bandpass=bp)
+                    # sed.flambda = 1.0e-20
+                    magNorms[i] = 1000.  # sed.calcMag(bandpass=bp)
 
                 if self.writeSedFile:
                     sed.writeSED(fnames[i])
-
 
         return (fnames, magNorms)
 
@@ -224,7 +224,9 @@ class SNFunctionality(object):
         return len(self.column_by_name('id'))
 
     def get_time(self):
-
+        """
+        mjd at SALT2 'peak'
+        """
         return np.repeat(self.mjdobs, self.numobjs)
 
     def get_band(self):
@@ -233,8 +235,10 @@ class SNFunctionality(object):
 
     @compound('flux', 'mag', 'flux_err', 'mag_err', 'adu')
     def get_snbrightness(self):
-
-        if self._sn_object_cache is None or len(self._sn_object_cache)>1000000:
+        """
+        getters for brightness related parameters of sn
+        """
+        if self._sn_object_cache is None or len(self._sn_object_cache) > 1000000:
             self._sn_object_cache = {}
 
         c, x1, x0, t0, _z, ra, dec = self.column_by_name('c'),\
@@ -255,8 +259,6 @@ class SNFunctionality(object):
         if isinstance(bandname, list):
             raise ValueError('bandname expected to be string, but is list\n')
         bandpass = self.lsstBandpassDict[bandname]
-        # Adding photometric parameters
-        _photParams = PhotometricParameters()
 
         # Initialize return array so that it contains the values you would get
         # if you passed through a t0=self.badvalues supernova
@@ -264,7 +266,8 @@ class SNFunctionality(object):
                         [np.nan]*len(t0), [np.inf]*len(t0),
                         [0.0]*len(t0)]).transpose()
 
-        for i in np.where(np.logical_and(np.isfinite(t0), np.abs(self.mjdobs-t0)<self.maxTimeSNVisible))[0]:
+        for i in np.where(np.logical_and(np.isfinite(t0),
+                                         np.abs(self.mjdobs - t0) < self.maxTimeSNVisible))[0]:
 
             if id_list[i] in self._sn_object_cache:
                 SNobject = self._sn_object_cache[id_list[i]]
@@ -275,7 +278,7 @@ class SNFunctionality(object):
                 SNobject.set_MWebv(ebv[i])
                 self._sn_object_cache[id_list[i]] = SNobject
 
-            if self.mjdobs<=SNobject.maxtime() and self.mjdobs>=SNobject.mintime():
+            if self.mjdobs <= SNobject.maxtime() and self.mjdobs >= SNobject.mintime():
 
                 # Calculate fluxes
                 fluxinMaggies = SNobject.catsimBandFlux(time=self.mjdobs,
@@ -289,7 +292,7 @@ class SNFunctionality(object):
                                                         bandpassobject=bandpass,
                                                         m5=self.obs_metadata.m5[
                                                             bandname],
-                                                        photParams=None,
+                                                        photParams=self.photometricparameters,
                                                         fluxinMaggies=fluxinMaggies,
                                                         magnitude=mag)
 
@@ -297,12 +300,12 @@ class SNFunctionality(object):
                                                       bandpassobject=bandpass,
                                                       m5=self.obs_metadata.m5[
                                                           bandname],
-                                                      photParams=None,
+                                                      photParams=self.photometricparameters,
                                                       magnitude=mag)
                 sed = SNobject.SNObjectSED(time=self.mjdobs,
                                            bandpass=self.lsstBandpassDict,
                                            applyExtinction=True)
-                adu = sed.calcADU(bandpass, photParams=_photParams)
+                adu = sed.calcADU(bandpass, photParams=self.photometricparameters)
                 vals[i, 2] = flux_err
                 vals[i, 3] = mag_err
                 vals[i, 4] = adu
@@ -325,25 +328,25 @@ class SNFunctionality(object):
         raDeg = np.degrees(ra)
         decDeg = np.degrees(dec)
 
-        SNobject = SNObject()
+        snobject = SNObject()
         # Initialize return array
         vals = np.zeros(shape=(self.numobjs, 19))
         for i, _ in enumerate(vals):
-            SNobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
-            SNobject.setCoords(ra=raDeg[i], dec=decDeg[i])
-            SNobject.mwEBVfromMaps()
+            snobject.set(z=_z[i], c=c[i], x1=x1[i], t0=t0[i], x0=x0[i])
+            snobject.setCoords(ra=raDeg[i], dec=decDeg[i])
+            snobject.mwEBVfromMaps()
             # Calculate fluxes
-            vals[i, :6] = SNobject.catsimManyBandFluxes(time=self.mjdobs,
+            vals[i, :6] = snobject.catsimManyBandFluxes(time=self.mjdobs,
                                                         bandpassDict=self.lsstBandpassDict,
                                                         observedBandPassInd=None)
             # Calculate magnitudes
-            vals[i, 6:12] = SNobject.catsimManyBandMags(time=self.mjdobs,
+            vals[i, 6:12] = snobject.catsimManyBandMags(time=self.mjdobs,
                                                         bandpassDict=self.lsstBandpassDict,
                                                         observedBandPassInd=None)
 
-            vals[i, 12:18] = SNobject.catsimManyBandADUs(time=self.mjdobs,
-                                                bandpassDict=self.lsstBandpassDict,
-                                                photParams=self.photometricparameters)
+            vals[i, 12:18] = snobject.catsimManyBandADUs(time=self.mjdobs,
+                                                         bandpassDict=self.lsstBandpassDict,
+                                                         photParams=self.photometricparameters)
             vals[i, 18] = SNobject.ebvofMW
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3],
                 vals[:, 4], vals[:, 5], vals[:, 6], vals[:, 7],
@@ -351,13 +354,8 @@ class SNFunctionality(object):
                 vals[:, 12], vals[:, 13], vals[:, 14], vals[:, 15],
                 vals[:, 16], vals[:, 17], vals[:, 18])
 
-
     def get_EBV(self):
-        if self._lsstmwebv is None:
-            self._lsstmwebv = EBVbase()
-        return np.array(self._lsstmwebv.calculateEbv(equatorialCoordinates=
-                                                     np.array([self.column_by_name('raJ2000'),
-                                                               self.column_by_name('decJ2000')])))
+        return self.column_by_name('EBV')
 
 
 class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
@@ -432,9 +430,7 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
     and parameters of the supernova model that predict the SED.
     """
 
-    surveyStartDate = 59580. # For Kraken_1042 / Minion_1016
-
-
+    surveyStartDate = 59580.0   # For Kraken_1042 / Minion_1016
 
     @compound('snra', 'sndec', 'z', 'vra', 'vdec', 'vr')
     def get_angularCoordinates(self):
@@ -462,10 +458,10 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
         """
 
         c, x1, x0 = self.column_by_name('Tc'), \
-                    self.column_by_name('Tx1'),\
-                    self.column_by_name('Tx0')
+            self.column_by_name('Tx1'),\
+            self.column_by_name('Tx0')
         t0 = self.column_by_name('Tt0') + self.surveyStartDate
-        if self.suppressDimSN :
+        if self.suppressDimSN:
             t0 = np.where(np.abs(t0 - self.mjdobs) > self.maxTimeSNVisible,
                           self.badvalues, t0)
 

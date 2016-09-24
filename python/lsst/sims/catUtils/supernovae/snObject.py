@@ -464,6 +464,14 @@ class SNObject(sncosmo.Model):
         self.set_source_peakabsmag(peakAbsMag, 'BessellB', 'AB', cosmo=cosmo)
         return
 
+    def restFrameSED(self, time, wavelen=None, bandpass=None,
+                     applyExtinction=True):
+        """
+        aliased method for SNObjectSourceSED with identical parameters
+        """
+        return self.SNObjectSourceSED(time=time, wavelen=wavelen,
+                                      bandpass=bandpass,
+                                      applyExtinction=applyExtinction)
 
     def SNObjectSED(self, time, wavelen=None, bandpass=None,
                     applyExtinction=True):
