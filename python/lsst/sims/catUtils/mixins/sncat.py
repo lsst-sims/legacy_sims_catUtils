@@ -466,3 +466,4 @@ class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse)
                           self.badvalues, t0)
 
         return (c, x1, x0, t0)
+
