@@ -5,12 +5,14 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.utils import arcsecFromRadians, _observedFromICRS, altAzPaFromRaDec
 from lsst.sims.catUtils.mixins import (EBVmixin, PhoSimAstrometryStars,
-                                       PhoSimAstrometryGalaxies, PhoSimAstrometrySSM)
+                                       PhoSimAstrometryGalaxies,
+                                       PhoSimAstrometrySSM,
+                                       FrozenSNCat)
 
 __all__ = ["write_phoSim_header", "PhosimInputBase",
-           "PhoSimCatalogPoint", "PhoSimCatalogZPoint",
+           "PhoSimCatalogPoint", "PhoSimCatalogZPoint", "PhoSimCatalogSN",
            "PhoSimCatalogSersic2D", "PhoSimCatalogSSM", "PhoSimSpecMap",
-           "DefaultPhoSimHeaderMap"]
+           "DefaultPhoSimHeaderMap", 'DefaultPhoSimInstanceCatalogCols']
 
 
 PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
@@ -30,7 +32,7 @@ PhoSimSpecMap = SpecMap(fileDict=defaultSpecMap.fileDict,
 #
 # OpSim columns are documented here
 # https://www.lsst.org/scientists/simulations/opsim/summary-table-column-descriptions-v335
-#
+
 DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
                           'obshistid': ('obsHistID', None),
                           'moonra': ('moonRA', np.degrees),
@@ -40,10 +42,21 @@ DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
                           'dist2moon': ('dist2Moon', np.degrees),
                           'sunalt': ('sunAlt', np.degrees),
                           'seeing': ('rawSeeing', None),
-                          'vistime': ('visitExpTime', lambda x: x+3.0),
+                          'vistime': ('visitExpTime', lambda x: x + 3.0),
                           'nsnap': 2,
                           'seed': ('obsHistID', None)}
 
+# This variable contains all of the columns in a phosim Instance Catalog
+# Can be used to reconstruct the information encoded in a phosim instance
+# Catalog
+DefaultPhoSimInstanceCatalogCols = ('object', 'uniqueID', 'RA', 'DEC'\
+                                    , 'MAG_NORM', 'SED_NAME', 'REDSHIFT'\
+                                    , 'GAMMA1', 'GAMMA2', 'MU', 'DELTA_RA'\
+                                    , 'DELTA_DEC', 'SOURCE_TYPE'\
+                                    , 'source_pars', 'DUST_REST_NAME'\
+                                    , 'dust_pars_1a', 'dust_pars_1b'\
+                                    , 'DUST_LAB_NAME', 'dust_pars_2a'\
+                                    , 'dust_pars_2b') 
 
 def evaluate_phosim_header(param, phosim_header_map, obs):
     """
@@ -288,6 +301,20 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
     spatialModel = "point"
 
     transformations = {'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
+
+
+class PhoSimCatalogSN(PhoSimCatalogZPoint, FrozenSNCat, EBVmixin):
+    """
+    Mixin for PhoSim Instance Catalogs in PhoSim
+    """
+    catalog_type = 'phoSim_SNcatalog'
+    writeSEDFile = True
+
+    def get_sedFilepath(self):
+        return self.column_by_name('TsedFilepath')
+
+    def get_phoSimMagNorm(self):
+        return self.column_by_name('magNorm')
 
 
 class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):

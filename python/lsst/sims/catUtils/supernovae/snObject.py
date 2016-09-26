@@ -464,7 +464,6 @@ class SNObject(sncosmo.Model):
         self.set_source_peakabsmag(peakAbsMag, 'BessellB', 'AB', cosmo=cosmo)
         return
 
-
     def SNObjectSED(self, time, wavelen=None, bandpass=None,
                     applyExtinction=True):
         '''
@@ -530,7 +529,7 @@ class SNObject(sncosmo.Model):
         # self.mintime() and self.maxtime() are properties describing
         # the ranges of SNCosmo.Model in time. Behavior beyond this is 
         # determined by self.modelOutSideTemporalRange
-        if (time > self.mintime()) and (time < self.maxtime()):
+        if (time >= self.mintime()) and (time <= self.maxtime()):
             # If SNCosmo is requested a SED value beyond the wavelength range
             # of model it will crash. Try to prevent that by returning np.nan for
             # such wavelengths. This will still not help band flux calculations
@@ -540,8 +539,8 @@ class SNObject(sncosmo.Model):
 
             # Convert to Ang
             wave = wavelen * 10.0
-            mask1 = wave > self.minwave()
-            mask2 = wave < self.maxwave()
+            mask1 = wave >= self.minwave()
+            mask2 = wave <= self.maxwave()
             mask = mask1 & mask2
             wave = wave[mask]
 
@@ -553,11 +552,12 @@ class SNObject(sncosmo.Model):
         else:
             # use prescription for modelOutSideTemporalRange
             if self.modelOutSideTemporalRange != 'zero':
-                raise ValueError('Model not implemented, change to zero\n')
+                raise NotImplementedError('Model not implemented, change to zero\n')
                 # Else Do nothing as flambda is already 0.
                 # This takes precedence over being outside wavelength range
                 
         if self.rectifySED:
+            # Note that this converts nans into 0.
             flambda = np.where(flambda > 0., flambda, 0.)
         SEDfromSNcosmo = Sed(wavelen=wavelen, flambda=flambda)
 
@@ -588,6 +588,94 @@ class SNObject(sncosmo.Model):
 
         SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
+
+    def SNObjectSourceSED(self, time, wavelen=None):
+        """
+        Return the rest Frame SED of SNObject at the phase corresponding to
+        time, at rest frame wavelengths wavelen. If wavelen is None,
+        then the SED is sampled at the rest frame wavelengths native to the
+        SALT model being used.
+
+        Parameters
+        ----------
+        time : float, mandatory,
+            observer frame time at which the SED has been requested in units
+            of days.
+        wavelen : `np.ndarray`, optional, defaults to native SALT wavelengths
+            array of wavelengths in the rest frame of the supernova in units
+            of nm. If None, this defaults to the wavelengths at which the
+            SALT model is sampled natively.
+        Returns
+        -------
+        `numpy.ndarray` of dtype float.
+
+        .. note: The result should usually match the SALT source spectrum.
+        However, it may be different for the following reasons:
+        1. If the time of observation is outside the model range, the values
+            have to be inserted using additional models. Here only one model
+            is currently implemented, where outside the model range the value
+            is set to 0.
+        2. If the wavelengths are beyond the range of the SALT model, the SED
+            flambda values are set to `np.nan` and these are actually set to 0.
+            if `self.rectifySED = True`
+        3. If the `flambda` values of the SALT model are negative which happens
+            in the less sampled phases of the model, these values are set to 0,
+            if `self.rectifySED` = True.
+        """
+        phase = (time - self.get('t0')) / (1. + self.get('z'))
+        source = self.source
+
+        # Set the default value of wavelength  input
+        if wavelen is None:
+            # use native SALT grid in Ang
+            wavelen = source._wave
+        else:
+            #input wavelen in nm, convert to Ang
+            wavelen = wavelen.copy()
+            wavelen *= 10.0
+
+        flambda = np.zeros(len(wavelen))
+        # self.mintime() and self.maxtime() are properties describing
+        # the ranges of SNCosmo.Model in time. Behavior beyond this is 
+        # determined by self.modelOutSideTemporalRange
+        insidephaseRange = (phase <= source.maxphase())and(phase >= source.minphase())
+        if insidephaseRange:
+            # If SNCosmo is requested a SED value beyond the wavelength range
+            # of model it will crash. Try to prevent that by returning np.nan for
+            # such wavelengths. This will still not help band flux calculations
+            # but helps us get past this stage.
+
+            flambda = flambda * np.nan
+
+            mask1 = wavelen >= source.minwave()
+            mask2 = wavelen <= source.maxwave()
+            mask = mask1 & mask2
+            # Where we have to calculate fluxes because it is not `np.nan`
+            wave = wavelen[mask]
+            flambda[mask] = source.flux(phase, wave)
+        else:
+            if self.modelOutSideTemporalRange == 'zero':
+                # flambda was initialized as np.zeros before start of
+                # conditional
+                pass
+            else:
+                raise NotImplementedError('Only modelOutSideTemporalRange=="zero" implemented')
+
+
+        # rectify the flux
+        if self.rectifySED:
+            flux = np.where(flambda>0., flambda, 0.)
+        else:
+            flux = flambda
+
+
+        # convert per Ang to per nm
+        flux *= 10.0
+        # convert ang to nm
+        wavelen = wavelen / 10.
+        sed = Sed(wavelen=wavelen, flambda=flux)
+        # This has the cosmology built in.
+        return sed
 
     def catsimBandFlux(self, time, bandpassobject):
         """
