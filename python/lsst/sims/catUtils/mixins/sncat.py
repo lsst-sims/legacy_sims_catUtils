@@ -347,7 +347,7 @@ class SNFunctionality(object):
             vals[i, 12:18] = snobject.catsimManyBandADUs(time=self.mjdobs,
                                                          bandpassDict=self.lsstBandpassDict,
                                                          photParams=self.photometricparameters)
-            vals[i, 18] = SNobject.ebvofMW
+            vals[i, 18] = snobject.ebvofMW
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3],
                 vals[:, 4], vals[:, 5], vals[:, 6], vals[:, 7],
                 vals[:, 8], vals[:, 9], vals[:, 10], vals[:, 11],
