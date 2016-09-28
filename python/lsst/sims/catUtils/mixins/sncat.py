@@ -21,6 +21,8 @@ from lsst.sims.catUtils.mixins import CosmologyMixin
 import lsst.sims.photUtils.PhotometricParameters as PhotometricParameters
 from lsst.sims.catUtils.supernovae import SNObject
 from lsst.sims.catUtils.supernovae import SNUniverse
+from lsst.sims.catUtils.mixins import EBVmixin
+from lsst.sims.utils import _galacticFromEquatorial
 import astropy
 
 
@@ -28,7 +30,7 @@ __all__ = ['SNIaCatalog', 'SNFunctionality', 'FrozenSNCat']
 cosmo = CosmologyMixin()
 
 
-class SNFunctionality(object):
+class SNFunctionality(EBVmixin):
     """
     SNFunctionality is a mixin that provides functionality of getting fluxes
     and magnitudes for SN defined by parameters of `~sims_catUtils.SNObject` as
@@ -397,6 +399,10 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
             hostra, hostdec, hostz)
 
         return ([snra, sndec, snz, snvra, snvdec, snvr])
+
+    @compound('glon', 'glat')
+    def get_galacticCoords(self):
+        return _galacticFromEquatorial(self.column_by_name('snra'), self.column_by_name('sndec'))
 
     @compound('c', 'x1', 'x0', 't0')
     def get_snparams(self):
