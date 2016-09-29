@@ -356,9 +356,6 @@ class SNFunctionality(EBVmixin):
                 vals[:, 12], vals[:, 13], vals[:, 14], vals[:, 15],
                 vals[:, 16], vals[:, 17], vals[:, 18])
 
-    #def get_EBV(self):
-    #    return self.column_by_name('EBV')
-
 
 class SNIaCatalog (InstanceCatalog, SNFunctionality, CosmologyMixin, SNUniverse):
 
