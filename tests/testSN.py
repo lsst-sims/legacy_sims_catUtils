@@ -484,7 +484,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         fnameList = []
         for obsindex, obsMetaData in enumerate(obsMetaDataResults):
 
-            cols = ['snid', 'snra', 'sndec', 't0', 'mwebv', 'time', 'band', 'flux', 'flux_err',
+            cols = ['snid', 'snra', 'sndec', 'z', 'x0', 'x1', 'c', 't0',
+                    'mwebv', 'time', 'band', 'flux', 'flux_err',
                     'mag', 'mag_err', 'cosmologicalDistanceModulus']
             newCatalog = SNIaCatalog(db_obj=cls.galDB, obs_metadata=obsMetaData,
                                      column_outputs=cols)
