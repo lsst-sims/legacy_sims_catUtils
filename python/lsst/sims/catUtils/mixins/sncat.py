@@ -360,7 +360,7 @@ class SNFunctionality(EBVmixin):
     #    return self.column_by_name('EBV')
 
 
-class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
+class SNIaCatalog (InstanceCatalog, SNFunctionality, CosmologyMixin, SNUniverse):
 
     """
     `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
@@ -414,7 +414,7 @@ class SNIaCatalog (SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
 
-class FrozenSNCat(SNFunctionality,  InstanceCatalog, CosmologyMixin, SNUniverse):
+class FrozenSNCat(InstanceCatalog, SNFunctionality, CosmologyMixin, SNUniverse):
 
     """
     `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
