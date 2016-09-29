@@ -30,7 +30,7 @@ __all__ = ['SNIaCatalog', 'SNFunctionality', 'FrozenSNCat']
 cosmo = CosmologyMixin()
 
 
-class SNFunctionality(EBVmixin):
+class SNFunctionality(InstanceCatalog, EBVmixin, CosmologyMixin, SNUniverse):
     """
     SNFunctionality is a mixin that provides functionality of getting fluxes
     and magnitudes for SN defined by parameters of `~sims_catUtils.SNObject` as
@@ -357,7 +357,7 @@ class SNFunctionality(EBVmixin):
                 vals[:, 16], vals[:, 17], vals[:, 18])
 
 
-class SNIaCatalog (InstanceCatalog, SNFunctionality, CosmologyMixin, SNUniverse):
+class SNIaCatalog (SNFunctionality):
 
     """
     `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
@@ -411,7 +411,7 @@ class SNIaCatalog (InstanceCatalog, SNFunctionality, CosmologyMixin, SNUniverse)
         return (vals[:, 0], vals[:, 1], vals[:, 2], vals[:, 3])
 
 
-class FrozenSNCat(InstanceCatalog, SNFunctionality, CosmologyMixin, SNUniverse):
+class FrozenSNCat(SNFunctionality):
 
     """
     `lsst.sims.catalogs.measures.instance.InstanceCatalog` class with SN
