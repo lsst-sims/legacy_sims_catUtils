@@ -105,6 +105,18 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         self.assertRaises(RuntimeError, gen.getObservationMetaData)
         self.assertRaises(RuntimeError, gen.getObservationMetaData, fieldRA=(1.0, 2.0, 3.0))
 
+    def testOrderBy(self):
+        """
+        Test that the ObservationMetaData really do get ordered on expMJD
+        """
+        results = self.gen.getObservationMetaData(altitude=(50.0, 80.0), limit=100)
+        self.assertEqual(len(results), 100)
+        for ix, obs in enumerate(results):
+            self.assertGreaterEqual(obs.OpsimMetaData['altitude'], np.radians(50.0))
+            self.assertLessEqual(obs.OpsimMetaData['altitude'], np.radians(80.0))
+            if ix>1:
+                self.assertGreater(obs.mjd.TAI, results[ix-1].mjd.TAI)
+
     def testQueryOnRanges(self):
         """
         Test that ObservationMetaData objects returned by queries of the form
