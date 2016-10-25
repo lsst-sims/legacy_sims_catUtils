@@ -388,6 +388,24 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             # Make sure that some ObservationMetaData were tested
             self.assertGreater(ct, 0)
 
+    def testQueryOnNight(self):
+        """
+        Check that the ObservationMetaDataGenerator can query on the 'night'
+        column in the OpSim summary table
+        """
+
+        # the test database goes from night=0 to night=28
+        # corresponding to 49353.032079 <= mjd <= 49381.38533
+        night0 = 49353.0
+
+        results = self.gen.getObservationMetaData(night=(11, 13))
+        self.assertGreater(len(results), 0)
+        for obs in results:
+            self.assertGreater(obs.mjd.TAI, night0+11.0)
+            self.assertLess(obs.mjd.TAI, night0+13.0)
+            self.assertGreater(obs._OpsimMetaData['night'], 11)
+            self.assertLess(obs._OpsimMetaData['night'], 13)
+
     def testCreationOfPhoSimCatalog(self):
         """
         Make sure that we can create PhoSim input catalogs using the returned

@@ -160,7 +160,7 @@ class ObservationMetaDataGenerator(object):
 
         self.dtype = np.dtype(dtypeList)
 
-    def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
+    def getOpSimRecords(self, obsHistID=None, expDate=None, night=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
                         rotSkyPos=None, telescopeFilter=None, rawSeeing=None,
                         seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
@@ -176,7 +176,7 @@ class ObservationMetaDataGenerator(object):
 
         Parameters
         ----------
-        obsHistID, expDate, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
+        obsHistID, expDate, night, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
         telescopeFilter, rawSeeing, seeing, sunAlt, moonAlt, dist2Moon,
         moonPhase, expMJD, altitude, azimuth, visitExpTime, airmass,
         skyBrightness, m5 : tuples of length 2, optional, defaults to None
@@ -373,7 +373,7 @@ class ObservationMetaDataGenerator(object):
 
         return out
 
-    def getObservationMetaData(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
+    def getObservationMetaData(self, obsHistID=None, expDate=None, night=None, fieldRA=None, fieldDec=None,
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
                                rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
@@ -426,12 +426,14 @@ class ObservationMetaDataGenerator(object):
         @param [in] obsHistID the integer used by OpSim to label pointings
         @param [in] expDate is the date of the exposure (units????)
         @param [in] expMJD is the MJD of the exposure
+        @param [in] night is the night (an int starting at zero) on which the observation took place
         @param [in] m5 is the five sigma depth of the observation
         @param [in] skyBrightness
         """
 
         OpSimPointingRecords = self.getOpSimRecords(obsHistID=obsHistID,
                                                     expDate=expDate,
+                                                    night=night,
                                                     fieldRA=fieldRA,
                                                     fieldDec=fieldDec,
                                                     moonRA=moonRA,
