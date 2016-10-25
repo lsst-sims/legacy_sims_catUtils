@@ -399,7 +399,11 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         night0 = 49353.032079
 
         results = self.gen.getObservationMetaData(night=(11, 13))
-        self.assertGreater(len(results), 0)
+
+        self.assertGreater(len(results), 1800)
+        # there should be about 700 observations a night;
+        # make sure we get at least 600
+
         for obs in results:
             self.assertGreaterEqual(obs.mjd.TAI, night0+11.0)
             self.assertLessEqual(obs.mjd.TAI, night0+13.5)
@@ -407,6 +411,18 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             # 13 days and 8 hours after the first observation on night 0
             self.assertGreaterEqual(obs._OpsimMetaData['night'], 11)
             self.assertLessEqual(obs._OpsimMetaData['night'], 13)
+
+        # query for an exact night
+        results = self.gen.getObservationMetaData(night=15)
+
+        self.assertGreater(len(results), 600)
+        # there should be about 700 observations a night;
+        # make sure we get at least 600
+
+        for obs in results:
+            self.assertEqual(obs._OpsimMetaData['night'], 15)
+            self.assertGreaterEqual(obs.mjd.TAI, night0+14.9)
+            self.assertLessEqual(obs.mjd.TAI, night0+15.9)
 
     def testCreationOfPhoSimCatalog(self):
         """
