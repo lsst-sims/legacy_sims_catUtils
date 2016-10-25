@@ -175,7 +175,7 @@ class ObservationMetaDataGenerator(object):
         res.dtype.names
         """
 
-        query = self.baseQuery + ' FROM SUMMARY'
+        query = self.baseQuery + ' FROM SUMMARY '
 
         query += constraint
 
@@ -253,7 +253,7 @@ class ObservationMetaDataGenerator(object):
                 if nConstraints > 0:
                     constraint += ' AND'
                 else:
-                    constraint += ' WHERE '
+                    constraint += 'WHERE '
 
                 if isinstance(value, tuple):
                     if len(value) > 2:
@@ -481,3 +481,29 @@ class ObservationMetaDataGenerator(object):
                                                            boundType=boundType,
                                                            boundLength=boundLength)
         return output
+
+    def getObservationMetaDataFromConstraint(self, constraint, boundType='circle', boundLength=1.75):
+        """
+        Get a list of ObservationMetaData corresponding to an arbitrary SQL query
+
+        Parameters
+        ----------
+        query: A string encoding the 'where' clause for an SQL query to be executed
+
+        boundType: The shape of the field of view returned in the ObservationMetaData
+
+        boundLength: The characteristic length (in degrees) of the field of view returned
+                     in the ObservationMetaData
+
+        See the docstring for ObservationMetaData for a clearer explanation of
+        boundType and boundLength.
+
+        Returns
+        -------
+        A list of the ObservationMetaData returned by that query
+        """
+        OpSimPointingRecords = self.getOpsimRecordsFromConstraint(constraint)
+        return self.ObservationMetaDataFromPointingArray(OpSimPointingRecords,
+                                                         OpSimColumns=None,
+                                                         boundType=boundType,
+                                                         boundLength=boundLength)

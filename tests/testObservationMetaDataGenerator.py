@@ -420,9 +420,28 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         # make sure we get at least 600
 
         for obs in results:
-            self.assertEqual(obs._OpsimMetaData['night'], 15)
+            self.assertEqual(obs.OpsimMetaData['night'], 15)
             self.assertGreaterEqual(obs.mjd.TAI, night0+14.9)
             self.assertLessEqual(obs.mjd.TAI, night0+15.9)
+
+    def testQueryOnConstraint(self):
+        """
+        Test that we can create a list of ObservationMetaData with an
+        arbitary SQL 'where' clause
+        """
+
+        constraint = 'where night<3 and altitude>1.3'
+        results = self.gen.getObservationMetaDataFromConstraint(constraint)
+        self.assertGreater(len(results), 0)
+        for obs in results:
+            self.assertLess(obs.OpsimMetaData['night'], 3)
+            self.assertGreater(obs.OpsimMetaData['altitude'], 1.3)
+
+        constraint = 'where altitude<1.2 limit 10'
+        results = self.gen.getObservationMetaDataFromConstraint(constraint)
+        self.assertEqual(len(results), 10)
+        for obs in results:
+            self.assertLess(obs.OpsimMetaData['altitude'], 1.2)
 
     def testCreationOfPhoSimCatalog(self):
         """
