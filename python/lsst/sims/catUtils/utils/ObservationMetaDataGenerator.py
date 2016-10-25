@@ -248,7 +248,7 @@ class ObservationMetaDataGenerator(object):
                         vmin = value[0]
                         vmax = value[1]
 
-                    query += ' %s > %s AND %s < %s' % \
+                    query += ' %s >= %s AND %s <= %s' % \
                              (transform[0], vmin, transform[0], vmax)
                 else:
                     # perform any necessary coordinate transformations
