@@ -160,6 +160,22 @@ class ObservationMetaDataGenerator(object):
 
         self.dtype = np.dtype(dtypeList)
 
+    def getOpsimRecordsFromQuery(self, query):
+        """
+        Perform an arbitrary SQL query on the Opsim database Summary table.
+        Return the results as a numpy recarray.
+
+        Parameters
+        ----------
+        A string containing the SQL query to be executed
+
+        Returns
+        -------
+        `numpy.recarray` with OpSim records. The column names may be obtained as
+        res.dtype.names
+        """
+        return self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
+
     def getOpSimRecords(self, obsHistID=None, expDate=None, night=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
                         rotSkyPos=None, telescopeFilter=None, rawSeeing=None,
@@ -269,8 +285,7 @@ class ObservationMetaDataGenerator(object):
             raise RuntimeError('You did not specify any contraints on your query;' +
                                ' you will just return ObservationMetaData for all poitnings')
 
-        results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
-        return results
+        return self.getOpsimRecordsFromQuery(query)
 
     def ObservationMetaDataFromPointing(self, OpSimPointingRecord, OpSimColumns=None,
                                         boundLength=1.75, boundType='circle'):
