@@ -404,12 +404,12 @@ class ObservationMetaDataGenerator(object):
         be returned
 
         @param [in] boundType is the boundType of the ObservationMetaData to be returned
-        (see documentation in sims_catalogs_generation/../db/spatialBounds.py for more
-        details)
 
         @param [in] boundLength is the boundLength of the ObservationMetaData to be
-        returned (in degrees; see documentation in
-        sims_catalogs_generation/../db/spatialBounds.py for more details)
+        returned
+
+        See the docstring for ObservationMetaData for a clearer explanation of
+        boundType and boundLength.
 
         All other input parameters are constraints to be placed on the SQL query of the
         opsim output db.  These contraints can either be tuples of the form (min, max)
