@@ -160,7 +160,28 @@ class ObservationMetaDataGenerator(object):
 
         self.dtype = np.dtype(dtypeList)
 
-    def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
+    def getOpsimRecordsFromConstraint(self, constraint):
+        """
+        Perform an arbitrary SQL query on the Opsim database Summary table.
+        Return the results as a numpy recarray.
+
+        Parameters
+        ----------
+        A string containing the 'where' clause for an SQL query to be executed
+
+        Returns
+        -------
+        `numpy.recarray` with OpSim records. The column names may be obtained as
+        res.dtype.names
+        """
+
+        query = self.baseQuery + ' FROM SUMMARY '
+
+        query += constraint
+
+        return self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
+
+    def getOpSimRecords(self, obsHistID=None, expDate=None, night=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
                         rotSkyPos=None, telescopeFilter=None, rawSeeing=None,
                         seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
@@ -176,7 +197,7 @@ class ObservationMetaDataGenerator(object):
 
         Parameters
         ----------
-        obsHistID, expDate, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
+        obsHistID, expDate, night, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
         telescopeFilter, rawSeeing, seeing, sunAlt, moonAlt, dist2Moon,
         moonPhase, expMJD, altitude, azimuth, visitExpTime, airmass,
         skyBrightness, m5 : tuples of length 2, optional, defaults to None
@@ -210,9 +231,9 @@ class ObservationMetaDataGenerator(object):
 
         self._set_seeing_column(self._summary_columns)
 
-        query = self.baseQuery + ' FROM SUMMARY'
-
         nConstraints = 0  # the number of constraints in this query
+
+        constraint = ''
 
         for column in self._user_interface_to_opsim:
             transform = self._user_interface_to_opsim[column]
@@ -230,9 +251,9 @@ class ObservationMetaDataGenerator(object):
                     raise RuntimeError("You have asked ObservationMetaDataGenerator to SELECT pointings on"
                                        "%s; that column does not exist in your OpSim database" % column)
                 if nConstraints > 0:
-                    query += ' AND'
+                    constraint += ' AND'
                 else:
-                    query += ' WHERE '
+                    constraint += 'WHERE '
 
                 if isinstance(value, tuple):
                     if len(value) > 2:
@@ -248,29 +269,28 @@ class ObservationMetaDataGenerator(object):
                         vmin = value[0]
                         vmax = value[1]
 
-                    query += ' %s > %s AND %s < %s' % \
-                             (transform[0], vmin, transform[0], vmax)
+                    constraint += ' %s >= %s AND %s <= %s' % \
+                                  (transform[0], vmin, transform[0], vmax)
                 else:
                     # perform any necessary coordinate transformations
                     if transform[1] is not None:
                         vv = transform[1](value)
                     else:
                         vv = value
-                    query += ' %s == %s' % (transform[0], vv)
+                    constraint += ' %s == %s' % (transform[0], vv)
 
                 nConstraints += 1
 
-        query += ' GROUP BY expMJD'
+        constraint += ' GROUP BY expMJD ORDER BY expMJD'
 
         if limit is not None:
-            query += ' LIMIT %d' % limit
+            constraint += ' LIMIT %d' % limit
 
         if nConstraints == 0 and limit is None:
             raise RuntimeError('You did not specify any contraints on your query;' +
                                ' you will just return ObservationMetaData for all poitnings')
 
-        results = self.opsimdb.execute_arbitrary(query, dtype=self.dtype)
-        return results
+        return self.getOpsimRecordsFromConstraint(constraint)
 
     def ObservationMetaDataFromPointing(self, OpSimPointingRecord, OpSimColumns=None,
                                         boundLength=1.75, boundType='circle'):
@@ -373,7 +393,7 @@ class ObservationMetaDataGenerator(object):
 
         return out
 
-    def getObservationMetaData(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
+    def getObservationMetaData(self, obsHistID=None, expDate=None, night=None, fieldRA=None, fieldDec=None,
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
                                rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
@@ -389,12 +409,12 @@ class ObservationMetaDataGenerator(object):
         be returned
 
         @param [in] boundType is the boundType of the ObservationMetaData to be returned
-        (see documentation in sims_catalogs_generation/../db/spatialBounds.py for more
-        details)
 
         @param [in] boundLength is the boundLength of the ObservationMetaData to be
-        returned (in degrees; see documentation in
-        sims_catalogs_generation/../db/spatialBounds.py for more details)
+        returned
+
+        See the docstring for ObservationMetaData for a clearer explanation of
+        boundType and boundLength.
 
         All other input parameters are constraints to be placed on the SQL query of the
         opsim output db.  These contraints can either be tuples of the form (min, max)
@@ -426,12 +446,14 @@ class ObservationMetaDataGenerator(object):
         @param [in] obsHistID the integer used by OpSim to label pointings
         @param [in] expDate is the date of the exposure (units????)
         @param [in] expMJD is the MJD of the exposure
+        @param [in] night is the night (an int starting at zero) on which the observation took place
         @param [in] m5 is the five sigma depth of the observation
         @param [in] skyBrightness
         """
 
         OpSimPointingRecords = self.getOpSimRecords(obsHistID=obsHistID,
                                                     expDate=expDate,
+                                                    night=night,
                                                     fieldRA=fieldRA,
                                                     fieldDec=fieldDec,
                                                     moonRA=moonRA,
@@ -459,3 +481,29 @@ class ObservationMetaDataGenerator(object):
                                                            boundType=boundType,
                                                            boundLength=boundLength)
         return output
+
+    def getObservationMetaDataFromConstraint(self, constraint, boundType='circle', boundLength=1.75):
+        """
+        Get a list of ObservationMetaData corresponding to an arbitrary SQL query
+
+        Parameters
+        ----------
+        query: A string encoding the 'where' clause for an SQL query to be executed
+
+        boundType: The shape of the field of view returned in the ObservationMetaData
+
+        boundLength: The characteristic length (in degrees) of the field of view returned
+                     in the ObservationMetaData
+
+        See the docstring for ObservationMetaData for a clearer explanation of
+        boundType and boundLength.
+
+        Returns
+        -------
+        A list of the ObservationMetaData returned by that query
+        """
+        OpSimPointingRecords = self.getOpsimRecordsFromConstraint(constraint)
+        return self.ObservationMetaDataFromPointingArray(OpSimPointingRecords,
+                                                         OpSimColumns=None,
+                                                         boundType=boundType,
+                                                         boundLength=boundLength)

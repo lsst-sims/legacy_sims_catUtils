@@ -105,6 +105,18 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         self.assertRaises(RuntimeError, gen.getObservationMetaData)
         self.assertRaises(RuntimeError, gen.getObservationMetaData, fieldRA=(1.0, 2.0, 3.0))
 
+    def testOrderBy(self):
+        """
+        Test that the ObservationMetaData really do get ordered on expMJD
+        """
+        results = self.gen.getObservationMetaData(altitude=(50.0, 80.0), limit=100)
+        self.assertEqual(len(results), 100)
+        for ix, obs in enumerate(results):
+            self.assertGreaterEqual(obs.OpsimMetaData['altitude'], np.radians(50.0))
+            self.assertLessEqual(obs.OpsimMetaData['altitude'], np.radians(80.0))
+            if ix>1:
+                self.assertGreater(obs.mjd.TAI, results[ix-1].mjd.TAI)
+
     def testQueryOnRanges(self):
         """
         Test that ObservationMetaData objects returned by queries of the form
@@ -142,8 +154,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
             for obs in results:
                 val = get_val_from_obs(tag, obs)
-                self.assertGreater(val, line[1][0], msg=msg)
-                self.assertLess(val, line[1][1], msg=msg)
+                self.assertGreaterEqual(val, line[1][0], msg=msg)
+                self.assertLessEqual(val, line[1][1], msg=msg)
 
         # test querying on two columns at once
         for ix in range(len(bounds)):
@@ -161,10 +173,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 for obs in results:
                     v1 = get_val_from_obs(tag1, obs)
                     v2 = get_val_from_obs(tag2, obs)
-                    self.assertGreater(v1, bounds[ix][1][0], msg=msg)
-                    self.assertLess(v1, bounds[ix][1][1], msg=msg)
-                    self.assertGreater(v2, bounds[jx][1][0], msg=msg)
-                    self.assertLess(v2, bounds[jx][1][1], msg=msg)
+                    self.assertGreaterEqual(v1, bounds[ix][1][0], msg=msg)
+                    self.assertLessEqual(v1, bounds[ix][1][1], msg=msg)
+                    self.assertGreaterEqual(v2, bounds[jx][1][0], msg=msg)
+                    self.assertLessEqual(v2, bounds[jx][1][1], msg=msg)
 
     def testOpSimQueryOnRanges(self):
         """
@@ -187,8 +199,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertGreater(len(results), 0)
             for rec in results:
                 val = get_val_from_rec(tag, rec)
-                self.assertGreater(val, line[1][0], msg=msg)
-                self.assertLess(val, line[1][1], msg=msg)
+                self.assertGreaterEqual(val, line[1][0], msg=msg)
+                self.assertLessEqual(val, line[1][1], msg=msg)
 
         for ix in range(len(bounds)):
             tag1 = bounds[ix][0]
@@ -201,10 +213,10 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                 for rec in results:
                     v1 = get_val_from_rec(tag1, rec)
                     v2 = get_val_from_rec(tag2, rec)
-                    self.assertGreater(v1, bounds[ix][1][0], msg=msg)
-                    self.assertLess(v1, bounds[ix][1][1], msg=msg)
-                    self.assertGreater(v2, bounds[jx][1][0], msg=msg)
-                    self.assertLess(v2, bounds[jx][1][1], msg=msg)
+                    self.assertGreaterEqual(v1, bounds[ix][1][0], msg=msg)
+                    self.assertLessEqual(v1, bounds[ix][1][1], msg=msg)
+                    self.assertGreaterEqual(v2, bounds[jx][1][0], msg=msg)
+                    self.assertLessEqual(v2, bounds[jx][1][1], msg=msg)
 
     def testQueryExactValues(self):
         """
@@ -339,7 +351,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             # adjust the boundLength to accommodate the transformation between
             # ICRS and observed coordinates
             self.assertGreaterEqual(obs_metadata.bounds.radiusdeg, 0.9)
-            self.assertLess(obs_metadata.bounds.radiusdeg, 0.95)
+            self.assertLessEqual(obs_metadata.bounds.radiusdeg, 0.95)
 
             self.assertAlmostEqual(obs_metadata.bounds.RA,
                                    np.radians(obs_metadata.pointingRA), 5)
@@ -387,6 +399,61 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
             # Make sure that some ObservationMetaData were tested
             self.assertGreater(ct, 0)
+
+    def testQueryOnNight(self):
+        """
+        Check that the ObservationMetaDataGenerator can query on the 'night'
+        column in the OpSim summary table
+        """
+
+        # the test database goes from night=0 to night=28
+        # corresponding to 49353.032079 <= mjd <= 49381.38533
+        night0 = 49353.032079
+
+        results = self.gen.getObservationMetaData(night=(11, 13))
+
+        self.assertGreater(len(results), 1800)
+        # there should be about 700 observations a night;
+        # make sure we get at least 600
+
+        for obs in results:
+            self.assertGreaterEqual(obs.mjd.TAI, night0+11.0)
+            self.assertLessEqual(obs.mjd.TAI, night0+13.5)
+            # the 0.5 is there because the last observation on night 13 could be
+            # 13 days and 8 hours after the first observation on night 0
+            self.assertGreaterEqual(obs.OpsimMetaData['night'], 11)
+            self.assertLessEqual(obs.OpsimMetaData['night'], 13)
+
+        # query for an exact night
+        results = self.gen.getObservationMetaData(night=15)
+
+        self.assertGreater(len(results), 600)
+        # there should be about 700 observations a night;
+        # make sure we get at least 600
+
+        for obs in results:
+            self.assertEqual(obs.OpsimMetaData['night'], 15)
+            self.assertGreaterEqual(obs.mjd.TAI, night0+14.9)
+            self.assertLessEqual(obs.mjd.TAI, night0+15.9)
+
+    def testQueryOnConstraint(self):
+        """
+        Test that we can create a list of ObservationMetaData with an
+        arbitary SQL 'where' clause
+        """
+
+        constraint = 'where night<3 and altitude>1.3'
+        results = self.gen.getObservationMetaDataFromConstraint(constraint)
+        self.assertGreater(len(results), 0)
+        for obs in results:
+            self.assertLess(obs.OpsimMetaData['night'], 3)
+            self.assertGreater(obs.OpsimMetaData['altitude'], 1.3)
+
+        constraint = 'where altitude<1.2 limit 10'
+        results = self.gen.getObservationMetaDataFromConstraint(constraint)
+        self.assertEqual(len(results), 10)
+        for obs in results:
+            self.assertLess(obs.OpsimMetaData['altitude'], 1.2)
 
     def testCreationOfPhoSimCatalog(self):
         """
@@ -476,7 +543,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         self.assertGreater(len(results), 0)
         for obs in results:
             self.assertGreater(obs.pointingRA, raBounds[0])
-            self.assertLess(obs.pointingDec, raBounds[1])
+            self.assertLessEqual(obs.pointingDec, raBounds[1])
 
     def testSelectException(self):
         """
