@@ -409,8 +409,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
             self.assertLessEqual(obs.mjd.TAI, night0+13.5)
             # the 0.5 is there because the last observation on night 13 could be
             # 13 days and 8 hours after the first observation on night 0
-            self.assertGreaterEqual(obs._OpsimMetaData['night'], 11)
-            self.assertLessEqual(obs._OpsimMetaData['night'], 13)
+            self.assertGreaterEqual(obs.OpsimMetaData['night'], 11)
+            self.assertLessEqual(obs.OpsimMetaData['night'], 13)
 
         # query for an exact night
         results = self.gen.getObservationMetaData(night=15)
