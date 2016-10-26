@@ -227,7 +227,7 @@ class ObservationMetaDataGenerator(object):
 
             if value is not None:
                 if column not in self.active_columns:
-                    raise RuntimeError("You have asked ObservationMetaDataGenerator to SELECT pointings on"
+                    raise RuntimeError("You have asked ObservationMetaDataGenerator to SELECT pointings on "
                                        "%s; that column does not exist in your OpSim database" % column)
                 if nConstraints > 0:
                     query += ' AND'
