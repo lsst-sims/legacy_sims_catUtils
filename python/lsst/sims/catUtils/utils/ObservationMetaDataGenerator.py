@@ -260,7 +260,7 @@ class ObservationMetaDataGenerator(object):
 
                 nConstraints += 1
 
-        query += ' GROUP BY expMJD'
+        query += ' GROUP BY expMJD ORDER BY expMJD'
 
         if limit is not None:
             query += ' LIMIT %d' % limit
