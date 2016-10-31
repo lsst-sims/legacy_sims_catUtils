@@ -324,8 +324,8 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
     column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
                       'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
                       'spatialmodel', 'majorAxis', 'minorAxis', 'positionAngle', 'sindex',
-                      'galacticExtinctionModel', 'galacticAv', 'galacticRv',
-                      'internalExtinctionModel', 'internalAv', 'internalRv']
+                      'internalExtinctionModel', 'internalAv', 'internalRv',
+                      'galacticExtinctionModel', 'galacticAv', 'galacticRv',]
 
     default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float),
