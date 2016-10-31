@@ -786,10 +786,8 @@ class PhoSimCatalogTest(unittest.TestCase):
                 self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
                 self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
                 self.assertEqual(params[12], 'point')  # source type
-                dust_msg = ('It is possible you are outputting Milky Way dust parameters before '
-                            'internal dust parameters; internal dust should come first')
-                self.assertEqual(params[13], 'none', msg=dust_msg)  # internal dust
-                self.assertEqual(params[14], 'none', msg=dust_msg)  # Milky Way dust
+                self.assertEqual(params[13], 'none')  # internal dust
+                self.assertEqual(params[14], 'none')  # Milky Way dust
 
         self.assertGreater(n_obj, 0)
 
