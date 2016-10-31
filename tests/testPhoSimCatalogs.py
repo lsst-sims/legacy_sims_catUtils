@@ -507,8 +507,8 @@ class PhoSimCatalogTest(unittest.TestCase):
                 self.assertEqual(params[12], 'point')  # source type
                 self.assertEqual(params[13], 'none')  # internal dust
                 self.assertEqual(params[14], 'CCM')  # Milky Way dust
-                float(params[15])  # Av
-                float(params[16])  # Rv
+                self.assertGreater(float(params[15]), 0.0)  # Av
+                self.assertGreater(float(params[16]), 0.0)  # Rv
 
         self.assertGreater(n_obj, 0)
 
