@@ -265,8 +265,8 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
 
     column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
                       'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
-                      'spatialmodel', 'galacticExtinctionModel', 'galacticAv', 'galacticRv',
-                      'internalExtinctionModel']
+                      'spatialmodel', 'internalExtinctionModel',
+                      'galacticExtinctionModel', 'galacticAv', 'galacticRv']
 
     default_columns = [('redshift', 0., float), ('shear1', 0., float), ('shear2', 0., float),
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float),
