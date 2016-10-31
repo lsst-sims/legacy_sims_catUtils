@@ -207,10 +207,10 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     pa_bulge = rng.random_sample(size)*360.0
     pa_disk = rng.random_sample(size)*360.0
 
-    av_b = rng.random_sample(size)*0.4
-    av_d = rng.random_sample(size)*0.4
-    rv_b = rng.random_sample(size)*0.1 + 3.0
-    rv_d = rng.random_sample(size)*0.1 + 3.0
+    av_b = rng.random_sample(size)*0.3
+    av_d = rng.random_sample(size)*0.3
+    rv_b = rng.random_sample(size)*0.1 + 2.0
+    rv_d = rng.random_sample(size)*0.1 + 2.0
 
     u_ab = rng.random_sample(size)*4.0 + 17.0
     g_ab = rng.random_sample(size)*4.0 + 17.0
