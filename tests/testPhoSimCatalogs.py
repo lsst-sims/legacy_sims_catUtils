@@ -576,6 +576,57 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
+    def testZPointSourceSchema(self):
+        """
+        Create a PhoSim InstanceCatalog of extra-galactic point sources (agns).  Verify
+        that the schema of the actual objects conforms to what PhoSim expects,
+        as defined here
+
+        https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+        """
+        cat = PhoSimCatalogZPoint(self.agnDB, obs_metadata=self.obs_metadata)
+        cat.phoSimHeaderMap = test_header_map
+        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'phosim_agn_schema_cat.txt')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+        cat.write_catalog(cat_name)
+
+        with open(cat_name, 'r') as input_file:
+            cat_lines = input_file.readlines()
+
+        n_obj = 0
+        for line in cat_lines:
+            params = line.split()
+            if len(params) > 2:
+                n_obj += 1
+                self.assertEqual(len(params), 17)
+                self.assertEqual(params[0], 'object')
+                self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
+                float(params[2])  # ra
+                float(params[3])  # dec
+                float(params[4])  # mag norm
+                self.assertIn('agnSED', params[5])  # sed name
+                self.assertGreater(float(params[6]), 0.0)  # redshift
+                self.assertAlmostEqual(float(params[7]), 0.0, 10)  # gamma1
+                self.assertAlmostEqual(float(params[8]), 0.0, 10)  # gamma2
+                self.assertAlmostEqual(float(params[9]), 0.0, 10)  # kappa
+                self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
+                self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
+                self.assertEqual(params[12], 'point')  # source type
+                dust_msg = ('It is possible you are outputting Milky Way dust parameters before '
+                            'internal dust parameters; internal dust should come first')
+                self.assertEqual(params[13], 'none', msg=dust_msg)  # internal dust
+                self.assertEqual(params[14], 'CCM', msg=dust_msg)  # Milky Way dust
+                self.assertGreater(float(params[15]), 0.0, msg=dust_msg)  # Av
+                self.assertAlmostEqual(float(params[16]), 3.1, msg=dust_msg)  # Rv
+
+        self.assertGreater(n_obj, 0)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
