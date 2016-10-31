@@ -7,7 +7,7 @@ from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
                                                           PhoSimCatalogZPoint)
-from lsst.sims.catalogs.utils import makePhoSimTestDB
+from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies

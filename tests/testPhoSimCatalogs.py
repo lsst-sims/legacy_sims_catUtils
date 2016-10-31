@@ -10,7 +10,7 @@ from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
                                                           PhoSimCatalogZPoint)
-from lsst.sims.catalogs.utils import makePhoSimTestDB
+from lsst.sims.catUtils.utils import makePhoSimTestDB
 
 
 test_header_map = {'dist2moon': ('dist2moon', np.degrees),
