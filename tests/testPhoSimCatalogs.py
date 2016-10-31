@@ -694,7 +694,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
-    def testSNSourceSchema(self):
+    def testSNSchema(self):
         """
         Create a PhoSim InstanceCatalog of supernovae.  Verify
         that the schema of the actual objects conforms to what PhoSim expects,
