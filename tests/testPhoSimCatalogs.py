@@ -495,7 +495,7 @@ class PhoSimCatalogTest(unittest.TestCase):
                 self.assertEqual(params[0], 'object')
                 self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
                 float(params[2])  # ra
-                float(params[4])  # dec
+                float(params[3])  # dec
                 float(params[4])  # mag norm
                 self.assertIn('starSED', params[5])  # sed name
                 self.assertAlmostEqual(float(params[6]), 0.0, 10)  # redshift
