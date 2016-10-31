@@ -627,7 +627,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
-
     def testSSMSchema(self):
         """
         Create a PhoSim InstanceCatalog of point sources (stars) formatted by the
