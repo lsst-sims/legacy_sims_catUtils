@@ -160,7 +160,7 @@ class ObservationMetaDataGenerator(object):
 
         self.dtype = np.dtype(dtypeList)
 
-    def getOpSimRecords(self, obsHistID=None, expDate=None, fieldRA=None,
+    def getOpSimRecords(self, obsHistID=None, expDate=None, night=None, fieldRA=None,
                         fieldDec=None, moonRA=None, moonDec=None,
                         rotSkyPos=None, telescopeFilter=None, rawSeeing=None,
                         seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
@@ -176,15 +176,15 @@ class ObservationMetaDataGenerator(object):
 
         Parameters
         ----------
-        obsHistID, expDate, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
+        obsHistID, expDate, night, fieldRA, fieldDec, moonRa, moonDec, rotSkyPos,
         telescopeFilter, rawSeeing, seeing, sunAlt, moonAlt, dist2Moon,
         moonPhase, expMJD, altitude, azimuth, visitExpTime, airmass,
         skyBrightness, m5 : tuples of length 2, optional, defaults to None
             each of these variables represent a single column (perhaps through
             an alias) in the OpSim database, and potentially in a different unit.
             if not None, the variable self.columnMapping is used to constrain
-            the corresponding column in the OpSim database to the ranges specified
-            in the tuples, after a unit transformation if necessary.
+            the corresponding column in the OpSim database to the ranges (inclusive)
+            specified in the tuples, after a unit transformation if necessary.
 
             The ranges must be specified in the tuple in degrees for all angles in this
             (moonRa, moonDec, rotSkyPos, sunAlt, moonAlt, dist2Moon, altitude,
@@ -227,7 +227,7 @@ class ObservationMetaDataGenerator(object):
 
             if value is not None:
                 if column not in self.active_columns:
-                    raise RuntimeError("You have asked ObservationMetaDataGenerator to SELECT pointings on"
+                    raise RuntimeError("You have asked ObservationMetaDataGenerator to SELECT pointings on "
                                        "%s; that column does not exist in your OpSim database" % column)
                 if nConstraints > 0:
                     query += ' AND'
@@ -248,7 +248,7 @@ class ObservationMetaDataGenerator(object):
                         vmin = value[0]
                         vmax = value[1]
 
-                    query += ' %s > %s AND %s < %s' % \
+                    query += ' %s >= %s AND %s <= %s' % \
                              (transform[0], vmin, transform[0], vmax)
                 else:
                     # perform any necessary coordinate transformations
@@ -260,7 +260,7 @@ class ObservationMetaDataGenerator(object):
 
                 nConstraints += 1
 
-        query += ' GROUP BY expMJD'
+        query += ' GROUP BY expMJD ORDER BY expMJD'
 
         if limit is not None:
             query += ' LIMIT %d' % limit
@@ -373,7 +373,7 @@ class ObservationMetaDataGenerator(object):
 
         return out
 
-    def getObservationMetaData(self, obsHistID=None, expDate=None, fieldRA=None, fieldDec=None,
+    def getObservationMetaData(self, obsHistID=None, expDate=None, night=None, fieldRA=None, fieldDec=None,
                                moonRA=None, moonDec=None, rotSkyPos=None, telescopeFilter=None,
                                rawSeeing=None, seeing=None, sunAlt=None, moonAlt=None, dist2Moon=None,
                                moonPhase=None, expMJD=None, altitude=None, azimuth=None,
@@ -398,7 +398,8 @@ class ObservationMetaDataGenerator(object):
 
         All other input parameters are constraints to be placed on the SQL query of the
         opsim output db.  These contraints can either be tuples of the form (min, max)
-        or an exact value the user wants returned.
+        or an exact value the user wants returned.  Note: min and max are inclusive
+        bounds.
 
         Parameters that can be constrained are:
 
@@ -426,12 +427,14 @@ class ObservationMetaDataGenerator(object):
         @param [in] obsHistID the integer used by OpSim to label pointings
         @param [in] expDate is the date of the exposure (units????)
         @param [in] expMJD is the MJD of the exposure
+        @param [in] night is the night (an int starting at zero) on which the observation took place
         @param [in] m5 is the five sigma depth of the observation
         @param [in] skyBrightness
         """
 
         OpSimPointingRecords = self.getOpSimRecords(obsHistID=obsHistID,
                                                     expDate=expDate,
+                                                    night=night,
                                                     fieldRA=fieldRA,
                                                     fieldDec=fieldDec,
                                                     moonRA=moonRA,

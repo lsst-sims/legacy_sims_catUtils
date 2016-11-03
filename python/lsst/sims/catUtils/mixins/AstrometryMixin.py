@@ -59,6 +59,7 @@ class CameraCoords(AstrometryBase):
                                   # multiple chips; only the first chip would be
                                   # written to the catalog
 
+    @cached
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
