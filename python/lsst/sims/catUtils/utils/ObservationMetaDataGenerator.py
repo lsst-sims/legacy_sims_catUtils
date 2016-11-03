@@ -183,8 +183,8 @@ class ObservationMetaDataGenerator(object):
             each of these variables represent a single column (perhaps through
             an alias) in the OpSim database, and potentially in a different unit.
             if not None, the variable self.columnMapping is used to constrain
-            the corresponding column in the OpSim database to the ranges specified
-            in the tuples, after a unit transformation if necessary.
+            the corresponding column in the OpSim database to the ranges (inclusive)
+            specified in the tuples, after a unit transformation if necessary.
 
             The ranges must be specified in the tuple in degrees for all angles in this
             (moonRa, moonDec, rotSkyPos, sunAlt, moonAlt, dist2Moon, altitude,
@@ -398,7 +398,8 @@ class ObservationMetaDataGenerator(object):
 
         All other input parameters are constraints to be placed on the SQL query of the
         opsim output db.  These contraints can either be tuples of the form (min, max)
-        or an exact value the user wants returned.
+        or an exact value the user wants returned.  Note: min and max are inclusive
+        bounds.
 
         Parameters that can be constrained are:
 
