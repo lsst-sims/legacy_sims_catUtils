@@ -15,6 +15,20 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D,
                                                           PhoSimCatalogSN)
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 
+# 2016 November 22
+# For some reason, the Jenkins slaves used for continuous integration
+# cannot properly load the astropy config directories used by sncosmo.
+# To prevent this from crashing every build, we will test whether
+# the directories can be accessed and, if they cannot, use unittest.skipIf()
+# to skip all of the unit tests in this file.
+from astropy.config import get_config_dir
+
+_skip_sn_tests = False
+try:
+    get_config_dir()
+except:
+    _skip_sn_tests = True
+
 
 def createTestSNDB():
     """
@@ -694,6 +708,7 @@ class PhoSimCatalogTest(unittest.TestCase):
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
+    @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
     def testSNSchema(self):
         """
         Create a PhoSim InstanceCatalog of supernovae.  Verify
