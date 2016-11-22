@@ -36,7 +36,7 @@ def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, i
 
 
 def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, radius=0.1,
-                     displacedRA=None, displacedDec=None,
+                     deltaRA=None, deltaDec=None,
                      bandpass='r', m5=None, seeing=None, **kwargs):
     """
     Make a test database to storing cartoon information for the test phoSim input
@@ -62,7 +62,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     @param [in] seeing is the seeing value(s) in arcseconds to be passed to
     ObservationMetaData (optional)
 
-    @param [in] displacedRA/Dec are numpy arrays that indicate where (in relation to the center
+    @param [in] deltaRA/Dec are numpy arrays that indicate where (in relation to the center
     of the field of view) objects should be placed.  These coordinates are in degrees.  Specifying
     either of these paramters will overwrite size.  If you only specify one of these parameters, the other
     will be set randomly.  These parameters are optional.
@@ -78,15 +78,15 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
 
     rng = np.random.RandomState(seedVal)
 
-    if displacedRA is not None and displacedDec is not None:
-        if len(displacedRA) != len(displacedDec):
-            raise RuntimeError("WARNING in makePhoSimTestDB displacedRA and "
-                               "displacedDec have different lengths")
+    if deltaRA is not None and deltaDec is not None:
+        if len(deltaRA) != len(deltaDec):
+            raise RuntimeError("WARNING in makePhoSimTestDB deltaRA and "
+                               "deltaDec have different lengths")
 
-    if displacedRA is not None:
-        size = len(displacedRA)
-    elif displacedDec is not None:
-        size = len(displacedDec)
+    if deltaRA is not None:
+        size = len(deltaRA)
+    elif deltaDec is not None:
+        size = len(deltaDec)
 
     # create the ObservationMetaData object
     mjd = 52000.0
@@ -177,15 +177,15 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     rr = rng.random_sample(size)*np.radians(radius)
     theta = rng.random_sample(size)*2.0*np.pi
 
-    if displacedRA is None:
+    if deltaRA is None:
         ra = np.degrees(centerRA + rr*np.cos(theta))
     else:
-        ra = np.degrees(centerRA) + displacedRA
+        ra = np.degrees(centerRA) + deltaRA
 
-    if displacedDec is None:
+    if deltaDec is None:
         dec = np.degrees(centerDec + rr*np.sin(theta))
     else:
-        dec = np.degrees(centerDec) + displacedDec
+        dec = np.degrees(centerDec) + deltaDec
 
     bra = np.radians(ra+rng.random_sample(size)*0.01*radius)
     bdec = np.radians(dec+rng.random_sample(size)*0.01*radius)
@@ -234,15 +234,15 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     rrStar = rng.random_sample(size)*np.radians(radius)
     thetaStar = rng.random_sample(size)*2.0*np.pi
 
-    if displacedRA is None:
+    if deltaRA is None:
         raStar = centerRA + rrStar*np.cos(thetaStar)
     else:
-        raStar = centerRA + np.radians(displacedRA)
+        raStar = centerRA + np.radians(deltaRA)
 
-    if displacedDec is None:
+    if deltaDec is None:
         decStar = centerDec + rrStar*np.sin(thetaStar)
     else:
-        decStar = centerDec + np.radians(displacedDec)
+        decStar = centerDec + np.radians(deltaDec)
 
     raStar = np.degrees(raStar)
     decStar = np.degrees(decStar)
