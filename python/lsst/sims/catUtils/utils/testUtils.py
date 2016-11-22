@@ -12,6 +12,31 @@ __all__ = ["calcADUwrapper", "makePhoSimTestDB"]
 
 def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, internalRv=None,
                    galacticAv=None, galacticRv=None, bandpass=None):
+    """
+    Read in an SED and calculat the number of ADU produced by that SED in a specified bandpass
+
+    Parameters
+    ----------
+    sedName is a string specifying the file name of the SED
+
+    magNorm is the normalizing magnitude of the SED in the imsimBandpass
+
+    redshift is the redshift of the SED
+
+    internalAv is the Av due to internal dust of the source (if a galaxy)
+
+    internalRv is the Rv due to internal dust of the source (if a galaxy)
+
+    galacticAv is the Av due to Milky Way dust between observer and source
+
+    galacticRv is the Rv due to Milky Way dust between observer and source
+
+    bandpass is an intantiation of Bandpass representing the band in which the ADUs are measured
+
+    Returns
+    -------
+    A float representing the number of ADUs measured in the bandpass
+    """
 
     imsimband = Bandpass()
     imsimband.imsimBandpass()
