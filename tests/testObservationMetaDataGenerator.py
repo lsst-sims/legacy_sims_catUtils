@@ -9,7 +9,7 @@ from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catUtils.utils import testGalaxyBulgeDBObj
-from lsst.sims.catalogs.utils import makePhoSimTestDB
+from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.utils import getPackageDir
 
 

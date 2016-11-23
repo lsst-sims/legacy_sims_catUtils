@@ -6,11 +6,92 @@ import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec, ObservationMetaData
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
+from lsst.sims.catalogs.db import fileDBObject
+from lsst.sims.catUtils.baseCatalogModels import SNDBObj
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
 from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D, PhoSimCatalogPoint,
-                                                          PhoSimCatalogZPoint)
-from lsst.sims.catalogs.utils import makePhoSimTestDB
+                                                          PhoSimCatalogZPoint, PhoSimCatalogSSM,
+                                                          PhoSimCatalogSN)
+from lsst.sims.catUtils.utils import makePhoSimTestDB
+
+# 2016 November 22
+# For some reason, the Jenkins slaves used for continuous integration
+# cannot properly load the astropy config directories used by sncosmo.
+# To prevent this from crashing every build, we will test whether
+# the directories can be accessed and, if they cannot, use unittest.skipIf()
+# to skip all of the unit tests in this file.
+from astropy.config import get_config_dir
+
+_skip_sn_tests = False
+try:
+    get_config_dir()
+except:
+    _skip_sn_tests = True
+
+
+def createTestSNDB():
+    """
+    Create a CatalogDBObject-like database that contains everything needed to create
+    a supernova catalog.  Return the CatalogDBObject and an ObservationMetaData pointing
+    to its center.
+
+    Note: the OpsimMetaData for the returned ObservationMetaData will be inconsistent.
+    It is just there so that PhoSim InstanceCatalog classes can write out a header.
+    """
+
+    raCenter = 23.0
+    decCenter = -19.0
+    radius = 0.1
+    obs = ObservationMetaData(pointingRA=raCenter, pointingDec=decCenter, boundType='circle',
+                              boundLength=radius, rotSkyPos=33.0, mjd=59580.0,
+                              bandpassName='r')
+
+    # these will be totally inconsistent; just need something to put in the header
+    obs.OpsimMetaData = {'dist2Moon': 0.1, 'moonalt': -0.2,
+                         'moonra': 1.1, 'moondec': 0.5,
+                         'rottelpos': 0.4, 'sunalt': -1.1}
+
+    rng = np.random.RandomState(88)
+    n_obj = 10
+    rr = rng.random_sample(n_obj)*radius
+    theta = rng.random_sample(n_obj)*2.0*np.pi
+    ra_list = raCenter + rr*np.cos(theta)
+    dec_list = decCenter + rr*np.sin(theta)
+    t0_list = 0.5*rng.random_sample(n_obj)
+    x0_list = rng.random_sample(n_obj)*1.0e-4
+    x1_list = rng.random_sample(n_obj)
+    c_list = rng.random_sample(n_obj)*2.0
+    z_list = rng.random_sample(n_obj)*1.1 + 0.1
+
+    txt_file_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                 'test_phosim_sn_source.txt')
+
+    if os.path.exists(txt_file_name):
+        os.unlink(txt_file_name)
+
+    dtype = np.dtype([('id', int), ('snra', float), ('sndec', float),
+                      ('t0', float), ('x0', float), ('x1', float),
+                      ('c', float), ('redshift', float), ('galtileid', int)])
+
+    with open(txt_file_name, 'w') as output_file:
+        for ix, (ra, dec, t0, x0, x1, c, z) in enumerate(zip(ra_list, dec_list, t0_list, x0_list,
+                                                             x1_list, c_list, z_list)):
+            output_file.write('%d %e %e %e %e %e %e %e %d\n' %
+                              (ix, ra, dec, t0, x0, x1, c, z, ix))
+
+    class testSNDBObj(SNDBObj, fileDBObject):
+        tableid = 'test'
+
+        def query_columns(self, *args, **kwargs):
+            return fileDBObject.query_columns(self, *args, **kwargs)
+
+    dbobj = testSNDBObj(txt_file_name, runtable='test', dtype=dtype)
+
+    if os.path.exists(txt_file_name):
+        os.unlink(txt_file_name)
+
+    return dbobj, obs
 
 
 test_header_map = {'dist2moon': ('dist2moon', np.degrees),
@@ -26,6 +107,8 @@ def setup_module(module):
 
 
 class PhoSimCatalogTest(unittest.TestCase):
+
+    longMessage = True
 
     def setUp(self):
         self.obs_metadata = makePhoSimTestDB(size=10)
@@ -465,6 +548,266 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         if os.path.exists(single_catName):
             os.unlink(single_catName)
+
+    def testPointSourceSchema(self):
+        """
+        Create a PhoSim InstanceCatalog of point sources (stars).  Verify
+        that the schema of the actual objects conforms to what PhoSim expects,
+        as defined here
+
+        https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+        """
+        cat = PhoSimCatalogPoint(self.starDB, obs_metadata=self.obs_metadata)
+        cat.phoSimHeaderMap = test_header_map
+        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'phosim_point_source_schema_cat.txt')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+        cat.write_catalog(cat_name)
+
+        with open(cat_name, 'r') as input_file:
+            cat_lines = input_file.readlines()
+
+        n_obj = 0
+        for line in cat_lines:
+            params = line.split()
+            if len(params) > 2:
+                n_obj += 1
+                self.assertEqual(len(params), 17)
+                self.assertEqual(params[0], 'object')
+                self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
+                float(params[2])  # ra
+                float(params[3])  # dec
+                float(params[4])  # mag norm
+                self.assertIn('starSED', params[5])  # sed name
+                self.assertAlmostEqual(float(params[6]), 0.0, 10)  # redshift
+                self.assertAlmostEqual(float(params[7]), 0.0, 10)  # gamma1
+                self.assertAlmostEqual(float(params[8]), 0.0, 10)  # gamma2
+                self.assertAlmostEqual(float(params[9]), 0.0, 10)  # kappa
+                self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
+                self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
+                self.assertEqual(params[12], 'point')  # source type
+                dust_msg = ('It is possible you are outputting Milky Way dust parameters before '
+                            'internal dust parameters; internal dust should come first')
+                self.assertEqual(params[13], 'none', msg=dust_msg)  # internal dust
+                self.assertEqual(params[14], 'CCM', msg=dust_msg)  # Milky Way dust
+                self.assertGreater(float(params[15]), 0.0, msg=dust_msg)  # Av
+                self.assertAlmostEqual(float(params[16]), 3.1, msg=dust_msg)  # Rv
+
+        self.assertGreater(n_obj, 0)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+    def testSersicSchema(self):
+        """
+        Create a PhoSim InstanceCatalog of Sersic profiles (galaxy bulges).  Verify
+        that the schema of the actual objects conforms to what PhoSim expects,
+        as defined here
+
+        https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+        """
+        cat = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
+        cat.phoSimHeaderMap = test_header_map
+        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'phosim_sersic_schema_cat.txt')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+        cat.write_catalog(cat_name)
+
+        with open(cat_name, 'r') as input_file:
+            cat_lines = input_file.readlines()
+
+        n_obj = 0
+        for line in cat_lines:
+            params = line.split()
+            if len(params) > 2:
+                n_obj += 1
+                self.assertEqual(len(params), 23)
+                self.assertEqual(params[0], 'object')
+                self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
+                float(params[2])  # ra
+                float(params[3])  # dec
+                float(params[4])  # mag norm
+                self.assertIn('galaxySED', params[5])  # sed name
+                self.assertGreater(float(params[6]), 0.0, 10)  # redshift
+                self.assertAlmostEqual(float(params[7]), 0.0, 10)  # gamma1
+                self.assertAlmostEqual(float(params[8]), 0.0, 10)  # gamma2
+                self.assertAlmostEqual(float(params[9]), 0.0, 10)  # kappa
+                self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
+                self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
+                self.assertEqual(params[12], 'sersic2d')  # source type
+                self.assertGreater(float(params[13]), 0.0)  # major axis
+                self.assertGreater(float(params[14]), 0.0)  # minor axis
+                self.assertGreater(float(params[15]), 0.0)  # position angle
+                self.assertAlmostEqual(float(params[16]), 4.0, 13)  # n_s (bulges have sersic index=4)
+                self.assertEqual(params[17], 'CCM')  # internal dust
+                dust_msg = ('It is possible you are outputting Milky Way dust parameters before '
+                            'internal dust parameters; internal dust should come first')
+                self.assertLess(float(params[18]), 0.31, msg=dust_msg)  # Av
+                self.assertLess(float(params[19]), 2.11, msg=dust_msg)  # Rv
+                self.assertEqual(params[20], 'CCM')  # Milky Way dust
+                self.assertGreater(float(params[21]), 0.0, msg=dust_msg)  # Av
+                self.assertAlmostEqual(float(params[22]), 3.1, msg=dust_msg)  # Rv
+
+        self.assertGreater(n_obj, 0)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+    def testZPointSourceSchema(self):
+        """
+        Create a PhoSim InstanceCatalog of extra-galactic point sources (agns).  Verify
+        that the schema of the actual objects conforms to what PhoSim expects,
+        as defined here
+
+        https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+        """
+        cat = PhoSimCatalogZPoint(self.agnDB, obs_metadata=self.obs_metadata)
+        cat.phoSimHeaderMap = test_header_map
+        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'phosim_agn_schema_cat.txt')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+        cat.write_catalog(cat_name)
+
+        with open(cat_name, 'r') as input_file:
+            cat_lines = input_file.readlines()
+
+        n_obj = 0
+        for line in cat_lines:
+            params = line.split()
+            if len(params) > 2:
+                n_obj += 1
+                self.assertEqual(len(params), 17)
+                self.assertEqual(params[0], 'object')
+                self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
+                float(params[2])  # ra
+                float(params[3])  # dec
+                float(params[4])  # mag norm
+                self.assertIn('agnSED', params[5])  # sed name
+                self.assertGreater(float(params[6]), 0.0)  # redshift
+                self.assertAlmostEqual(float(params[7]), 0.0, 10)  # gamma1
+                self.assertAlmostEqual(float(params[8]), 0.0, 10)  # gamma2
+                self.assertAlmostEqual(float(params[9]), 0.0, 10)  # kappa
+                self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
+                self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
+                self.assertEqual(params[12], 'point')  # source type
+                dust_msg = ('It is possible you are outputting Milky Way dust parameters before '
+                            'internal dust parameters; internal dust should come first')
+                self.assertEqual(params[13], 'none', msg=dust_msg)  # internal dust
+                self.assertEqual(params[14], 'CCM', msg=dust_msg)  # Milky Way dust
+                self.assertGreater(float(params[15]), 0.0, msg=dust_msg)  # Av
+                self.assertAlmostEqual(float(params[16]), 3.1, msg=dust_msg)  # Rv
+
+        self.assertGreater(n_obj, 0)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+    @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
+    def testSNSchema(self):
+        """
+        Create a PhoSim InstanceCatalog of supernovae.  Verify
+        that the schema of the actual objects conforms to what PhoSim expects,
+        as defined here
+
+        https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+        """
+        db, obs = createTestSNDB()
+        cat = PhoSimCatalogSN(db, obs_metadata=obs)
+        cat.writeSEDFile = False
+        cat.phoSimHeaderMap = test_header_map
+        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'phosim_sne_schema_cat.txt')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+        cat.write_catalog(cat_name)
+
+        with open(cat_name, 'r') as input_file:
+            cat_lines = input_file.readlines()
+
+        n_obj = 0
+        for line in cat_lines:
+            params = line.split()
+            if len(params) > 2:
+                n_obj += 1
+                self.assertEqual(len(params), 17)
+                self.assertEqual(params[0], 'object')
+                self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
+                float(params[2])  # ra
+                float(params[3])  # dec
+                float(params[4])  # mag norm
+                self.assertIn('%s.dat' % obs.bandpass, params[5])  # sed name
+                self.assertGreater(float(params[6]), 0.0)  # redshift
+                self.assertAlmostEqual(float(params[7]), 0.0, 10)  # gamma1
+                self.assertAlmostEqual(float(params[8]), 0.0, 10)  # gamma2
+                self.assertAlmostEqual(float(params[9]), 0.0, 10)  # kappa
+                self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
+                self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
+                self.assertEqual(params[12], 'point')  # source type
+                dust_msg = ('It is possible you are outputting Milky Way dust parameters before '
+                            'internal dust parameters; internal dust should come first')
+                self.assertEqual(params[13], 'none', msg=dust_msg)  # internal dust
+                self.assertEqual(params[14], 'CCM', msg=dust_msg)  # Milky Way dust
+                self.assertGreater(float(params[15]), 0.0, msg=dust_msg)  # Av
+                self.assertAlmostEqual(float(params[16]), 3.1, msg=dust_msg)  # Rv
+
+        self.assertGreater(n_obj, 0)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+    def testSSMSchema(self):
+        """
+        Create a PhoSim InstanceCatalog of point sources (stars) formatted by the
+        PhoSimCatalogSSM class.  Verify that the schema of the actual objects conforms
+        to what PhoSim expects, as defined here
+
+        https://bitbucket.org/phosim/phosim_release/wiki/Instance%20Catalog
+        """
+        cat = PhoSimCatalogSSM(self.starDB, obs_metadata=self.obs_metadata)
+        cat.phoSimHeaderMap = test_header_map
+        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+                                'phosim_ssm_schema_cat.txt')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
+        cat.write_catalog(cat_name)
+
+        with open(cat_name, 'r') as input_file:
+            cat_lines = input_file.readlines()
+
+        n_obj = 0
+        for line in cat_lines:
+            params = line.split()
+            if len(params) > 2:
+                n_obj += 1
+                self.assertEqual(len(params), 15)
+                self.assertEqual(params[0], 'object')
+                self.assertEqual(round(float(params[1])), float(params[1]), 10)  # id
+                float(params[2])  # ra
+                float(params[3])  # dec
+                float(params[4])  # mag norm
+                self.assertIn('starSED', params[5])  # sed name
+                self.assertAlmostEqual(float(params[6]), 0.0, 10)  # redshift
+                self.assertAlmostEqual(float(params[7]), 0.0, 10)  # gamma1
+                self.assertAlmostEqual(float(params[8]), 0.0, 10)  # gamma2
+                self.assertAlmostEqual(float(params[9]), 0.0, 10)  # kappa
+                self.assertAlmostEqual(float(params[10]), 0.0, 10)  # delta_ra
+                self.assertAlmostEqual(float(params[11]), 0.0, 10)  # delta_dec
+                self.assertEqual(params[12], 'point')  # source type
+                self.assertEqual(params[13], 'none')  # internal dust
+                self.assertEqual(params[14], 'none')  # Milky Way dust
+
+        self.assertGreater(n_obj, 0)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

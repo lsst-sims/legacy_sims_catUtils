@@ -4,7 +4,7 @@ import unittest
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
-from lsst.sims.catalogs.utils import makePhoSimTestDB
+from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import defaultSpecMap
