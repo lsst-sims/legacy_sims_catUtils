@@ -52,6 +52,7 @@ class testCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
     """
     catalog_type = __file__ + 'test_stars'
     column_outputs = ['id', 'raICRS', 'decICRS',
+                      'parallax', 'radial_velocity',
                       'x_pupil', 'y_pupil',
                       'chipName', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane']
     # Needed to do camera coordinate transforms.
@@ -216,6 +217,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         dtype = [('id', int),
                  ('raICRS', float), ('decICRS', float),
+                 ('parallax', float), ('radial_velocity', float),
                  ('x_pupil', float), ('y_pupil', float), ('chipName', str, 11),
                  ('xPix', float), ('yPix', float),
                  ('xFocalPlane', float), ('yFocalPlane', float)]
@@ -226,6 +228,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         pupilTest = _pupilCoordsFromRaDec(baselineData['raICRS'],
                                           baselineData['decICRS'],
+                                          parallax=baselineData['parallax'],
+                                          v_rad=baselineData['radial_velocity'],
                                           obs_metadata=self.obs_metadata,
                                           epoch=2000.0)
 
@@ -237,6 +241,8 @@ class astrometryUnitTest(unittest.TestCase):
         focalTest = focalPlaneCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
         focalRa = _focalPlaneCoordsFromRaDec(baselineData['raICRS'], baselineData['decICRS'],
+                                             parallax=baselineData['parallax'],
+                                             v_rad=baselineData['radial_velocity'],
                                              epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                              camera=self.cat.camera)
 
@@ -252,6 +258,8 @@ class astrometryUnitTest(unittest.TestCase):
         pixTest = pixelCoordsFromPupilCoords(pupilTest[0], pupilTest[1], camera=self.cat.camera)
 
         pixTestRaDec = _pixelCoordsFromRaDec(baselineData['raICRS'], baselineData['decICRS'],
+                                             parallax=baselineData['parallax'],
+                                             v_rad=baselineData['radial_velocity'],
                                              epoch=self.cat.db_obj.epoch,
                                              obs_metadata=self.cat.obs_metadata,
                                              camera=self.cat.camera)
