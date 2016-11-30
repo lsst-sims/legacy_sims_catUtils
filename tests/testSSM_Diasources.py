@@ -6,6 +6,7 @@ import unittest
 import lsst.utils.tests
 
 import numpy as np
+from lsst.sims.catalogs.db import _close_all_connections
 # Observation metadata modules
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
@@ -93,6 +94,10 @@ class ssmCatCamera(ssmCat):
 
 
 class createSSMSourceCatalogsTest(unittest.TestCase):
+
+    @classmethod
+    def tearDownClass(cls):
+        _close_all_connections()
 
     def test_ssm_catalog_creation(self):
 

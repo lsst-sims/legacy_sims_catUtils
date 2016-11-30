@@ -27,6 +27,7 @@ import astropy
 
 # Lsst Sims Dependencies
 import lsst.utils.tests
+from lsst.sims.catalogs.db import _close_all_connections
 from lsst.utils import getPackageDir
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.photUtils import BandpassDict
@@ -386,6 +387,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        _close_all_connections()
         del cls.galDB
         cls.cleanDB(cls.dbname)
         if os.path.exists(cls.valName):
@@ -623,6 +625,7 @@ class SNIaLightCurveTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        _close_all_connections()
         if os.path.exists(cls.input_cat_name):
             os.unlink(cls.input_cat_name)
 
