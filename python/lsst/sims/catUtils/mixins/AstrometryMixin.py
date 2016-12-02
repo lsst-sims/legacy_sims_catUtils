@@ -5,6 +5,7 @@ from lsst.sims.utils import _galacticFromEquatorial, sphericalFromCartesian, \
 
 from lsst.sims.utils import _applyProperMotion
 from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
+from lsst.sims.utils import _pupilCoordsFromObserved
 from lsst.sims.utils import rotationMatrixFromVectors
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
@@ -42,13 +43,11 @@ class AstrometryBase(object):
         in the pupil.
         """
 
-        # these coordinates will be the mean RA, Dec from the catalog
-        # with proper motion applied
-        raObj = self.column_by_name('raICRS')
-        decObj = self.column_by_name('decICRS')
+        raObs = self.column_by_name('raObserved')
+        decObs = self.column_by_name('decObserved')
 
-        return _pupilCoordsFromRaDec(raObj, decObj, epoch=self.db_obj.epoch,
-                                     obs_metadata=self.obs_metadata)
+        return _pupilCoordsFromObserved(raObs, decObs, epoch=self.db_obj.epoch,
+                                        obs_metadata=self.obs_metadata)
 
 
 class CameraCoords(AstrometryBase):
