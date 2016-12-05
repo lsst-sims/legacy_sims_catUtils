@@ -54,7 +54,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
     """
 
     @classmethod
-    def setUp(cls):
+    def setUpClass(cls):
         cls.dbName = 'PhoSimVariabilityDatabase.db'
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
