@@ -4,6 +4,7 @@ import numpy as np
 import unittest
 import lsst.utils.tests
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import defaultSpecMap, altAzPaFromRaDec, ObservationMetaData
 from lsst.sims.catalogs.definitions import CompoundInstanceCatalog
 from lsst.sims.catalogs.db import fileDBObject
@@ -109,6 +110,10 @@ def setup_module(module):
 class PhoSimCatalogTest(unittest.TestCase):
 
     longMessage = True
+
+    @classmethod
+    def tearDownClass(cls):
+        sims_clean_up()
 
     def setUp(self):
         self.obs_metadata = makePhoSimTestDB(size=10)
