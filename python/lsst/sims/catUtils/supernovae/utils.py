@@ -1,7 +1,16 @@
-import matplotlib.gridspec as gridspec
-import matplotlib.ticker as ticker
-import matplotlib.pyplot as plt
+import warnings
+
+try:
+    import matplotlib.gridspec as gridspec
+    import matplotlib.ticker as ticker
+    import matplotlib.pyplot as plt
+except Exception as ex:
+    warnings.warn("matplotlib not imported in %s\n\n" % __file__
+                  + ex.message + '\n\n')
+
 __all__ = ['settwopanel']
+
+
 def settwopanel(height_ratios=[1.0, 0.3],
                 width_ratios=[1., 0.],
                 padding=None,
