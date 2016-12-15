@@ -1,13 +1,20 @@
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.utils import defaultSpecMap
-import matplotlib.pylab as plt
 import warnings
 import numpy
 import copy
 import os
 
+try:
+    import matplotlib.pylab as plt
+except Exception as ex:
+    warnings.warn("Failed to import matplotlib in %s\n\n" % __file__
+                  + ex.message + "\n\n")
+
+
 __all__ = ["ValidationUtils"]
+
 
 class ValidationUtils(object):
     sedDict = {}
