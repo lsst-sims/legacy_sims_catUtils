@@ -8,9 +8,9 @@ import os
 
 try:
     import matplotlib.pylab as plt
-except Exception as ex:
+except Exception as e:
     warnings.warn("Failed to import matplotlib in %s\n\n" % __file__
-                  + ex.message + "\n\n")
+                  + e.message + "\n\n")
 
 
 __all__ = ["ValidationUtils"]

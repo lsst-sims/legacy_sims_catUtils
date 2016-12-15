@@ -4,9 +4,9 @@ try:
     import matplotlib.gridspec as gridspec
     import matplotlib.ticker as ticker
     import matplotlib.pyplot as plt
-except Exception as ex:
+except Exception as e:
     warnings.warn("matplotlib not imported in %s\n\n" % __file__
-                  + ex.message + '\n\n')
+                  + e.message + '\n\n')
 
 __all__ = ['settwopanel']
 
