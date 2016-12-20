@@ -4,6 +4,7 @@ import unittest
 import sqlite3
 import numpy as np
 import lsst.utils.tests
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
 from lsst.sims.utils import ObservationMetaData
@@ -85,6 +86,10 @@ def get_val_from_rec(tag, rec):
 class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
     longMessage = True
+
+    @classmethod
+    def tearDownClass(cls):
+        sims_clean_up()
 
     def setUp(self):
 
@@ -493,6 +498,9 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+
+        sims_clean_up()
+
         if os.path.exists(cls.opsim_db_name):
             os.unlink(cls.opsim_db_name)
 

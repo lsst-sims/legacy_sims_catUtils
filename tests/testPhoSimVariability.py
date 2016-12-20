@@ -2,6 +2,7 @@ import os
 import unittest
 import lsst.utils.tests
 import numpy as np
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
@@ -54,7 +55,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
     """
 
     @classmethod
-    def setUp(cls):
+    def setUpClass(cls):
         cls.dbName = 'PhoSimVariabilityDatabase.db'
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
@@ -68,6 +69,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.bulgeDB
         del cls.diskDB
         del cls.agnDB

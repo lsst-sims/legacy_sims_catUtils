@@ -27,6 +27,7 @@ import astropy
 
 # Lsst Sims Dependencies
 import lsst.utils.tests
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.utils import getPackageDir
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
 from lsst.sims.photUtils import BandpassDict
@@ -61,6 +62,10 @@ def setup_module(module):
 
 @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNObject_tests(unittest.TestCase):
+
+    @classmethod
+    def tearDownClass(cls):
+        sims_clean_up()
 
     def setUp(self):
         """
@@ -386,6 +391,7 @@ class SNIaCatalog_tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.galDB
         cls.cleanDB(cls.dbname)
         if os.path.exists(cls.valName):
@@ -623,6 +629,7 @@ class SNIaLightCurveTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.input_cat_name):
             os.unlink(cls.input_cat_name)
 

@@ -7,6 +7,7 @@ import numpy as np
 import lsst
 # import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 from lsst.sims.catalogs.db import fileDBObject
 
@@ -114,6 +115,7 @@ class StellarLightCurveTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.txt_name):
             os.unlink(cls.txt_name)
 
@@ -564,6 +566,7 @@ class AgnLightCurveTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.txt_cat_name):
             os.unlink(cls.txt_cat_name)
 

@@ -9,6 +9,7 @@ from lsst.sims.catalogs.utils import (myTestGals, myTestStars,
                                       makeStarTestDB, makeGalTestDB, getOneChunk)
 
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
@@ -38,6 +39,7 @@ class variabilityUnitTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists('PhotometryTestDatabase.db'):
             os.unlink('PhotometryTestDatabase.db')
 
@@ -97,6 +99,7 @@ class photometryUnitTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists('PhotometryTestDatabase.db'):
             os.unlink('PhotometryTestDatabase.db')
 

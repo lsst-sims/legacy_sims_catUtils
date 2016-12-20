@@ -205,7 +205,7 @@ class PhosimInputBase(InstanceCatalog):
 
     specFileMap = PhoSimSpecMap
 
-    cannot_be_null = ['sedFilepath', 'sedFilename']
+    cannot_be_null = ['sedFilepath']
 
     delimiter = " "
 
