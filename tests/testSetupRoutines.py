@@ -5,6 +5,7 @@ import unittest
 import lsst
 import lsst.utils.tests
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -127,6 +128,10 @@ class testGalaxyDBObject(CatalogDBObject):
 
 
 class InstanceCatalogSetupUnittest(unittest.TestCase):
+
+    @classmethod
+    def tearDownClass(self):
+        sims_clean_up()
 
     def setUp(self):
         self.driver = 'sqlite'

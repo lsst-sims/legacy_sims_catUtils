@@ -3,6 +3,7 @@ import os
 import numpy as np
 import unittest
 import lsst.utils.tests
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.utils import makeStarTestDB, myTestStars
 from lsst.sims.catalogs.utils import makeGalTestDB, myTestGals
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -177,6 +178,7 @@ class VariabilityDesignTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.starDbName):
             os.unlink(cls.starDbName)
 

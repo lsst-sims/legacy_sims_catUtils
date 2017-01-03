@@ -4,6 +4,7 @@ import unittest
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -116,6 +117,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
         del cls.dbName
