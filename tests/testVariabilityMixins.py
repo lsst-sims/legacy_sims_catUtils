@@ -5,6 +5,7 @@ import numpy as np
 import sqlite3
 import json
 import lsst.utils.tests
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -499,6 +500,7 @@ class VariabilityTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists('VariabilityTestDatabase.db'):
             os.unlink('VariabilityTestDatabase.db')
 
@@ -654,6 +656,10 @@ class VariabilityTest(unittest.TestCase):
 
 
 class AgnCacheTest(unittest.TestCase):
+
+    @classmethod
+    def tearDownClass(self):
+        sims_clean_up()
 
     def test_agn_caching(self):
         """

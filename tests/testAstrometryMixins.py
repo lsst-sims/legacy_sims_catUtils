@@ -7,6 +7,7 @@ import palpy as pal
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
 from lsst.sims.utils import _observedFromAppGeo, _pupilCoordsFromRaDec
@@ -123,6 +124,7 @@ class astrometryUnitTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.starDBName):
             os.unlink(cls.starDBName)
 

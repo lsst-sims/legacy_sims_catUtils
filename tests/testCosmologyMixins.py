@@ -3,6 +3,8 @@ import unittest
 import lsst.utils.tests
 import numpy as np
 
+from lsst.sims.utils.CodeUtilities import sims_clean_up
+
 from lsst.sims.photUtils import CosmologyObject
 
 from lsst.sims.catalogs.utils import myTestGals, makeGalTestDB
@@ -57,6 +59,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
 

@@ -4,6 +4,7 @@ import unittest
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -29,7 +30,6 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
 
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     catalog_type = __file__ + "test_galaxy_catalog"
-
 
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
@@ -116,6 +116,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
         del cls.dbName
