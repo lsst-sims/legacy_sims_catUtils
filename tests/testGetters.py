@@ -31,7 +31,6 @@ class testStarCatalog(InstanceCatalog, PhotometryStars):
 class testGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     catalog_type = __file__ + "test_galaxy_catalog"
 
-
     column_outputs = ['raJ2000', 'decJ2000',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
