@@ -149,6 +149,12 @@ class ObservationMetaDataGenerator(object):
         dtypeList = []
         self.baseQuery = 'SELECT'
         self.active_columns = []
+
+        self._queried_columns = []  # This will be a list of all of the
+                                    # OpSim columns queried
+                                    # Note: here we will refer to the
+                                    # columns by their names in OpSim
+
         for column in self._user_interface_to_opsim:
             rec = self._user_interface_to_opsim[column]
             if rec[0] in self._summary_columns:
@@ -157,6 +163,16 @@ class ObservationMetaDataGenerator(object):
                 if self.baseQuery != 'SELECT':
                     self.baseQuery += ','
                 self.baseQuery += ' ' + rec[0]
+                self._queried_columns.append(rec[0])
+
+        # Now loop over self._summary_columns, adding any columns
+        # to the query that have not already been included therein.
+        # Since we do not have explicit information about the
+        # data types of these columns, we will assume they are floats.
+        for column in self._summary_columns:
+            if column not in self._queried_columns:
+                self.baseQuery += ', ' + column
+                dtypeList.append((column, float))
 
         self.dtype = np.dtype(dtypeList)
 
