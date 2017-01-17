@@ -510,6 +510,19 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
     def tearDown(self):
         del self.obs_meta_gen
 
+    def testOnNonExistentDatabase(self):
+        """
+        Test that an exception is raised if you try to connect to an query
+        a database that does not exist.
+        """
+
+        with self.assertRaises(RuntimeError) as context:
+            ObservationMetaDataGenerator(database='non_existent.db',
+                                         driver='sqlite')
+
+        self.assertEqual(context.exception.message,
+                         'non_existent.db does not exist')
+
     def testSpatialQuery(self):
         """
         Test that when we run a spatial query on the mock opsim database, we get expected results.

@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
@@ -130,6 +131,9 @@ class ObservationMetaDataGenerator(object):
 
         if self.database is None:
             return
+
+        if not os.path.exists(self.database):
+            raise RuntimeError('%s does not exist' % self.database)
 
         self.opsimdb = DBObject(driver=self.driver, database=self.database,
                                 host=self.host, port=self.port)
