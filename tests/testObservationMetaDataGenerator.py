@@ -516,12 +516,15 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         a database that does not exist.
         """
 
+        test_name = 'non_existent.db'
         with self.assertRaises(RuntimeError) as context:
-            ObservationMetaDataGenerator(database='non_existent.db',
+            ObservationMetaDataGenerator(database=test_name,
                                          driver='sqlite')
 
         self.assertEqual(context.exception.message,
-                         'non_existent.db does not exist')
+                         '%s does not exist' % test_name)
+
+        self.assertFalse(os.path.exists(test_name))
 
     def testSpatialQuery(self):
         """
