@@ -17,7 +17,7 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D,
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 
 # 2016 November 22
-# For some reason, the Jenkins slaves used for continuous integration
+# For some reason, the Jenkins nodes used for continuous integration
 # cannot properly load the astropy config directories used by sncosmo.
 # To prevent this from crashing every build, we will test whether
 # the directories can be accessed and, if they cannot, use unittest.skipIf()
