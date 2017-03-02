@@ -312,6 +312,32 @@ class PhoSimAstrometryBase(object):
         return _icrsFromObserved(ra_obs, dec_obs, obs_metadata=obs_metadata,
                                  epoch=2000.0, includeRefraction=False)
 
+    @classmethod
+    def icrsFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
+        """
+        This method will convert from the 'deprecessed' coordinates expected by
+        PhoSim to ICRS coordinates
+
+        Parameters
+        ----------
+        raPhoSim is the PhoSim RA-like coordinate (in degrees)
+
+        decPhoSim is the PhoSim Dec-like coordinate (in degrees)
+
+        obs_metadata is an ObservationMetaData characterizing the
+        telescope pointing
+
+        Returns
+        -------
+        raICRS in degrees
+
+        decICRS in degrees
+        """
+        ra, dec = PhoSimAstrometryBase._icrsFromPhoSim(np.radians(raPhoSim),
+                                                       np.radians(decPhoSim),
+                                                       obs_metadata)
+        return np.degrees(ra), np.degrees(dec)
+
 
 class PhoSimAstrometryStars(AstrometryStars, PhoSimAstrometryBase):
     """
