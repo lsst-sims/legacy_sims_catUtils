@@ -288,9 +288,6 @@ class PhoSimAstrometryBase(object):
         decICRS in radians
         """
 
-        if len(raPhoSim) == 0:
-            return np.array([[], []])
-
         # Calculate the rotation matrix to go from the ICRS bore site to the
         # precessed bore site
         xyz_bore = cartesianFromSpherical(np.array([obs_metadata._pointingRA]),
