@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from __future__ import print_function
 import os
 import sys
 import traceback
@@ -60,8 +61,8 @@ def failedOnFatboy(tracebackList):
 
 
 def reassure():
-    print '\ntestObsCat failed to connect to fatboy'
-    print 'Sometimes that happens.  Do not worry.'
+    print('\ntestObsCat failed to connect to fatboy')
+    print('Sometimes that happens.  Do not worry.')
 
 # Build sso instance class
 basic_columns = ['objid', 'expMJD', 'raJ2000', 'decJ2000', 'velRa', 'velDec',
@@ -118,7 +119,7 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                                                               limit=3, boundLength=2.2)
 
         dt, t = dtime(t)
-        print 'To query opsim database: %f seconds' % (dt)
+        print('To query opsim database: %f seconds' % (dt))
 
         write_header = True
         write_mode = 'w'
@@ -175,7 +176,7 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 write_header = False
 
                 dt, t = dtime(t)
-                print 'To query solar system objects: %f seconds (obs MJD time %f)' % (dt, obs.mjd.TAI)
+                print('To query solar system objects: %f seconds (obs MJD time %f)' % (dt, obs.mjd.TAI))
 
                 if os.path.exists(output_cat):
                     os.unlink(output_cat)

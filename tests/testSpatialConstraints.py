@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 import numpy
 import lsst
@@ -39,14 +40,14 @@ class testCatalogBounds(unittest.TestCase):
 
                 continue
 
-            print "Running tests for", objname
+            print("Running tests for", objname)
             obs_metadata = objcls.testObservationMetaData
             dbobj = objcls(verbose=False)
             result = dbobj.query_columns(column_outputs, obs_metadata=obs_metadata)
 
             # testObservationMetadata gives few enough results for one chunk
             try:
-                result = result.next()
+                result = next(result)
             except StopIteration:
                 raise RuntimeError("No results for %s."%(objname))
 
@@ -73,7 +74,7 @@ class testCatalogBounds(unittest.TestCase):
 
                 continue
 
-            print "Running tests for", objname
+            print("Running tests for", objname)
             circ_bounds = objcls.testObservationMetaData.bounds
             length = numpy.degrees(circ_bounds.radius)
             raCenter = numpy.degrees(circ_bounds.RA)+length
@@ -87,7 +88,7 @@ class testCatalogBounds(unittest.TestCase):
             result = dbobj.query_columns(column_outputs, obs_metadata=obs_metadata)
             # testObservationMetadata gives few enough results for one chunk
             try:
-                result = result.next()
+                result = next(result)
             except StopIteration:
                 raise RuntimeError("No results for %s."%(objname))
 

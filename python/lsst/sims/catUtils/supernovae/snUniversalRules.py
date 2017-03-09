@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import numpy as np
 
 __all__ = ['SNUniverse']
@@ -175,7 +176,7 @@ class SNUniverse(object):
         """
         rng is an instantiation of np.random.RandomState
         """
-        import snObject
+        from . import snObject
 
         # First draw an absolute BessellB magnitude for SN
         mabs = rng.normal(-19.3, 0.3)

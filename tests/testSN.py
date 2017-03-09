@@ -13,6 +13,7 @@ The following functionality is tested:
 SNIaCatalog_tests:
 A Class containing tests to check crictical functionality for SNIaCatalog
 """
+from __future__ import print_function
 import os
 import sqlite3
 import numpy as np
@@ -74,11 +75,11 @@ class SNObject_tests(unittest.TestCase):
         """
 
         mydir = get_config_dir()
-        print '==============================='
-        print '==============================='
+        print('===============================')
+        print('===============================')
         print (mydir)
-        print '==============================='
-        print '==============================='
+        print('===============================')
+        print('===============================')
         # A range of wavelengths in Ang
         self.wave = np.arange(3000., 12000., 50.)
         # Equivalent wavelenths in nm
@@ -556,11 +557,11 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         if os.path.exists(dbname):
             if verbose:
-                print "deleting database ", dbname
+                print("deleting database ", dbname)
             os.unlink(dbname)
         else:
             if verbose:
-                print 'database ', dbname, ' does not exist'
+                print('database ', dbname, ' does not exist')
 
     @staticmethod
     def insertfromdata(tablename, records, multiple=True):

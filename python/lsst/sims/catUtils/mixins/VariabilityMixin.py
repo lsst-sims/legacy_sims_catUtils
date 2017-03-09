@@ -135,7 +135,7 @@ class Variability(object):
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
         epoch = expmjd - toff
-        if self.variabilityLcCache.has_key(filename):
+        if filename in self.variabilityLcCache:
             splines = self.variabilityLcCache[filename]['splines']
             period = self.variabilityLcCache[filename]['period']
         else:

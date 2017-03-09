@@ -1,3 +1,4 @@
+from __future__ import print_function
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.utils import defaultSpecMap
@@ -27,13 +28,13 @@ class ValidationUtils(object):
         if sedKey is None or sedKey == 'None' or magNorm is None or numpy.isnan(magNorm):
             return None, None, None, None
         datadir = os.environ.get("SIMS_SED_LIBRARY_DIR")
-        if cls.sedDict.has_key(sedKey):
+        if sedKey in cls.sedDict:
             sed = copy.deepcopy(cls.sedDict[sedKey])
         else:
             sed = Sed()
             try:
                 sed.readSED_flambda(os.path.join(datadir, defaultSpecMap[sedKey]))
-            except KeyError, ke:
+            except KeyError as ke:
                 warnings.warn("Couldn't find the spectrum for one of the components")
                 return None, None, None, None
             if matchwavelen is not None:
@@ -44,7 +45,7 @@ class ValidationUtils(object):
         matchwavelen = sed.wavelen
         try:
             fNorm = sed.calcFluxNorm(magNorm, cls.imsimband)
-        except Exception, e:
+        except Exception as e:
             warnings.warn("Could not calculate the flux norm")
             return None, None, None, None
         sed.multiplyFluxNorm(fNorm)
@@ -55,7 +56,7 @@ class ValidationUtils(object):
         sed.redshiftSED(z, dimming=True)
         try:
             sed.resampleSED(wavelen_match=bplist[0].wavelen)
-        except Exception, e:
+        except Exception as e:
             warnings.warn("Exception trying to resample the SED.  Redshift is: %f"%(z))
             return None, None, None, None
         sed.flambdaTofnu()
@@ -290,7 +291,7 @@ class ValidationUtils(object):
             meanz = numpy.sum(hist*zbinx)/numpy.sum(hist)
             nsamp = 100000
             meanzsamp = numpy.sum(cls.sampleNofz(z_o_corr[i],nsamp))/nsamp
-            print meanz, meanzsamp
+            print(meanz, meanzsamp)
             hist /= area
             ax=fig.add_subplot(3,2,i+1)
             plt.bar(zbinx, hist, width=barwidth, label="Base Catalog")

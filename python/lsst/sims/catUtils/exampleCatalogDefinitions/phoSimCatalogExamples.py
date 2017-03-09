@@ -1,4 +1,5 @@
 """Instance Catalog"""
+from __future__ import print_function
 import numpy as np
 from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -175,10 +176,10 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
 
         file_handle.write('rotskypos %.7f\n' % obs.rotSkyPos)
     except:
-        print "\n\n"
-        print "The ObservationMetaData you tried to write a PhoSim header from"
-        print "lacks one of the required parameters"
-        print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)\n"
+        print("\n\n")
+        print("The ObservationMetaData you tried to write a PhoSim header from")
+        print("lacks one of the required parameters")
+        print("(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)\n")
         raise
 
     # sort the header map keys so that PhoSim headers generated with the same
