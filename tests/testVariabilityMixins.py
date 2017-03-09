@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from builtins import range
 import os
 import unittest
 import numpy as np
@@ -42,7 +43,7 @@ def makeMflareTable(size=10, **kwargs):
     except:
         raise RuntimeError("Error creating database.")
 
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyMflare',
                     'pars': {'t0': 48000.0, 'lcfilename': lcFiles[rng.randint(0, len(lcFiles))],
@@ -78,7 +79,7 @@ def makeRRlyTable(size=100, **kwargs):
 
     rng = np.random.RandomState(32)
     mjDisplacement = (rng.random_sample(size)-50.0)*50.0
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyRRly',
                     'pars': {'tStartMjd': 48000.0+mjDisplacement[i],
@@ -116,7 +117,7 @@ def makeCepheidTable(size=100, **kwargs):
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
     mjDisplacement = (rng.random_sample(size)-0.5)*50.0
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyCepheid',
                     'pars': {'period': periods[i], 'lcfile': lcFiles[rng.randint(0, len(lcFiles))],
@@ -149,7 +150,7 @@ def makeEbTable(size=100, **kwargs):
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
     mjDisplacement = (rng.random_sample(size)-0.5)*50.0
-    for i in xrange(size):
+    for i in range(size):
         sedFile = 'sed_flat_norm.txt'
         varParam = {'varMethodName': 'applyEb',
                     'pars': {'period': periods[i], 'lcfile': lcFiles[rng.randint(0, len(lcFiles))],
@@ -185,7 +186,7 @@ def makeMicrolensingTable(size=100, **kwargs):
     that = rng.random_sample(size)*40.0+40.0
     umin = rng.random_sample(size)
     mjDisplacement = rng.random_sample(size)*50.0
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[0]
         varParam = {'varMethodName': method[i%len(method)],
                     'pars': {'that': that[i], 'umin': umin[i], 't0': 52000.0+mjDisplacement[i]}}
@@ -222,7 +223,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
 
     rng = np.random.RandomState(32)
     mjDisplacement = rng.random_sample(size)*5.0*365.25
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyBHMicrolens',
                     'pars': {'filename': lcFiles[rng.randint(0, len(lcFiles))],
@@ -261,7 +262,7 @@ def makeAmcvnTable(size=100, **kwargs):
     amplitude = rng.random_sample(size)*0.2
     period = rng.random_sample(size)*200.0
     mjDisplacement = rng.random_sample(size)*50.0
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyAmcvn',
                     'pars': {'does_burst': int(doesBurst[i]),  # have to cast to int from np.int for json
@@ -312,7 +313,7 @@ def makeAgnTable(size=100, **kwargs):
     avBulge = rng.random_sample(size)*0.5+2.6
     avDisk = rng.random_sample(size)*0.5+2.6
     redshift = rng.random_sample(size)*0.5
-    for i in xrange(size):
+    for i in range(size):
         varParam = {'varMethodName': 'applyAgn',
                     'pars': {'agn_tau': agn_tau[i], 'agn_sfu': agn_sfu[i], 'agn_sfg': agn_sfg[i],
                              'agn_sfr': agn_sfr[i], 'agn_sfi': agn_sfi[i], 'agn_sfz': agn_sfz[i],
@@ -360,7 +361,7 @@ def makeHybridTable(size=100, **kwargs):
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
     mjDisplacement = (rng.random_sample(size)-0.5)*50.0
-    for i in xrange(size):
+    for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         if i%3 == 0:
             # just to make sure that Variability mixins no how to andle

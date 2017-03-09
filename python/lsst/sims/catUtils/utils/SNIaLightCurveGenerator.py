@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import zip
 import numpy as np
 import warnings
 
@@ -119,7 +120,7 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
         snobj = SNObject()
 
-        cat = cat_dict[cat_dict.keys()[0]]  # does not need to be associated with a bandpass
+        cat = cat_dict[list(cat_dict.keys())[0]]  # does not need to be associated with a bandpass
 
         dummy_sed = Sed()
 

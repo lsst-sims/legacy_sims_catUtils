@@ -14,6 +14,9 @@ SNIaCatalog_tests:
 A Class containing tests to check crictical functionality for SNIaCatalog
 """
 from __future__ import print_function
+from builtins import map
+from builtins import str
+from builtins import range
 import os
 import sqlite3
 import numpy as np
@@ -420,8 +423,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         # External packages used
         import pandas as pd
         dfs = []
-        map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
-            fnamelist)
+        list(map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
+                 fnamelist))
         all_lcsDumped = pd.concat(dfs)
         all_lcsDumped.rename(columns={'#snid': 'snid'}, inplace=True)
         all_lcsDumped['snid'] = all_lcsDumped['snid'].astype(int)

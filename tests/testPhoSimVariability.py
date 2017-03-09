@@ -1,3 +1,4 @@
+from builtins import zip
 import os
 import unittest
 import lsst.utils.tests

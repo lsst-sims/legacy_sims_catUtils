@@ -10,6 +10,7 @@ after applying MW extinction:
  -  extinction which use the extinction calculations in LSST stack
 
 """
+from builtins import str
 import numpy as np
 
 from lsst.sims.photUtils.Sed import Sed
@@ -906,7 +907,7 @@ class SNObject(sncosmo.Model):
         SEDfromSNcosmo = self.SNObjectSED(time=time,
                                           bandpass=bandpassDict)
 
-        bandpassNames = bandpassDict.keys()
+        bandpassNames = list(bandpassDict.keys())
         adus = np.zeros(len(bandpassNames))
 
         for i, filt in enumerate(bandpassNames):

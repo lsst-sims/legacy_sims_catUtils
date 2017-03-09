@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import next
 import unittest
 import numpy
 import lsst
@@ -32,7 +33,7 @@ class testCatalogBounds(unittest.TestCase):
         because the test depends on a network connection.
         """
         column_outputs = ['raJ2000', 'decJ2000']
-        for objname, objcls in CatalogDBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.items():
             if (not objcls.doRunTest or
                 (objcls.testObservationMetaData is None) or
                 (objcls.testObservationMetaData.bounds is None) or
@@ -66,7 +67,7 @@ class testCatalogBounds(unittest.TestCase):
         because test depends on a network connection.
         """
         column_outputs = ['raJ2000', 'decJ2000']
-        for objname, objcls in CatalogDBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.items():
             if (not objcls.doRunTest or
                 (objcls.testObservationMetaData is None) or
                 (objcls.testObservationMetaData.bounds is None) or

@@ -4,6 +4,8 @@ This file defines some test catalog and DBObject classes for use with unit tests
 To date (30 October 2014) testPhotometryMixins.py and testCosmologyMixins.py import from this module
 """
 
+from builtins import range
+from builtins import object
 import numpy
 import os
 import sqlite3

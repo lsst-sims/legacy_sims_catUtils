@@ -4,6 +4,7 @@ test whether or not the GalSim interface can be pointed to alternate
 throughputs.
 """
 
+from builtins import zip
 from __future__ import with_statement
 import numpy
 

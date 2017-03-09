@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 import os
 import unittest
 import lsst.utils.tests

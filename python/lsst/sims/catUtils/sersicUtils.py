@@ -1,3 +1,4 @@
+from builtins import object
 from scipy.special import gammainc
 from scipy.interpolate import interp1d
 import numpy

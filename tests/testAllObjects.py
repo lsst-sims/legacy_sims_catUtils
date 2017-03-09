@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import next
 import os
 import inspect
 import numpy as np
@@ -62,7 +64,7 @@ class basicAccessTest(unittest.TestCase):
         ct_failed_connection = 0
         list_of_failures = []
 
-        for objname, objcls in CatalogDBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.items():
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
                 continue
 

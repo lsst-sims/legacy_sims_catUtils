@@ -1,4 +1,7 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import range
+from builtins import object
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.utils import defaultSpecMap

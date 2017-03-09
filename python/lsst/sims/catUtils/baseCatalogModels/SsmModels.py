@@ -53,7 +53,7 @@ class SolarSystemObj(BaseCatalogObj):
     columns = [('objid', 'ssmid', int),
             ('raJ2000', 'ra*PI()/180.'),
             ('decJ2000', 'decl*PI()/180.'),
-            ('sedFilename', 'sed_filename', unicode, 40),
+            ('sedFilename', 'sed_filename', str, 40),
             ('dist', 'dist', numpy.float),
             ('velRa', 'dradt*PI()/180.'),
             ('velDec', 'ddecldt*PI()/180.'),

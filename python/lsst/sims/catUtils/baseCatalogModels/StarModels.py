@@ -34,7 +34,7 @@ class StarBase(BaseCatalogObj):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 
 class StarObj(StarBase):
@@ -58,7 +58,7 @@ class StarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class MsStarObj(StarBase):
     objid = 'msstars'
@@ -81,7 +81,7 @@ class MsStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 
 class BrightStarObj(StarBase):
@@ -101,7 +101,7 @@ class BrightStarObj(StarBase):
                ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
                ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
-               ('sedFilename', 'sedfilename', unicode, 60)]
+               ('sedFilename', 'sedfilename', str, 60)]
 
 class WdStarObj(StarBase):
     objid = 'wdstars'
@@ -122,7 +122,7 @@ class WdStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class RRLyStarObj(StarBase):
     objid = 'rrlystars'
@@ -143,7 +143,7 @@ class RRLyStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class BhbStarObj(StarBase):
     objid = 'bhbstars'
@@ -164,7 +164,7 @@ class BhbStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class EbStarObj(StarBase):
     objid = 'ebstars'
@@ -186,7 +186,7 @@ class EbStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class CepheidStarObj(StarBase):
     objid = 'cepheidstars'
@@ -208,7 +208,7 @@ class CepheidStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class EasterEggStarObj(StarBase):
     objid = 'eastereggstars'
@@ -236,7 +236,7 @@ class EasterEggStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class DwarfGalStarObj(StarBase):
     objid = 'dwarfgalstars'
@@ -259,4 +259,4 @@ class DwarfGalStarObj(StarBase):
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]

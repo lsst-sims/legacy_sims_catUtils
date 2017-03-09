@@ -3,6 +3,7 @@ This script will create cartoon SEDs so that we can test our ability
 to re-direct the GalSim catalogs to alternate SEDs.
 """
 
+from builtins import zip
 from __future__ import with_statement
 import os
 import numpy

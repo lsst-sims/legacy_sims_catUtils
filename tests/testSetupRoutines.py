@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import object
 import numpy as np
 
 import os
@@ -102,9 +104,9 @@ class testGalaxyDBObject(CatalogDBObject):
                ('magNormBulge', 'magnorm_bulge'),
                ('magNormDisk', 'magnorm_disk'),
                ('magNormAgn', 'magnorm_agn'),
-               ('sedFilenameBulge', 'sedname_bulge', unicode, 40),
-               ('sedFilenameDisk', 'sedname_disk', unicode, 40),
-               ('sedFilenameAgn', 'sedname_agn', unicode, 40),
+               ('sedFilenameBulge', 'sedname_bulge', str, 40),
+               ('sedFilenameDisk', 'sedname_disk', str, 40),
+               ('sedFilenameAgn', 'sedname_agn', str, 40),
                ('majorAxisBulge', 'a_b*PI()/648000.'),
                ('minorAxisBulge', 'b_b*PI()/648000.'),
                ('positionAngleBulge', 'pa_bulge*PI()/180.'),
