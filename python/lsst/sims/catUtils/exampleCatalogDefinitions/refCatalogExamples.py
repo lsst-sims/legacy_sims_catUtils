@@ -2,7 +2,6 @@
 import numpy
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import arcsecFromRadians
-from lsst.sims.catUtils import ValidationUtils
 from lsst.sims.catUtils.mixins import AstrometryGalaxies, PhotometryGalaxies, PhotometryStars
 
 __all__ = ["RefCatalogGalaxyBase", "GalaxyPhotometry", "RefCatalogStarBase"]
