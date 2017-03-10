@@ -522,7 +522,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
             ObservationMetaDataGenerator(database=test_name,
                                          driver='sqlite')
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          '%s does not exist' % test_name)
 
         self.assertFalse(os.path.exists(test_name))

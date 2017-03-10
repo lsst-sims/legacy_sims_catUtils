@@ -541,7 +541,7 @@ class VariabilityTest(unittest.TestCase):
 
         expectedMessage = "Your InstanceCatalog does not contain a variability method"
         expectedMessage += " corresponding to 'testVar'"
-        self.assertEqual(context.exception.message, expectedMessage)
+        self.assertEqual(context.exception.args[0], expectedMessage)
 
         if os.path.exists('hybridTestCatalog.dat'):
             os.unlink('hybridTestCatalog.dat')

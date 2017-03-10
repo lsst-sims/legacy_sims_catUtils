@@ -147,7 +147,7 @@ class SNObject_tests(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             snobj.modelOutSideTemporalRange = 'False'
         self.assertEqual('Model not implemented, defaulting to zero method\n',
-                         context.exception.message)
+                         context.exception.args[0])
 
     def test_rectifiedSED(self):
         """
