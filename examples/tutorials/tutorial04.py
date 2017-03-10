@@ -1,7 +1,9 @@
 """
 This is a version of tutorial04.ipynb without the running commentary
 """
+from __future__ import print_function
 
+from builtins import range
 import os
 import numpy
 import sqlite3
@@ -33,7 +35,7 @@ def makeTestDB(filename='tutorialDatabase.db', size=1000, seedVal=None, **kwargs
     c3 = numpy.random.random_sample(size)
     c4 = numpy.random.random_sample(size)
 
-    for i in xrange(size):
+    for i in range(size):
         c5 = '%sth_row' % i
         qstr = '''INSERT INTO example VALUES (%i, %i, %i, %f, %f,
                      '%s')'''%\
@@ -74,18 +76,18 @@ myDB = TutorialDB(driver='sqlite', database='tutorialDB.db')
 
 
 
-print 'First show all of the columns in the raw database'
+print('First show all of the columns in the raw database')
 myDB.show_db_columns()
-print '\n'
+print('\n')
 
 
 
 
-print 'Then show all of the columns in the CatalogDBObject'
+print('Then show all of the columns in the CatalogDBObject')
 myDB.show_mapped_columns()
-print '\n'
+print('\n')
 
-print 'now do a rough, by-hand query of the columns (this returns all of the rows)'
+print('now do a rough, by-hand query of the columns (this returns all of the rows)')
 
 #specify the names of the columns to be queried
 colNames = ['rowNumber', 'TwiceColumn1', 'col1', 'ThreeTimesColumn2', 'col2']
@@ -94,18 +96,18 @@ result = myDB.query_columns(colnames=colNames, chunk_size=5)
 
 for chunk in result:
     for row in chunk:
-        print row
-print '\n'
+        print(row)
+print('\n')
 
 
-print 'now apply a constraint to the query'
+print('now apply a constraint to the query')
 result = myDB.query_columns(colnames=colNames, constraint='id<6', chunk_size=5)
 for chunk in result:
     for row in chunk:
-        print row
-print '\n'
+        print(row)
+print('\n')
 
-print 'now we will write a cartoon catalog class to write out this cartoon database'
+print('now we will write a cartoon catalog class to write out this cartoon database')
 
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import cached
