@@ -141,7 +141,7 @@ class Variability(object):
             splines = self.variabilityLcCache[filename]['splines']
             period = self.variabilityLcCache[filename]['period']
         else:
-            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename).encode('ascii','ignore'), unpack=True, comments='#')
+            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename), unpack=True, comments='#')
             if inPeriod is None:
                 dt = lc[0][1] - lc[0][0]
                 period = lc[0][-1] + dt
