@@ -2,7 +2,9 @@
 This script demonstrates how to use the stand-along findChipName method from astrometry
 using an ObservationMetaData generated from the OpSim database
 """
+from __future__ import print_function
 
+from builtins import zip
 import numpy
 import os
 from collections import OrderedDict
@@ -43,4 +45,4 @@ xx, yy = pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
 chipNames = chipNameFromRaDec(ra, dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
 
 for (rr,dd,x,y,nn) in zip(ra,dec,xx,yy,chipNames):
-    print rr,dd,arcsecFromRadians(x),arcsecFromRadians(y),nn
+    print(rr,dd,arcsecFromRadians(x),arcsecFromRadians(y),nn)
