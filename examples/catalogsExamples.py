@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import math
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData, SpatialBounds
@@ -70,20 +72,20 @@ def examplePhoSimCatalogs():
 
         t.phoSimHeaderMap = {}  # technically only needed for PhoSim InstanceCatalog classes
 
-        print
-        print "These are the required columns from the database:"
-        print t.db_required_columns()
-        print
-        print "These are the columns that will be output to the file:"
-        print t.column_outputs
-        print
+        print()
+        print("These are the required columns from the database:")
+        print(t.db_required_columns())
+        print()
+        print("These are the columns that will be output to the file:")
+        print(t.column_outputs)
+        print()
 
         filename = 'catalog_test_%s.dat'%(dbobj.objid)
-        print "querying and writing catalog to %s:" % filename
+        print("querying and writing catalog to %s:" % filename)
         t.write_catalog(filename)
         filename = 'catalog_test_%s_chunked.dat'%(dbobj.objid)
         t.write_catalog(filename, chunk_size=10)
-        print " - finished"
+        print(" - finished")
 
 def examplePhoSimNoOpSim():
     """
