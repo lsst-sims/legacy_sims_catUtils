@@ -526,7 +526,7 @@ class galaxiesWithHoles(InstanceCatalog, PhotometryGalaxies):
             agn.append(self.defSedName)
 
 
-        for ix in range(elements/8):
+        for ix in range(elements//8):
             ibase = ix*8
             if ibase+1<elements:
                 bulge[ibase+1] = 'None'
