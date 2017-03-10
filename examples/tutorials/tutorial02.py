@@ -2,6 +2,7 @@
 This is a version of tutorial02.ipynb without the running commentary
 """
 
+from builtins import object
 import numpy
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.utils import ObservationMetaData
