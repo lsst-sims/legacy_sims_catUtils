@@ -225,7 +225,7 @@ class astrometryUnitTest(unittest.TestCase):
                  ('xPix', float), ('yPix', float),
                  ('xFocalPlane', float), ('yFocalPlane', float)]
 
-        baselineData = np.loadtxt(catName, dtype=dtype, delimiter=';')
+        baselineData = np.genfromtxt(catName, dtype=dtype, delimiter=';')
 
         self.assertGreater(len(baselineData), 0)
 
