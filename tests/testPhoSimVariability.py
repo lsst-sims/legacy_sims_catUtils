@@ -55,6 +55,8 @@ class PhoSimVariabilityTest(unittest.TestCase):
     PhoSim catalogs
     """
 
+    longMessage = True
+
     @classmethod
     def setUpClass(cls):
         cls.dbName = 'PhoSimVariabilityDatabase.db'
@@ -90,7 +92,8 @@ class PhoSimVariabilityTest(unittest.TestCase):
         test = PhoSimZPointVariable(self.agnDB, obs_metadata=self.obs_metadata)
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
-            self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
+            msg = 'baseline mag %.6e; delta %.6e' % (bb[0], bb[1])
+            self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10, msg=msg)
             self.assertGreater(np.abs(bb[1]), 0.0)
 
     def testStars(self):
@@ -105,7 +108,8 @@ class PhoSimVariabilityTest(unittest.TestCase):
         test = PhoSimPointVariable(self.starDB, obs_metadata=self.obs_metadata)
 
         for bb, tt in zip(baseline.iter_catalog(), test.iter_catalog()):
-            self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10)
+            msg = 'baseline mag %.6e; delta %.6e' % (bb[0], bb[1])
+            self.assertAlmostEqual(bb[0] + bb[1], tt[4], 10, msg=msg)
             self.assertGreater(np.abs(bb[1]), 0.0)
 
     def testBulges(self):
