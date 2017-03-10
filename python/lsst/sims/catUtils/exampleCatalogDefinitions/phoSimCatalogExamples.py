@@ -241,11 +241,16 @@ class PhosimInputBase(InstanceCatalog):
         further investigation into the behavior of PhoSim.
         """
 
+        try:
+            string_class = basestring
+        except:
+            string_class = str
+
         magNorm = self.column_by_name('magNorm')
         varName = None
         if self.obs_metadata is not None:
             if self.obs_metadata.bandpass is not None:
-                if not hasattr(self.obs_metadata.bandpass, '__iter__'):
+                if isinstance(self.obs_metadata.bandpass, string_class):
                     varName = 'delta_lsst_' + self.obs_metadata.bandpass
 
         if varName is not None and varName in self._all_available_columns:
