@@ -107,7 +107,7 @@ class basicAccessTest(unittest.TestCase):
 
             ct_connected += 1
 
-            # Since there is only one chunck,
+            # Since there is only one chunk,
             try:
                 result = next(result)
             except StopIteration:
