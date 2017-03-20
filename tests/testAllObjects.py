@@ -1,6 +1,7 @@
 from __future__ import print_function
 from builtins import zip
 from builtins import next
+from builtins import str
 import os
 import inspect
 import numpy as np
@@ -73,7 +74,7 @@ class basicAccessTest(unittest.TestCase):
                 dbobj = objcls(verbose=False)
             except:
                 trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
-                msg = sys.exc_info()[1].args[0]
+                msg = str(sys.exc_info()[1].args[0])
                 if 'Failed to connect' in msg or failedOnFatboy(trace):
 
                     # if the exception was due to a failed connection
@@ -170,7 +171,7 @@ class basicAccessTest(unittest.TestCase):
 
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
-            msg = sys.exc_info()[1].args[0]
+            msg = str(sys.exc_info()[1].args[0])
             if 'Failed to connect' in msg or failedOnFatboy(trace):
 
                 # if the exception was because of a failed connection
@@ -196,7 +197,7 @@ class basicAccessTest(unittest.TestCase):
                 dbobj = objcls(verbose=False)
             except:
                 trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
-                msg = sys.exc_info()[1].args[0]
+                msg = str(sys.exc_info()[1].args[0])
                 if 'Failed to connect' in msg or failedOnFatboy(trace):
 
                     # if the exception was due to a failed connection
@@ -245,7 +246,7 @@ class basicAccessTest(unittest.TestCase):
                 dbobj = objcls(verbose=False)
             except:
                 trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
-                msg = sys.exc_info()[1].args[0]
+                msg = str(sys.exc_info()[1].args[0])
                 if 'Failed to connect' in msg or failedOnFatboy(trace):
 
                     # if the exception was due to a failed connection
@@ -308,7 +309,7 @@ class basicAccessTest(unittest.TestCase):
             dbobj = bcm.GalaxyObj(verbose=False)
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
-            msg = sys.exc_info()[1].args[0]
+            msg = str(sys.exc_info()[1].args[0])
             if 'Failed to connect' in msg or failedOnFatboy(trace):
 
                 # if the exception was due to a failed connection
