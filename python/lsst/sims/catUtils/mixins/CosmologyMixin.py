@@ -1,3 +1,4 @@
+from builtins import object
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units

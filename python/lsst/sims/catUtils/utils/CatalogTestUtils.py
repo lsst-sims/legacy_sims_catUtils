@@ -4,6 +4,8 @@ This file defines some test catalog and DBObject classes for use with unit tests
 To date (30 October 2014) testPhotometryMixins.py and testCosmologyMixins.py import from this module
 """
 
+from builtins import range
+from builtins import object
 import numpy
 import os
 import sqlite3
@@ -524,7 +526,7 @@ class galaxiesWithHoles(InstanceCatalog, PhotometryGalaxies):
             agn.append(self.defSedName)
 
 
-        for ix in range(elements/8):
+        for ix in range(elements//8):
             ibase = ix*8
             if ibase+1<elements:
                 bulge[ibase+1] = 'None'

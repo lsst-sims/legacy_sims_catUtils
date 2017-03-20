@@ -10,6 +10,9 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 """
 
+from builtins import zip
+from builtins import range
+from builtins import object
 import os
 import numpy
 from collections import OrderedDict
@@ -785,7 +788,7 @@ class PhotometrySSM(PhotometryBase):
                                "specify seeing.")
 
         if len(self.obs_metadata.seeing)>1:
-            valueList = self.obs_metadata.seeing.values()
+            valueList = list(self.obs_metadata.seeing.values())
             for ix in range(1, len(valueList)):
                 if numpy.abs(valueList[ix]-valueList[0])>0.0001:
 

@@ -1,3 +1,5 @@
+from builtins import range
+from builtins import object
 import numpy
 import linecache
 import math
@@ -135,11 +137,11 @@ class Variability(object):
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
         epoch = expmjd - toff
-        if self.variabilityLcCache.has_key(filename):
+        if filename in self.variabilityLcCache:
             splines = self.variabilityLcCache[filename]['splines']
             period = self.variabilityLcCache[filename]['period']
         else:
-            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename).encode('ascii','ignore'), unpack=True, comments='#')
+            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename), unpack=True, comments='#')
             if inPeriod is None:
                 dt = lc[0][1] - lc[0][0]
                 period = lc[0][-1] + dt

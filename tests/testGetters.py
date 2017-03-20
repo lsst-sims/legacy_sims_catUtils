@@ -1,3 +1,4 @@
+from builtins import range
 import os
 import numpy as np
 import unittest
@@ -67,7 +68,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
 
         default_obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         bandpass = ['u', 'g', 'r', 'i', 'z', 'y']
-        m5 = lsstDefaults._m5.values()
+        m5 = list(lsstDefaults._m5.values())
 
         cls.obs_metadata = ObservationMetaData(pointingRA = default_obs_metadata.pointingRA,
                                                pointingDec = default_obs_metadata.pointingDec,

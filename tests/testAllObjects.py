@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import next
 import os
 import inspect
 import numpy as np
@@ -61,11 +64,11 @@ class basicAccessTest(unittest.TestCase):
         ct_failed_connection = 0
         list_of_failures = []
 
-        for objname, objcls in CatalogDBObject.registry.iteritems():
+        for objname, objcls in CatalogDBObject.registry.items():
             if not objcls.doRunTest or (objcls.testObservationMetaData is None):
                 continue
 
-            print "Running tests for", objname
+            print("Running tests for", objname)
             try:
                 dbobj = objcls(verbose=False)
             except:
@@ -104,9 +107,9 @@ class basicAccessTest(unittest.TestCase):
 
             ct_connected += 1
 
-            # Since there is only one chunck,
+            # Since there is only one chunk,
             try:
-                result = result.next()
+                result = next(result)
             except StopIteration:
                 raise RuntimeError("No results for %s defined in %s"%(objname,
                                    inspect.getsourcefile(dbobj.__class__)))
@@ -129,15 +132,15 @@ class basicAccessTest(unittest.TestCase):
 
         self.assertEqual(len(list_of_failures), ct_failed_connection)
 
-        print '\n================'
-        print 'Do not worry about this message'
-        print 'sometimes, connections to the UW database fail.'
-        print 'It is expected.'
-        print 'This is just a tally so that you know how often that happened.'
-        print 'successful connections: ', ct_connected
-        print 'failed connections: ', ct_failed_connection
+        print('\n================')
+        print('Do not worry about this message')
+        print('sometimes, connections to the UW database fail.')
+        print('It is expected.')
+        print('This is just a tally so that you know how often that happened.')
+        print('successful connections: ', ct_connected)
+        print('failed connections: ', ct_failed_connection)
         if len(list_of_failures) > 0:
-            print 'objects that failed to connect: ', list_of_failures
+            print('objects that failed to connect: ', list_of_failures)
 
     def testObsCat(self):
         objname = 'wdstars'
@@ -163,7 +166,7 @@ class basicAccessTest(unittest.TestCase):
                 if os.path.exists(catName):
                     os.unlink(catName)
 
-            print '\ntestObsCat successfully connected to fatboy'
+            print('\ntestObsCat successfully connected to fatboy')
 
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
@@ -173,8 +176,8 @@ class basicAccessTest(unittest.TestCase):
                 # if the exception was because of a failed connection
                 # to fatboy, ignore it.
 
-                print '\ntestObsCat failed to connect to fatboy'
-                print 'Sometimes that happens.  Do not worry.'
+                print('\ntestObsCat failed to connect to fatboy')
+                print('Sometimes that happens.  Do not worry.')
 
                 pass
             else:
@@ -224,10 +227,10 @@ class basicAccessTest(unittest.TestCase):
             self.assertEqual(ct_limit, 10, msg=msg)
 
         if len(list_of_failures) > 0:
-            print "\nList of DBObjects that could not connect to fatboy " \
-                  "for the test on the limit kwarg"
+            print("\nList of DBObjects that could not connect to fatboy " \
+                  "for the test on the limit kwarg")
             for nn in list_of_failures:
-                print nn
+                print(nn)
 
     def test_constraint(self):
         """
@@ -289,10 +292,10 @@ class basicAccessTest(unittest.TestCase):
             self.assertEqual(ct_res-ct_con, ct_no_varparamstr)
 
         if len(list_of_failures) > 0:
-            print "\nList of DBObjects that could not connect to fatboy " \
-                  "for the test on the constraint kwarg"
+            print("\nList of DBObjects that could not connect to fatboy " \
+                  "for the test on the constraint kwarg")
             for nn in list_of_failures:
-                print nn
+                print(nn)
 
     def test_limit_and_constraint(self):
         """
@@ -345,10 +348,10 @@ class basicAccessTest(unittest.TestCase):
                 self.assertEqual(ct_lim, ct_res-1)
 
         if len(list_of_failures) > 0:
-            print "\nList of DBObjects that could not connect to fatboy " \
-                  "for the test on the constraint and limit kwargs"
+            print("\nList of DBObjects that could not connect to fatboy " \
+                  "for the test on the constraint and limit kwargs")
             for nn in list_of_failures:
-                print nn
+                print(nn)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

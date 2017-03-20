@@ -1,4 +1,7 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import object
 import numpy as np
 import copy
 
@@ -55,10 +58,11 @@ class _baseLightCurveCatalog(InstanceCatalog):
                 yield line
         else:
             # Otherwise iterate over the query cache
+            transform_keys = list(self.transformations.keys())
             for chunk in query_cache:
                 self._set_current_chunk(chunk)
                 chunk_cols = [self.transformations[col](self.column_by_name(col))
-                              if col in self.transformations.keys() else
+                              if col in transform_keys else
                               self.column_by_name(col)
                               for col in self.iter_column_names()]
                 # iterate over lines in the cache and yield lines augmented by

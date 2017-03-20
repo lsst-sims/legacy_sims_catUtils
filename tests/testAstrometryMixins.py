@@ -1,3 +1,4 @@
+from builtins import zip
 import numpy as np
 
 import os
@@ -224,7 +225,7 @@ class astrometryUnitTest(unittest.TestCase):
                  ('xPix', float), ('yPix', float),
                  ('xFocalPlane', float), ('yFocalPlane', float)]
 
-        baselineData = np.loadtxt(catName, dtype=dtype, delimiter=';')
+        baselineData = np.genfromtxt(catName, dtype=dtype, delimiter=';')
 
         self.assertGreater(len(baselineData), 0)
 
@@ -290,13 +291,18 @@ class astrometryUnitTest(unittest.TestCase):
                                     epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                     camera=self.cat.camera)
 
+        is_none = 0
         for (ntest, nra, ncontrol) in zip(nameTest, nameRA, baselineData['chipName']):
             if ncontrol != 'None':
                 self.assertEqual(ntest, ncontrol)
                 self.assertEqual(nra, ncontrol)
             else:
+                is_none += 1
                 self.assertIsNone(ntest)
                 self.assertIsNone(nra)
+
+        self.assertGreater(is_none, 0)
+        self.assertLess(is_none, len(baselineData))
 
         if os.path.exists(catName):
             os.unlink(catName)

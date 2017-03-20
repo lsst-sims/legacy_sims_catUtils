@@ -1,4 +1,6 @@
 """Instance Catalog"""
+from __future__ import print_function
+from builtins import range
 import numpy as np
 from lsst.sims.utils import SpecMap, defaultSpecMap
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -105,7 +107,7 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
         raw_opsim_contents = ""
 
         if obs.OpsimMetaData is not None:
-            sorted_opsim_metadata = obs.OpsimMetaData.keys()
+            sorted_opsim_metadata = list(obs.OpsimMetaData.keys())
             sorted_opsim_metadata.sort()
             for tag in sorted_opsim_metadata:
                 raw_opsim_contents += "%s\n" % tag
@@ -175,15 +177,15 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
 
         file_handle.write('rotskypos %.7f\n' % obs.rotSkyPos)
     except:
-        print "\n\n"
-        print "The ObservationMetaData you tried to write a PhoSim header from"
-        print "lacks one of the required parameters"
-        print "(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)\n"
+        print("\n\n")
+        print("The ObservationMetaData you tried to write a PhoSim header from")
+        print("lacks one of the required parameters")
+        print("(pointingRA, pointingDec, mjd, bandpass, rotSkyPos)\n")
         raise
 
     # sort the header map keys so that PhoSim headers generated with the same
     # map always have parameters in the same order.
-    sorted_header_keys = phosim_header_map.keys()
+    sorted_header_keys = list(phosim_header_map.keys())
     sorted_header_keys.sort()
 
     for name in sorted_header_keys:
@@ -193,7 +195,7 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
                 file_handle.write('%s %.7f\n' % (name, val))
             elif isinstance(val, int) or isinstance(val, np.int):
                 file_handle.write('%s %d\n' % (name, val))
-            elif isinstance(val, long):
+            elif isinstance(val, int):
                 file_handle.write('%s %ld\n' % (name, val))
             else:
                 file_handle.write('%s %s\n' % (name, str(val)))
@@ -211,7 +213,7 @@ class PhosimInputBase(InstanceCatalog):
 
     @cached
     def get_prefix(self):
-        chunkiter = xrange(len(self.column_by_name(self.refIdCol)))
+        chunkiter = range(len(self.column_by_name(self.refIdCol)))
         return np.array(['object' for i in chunkiter], dtype=(str, 6))
 
     @cached
@@ -221,7 +223,7 @@ class PhosimInputBase(InstanceCatalog):
 
     @cached
     def get_spatialmodel(self):
-        chunkiter = xrange(len(self._current_chunk))
+        chunkiter = range(len(self._current_chunk))
         return np.array([self.spatialModel for i in chunkiter], dtype=(str, 8))
 
     @cached
@@ -239,11 +241,16 @@ class PhosimInputBase(InstanceCatalog):
         further investigation into the behavior of PhoSim.
         """
 
+        try:
+            string_class = basestring
+        except:
+            string_class = str
+
         magNorm = self.column_by_name('magNorm')
         varName = None
         if self.obs_metadata is not None:
             if self.obs_metadata.bandpass is not None:
-                if not hasattr(self.obs_metadata.bandpass, '__iter__'):
+                if isinstance(self.obs_metadata.bandpass, string_class):
                     varName = 'delta_lsst_' + self.obs_metadata.bandpass
 
         if varName is not None and varName in self._all_available_columns:

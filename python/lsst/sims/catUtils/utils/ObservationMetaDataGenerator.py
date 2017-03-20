@@ -1,3 +1,4 @@
+from builtins import object
 import numpy as np
 import os
 from lsst.sims.catalogs.db import DBObject

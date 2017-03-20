@@ -12,6 +12,8 @@ are three classes here:
         uploaded to catsim. Examples of such catalogs that are in the catsim
         database are the tables `TwinkSN` and `TwinkSNKraken`
 """
+from builtins import str
+from builtins import range
 import numpy as np
 
 from lsst.sims.catalogs.definitions import InstanceCatalog

@@ -1,3 +1,4 @@
+from builtins import object
 import numpy as np
 from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.utils import _galacticFromEquatorial, sphericalFromCartesian, \

@@ -1,4 +1,6 @@
 from __future__ import with_statement
+from builtins import next
+from builtins import object
 import os
 import numpy as np
 import unittest
@@ -92,7 +94,7 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
 
         sedDir = os.path.join(getPackageDir('sims_sed_library'), 'starSED', 'kurucz')
 
-        for ix, line in enumerate(db_columns.next()):
+        for ix, line in enumerate(next(db_columns)):
             spectrum = Sed()
             spectrum.readSED_flambda(os.path.join(sedDir, line[3]))
             fnorm = spectrum.calcFluxNorm(line[4], self.normband)
@@ -151,7 +153,7 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
 
         sedDir = os.path.join(getPackageDir('sims_sed_library'), 'starSED', 'kurucz')
 
-        for ix, line in enumerate(db_columns.next()):
+        for ix, line in enumerate(next(db_columns)):
             spectrum = Sed()
             spectrum.readSED_flambda(os.path.join(sedDir, line[3]))
             fnorm = spectrum.calcFluxNorm(line[4], self.normband)

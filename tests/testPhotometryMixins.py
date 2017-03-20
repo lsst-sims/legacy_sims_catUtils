@@ -1,4 +1,7 @@
 from __future__ import with_statement
+from __future__ import print_function
+from builtins import zip
+from builtins import range
 import numpy as np
 
 import os
@@ -31,7 +34,7 @@ class variabilityUnitTest(unittest.TestCase):
     def setUpClass(cls):
         # Create test databases
         if os.path.exists('PhotometryTestDatabase.db'):
-            print "deleting database"
+            print("deleting database")
             os.unlink('PhotometryTestDatabase.db')
 
         makeStarTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
@@ -91,7 +94,7 @@ class photometryUnitTest(unittest.TestCase):
     def setUpClass(cls):
         # Create test databases
         if os.path.exists('PhotometryTestDatabase.db'):
-            print "deleting database"
+            print("deleting database")
             os.unlink('PhotometryTestDatabase.db')
 
         makeStarTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)

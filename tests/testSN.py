@@ -13,6 +13,10 @@ The following functionality is tested:
 SNIaCatalog_tests:
 A Class containing tests to check crictical functionality for SNIaCatalog
 """
+from __future__ import print_function
+from builtins import map
+from builtins import str
+from builtins import range
 import os
 import sqlite3
 import numpy as np
@@ -74,11 +78,11 @@ class SNObject_tests(unittest.TestCase):
         """
 
         mydir = get_config_dir()
-        print '==============================='
-        print '==============================='
+        print('===============================')
+        print('===============================')
         print (mydir)
-        print '==============================='
-        print '==============================='
+        print('===============================')
+        print('===============================')
         # A range of wavelengths in Ang
         self.wave = np.arange(3000., 12000., 50.)
         # Equivalent wavelenths in nm
@@ -143,7 +147,7 @@ class SNObject_tests(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             snobj.modelOutSideTemporalRange = 'False'
         self.assertEqual('Model not implemented, defaulting to zero method\n',
-                         context.exception.message)
+                         context.exception.args[0])
 
     def test_rectifiedSED(self):
         """
@@ -419,8 +423,8 @@ class SNIaCatalog_tests(unittest.TestCase):
         # External packages used
         import pandas as pd
         dfs = []
-        map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
-            fnamelist)
+        list(map(lambda x: dfs.append(pd.read_csv(x, index_col=None, sep=', ')),
+                 fnamelist))
         all_lcsDumped = pd.concat(dfs)
         all_lcsDumped.rename(columns={'#snid': 'snid'}, inplace=True)
         all_lcsDumped['snid'] = all_lcsDumped['snid'].astype(int)
@@ -556,11 +560,11 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         if os.path.exists(dbname):
             if verbose:
-                print "deleting database ", dbname
+                print("deleting database ", dbname)
             os.unlink(dbname)
         else:
             if verbose:
-                print 'database ', dbname, ' does not exist'
+                print('database ', dbname, ' does not exist')
 
     @staticmethod
     def insertfromdata(tablename, records, multiple=True):
