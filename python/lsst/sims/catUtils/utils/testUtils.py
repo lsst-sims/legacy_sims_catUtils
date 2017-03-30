@@ -92,7 +92,8 @@ def calcADUwrapper(sedName=None, magNorm=None, redshift=None, internalAv=None, i
 
 def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, radius=0.1,
                      deltaRA=None, deltaDec=None,
-                     bandpass='r', m5=None, seeing=None, **kwargs):
+                     bandpass='r', m5=None, seeing=None,
+                     magnorm_min=17.0, delta_magnorm=4.0, **kwargs):
     """
     Make a test database to storing cartoon information for the test phoSim input
     catalog to use.
@@ -121,6 +122,11 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     of the field of view) objects should be placed.  These coordinates are in degrees.  Specifying
     either of these paramters will overwrite size.  If you only specify one of these parameters, the other
     will be set randomly.  These parameters are optional.
+
+    @param [in] magnorm_min is the min magnorm (magNorms for sources in the database will be
+    distributed according to a random deviate drawn from magnorm_min + random*delta_magnorm)
+
+    @param [in] delta_magnorm (see documentation for magnorm_min)
     """
 
     if os.path.exists(filename):
@@ -249,9 +255,9 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     agnra = np.radians(ra + rng.random_sample(size)*0.01*radius)
     agndec = np.radians(dec + rng.random_sample(size)*0.01*radius)
 
-    magnorm_bulge = rng.random_sample(size)*4.0 + 17.0
-    magnorm_disk = rng.random_sample(size)*5.0 + 17.0
-    magnorm_agn = rng.random_sample(size)*5.0 + 17.0
+    magnorm_bulge = rng.random_sample(size)*delta_magnorm + magnorm_min
+    magnorm_disk = rng.random_sample(size)*delta_magnorm + magnorm_min
+    magnorm_agn = rng.random_sample(size)*delta_magnorm + magnorm_min
     b_b = rng.random_sample(size)*0.2
     a_b = b_b+rng.random_sample(size)*0.05
     b_d = rng.random_sample(size)*0.5
@@ -302,7 +308,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
     raStar = np.degrees(raStar)
     decStar = np.degrees(decStar)
 
-    magnormStar = rng.random_sample(size)*4.0 + 17.0
+    magnormStar = rng.random_sample(size)*delta_magnorm + magnorm_min
     mudecl = rng.random_sample(size)*0.0001
     mura = rng.random_sample(size)*0.0001
     galacticAv = rng.random_sample(size)*0.05*3.1
