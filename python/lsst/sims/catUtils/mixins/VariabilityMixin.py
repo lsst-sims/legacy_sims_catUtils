@@ -68,7 +68,7 @@ class Variability(object):
         it uses the varMethodName to select the correct variability method from the
         dict self._methodRegistry
 
-        it uses then feeds the pars array to that method, under the assumption
+        it then feeds the pars array to that method, under the assumption
         that the parameters needed by the method can be found therein
 
         @param [in] varParams is a string object (readable by json) that tells
