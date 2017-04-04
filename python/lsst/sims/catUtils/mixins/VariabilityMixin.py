@@ -177,16 +177,6 @@ class Variability(object):
             magoff[k] = splines[k](phase)
         return magoff
 
-    @register_method('applyMflare')
-    def applyMflare(self, params, expmjd):
-
-        params['lcfilename'] = "mflare/"+params['lcfilename']+".gz"
-        keymap = {'filename':'lcfilename', 't0':'t0'}
-        magoff = self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
-        for k in magoff.keys():
-            magoff[k] = -magoff[k]
-        return magoff
-
     @register_method('applyRRly')
     def applyRRly(self, params, expmjd):
 
