@@ -21,41 +21,6 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
-def makeMflareTable(size=10, **kwargs):
-    """
-    Make a test database to serve information to the flare test
-    """
-
-    rng = np.random.RandomState(110)
-
-    # a haphazard sample of mdwarf SEDs
-    sedFiles = ['m2.0Full.dat', 'm5.1Full.dat', 'm4.9Full.dat']
-
-    # a haphazard sample of mflare light curves
-    lcFiles = ['flare_lc_bin3_4.dat', 'flare_lc_bin1_4.dat', 'flare_lc_bin3_3.dat']
-
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
-    c = conn.cursor()
-    try:
-        c.execute('''CREATE TABLE mFlare
-                     (varsimobjid int, variability text, sedfilename text)''')
-        conn.commit()
-    except:
-        raise RuntimeError("Error creating database.")
-
-    for i in range(size):
-        sedFile = sedFiles[rng.randint(0, len(sedFiles))]
-        varParam = {'varMethodName': 'applyMflare',
-                    'pars': {'t0': 48000.0, 'lcfilename': lcFiles[rng.randint(0, len(lcFiles))],
-                             'dt': 0.00069444418, 'length': 1825}}
-        paramStr = json.dumps(varParam)
-
-        qstr = '''INSERT INTO mFlare VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
-        c.execute(qstr)
-    conn.commit()
-    conn.close()
-
-
 def makeRRlyTable(size=100, **kwargs):
     """
     Make a test database to serve information to the rrlyrae test
@@ -395,11 +360,6 @@ class variabilityDB(CatalogDBObject):
                ('varParamStr', 'variability', str, 600)]
 
 
-class mflareDB(variabilityDB):
-    objid = 'mflareTest'
-    tableid = 'mFlare'
-    objectTypeId = 53
-
 
 class hybridDB(variabilityDB):
     objid = 'hybridTest'
@@ -560,15 +520,6 @@ class VariabilityTest(unittest.TestCase):
         self.assertIn('testVar', StellarVariabilityCatalogWithTest._methodRegistry)
         self.assertIn('testVar', OtherVariabilityCatalogWithTest._methodRegistry)
         self.assertNotIn('testVar', StellarVariabilityCatalog._methodRegistry)
-
-    def testMflares(self):
-        makeMflareTable()
-        myDB = CatalogDBObject.from_objid('mflareTest')
-        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('mFlareTestCatalog.dat', chunk_size=1000)
-
-        if os.path.exists('mFlareTestCatalog.dat'):
-            os.unlink('mFlareTestCatalog.dat')
 
     def testRRlyrae(self):
         makeRRlyTable()
