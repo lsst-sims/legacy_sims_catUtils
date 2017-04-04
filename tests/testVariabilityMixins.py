@@ -340,7 +340,7 @@ def makeHybridTable(size=100, **kwargs):
                                  't0': 48000.0+mjDisplacement[i]}}
         else:
             varParam = {'varMethodName': 'testVar',
-                        'pars': {'period': 5.0, 'amplitude': 2.0}}
+                        'pars': {'period': rng.random_sample()*100.0, 'amplitude': 2.0}}
 
         if varParam is not None:
             paramStr = json.dumps(varParam)
