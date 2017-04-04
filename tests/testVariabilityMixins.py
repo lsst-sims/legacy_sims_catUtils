@@ -6,6 +6,7 @@ import numpy as np
 import sqlite3
 import json
 import lsst.utils.tests
+from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import CatalogDBObject
@@ -467,6 +468,8 @@ class VariabilityTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.0)
+        self.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
+                                        'tests', 'scratchSpace')
 
     def tearDown(self):
         del self.obs_metadata
@@ -478,33 +481,34 @@ class VariabilityTest(unittest.TestCase):
         the register_method and register_class decorators do not mangle inheritance of
         methods from mixins.
         """
+        cat_name = os.path.join(self.scratch_dir, 'hybridTestCatalog.dat')
         makeHybridTable()
         myDB = CatalogDBObject.from_objid('hybridTest')
         myCatalog = StellarVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
 
-        if os.path.exists('hybridTestCatalog.dat'):
-            os.unlink('hybridTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
         # make sure order of mixin inheritance does not matter
         myCatalog = OtherVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
 
-        if os.path.exists('hybridTestCatalog.dat'):
-            os.unlink('hybridTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
         # make sure that, if a catalog does not contain a variability method,
         # an error is thrown; verify that it contains the correct error message
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         with self.assertRaises(RuntimeError) as context:
-            myCatalog.write_catalog('hybridTestCatalog.dat')
+            myCatalog.write_catalog(cat_name)
 
         expectedMessage = "Your InstanceCatalog does not contain a variability method"
         expectedMessage += " corresponding to 'testVar'"
         self.assertEqual(context.exception.args[0], expectedMessage)
 
-        if os.path.exists('hybridTestCatalog.dat'):
-            os.unlink('hybridTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testInheritance(self):
         """
@@ -522,31 +526,34 @@ class VariabilityTest(unittest.TestCase):
         self.assertNotIn('testVar', StellarVariabilityCatalog._methodRegistry)
 
     def testRRlyrae(self):
+        cat_name = os.path.join(self.scratch_dir, 'rrlyTestCatalog.dat')
         makeRRlyTable()
         myDB = CatalogDBObject.from_objid('rrlyTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('rrlyTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('rrlyTestCatalog.dat'):
-            os.unlink('rrlyTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testCepheids(self):
+        cat_name = os.path.join(self.scratch_dir, 'cepheidTestCatalog.dat')
         makeCepheidTable()
         myDB = CatalogDBObject.from_objid('cepheidTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('cepheidTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('cepheidTestCatalog.dat'):
-            os.unlink('cepheidTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testEb(self):
+        cat_name = os.path.join(self.scratch_dir, 'ebTestCatalog.dat')
         makeEbTable()
         myDB = CatalogDBObject.from_objid('ebTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('ebTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('ebTestCatalog.dat'):
-            os.unlink('ebTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testMicrolensing(self):
         # Note:  this test assumes that the parameters for the microlensing variability
@@ -556,13 +563,14 @@ class VariabilityTest(unittest.TestCase):
         # The varParamStr formalism is how the applyMicrolensing methods are written, however,
         # so that is what we will test.
 
+        cat_name = os.path.join(self.scratch_dir, 'microlensTestCatalog.dat')
         makeMicrolensingTable()
         myDB = CatalogDBObject.from_objid('microlensTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('microlensTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('microlensTestCatalog.dat'):
-            os.unlink('microlensTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testBHMicrolensing(self):
         # Note:  this test assumes that the parameters for the BHmicrolensing variability
@@ -572,13 +580,14 @@ class VariabilityTest(unittest.TestCase):
         # The varParamStr formalism is how the applyBHMicrolens method is written, however,
         # so that is what we will test.
 
+        cat_name = os.path.join(self.scratch_dir, 'bhmicrolensTestCatalog.dat')
         makeBHMicrolensingTable()
         myDB = CatalogDBObject.from_objid('bhmicrolensTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('bhmicrolensTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('bhmicrolensTestCatalog.dat'):
-            os.unlink('bhmicrolensTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testAmcvn(self):
         # Note:  this test assumes that the parameters for the Amcvn variability
@@ -588,23 +597,25 @@ class VariabilityTest(unittest.TestCase):
         # The varParamStr formalism is how the applyAmcvn method is written, however,
         # so that is what we will test.
 
+        cat_name = os.path.join(self.scratch_dir, 'amcvnTestCatalog.dat')
         makeAmcvnTable()
         myDB = CatalogDBObject.from_objid('amcvnTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('amcvnTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('amcvnTestCatalog.dat'):
-            os.unlink('amcvnTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testAgn(self):
 
+        cat_name = os.path.join(self.scratch_dir, 'agnTestCatalog.dat')
         makeAgnTable()
         myDB = CatalogDBObject.from_objid('agnTest')
         myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('agnTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('agnTestCatalog.dat'):
-            os.unlink('agnTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
 
 class AgnCacheTest(unittest.TestCase):
