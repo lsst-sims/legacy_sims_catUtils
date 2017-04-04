@@ -418,14 +418,14 @@ class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, VariabilitySta
 class StellarVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars,
                                         VariabilityStars, TestVariabilityMixin):
     catalog_type = __file__ + 'testVariabilityCatalog'
-    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
+    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u', 'varParamStr']
     default_columns = [('magNorm', 14.0, float)]
 
 
 class OtherVariabilityCatalogWithTest(InstanceCatalog, PhotometryStars,
                                       TestVariabilityMixin, VariabilityStars):
     catalog_type = __file__ + 'other_variability_catalog'
-    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u']
+    column_outputs = ['varsimobjid', 'sedFilename', 'delta_lsst_u', 'varParamStr']
     default_columns = [('magNorm', 14.0, float)]
 
 
