@@ -6,6 +6,7 @@ import math
 import os
 import copy
 import json as json
+from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_class, register_method, compound
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
@@ -15,7 +16,7 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "reset_agn_lc_cache"]
 
 _AGN_LC_CACHE = {} # a global cache of agn light curve calculations
-
+_MLT_LC_CACHE = None
 
 def reset_agn_lc_cache():
     """
@@ -176,6 +177,19 @@ class Variability(object):
         for k in splines:
             magoff[k] = splines[k](phase)
         return magoff
+
+    @register_method('applyMLTflaring')
+    def applyMlTflaring(self, params, expmjd):
+        if _MLT_LC_CACHE is None:
+            cache_file = os.path.join(getPackageDir('sims_catUtils'),
+                                      'data', 'mdwarf_flare_light_curves.npz')
+
+            if not os.path.exists(cache_file):
+                raise RuntimeError("The MLT flaring light curve file:\n"
+                                    + "\n%s\n" % cache_file
+                                    + "\ndoes not exist.")
+
+            _MLT_LC_CACHE = numpy.load(cache_file)
 
     @register_method('applyRRly')
     def applyRRly(self, params, expmjd):
