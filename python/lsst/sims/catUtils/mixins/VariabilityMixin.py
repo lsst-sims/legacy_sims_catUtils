@@ -5,6 +5,7 @@ import linecache
 import math
 import os
 import copy
+import numbers
 import json as json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_class, register_method, compound
@@ -376,7 +377,7 @@ class Variability(object):
         return dMags
 
     @register_method('applyAmcvn')
-    def applyAmcvn(self, params, expmjd_in):
+    def applyAmcvn(self, valid_dexes, params, expmjd_in):
         #21 October 2014
         #This method assumes that the parameters for Amcvn variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -385,39 +386,53 @@ class Variability(object):
         #At some point, either this method or the Amcvn tables in the
         #database will need to be changed.
 
+        if not isinstance(expmjd_in, numbers.Number):
+            raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
+
         maxyears = 10.
-        dMag = {}
-        epochs = numpy.asarray(expmjd_in,dtype=float)
+        dMag = numpy.zeros((6, self.num_variable_obj()))
+        epoch = expmjd_in
+
+        amplitude = params['amplitude'].astype(float)[valid_dexes]
+        t0 = params['t0'].astype(float)[valid_dexes]
+        period = params['period'].astype(float)[valid_dexes]
+        burst_freq = params['burst_freq'].astype(float)[valid_dexes]
+        burst_scale = params['burst_scale'].astype(float)[valid_dexes]
+        amp_burst = params['amp_burst'].astype(float)[valid_dexes]
+        color_excess = params['color_excess_during_burst'].astype(float)[valid_dexes]
+        does_burst = params['does_burst'].astype(int)[valid_dexes]
+
         # get the light curve of the typical variability
-        uLc   = params['amplitude']*numpy.cos((epochs - params['t0'])/params['period'])
-        gLc   = uLc
-        rLc   = uLc
-        iLc   = uLc
-        zLc   = uLc
-        yLc   = uLc
+        uLc   = amplitude*numpy.cos((epoch - t0)/period)
+        gLc   = copy.deepcopy(uLc)
+        rLc   = copy.deepcopy(uLc)
+        iLc   = copy.deepcopy(uLc)
+        zLc   = copy.deepcopy(uLc)
+        yLc   = copy.deepcopy(uLc)
 
         # add in the flux from any bursting
-        if params['does_burst']:
-            adds = numpy.zeros(epochs.size)
-            for o in numpy.linspace(params['t0'] + params['burst_freq'],\
-                                 params['t0'] + maxyears*365.25, \
-                                 numpy.ceil(maxyears*365.25/params['burst_freq'])):
-                tmp = numpy.exp( -1*(epochs - o)/params['burst_scale'])/numpy.exp(-1.)
-                adds -= params['amp_burst']*tmp*(tmp < 1.0)  ## kill the contribution
+        local_bursting_dexes = numpy.where(does_burst==1)
+        for i_burst in local_bursting_dexes[0]:
+            adds = 0.0
+            for o in numpy.linspace(t0[i_burst] + burst_freq[i_burst],\
+                                 t0[i_burst] + maxyears*365.25, \
+                                 numpy.ceil(maxyears*365.25/burst_freq[i_burst])):
+                tmp = numpy.exp( -1*(epoch - o)/burst_scale[i_burst])/numpy.exp(-1.)
+                adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
             ## add some blue excess during the outburst
-            uLc += adds +  2.0*params['color_excess_during_burst']*adds/min(adds)
-            gLc += adds + params['color_excess_during_burst']*adds/min(adds)
-            rLc += adds + 0.5*params['color_excess_during_burst']*adds/min(adds)
-            iLc += adds
-            zLc += adds
-            yLc += adds
+            uLc[i_burst] += adds +  2.0*color_excess[i_burst]
+            gLc[i_burst] += adds + color_excess[i_burst]
+            rLc[i_burst] += adds + 0.5*color_excess[i_burst]
+            iLc[i_burst] += adds
+            zLc[i_burst] += adds
+            yLc[i_burst] += adds
 
-        dMag['u'] = uLc
-        dMag['g'] = gLc
-        dMag['r'] = rLc
-        dMag['i'] = iLc
-        dMag['z'] = zLc
-        dMag['y'] = yLc
+        dMag[0][valid_dexes] += uLc
+        dMag[1][valid_dexes] += gLc
+        dMag[2][valid_dexes] += rLc
+        dMag[3][valid_dexes] += iLc
+        dMag[4][valid_dexes] += zLc
+        dMag[5][valid_dexes] += yLc
         return dMag
 
     @register_method('applyBHMicrolens')
