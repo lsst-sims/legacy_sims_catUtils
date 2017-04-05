@@ -60,7 +60,7 @@ class Variability(object):
 
 
 
-    def applyVariability(self, varParams):
+    def applyVariability(self, varParams_arr):
         """
         varParams will be the varParamStr column from the data base
 
@@ -72,8 +72,8 @@ class Variability(object):
         it then feeds the pars array to that method, under the assumption
         that the parameters needed by the method can be found therein
 
-        @param [in] varParams is a string object (readable by json) that tells
-        us which variability model to use
+        @param [in] varParams_arr is a numpy array of strings (readable by json)
+        that tells us which variability model to use
 
         @param [out] output is a dict of magnitude offsets keyed to the filter name
         e.g. output['u'] is the magnitude offset in the u band
@@ -82,24 +82,42 @@ class Variability(object):
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
 
-        varCmd = json.loads(varParams)
+        deltaMag = numpy.zeros((6, len(varParams_arr)))
 
-        method = varCmd['varMethodName']
-        params = varCmd['pars']
+        method_name_arr = []
+        params = {}
+        for ix, varCmd in enumerate(varParams_arr):
+            varCmd = json.loads(varCmd)
+            if varCmd['varMethodName'] not in method_name_arr:
+                params[varCmd['varMethodName']] = {}
+                for p_name in varCmd['pars']:
+                    params[varCmd['varMethodName']][p_name] = [None]*len(varParams_arr)
+
+            method_name_arr.append(varCmd['varMethodName'])
+            for p_name in varCmd['pars']:
+                params[varCmd['varMethodName']][p_name][ix] = varCmd['pars'][p_name]
+
+        method_name_arr = numpy.array(method_name_arr)
+        for method_name in params:
+            for p_name in params[method_name]:
+                params[method_name][p_name] = numpy.array(params[method_name][p_name])
+
         expmjd=self.obs_metadata.mjd.TAI
-        try:
-            output = self._methodRegistry[method](self, params,expmjd)
-        except KeyError:
-            raise RuntimeError("Your InstanceCatalog does not contain " \
-                               + "a variability method corresponding to '%s'" % method)
+        for method_name in numpy.unique(method_name_arr):
+            if method_name not in self._methodRegistry:
+                raise RuntimeError("Your InstanceCatalog does not contain " \
+                                   + "a variability method corresponding to '%s'" % method_name)
+
+            deltaMag += self._methodRegistry[method_name](self,
+                                                          numpy.where(numpy.char.equal(method_name, method_name_arr)),
+                                                          params[method_name],
+                                                          expmjd)
+
+        return deltaMag
 
 
-        return output
-
-
-
-    def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
-            inDays=True, interpFactory=None):
+    def applyStdPeriodic(self, valid_dexes, params, keymap, expmjd,
+                         inDays=True, interpFactory=None):
 
         """
         Applies an a specified variability method.
@@ -122,8 +140,6 @@ class Variability(object):
 
         @param [in] expmjd is the mjd of the observation
 
-        @param [in] inPeriod is a priori period of the model
-
         @param [in] inDays controls whether or not the time grid
         of the light curve is renormalized by the period
 
@@ -134,48 +150,60 @@ class Variability(object):
 
         """
 
+        magoff = numpy.zeros((6, len(valid_dexes[0])))
         expmjd = numpy.asarray(expmjd)
-        filename = params[keymap['filename']]
-        toff = float(params[keymap['t0']])
-        epoch = expmjd - toff
-        if filename in self.variabilityLcCache:
-            splines = self.variabilityLcCache[filename]['splines']
-            period = self.variabilityLcCache[filename]['period']
-        else:
-            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename), unpack=True, comments='#')
-            if inPeriod is None:
-                dt = lc[0][1] - lc[0][0]
-                period = lc[0][-1] + dt
+        for ix in valid_dexes[0]:
+            filename = params[keymap['filename']][ix]
+            toff = params[keymap['t0']][ix]
+
+            inPeriod = None
+            if 'period' in params:
+                inPeriod = params['period'][ix]
+
+            epoch = expmjd - toff
+            if filename in self.variabilityLcCache:
+                splines = self.variabilityLcCache[filename]['splines']
+                period = self.variabilityLcCache[filename]['period']
             else:
-                period = inPeriod
+                lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename), unpack=True, comments='#')
+                if inPeriod is None:
+                    dt = lc[0][1] - lc[0][0]
+                    period = lc[0][-1] + dt
+                else:
+                    period = inPeriod
 
-            if inDays:
-                lc[0] /= period
+                if inDays:
+                    lc[0] /= period
 
-            splines  = {}
-            if interpFactory is not None:
-                splines['u'] = interpFactory(lc[0], lc[1])
-                splines['g'] = interpFactory(lc[0], lc[2])
-                splines['r'] = interpFactory(lc[0], lc[3])
-                splines['i'] = interpFactory(lc[0], lc[4])
-                splines['z'] = interpFactory(lc[0], lc[5])
-                splines['y'] = interpFactory(lc[0], lc[6])
-                if self.variabilityCache:
-                    self.variabilityLcCache[filename] = {'splines':splines, 'period':period}
-            else:
-                splines['u'] = interp1d(lc[0], lc[1])
-                splines['g'] = interp1d(lc[0], lc[2])
-                splines['r'] = interp1d(lc[0], lc[3])
-                splines['i'] = interp1d(lc[0], lc[4])
-                splines['z'] = interp1d(lc[0], lc[5])
-                splines['y'] = interp1d(lc[0], lc[6])
-                if self.variabilityCache:
-                    self.variabilityLcCache[filename] = {'splines':splines, 'period':period}
+                splines  = {}
 
-        phase = epoch/period - epoch//period
-        magoff = {}
-        for k in splines:
-            magoff[k] = splines[k](phase)
+                if interpFactory is not None:
+                    splines['u'] = interpFactory(lc[0], lc[1])
+                    splines['g'] = interpFactory(lc[0], lc[2])
+                    splines['r'] = interpFactory(lc[0], lc[3])
+                    splines['i'] = interpFactory(lc[0], lc[4])
+                    splines['z'] = interpFactory(lc[0], lc[5])
+                    splines['y'] = interpFactory(lc[0], lc[6])
+                    if self.variabilityCache:
+                        self.variabilityLcCache[filename] = {'splines':splines, 'period':period}
+                else:
+                    splines['u'] = interp1d(lc[0], lc[1])
+                    splines['g'] = interp1d(lc[0], lc[2])
+                    splines['r'] = interp1d(lc[0], lc[3])
+                    splines['i'] = interp1d(lc[0], lc[4])
+                    splines['z'] = interp1d(lc[0], lc[5])
+                    splines['y'] = interp1d(lc[0], lc[6])
+                    if self.variabilityCache:
+                        self.variabilityLcCache[filename] = {'splines':splines, 'period':period}
+
+            phase = epoch/period - epoch//period
+            magoff[0][ix] = splines['u'](phase)
+            magoff[1][ix] = splines['g'](phase)
+            magoff[2][ix] = splines['r'](phase)
+            magoff[3][ix] = splines['i'](phase)
+            magoff[4][ix] = splines['z'](phase)
+            magoff[5][ix] = splines['y'](phase)
+
         return magoff
 
     @register_method('applyMLTflaring')
@@ -192,33 +220,36 @@ class Variability(object):
             _MLT_LC_CACHE = numpy.load(cache_file)
 
     @register_method('applyRRly')
-    def applyRRly(self, params, expmjd):
+    def applyRRly(self, valid_dexes, params, expmjd):
 
         keymap = {'filename':'filename', 't0':'tStartMjd'}
-        return self.applyStdPeriodic(params, keymap, expmjd,
+        return self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyCepheid')
-    def applyCepheid(self, params, expmjd):
+    def applyCepheid(self, valid_dexes, params, expmjd):
         keymap = {'filename':'lcfile', 't0':'t0'}
-        return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
+        return self.applyStdPeriodic(valid_dexes, params, keymap, expmjd, inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyEb')
-    def applyEb(self, params, expmjd):
+    def applyEb(self, valid_dexes, params, expmjd):
         keymap = {'filename':'lcfile', 't0':'t0'}
-        dMags = self.applyStdPeriodic(params, keymap, expmjd,
-                interpFactory=InterpolatedUnivariateSpline)
-        for k in dMags.keys():
-            dMags[k] = -2.5*numpy.log10(dMags[k])
+        dMags = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
+                                      inDays=False,
+                                      interpFactory=InterpolatedUnivariateSpline)
+        if len(dMags)>0:
+            if dMags.min()<0.0:
+                raise RuntimeError("Negative delta flux in applyEb")
+        dMags = -2.5*numpy.log10(dMags)
         return dMags
 
     @register_method('applyMicrolensing')
-    def applyMicrolensing(self, params, expmjd_in):
-        return self.applyMicrolens(params,expmjd_in)
+    def applyMicrolensing(self, valid_dexes, params, expmjd_in):
+        return self.applyMicrolens(valid_dexes, params,expmjd_in)
 
     @register_method('applyMicrolens')
-    def applyMicrolens(self, params, expmjd_in):
+    def applyMicrolens(self, valid_dexes, params, expmjd_in):
         #I believe this is the correct method based on
         #http://www.physics.fsu.edu/Courses/spring98/AST3033/Micro/lensing.htm
         #
@@ -451,31 +482,7 @@ class VariabilityStars(Variability):
         """
 
         varParams = self.column_by_name('varParamStr')
-
-        output = numpy.empty((6,len(varParams)))
-
-        for ii, vv in enumerate(varParams):
-            if vv != numpy.unicode_("None") and \
-               self.obs_metadata is not None and \
-               self.obs_metadata.mjd is not None:
-
-                deltaMag = self.applyVariability(vv)
-
-                output[0][ii] = deltaMag['u']
-                output[1][ii] = deltaMag['g']
-                output[2][ii] = deltaMag['r']
-                output[3][ii] = deltaMag['i']
-                output[4][ii] = deltaMag['z']
-                output[5][ii] = deltaMag['y']
-            else:
-                output[0][ii] = 0.0
-                output[1][ii] = 0.0
-                output[2][ii] = 0.0
-                output[3][ii] = 0.0
-                output[4][ii] = 0.0
-                output[5][ii] = 0.0
-
-        return output
+        return self.applyVariability(varParams)
 
 
 class VariabilityGalaxies(Variability):
@@ -496,7 +503,6 @@ class VariabilityGalaxies(Variability):
     for which delta_columnName is defined.
     """
 
-
     @compound('delta_uAgn', 'delta_gAgn', 'delta_rAgn',
               'delta_iAgn', 'delta_zAgn', 'delta_yAgn')
     def get_galaxy_variability_total(self):
@@ -508,30 +514,4 @@ class VariabilityGalaxies(Variability):
         the baseline magnitude.
         """
         varParams = self.column_by_name("varParamStr")
-
-        output = numpy.empty((6, len(varParams)))
-
-        for ii, vv in enumerate(varParams):
-            if vv != numpy.unicode_("None") and \
-               self.obs_metadata is not None and \
-               self.obs_metadata.mjd is not None:
-
-                deltaMag = self.applyVariability(vv)
-
-                output[0][ii] = deltaMag['u']
-                output[1][ii] = deltaMag['g']
-                output[2][ii] = deltaMag['r']
-                output[3][ii] = deltaMag['i']
-                output[4][ii] = deltaMag['z']
-                output[5][ii] = deltaMag['y']
-
-            else:
-
-                output[0][ii] = 0.0
-                output[1][ii] = 0.0
-                output[2][ii] = 0.0
-                output[3][ii] = 0.0
-                output[4][ii] = 0.0
-                output[5][ii] = 0.0
-
-        return output
+        return self.applyVariability(varParams)
