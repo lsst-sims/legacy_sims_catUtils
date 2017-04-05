@@ -438,7 +438,6 @@ class Variability(object):
             toff = toff_arr[ix]
             filename = filename_arr[ix]
             epoch = expmjd - toff
-            #print('filename: ',filename)
             lc = numpy.loadtxt(os.path.join(self.variabilityDataDir, filename), unpack=True, comments='#')
             dt = lc[0][1] - lc[0][0]
             period = lc[0][-1]
