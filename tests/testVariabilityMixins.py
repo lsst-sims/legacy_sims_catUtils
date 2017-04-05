@@ -220,14 +220,14 @@ def makeAmcvnTable(size=100, **kwargs):
         raise RuntimeError("Error creating database.")
 
     rng = np.random.RandomState(32)
-    doesBurst = rng.randint(0, 1, size=size)
+    doesBurst = rng.randint(0, 2, size=size)
     burst_freq = rng.randint(10, 150, size=size)
-    burst_scale = 115
+    burst_scale = 115.0
     amp_burst = rng.random_sample(size)*8.0
     color_excess_during_burst = rng.random_sample(size)*0.2-0.4
     amplitude = rng.random_sample(size)*0.2
     period = rng.random_sample(size)*200.0
-    mjDisplacement = rng.random_sample(size)*50.0
+    mjDisplacement = rng.random_sample(size)*500.0
     for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyAmcvn',
@@ -238,7 +238,7 @@ def makeAmcvnTable(size=100, **kwargs):
                              'color_excess_during_burst': color_excess_during_burst[i],
                              'amplitude': amplitude[i],
                              'period': period[i],
-                             't0': 52000.0+mjDisplacement[i]}}
+                             't0': 51500.0+mjDisplacement[i]}}
 
         paramStr = json.dumps(varParam)
 
