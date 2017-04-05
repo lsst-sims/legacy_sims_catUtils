@@ -272,18 +272,16 @@ class Variability(object):
         #At some point, either this method or the microlensing tables in the
         #database will need to be changed.
 
+        dMags = numpy.zeros((6, self.num_variable_obj()))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
-        epochs = expmjd - params['t0']
-        dMags = {}
-        u = numpy.sqrt(params['umin']**2 + ((2.0*epochs/params['that'])**2))
+        epochs = expmjd - params['t0'][valid_dexes].astype(float)
+        umin = params['umin'].astype(float)[valid_dexes]
+        that = params['that'].astype(float)[valid_dexes]
+        u = numpy.sqrt(umin**2 + ((2.0*epochs/that)**2))
         magnification = (u**2+2.0)/(u*numpy.sqrt(u**2+4.0))
         dmag = -2.5*numpy.log10(magnification)
-        dMags['u'] = dmag
-        dMags['g'] = dmag
-        dMags['r'] = dmag
-        dMags['i'] = dmag
-        dMags['z'] = dmag
-        dMags['y'] = dmag
+        for ix in range(6):
+            dMags[ix][valid_dexes] += dmag
         return dMags
 
 
