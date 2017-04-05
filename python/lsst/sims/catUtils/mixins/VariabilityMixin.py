@@ -39,12 +39,19 @@ class Variability(object):
 
     variabilityInitialized = False
 
-    def num_variable_obj(self):
+    def num_variable_obj(self, params):
         """
         Return the total number of objects in the catalog
+
+        Parameters
+        ----------
+        params is the dict of parameter arrays passed to a variability method
+
+        Returns
+        -------
+        The number of objects in the catalog
         """
-        var_param_str = self.column_by_name('varParamStr')
-        return len(var_param_str)
+        return len(params[list(params.keys())[0]])
 
     def initializeVariability(self, doCache=False):
         """
@@ -162,7 +169,7 @@ class Variability(object):
         @param [out] magoff is a dict of magnitude offsets so that magoff['u'] is the offset in the u band
 
         """
-        magoff = numpy.zeros((6, self.num_variable_obj()))
+        magoff = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd)
         for ix in valid_dexes[0]:
             filename = params[keymap['filename']][ix]
@@ -273,7 +280,7 @@ class Variability(object):
         #At some point, either this method or the microlensing tables in the
         #database will need to be changed.
 
-        dMags = numpy.zeros((6, self.num_variable_obj()))
+        dMags = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         epochs = expmjd - params['t0'][valid_dexes].astype(float)
         umin = params['umin'].astype(float)[valid_dexes]
@@ -390,7 +397,7 @@ class Variability(object):
             raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
 
         maxyears = 10.
-        dMag = numpy.zeros((6, self.num_variable_obj()))
+        dMag = numpy.zeros((6, self.num_variable_obj(params)))
         epoch = expmjd_in
 
         amplitude = params['amplitude'].astype(float)[valid_dexes]
@@ -445,7 +452,7 @@ class Variability(object):
         #At some point, either this method or the BHMicrolensing tables in the
         #database will need to be changed.
 
-        magoff = numpy.zeros((6, self.num_variable_obj()))
+        magoff = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename_arr = params['filename']
         toff_arr = params['t0'].astype(float)
