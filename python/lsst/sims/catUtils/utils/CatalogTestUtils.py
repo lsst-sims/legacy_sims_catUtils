@@ -193,12 +193,18 @@ class TestVariabilityMixin(Variability):
     This is a mixin which provides a dummy variability method for use in unit tests
     """
     @register_method('testVar')
-    def applySineVar(self, varParams, expmjd):
-        period = varParams['period']
-        amplitude = varParams['amplitude']
+    def applySineVar(self, valid_dexes, varParams, expmjd):
+        period = varParams['period'][valid_dexes]
+        amplitude = varParams['amplitude'][valid_dexes]
         phase = expmjd%period
-        magoff = amplitude*numpy.sin(2*numpy.pi*phase)
-        return {'u':magoff, 'g':magoff, 'r':magoff, 'i':magoff, 'z':magoff, 'y':magoff}
+        numobj = len(varParams[list(varParams.keys())[0]])
+        magoff = numpy.zeros((6,numobj))
+        delta = amplitude*numpy.sin(2*numpy.pi*phase.astype(float))
+        delta = delta.astype(float)
+        for ix in range(6):
+            magoff[ix][valid_dexes] += delta
+        return magoff
+
 
 class testDefaults(object):
     """
