@@ -238,7 +238,7 @@ def makeAmcvnTable(size=100, **kwargs):
                              'color_excess_during_burst': color_excess_during_burst[i],
                              'amplitude': amplitude[i],
                              'period': period[i],
-                             't0': 51500.0+mjDisplacement[i]}}
+                             't0': 51500.0-mjDisplacement[i]}}
 
         paramStr = json.dumps(varParam)
 
