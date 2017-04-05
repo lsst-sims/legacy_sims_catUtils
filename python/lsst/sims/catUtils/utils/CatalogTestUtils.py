@@ -197,8 +197,7 @@ class TestVariabilityMixin(Variability):
         period = varParams['period'][valid_dexes]
         amplitude = varParams['amplitude'][valid_dexes]
         phase = expmjd%period
-        numobj = len(varParams[list(varParams.keys())[0]])
-        magoff = numpy.zeros((6,numobj))
+        magoff = numpy.zeros((6, self.num_variable_obj()))
         delta = amplitude*numpy.sin(2*numpy.pi*phase.astype(float))
         delta = delta.astype(float)
         for ix in range(6):

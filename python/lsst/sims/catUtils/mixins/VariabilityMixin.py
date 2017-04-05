@@ -38,6 +38,13 @@ class Variability(object):
 
     variabilityInitialized = False
 
+    def num_variable_obj(self):
+        """
+        Return the total number of objects in the catalog
+        """
+        var_param_str = self.column_by_name('varParamStr')
+        return len(var_param_str)
+
     def initializeVariability(self, doCache=False):
         """
         It will only be called from applyVariability, and only
@@ -154,8 +161,7 @@ class Variability(object):
         @param [out] magoff is a dict of magnitude offsets so that magoff['u'] is the offset in the u band
 
         """
-        num_obj = len(params[list(params.keys())[0]])
-        magoff = numpy.zeros((6, num_obj))
+        magoff = numpy.zeros((6, self.num_variable_obj()))
         expmjd = numpy.asarray(expmjd)
         for ix in valid_dexes[0]:
             filename = params[keymap['filename']][ix]
