@@ -674,10 +674,9 @@ class AgnCacheTest(unittest.TestCase):
         """
 
         rng = np.random.RandomState(8374)
-
+        nn = 5
         var = Variability()
 
-        nn = 5
         seed_list = rng.random_integers(0, 20000, nn)
         toff_list = rng.random_sample(nn)*10000.0+40000.0
         sfz_list = rng.random_sample(nn)*2.0
@@ -690,11 +689,11 @@ class AgnCacheTest(unittest.TestCase):
 
         param_list = []
         for ix in range(nn):
-            params = {'agn_sfu': sfu_list[ix], 'agn_sfg': sfg_list[ix],
-                      'agn_sfr': sfr_list[ix], 'agn_sfi': sfi_list[ix],
-                      'agn_sfz': sfz_list[ix], 'agn_sfy': sfy_list[ix],
-                      't0_mjd': toff_list[ix], 'agn_tau': tau_list[ix],
-                      'seed': seed_list[ix]}
+            params = {'agn_sfu': np.array([sfu_list[ix]]), 'agn_sfg': np.array([sfg_list[ix]]),
+                      'agn_sfr': np.array([sfr_list[ix]]), 'agn_sfi': np.array([sfi_list[ix]]),
+                      'agn_sfz': np.array([sfz_list[ix]]), 'agn_sfy': np.array([sfy_list[ix]]),
+                      't0_mjd': np.array([toff_list[ix]]), 'agn_tau': np.array([tau_list[ix]]),
+                      'seed': np.array([seed_list[ix]])}
             param_list.append(params)
 
         mjd_list = rng.random_sample(100)*10000.0+50000.0
@@ -704,17 +703,17 @@ class AgnCacheTest(unittest.TestCase):
 
         for mjd in mjd_list:
             for pp in param_list:
-                dd = var.applyAgn(pp, mjd)
-                for kk in dd:
-                    caching_output.append(dd[kk])
+                dd = var.applyAgn(np.where(np.array([True])), pp, mjd)
+                for ix in range(6):
+                    caching_output.append(dd[ix])
 
         uncached_output = []
         for mjd in mjd_list:
             for pp in param_list:
                 reset_agn_lc_cache()
-                dd = var.applyAgn(pp, mjd)
-                for kk in dd:
-                    uncached_output.append(dd[kk])
+                dd = var.applyAgn(np.where(np.array([True])), pp, mjd)
+                for ix in range(6):
+                    uncached_output.append(dd[ix])
 
         np.testing.assert_array_almost_equal(np.array(caching_output), np.array(uncached_output), decimal=10)
 
