@@ -87,7 +87,11 @@ class Variability(object):
         method_name_arr = []
         params = {}
         for ix, varCmd in enumerate(varParams_arr):
-            varCmd = json.loads(varCmd)
+            if str(varCmd) != 'None':
+                varCmd = json.loads(varCmd)
+            else:
+                varCmd = {'varMethodName': 'None', 'pars':{}}
+
             if varCmd['varMethodName'] not in method_name_arr:
                 params[varCmd['varMethodName']] = {}
                 for p_name in varCmd['pars']:
@@ -104,14 +108,15 @@ class Variability(object):
 
         expmjd=self.obs_metadata.mjd.TAI
         for method_name in numpy.unique(method_name_arr):
-            if method_name not in self._methodRegistry:
-                raise RuntimeError("Your InstanceCatalog does not contain " \
-                                   + "a variability method corresponding to '%s'" % method_name)
+            if method_name != 'None':
+                if method_name not in self._methodRegistry:
+                    raise RuntimeError("Your InstanceCatalog does not contain " \
+                                       + "a variability method corresponding to '%s'" % method_name)
 
-            deltaMag += self._methodRegistry[method_name](self,
-                                                          numpy.where(numpy.char.equal(method_name, method_name_arr)),
-                                                          params[method_name],
-                                                          expmjd)
+                deltaMag += self._methodRegistry[method_name](self,
+                                                              numpy.where(numpy.char.equal(method_name, method_name_arr)),
+                                                              params[method_name],
+                                                              expmjd)
 
         return deltaMag
 
@@ -149,8 +154,8 @@ class Variability(object):
         @param [out] magoff is a dict of magnitude offsets so that magoff['u'] is the offset in the u band
 
         """
-
-        magoff = numpy.zeros((6, len(valid_dexes[0])))
+        num_obj = len(params[list(params.keys())[0]])
+        magoff = numpy.zeros((6, num_obj))
         expmjd = numpy.asarray(expmjd)
         for ix in valid_dexes[0]:
             filename = params[keymap['filename']][ix]
