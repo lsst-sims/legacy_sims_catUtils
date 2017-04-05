@@ -421,7 +421,7 @@ class Variability(object):
         return dMag
 
     @register_method('applyBHMicrolens')
-    def applyBHMicrolens(self, params, expmjd_in):
+    def applyBHMicrolens(self, valid_dexes, params, expmjd_in):
         #21 October 2014
         #This method assumes that the parameters for BHMicrolensing variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -430,35 +430,30 @@ class Variability(object):
         #At some point, either this method or the BHMicrolensing tables in the
         #database will need to be changed.
 
+        magoff = numpy.zeros((6, self.num_variable_obj()))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
-        filename = params['filename']
-        toff = float(params['t0'])
-        epoch = expmjd - toff
-        lc = numpy.loadtxt(self.variabilityDataDir+"/"+filename, unpack=True, comments='#')
-        dt = lc[0][1] - lc[0][0]
-        period = lc[0][-1]
-        #BH lightcurves are in years
-        lc[0] *= 365.
-        minage = lc[0][0]
-        maxage = lc[0][-1]
-        #I'm assuming that these are all single point sources lensed by a
-        #black hole.  These also can be used to simulate binary systems.
-        #Should be 8kpc away at least.
-        splines  = {}
-        magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
+        filename_arr = params['filename']
+        toff_arr = params['t0'].astype(float)
+        for ix in valid_dexes[0]:
+            toff = toff_arr[ix]
+            filename = filename_arr[ix]
+            epoch = expmjd - toff
+            #print('filename: ',filename)
+            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir, filename), unpack=True, comments='#')
+            dt = lc[0][1] - lc[0][0]
+            period = lc[0][-1]
+            #BH lightcurves are in years
+            lc[0] *= 365.
+            minage = lc[0][0]
+            maxage = lc[0][-1]
+            #I'm assuming that these are all single point sources lensed by a
+            #black hole.  These also can be used to simulate binary systems.
+            #Should be 8kpc away at least.
+            magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
+            moff = -2.5*numpy.log(magnification(epoch))
+            for ii in range(6):
+                magoff[ii][ix] = moff
 
-        magoff = {}
-        moff = []
-        if expmjd.size == 1:
-            epoch = [epoch]
-        for ep in epoch:
-            if ep < minage or ep > maxage:
-                moff.append(1.)
-            else:
-                moff.append(magnification(ep))
-        moff = numpy.asarray(moff)
-        for k in ['u','g','r','i','z','y']:
-            magoff[k] = -2.5*numpy.log(moff)
         return magoff
 
 
