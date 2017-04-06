@@ -496,8 +496,6 @@ class MLTflaringMixin(Variability):
         return dMags
 
 
-
-
 class ExtraGalacticVariabilityModels(Variability):
 
     @register_method('applyAgn')
