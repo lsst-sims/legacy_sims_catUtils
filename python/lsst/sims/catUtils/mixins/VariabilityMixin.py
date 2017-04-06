@@ -58,7 +58,11 @@ class Variability(object):
         -------
         The number of objects in the catalog
         """
-        return len(params[list(params.keys())[0]])
+        params_keys = list(params.keys())
+        if len(params_keys) == 0:
+            return 0
+
+        return len(params[params_keys[0]])
 
     def initializeVariability(self, doCache=False):
         """
@@ -113,6 +117,10 @@ class Variability(object):
             self.initializeVariability(doCache=True)
 
         deltaMag = numpy.zeros((6, len(varParams_arr)))
+
+        if len(varParams_arr) == 0:
+            for method_name in self._methodRegistry:
+                self._methodRegistry[method_name]([],{},0)
 
         method_name_arr = []
         params = {}
@@ -245,73 +253,11 @@ class Variability(object):
 
 class StellarVariabilityModels(Variability):
 
-    @register_method('applyMLTflaring')
-    def applyMlTflaring(self, valid_dexes, params, expmjd):
-
-        global _MLT_LC_CACHE
-
-        if not hasattr(self, 'photParams'):
-            raise RuntimeError("To apply MLT dwarf flaring, your "
-                               "InstanceCatalog must have a member variable "
-                               "photParams which is an instantiation of the "
-                               "class PhotometricParameters, which can be "
-                               "imported from lsst.sims.photUtils. "
-                               "This is so that your InstanceCatalog has "
-                               "knowledge of the effective area of the LSST "
-                               "mirror.")
-
-        if _MLT_LC_CACHE is None:
-
-            if not os.path.exists(self._mlt_lc_file):
-                raise RuntimeError("The MLT flaring light curve file:\n"
-                                    + "\n%s\n" % self._mlt_lc_file
-                                    + "\ndoes not exist.")
-
-            _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
-
-        # get the distance to each star in parsecs
-        _au_to_parsec = 1.0/206265.0
-        dd = _au_to_parsec/self.column_by_name('parallax')
-
-        # get the area of the sphere through which the star's energy
-        # is radiating to get to us (in cm^2)
-        _cm_per_parsec = 3.08576e16
-        sphere_area = 4.0*numpy.pi*numpy.power(dd*_cm_per_parsec, 2)
-
-        flux_factor = self.photPrams.effarea/spher_area
-
-        dMags = numpy.zeros((6, self.num_variable_obj()))
-        mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
-        base_fluxes = {}
-        base_mags = {}
-        ss = Sed()
-        for mag_name in mag_name_tuple:
-            if ('lsst_%s' % mag_name in self._actually_calculated_columns or
-                'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
-
-                mm = self.column_by_name('lsst_%s' % mag_name)
-                base_mags[mag_name] = mm
-                base_fluxes[mag_name] = ss.fluxFromMag(mm)
-
-        for i_obj in valid_dexes[0]:
-            lc_name = params['lc'][i_obj].replace('.txt','')
-            time_arr = _MLT_LC_CACHE['%s_time' % lc_name] - params['t0'][i_obj]
-            t_interp = self.obs_metadata.mjd.TAI - self._survey_start
-
-            while t_interp > time_arr.max():
-                t_interp -= (time_arr.max()-time_arr.min())
-
-            for i_mag, mag_name in enumerate(mag_name_tuple):
-                if 'delta_lsst_%s' % mag_name in self._actually_calculated_columns:
-                    flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
-                    dflux = numpy.interp(t_interp, time_arr, flux_arr)
-                    dflux *= flux_factor[i_obj]
-                    dMags[i_mag][i_obj] = ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
-
-        return dMags
-
     @register_method('applyRRly')
     def applyRRly(self, valid_dexes, params, expmjd):
+
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
 
         keymap = {'filename':'filename', 't0':'tStartMjd'}
         return self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
@@ -319,12 +265,20 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyCepheid')
     def applyCepheid(self, valid_dexes, params, expmjd):
+
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(valid_dexes, params, keymap, expmjd, inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyEb')
     def applyEb(self, valid_dexes, params, expmjd):
+
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
         keymap = {'filename':'lcfile', 't0':'t0'}
         dMags = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
                                       inDays=False,
@@ -352,6 +306,9 @@ class StellarVariabilityModels(Variability):
         #At some point, either this method or the microlensing tables in the
         #database will need to be changed.
 
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
         dMags = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         epochs = expmjd - params['t0'][valid_dexes].astype(float)
@@ -377,6 +334,9 @@ class StellarVariabilityModels(Variability):
 
         if not isinstance(expmjd_in, numbers.Number):
             raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
+
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
 
         maxyears = 10.
         dMag = numpy.zeros((6, self.num_variable_obj(params)))
@@ -434,6 +394,9 @@ class StellarVariabilityModels(Variability):
         #At some point, either this method or the BHMicrolensing tables in the
         #database will need to be changed.
 
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
         magoff = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename_arr = params['filename']
@@ -460,6 +423,80 @@ class StellarVariabilityModels(Variability):
         return magoff
 
 
+class MLTflaringMixin(Variability):
+
+    @register_method('applyMLTflaring')
+    def applyMlTflaring(self, valid_dexes, params, expmjd):
+
+        parallax = self.column_by_name('parallax')
+
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
+        global _MLT_LC_CACHE
+
+        if not hasattr(self, 'photParams'):
+            raise RuntimeError("To apply MLT dwarf flaring, your "
+                               "InstanceCatalog must have a member variable "
+                               "photParams which is an instantiation of the "
+                               "class PhotometricParameters, which can be "
+                               "imported from lsst.sims.photUtils. "
+                               "This is so that your InstanceCatalog has "
+                               "knowledge of the effective area of the LSST "
+                               "mirror.")
+
+        if _MLT_LC_CACHE is None:
+
+            if not os.path.exists(self._mlt_lc_file):
+                raise RuntimeError("The MLT flaring light curve file:\n"
+                                    + "\n%s\n" % self._mlt_lc_file
+                                    + "\ndoes not exist.")
+
+            _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
+
+        # get the distance to each star in parsecs
+        _au_to_parsec = 1.0/206265.0
+        dd = _au_to_parsec/parallax
+
+        # get the area of the sphere through which the star's energy
+        # is radiating to get to us (in cm^2)
+        _cm_per_parsec = 3.08576e16
+        sphere_area = 4.0*numpy.pi*numpy.power(dd*_cm_per_parsec, 2)
+
+        flux_factor = self.photPrams.effarea/spher_area
+
+        dMags = numpy.zeros((6, self.num_variable_obj()))
+        mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
+        base_fluxes = {}
+        base_mags = {}
+        ss = Sed()
+        for mag_name in mag_name_tuple:
+            if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                mm = self.column_by_name('lsst_%s' % mag_name)
+                base_mags[mag_name] = mm
+                base_fluxes[mag_name] = ss.fluxFromMag(mm)
+
+        for i_obj in valid_dexes[0]:
+            lc_name = params['lc'][i_obj].replace('.txt','')
+            time_arr = _MLT_LC_CACHE['%s_time' % lc_name] - params['t0'][i_obj]
+            t_interp = self.obs_metadata.mjd.TAI - self._survey_start
+
+            while t_interp > time_arr.max():
+                t_interp -= (time_arr.max()-time_arr.min())
+
+            for i_mag, mag_name in enumerate(mag_name_tuple):
+                if 'delta_lsst_%s' % mag_name in self._actually_calculated_columns:
+                    flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
+                    dflux = numpy.interp(t_interp, time_arr, flux_arr)
+                    dflux *= flux_factor[i_obj]
+                    dMags[i_mag][i_obj] = ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
+
+        return dMags
+
+
+
 
 class ExtraGalacticVariabilityModels(Variability):
 
@@ -467,6 +504,9 @@ class ExtraGalacticVariabilityModels(Variability):
     def applyAgn(self, valid_dexes, params, expmjd):
 
         global _AGN_LC_CACHE
+
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
 
         dMags = numpy.zeros((6, self.num_variable_obj(params)))
         toff_arr = params['t0_mjd'].astype(float)

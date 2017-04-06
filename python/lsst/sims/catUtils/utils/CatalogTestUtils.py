@@ -194,6 +194,10 @@ class TestVariabilityMixin(Variability):
     """
     @register_method('testVar')
     def applySineVar(self, valid_dexes, varParams, expmjd):
+
+        if len(varParams) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
         period = varParams['period'][valid_dexes]
         amplitude = varParams['amplitude'][valid_dexes]
         phase = expmjd%period
