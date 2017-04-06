@@ -237,6 +237,8 @@ class Variability(object):
     @register_method('applyMLTflaring')
     def applyMlTflaring(self, valid_dexes, params, expmjd):
 
+        global _MLT_LC_CACHE
+
         if not hasattr(self, 'photParams'):
             raise RuntimeError("To apply MLT dwarf flaring, your "
                                "InstanceCatalog must have a member variable "
