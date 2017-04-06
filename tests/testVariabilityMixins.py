@@ -13,6 +13,7 @@ from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
+from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 
 from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
@@ -543,21 +544,6 @@ class VariabilityTest(unittest.TestCase):
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
-    def testInheritance(self):
-        """
-        Directly test the contents of the _methodRegistrys for
-        StellarVariabilityCatalog and StellarVariabilityCatalogWithTest
-        to make sure that method inheritance was handled correctly
-        """
-
-        for m1 in StellarVariabilityCatalog._methodRegistry:
-            self.assertIn(m1, StellarVariabilityCatalogWithTest._methodRegistry)
-            self.assertIn(m1, OtherVariabilityCatalogWithTest._methodRegistry)
-
-        self.assertIn('testVar', StellarVariabilityCatalogWithTest._methodRegistry)
-        self.assertIn('testVar', OtherVariabilityCatalogWithTest._methodRegistry)
-        self.assertNotIn('testVar', StellarVariabilityCatalog._methodRegistry)
-
     def testRRlyrae(self):
         cat_name = os.path.join(self.scratch_dir, 'rrlyTestCatalog.dat')
         makeRRlyTable()
@@ -675,7 +661,7 @@ class AgnCacheTest(unittest.TestCase):
 
         rng = np.random.RandomState(8374)
         nn = 5
-        var = Variability()
+        var = ExtraGalacticVariabilityModels()
 
         seed_list = rng.random_integers(0, 20000, nn)
         toff_list = rng.random_sample(nn)*10000.0+40000.0

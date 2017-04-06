@@ -11,6 +11,7 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import (PhoSimCatalogSersic2D,
                                                           PhoSimCatalogZPoint)
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
+from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 
@@ -24,7 +25,8 @@ class PhoSimPointVariable(PhoSimCatalogPoint, VariabilityStars, TestVariabilityM
     pass
 
 
-class PhoSimZPointVariable(PhoSimCatalogZPoint, VariabilityStars, TestVariabilityMixin):
+class PhoSimZPointVariable(PhoSimCatalogZPoint, VariabilityStars,
+                           ExtraGalacticVariabilityModels,TestVariabilityMixin):
     catalog_type = __file__ + 'pho_sim_z_point_variable'
     pass
 

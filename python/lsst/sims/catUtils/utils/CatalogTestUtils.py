@@ -12,7 +12,7 @@ import sqlite3
 import json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catalogs.decorators import register_method, register_class, compound
+from lsst.sims.catalogs.decorators import register_method, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
 from lsst.sims.photUtils import BandpassDict, SedList
@@ -187,7 +187,7 @@ def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
     conn.commit()
     conn.close()
 
-@register_class
+
 class TestVariabilityMixin(Variability):
     """
     This is a mixin which provides a dummy variability method for use in unit tests

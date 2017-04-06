@@ -8,14 +8,15 @@ import copy
 import numbers
 import json as json
 from lsst.utils import getPackageDir
-from lsst.sims.catalogs.decorators import register_class, register_method, compound
+from lsst.sims.catalogs.decorators import register_method, compound
 from lsst.sims.photUtils import Sed
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
-           "reset_agn_lc_cache"]
+           "reset_agn_lc_cache", "StellarVariabilityModels",
+           "ExtraGalacticVariabilityModels"]
 
 _AGN_LC_CACHE = {} # a global cache of agn light curve calculations
 _MLT_LC_CACHE = None
@@ -30,7 +31,6 @@ def reset_agn_lc_cache():
     return None
 
 
-@register_class
 class Variability(object):
     """
     Variability class for adding temporal variation to the magnitudes of
@@ -101,6 +101,14 @@ class Variability(object):
         e.g. output['u'] is the magnitude offset in the u band
 
         """
+        if not hasattr(self, '_methodRegistry'):
+            self._methodRegistry = {}
+            for methodname in dir(self):
+                method=getattr(self, methodname)
+                if hasattr(method, '_registryKey'):
+                    if method._registryKey not in self._methodRegistry:
+                        self._methodRegistry[method._registryKey] = method
+
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
 
@@ -135,10 +143,10 @@ class Variability(object):
                     expmjd = self.obs_metadata.mjd.TAI
                 if method_name not in self._methodRegistry:
                     raise RuntimeError("Your InstanceCatalog does not contain " \
-                                       + "a variability method corresponding to '%s'" % method_name)
+                                       + "a variability method corresponding to '%s'"
+                                       % method_name)
 
-                deltaMag += self._methodRegistry[method_name](self,
-                                                              numpy.where(numpy.char.equal(method_name, method_name_arr)),
+                deltaMag += self._methodRegistry[method_name](numpy.where(numpy.char.equal(method_name, method_name_arr)),
                                                               params[method_name],
                                                               expmjd)
 
@@ -233,6 +241,9 @@ class Variability(object):
             magoff[5][ix] = splines['y'](phase)
 
         return magoff
+
+
+class StellarVariabilityModels(Variability):
 
     @register_method('applyMLTflaring')
     def applyMlTflaring(self, valid_dexes, params, expmjd):
@@ -354,6 +365,104 @@ class Variability(object):
         return dMags
 
 
+    @register_method('applyAmcvn')
+    def applyAmcvn(self, valid_dexes, params, expmjd_in):
+        #21 October 2014
+        #This method assumes that the parameters for Amcvn variability
+        #are stored in a varParamStr column in the database.  Actually, the
+        #current Amcvn event tables in the database store each
+        #variability parameter as its own database column.
+        #At some point, either this method or the Amcvn tables in the
+        #database will need to be changed.
+
+        if not isinstance(expmjd_in, numbers.Number):
+            raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
+
+        maxyears = 10.
+        dMag = numpy.zeros((6, self.num_variable_obj(params)))
+        epoch = expmjd_in
+
+        amplitude = params['amplitude'].astype(float)[valid_dexes]
+        t0 = params['t0'].astype(float)[valid_dexes]
+        period = params['period'].astype(float)[valid_dexes]
+        burst_freq = params['burst_freq'].astype(float)[valid_dexes]
+        burst_scale = params['burst_scale'].astype(float)[valid_dexes]
+        amp_burst = params['amp_burst'].astype(float)[valid_dexes]
+        color_excess = params['color_excess_during_burst'].astype(float)[valid_dexes]
+        does_burst = params['does_burst'][valid_dexes]
+
+        # get the light curve of the typical variability
+        uLc   = amplitude*numpy.cos((epoch - t0)/period)
+        gLc   = copy.deepcopy(uLc)
+        rLc   = copy.deepcopy(uLc)
+        iLc   = copy.deepcopy(uLc)
+        zLc   = copy.deepcopy(uLc)
+        yLc   = copy.deepcopy(uLc)
+
+        # add in the flux from any bursting
+        local_bursting_dexes = numpy.where(does_burst==1)
+        for i_burst in local_bursting_dexes[0]:
+            adds = 0.0
+            for o in numpy.linspace(t0[i_burst] + burst_freq[i_burst],\
+                                 t0[i_burst] + maxyears*365.25, \
+                                 numpy.ceil(maxyears*365.25/burst_freq[i_burst])):
+                tmp = numpy.exp( -1*(epoch - o)/burst_scale[i_burst])/numpy.exp(-1.)
+                adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
+            ## add some blue excess during the outburst
+            uLc[i_burst] += adds +  2.0*color_excess[i_burst]
+            gLc[i_burst] += adds + color_excess[i_burst]
+            rLc[i_burst] += adds + 0.5*color_excess[i_burst]
+            iLc[i_burst] += adds
+            zLc[i_burst] += adds
+            yLc[i_burst] += adds
+
+        dMag[0][valid_dexes] += uLc
+        dMag[1][valid_dexes] += gLc
+        dMag[2][valid_dexes] += rLc
+        dMag[3][valid_dexes] += iLc
+        dMag[4][valid_dexes] += zLc
+        dMag[5][valid_dexes] += yLc
+        return dMag
+
+    @register_method('applyBHMicrolens')
+    def applyBHMicrolens(self, valid_dexes, params, expmjd_in):
+        #21 October 2014
+        #This method assumes that the parameters for BHMicrolensing variability
+        #are stored in a varParamStr column in the database.  Actually, the
+        #current BHMicrolensing event tables in the database store each
+        #variability parameter as its own database column.
+        #At some point, either this method or the BHMicrolensing tables in the
+        #database will need to be changed.
+
+        magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        expmjd = numpy.asarray(expmjd_in,dtype=float)
+        filename_arr = params['filename']
+        toff_arr = params['t0'].astype(float)
+        for ix in valid_dexes[0]:
+            toff = toff_arr[ix]
+            filename = filename_arr[ix]
+            epoch = expmjd - toff
+            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir, filename), unpack=True, comments='#')
+            dt = lc[0][1] - lc[0][0]
+            period = lc[0][-1]
+            #BH lightcurves are in years
+            lc[0] *= 365.
+            minage = lc[0][0]
+            maxage = lc[0][-1]
+            #I'm assuming that these are all single point sources lensed by a
+            #black hole.  These also can be used to simulate binary systems.
+            #Should be 8kpc away at least.
+            magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
+            moff = -2.5*numpy.log(magnification(epoch))
+            for ii in range(6):
+                magoff[ii][ix] = moff
+
+        return magoff
+
+
+
+class ExtraGalacticVariabilityModels(Variability):
+
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd):
 
@@ -456,103 +565,8 @@ class Variability(object):
 
         return dMags
 
-    @register_method('applyAmcvn')
-    def applyAmcvn(self, valid_dexes, params, expmjd_in):
-        #21 October 2014
-        #This method assumes that the parameters for Amcvn variability
-        #are stored in a varParamStr column in the database.  Actually, the
-        #current Amcvn event tables in the database store each
-        #variability parameter as its own database column.
-        #At some point, either this method or the Amcvn tables in the
-        #database will need to be changed.
 
-        if not isinstance(expmjd_in, numbers.Number):
-            raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
-
-        maxyears = 10.
-        dMag = numpy.zeros((6, self.num_variable_obj(params)))
-        epoch = expmjd_in
-
-        amplitude = params['amplitude'].astype(float)[valid_dexes]
-        t0 = params['t0'].astype(float)[valid_dexes]
-        period = params['period'].astype(float)[valid_dexes]
-        burst_freq = params['burst_freq'].astype(float)[valid_dexes]
-        burst_scale = params['burst_scale'].astype(float)[valid_dexes]
-        amp_burst = params['amp_burst'].astype(float)[valid_dexes]
-        color_excess = params['color_excess_during_burst'].astype(float)[valid_dexes]
-        does_burst = params['does_burst'][valid_dexes]
-
-        # get the light curve of the typical variability
-        uLc   = amplitude*numpy.cos((epoch - t0)/period)
-        gLc   = copy.deepcopy(uLc)
-        rLc   = copy.deepcopy(uLc)
-        iLc   = copy.deepcopy(uLc)
-        zLc   = copy.deepcopy(uLc)
-        yLc   = copy.deepcopy(uLc)
-
-        # add in the flux from any bursting
-        local_bursting_dexes = numpy.where(does_burst==1)
-        for i_burst in local_bursting_dexes[0]:
-            adds = 0.0
-            for o in numpy.linspace(t0[i_burst] + burst_freq[i_burst],\
-                                 t0[i_burst] + maxyears*365.25, \
-                                 numpy.ceil(maxyears*365.25/burst_freq[i_burst])):
-                tmp = numpy.exp( -1*(epoch - o)/burst_scale[i_burst])/numpy.exp(-1.)
-                adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
-            ## add some blue excess during the outburst
-            uLc[i_burst] += adds +  2.0*color_excess[i_burst]
-            gLc[i_burst] += adds + color_excess[i_burst]
-            rLc[i_burst] += adds + 0.5*color_excess[i_burst]
-            iLc[i_burst] += adds
-            zLc[i_burst] += adds
-            yLc[i_burst] += adds
-
-        dMag[0][valid_dexes] += uLc
-        dMag[1][valid_dexes] += gLc
-        dMag[2][valid_dexes] += rLc
-        dMag[3][valid_dexes] += iLc
-        dMag[4][valid_dexes] += zLc
-        dMag[5][valid_dexes] += yLc
-        return dMag
-
-    @register_method('applyBHMicrolens')
-    def applyBHMicrolens(self, valid_dexes, params, expmjd_in):
-        #21 October 2014
-        #This method assumes that the parameters for BHMicrolensing variability
-        #are stored in a varParamStr column in the database.  Actually, the
-        #current BHMicrolensing event tables in the database store each
-        #variability parameter as its own database column.
-        #At some point, either this method or the BHMicrolensing tables in the
-        #database will need to be changed.
-
-        magoff = numpy.zeros((6, self.num_variable_obj(params)))
-        expmjd = numpy.asarray(expmjd_in,dtype=float)
-        filename_arr = params['filename']
-        toff_arr = params['t0'].astype(float)
-        for ix in valid_dexes[0]:
-            toff = toff_arr[ix]
-            filename = filename_arr[ix]
-            epoch = expmjd - toff
-            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir, filename), unpack=True, comments='#')
-            dt = lc[0][1] - lc[0][0]
-            period = lc[0][-1]
-            #BH lightcurves are in years
-            lc[0] *= 365.
-            minage = lc[0][0]
-            maxage = lc[0][-1]
-            #I'm assuming that these are all single point sources lensed by a
-            #black hole.  These also can be used to simulate binary systems.
-            #Should be 8kpc away at least.
-            magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
-            moff = -2.5*numpy.log(magnification(epoch))
-            for ii in range(6):
-                magoff[ii][ix] = moff
-
-        return magoff
-
-
-
-class VariabilityStars(Variability):
+class VariabilityStars(StellarVariabilityModels):
     """
     This is a mixin which wraps the methods from the class Variability
     into getters for InstanceCatalogs (specifically, InstanceCatalogs
@@ -583,7 +597,7 @@ class VariabilityStars(Variability):
         return self.applyVariability(varParams)
 
 
-class VariabilityGalaxies(Variability):
+class VariabilityGalaxies(ExtraGalacticVariabilityModels):
     """
     This is a mixin which wraps the methods from the class Variability
     into getters for InstanceCatalogs (specifically, InstanceCatalogs
