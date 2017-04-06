@@ -6,6 +6,7 @@ import lsst.utils.tests
 import numpy as np
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+from lsst.sims.utils import ObservationMetaData
 
 from lsst.sims.photUtils import CosmologyObject
 
@@ -69,6 +70,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         del cls.dbSize
 
     def setUp(self):
+        self.obs = ObservationMetaData(mjd=59580.0)
         self.catName = 'cosmologyCatalog.txt'
         if os.path.exists(self.catName):
             os.unlink(self.catName)
@@ -83,7 +85,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         Does a catalog get written?
         """
         dbObj = myTestGals(database=self.dbName)
-        cat = cosmologicalGalaxyCatalog(dbObj)
+        cat = cosmologicalGalaxyCatalog(dbObj, obs_metadata=self.obs)
         cat.write_catalog(self.catName)
 
     def testCatalogDistanceModulus(self):
@@ -91,8 +93,8 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         Does cosmologicalDistanceModulus get properly applied
         """
         dbObj = myTestGals(database=self.dbName)
-        cosmoCat = cosmologicalGalaxyCatalog(dbObj)
-        controlCat = absoluteGalaxyCatalog(dbObj)
+        cosmoCat = cosmologicalGalaxyCatalog(dbObj, obs_metadata=self.obs)
+        controlCat = absoluteGalaxyCatalog(dbObj, obs_metadata=self.obs)
         cosmoIter = cosmoCat.iter_catalog(chunk_size=self.dbSize)
         controlIter = controlCat.iter_catalog(chunk_size=self.dbSize)
 
