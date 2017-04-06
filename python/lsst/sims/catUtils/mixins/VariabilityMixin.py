@@ -302,7 +302,7 @@ class Variability(object):
 
         dMags = numpy.zeros((6, self.num_variable_obj(params)))
         toff_arr = params['t0_mjd'].astype(float)
-        seed_arr = params['seed'].astype(int)
+        seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
         sfu_arr = params['agn_sfu'].astype(float)
         sfg_arr = params['agn_sfg'].astype(float)
@@ -421,7 +421,7 @@ class Variability(object):
         burst_scale = params['burst_scale'].astype(float)[valid_dexes]
         amp_burst = params['amp_burst'].astype(float)[valid_dexes]
         color_excess = params['color_excess_during_burst'].astype(float)[valid_dexes]
-        does_burst = params['does_burst'].astype(int)[valid_dexes]
+        does_burst = params['does_burst'][valid_dexes]
 
         # get the light curve of the typical variability
         uLc   = amplitude*numpy.cos((epoch - t0)/period)
