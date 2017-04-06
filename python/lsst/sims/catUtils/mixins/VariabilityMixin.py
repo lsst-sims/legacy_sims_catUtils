@@ -16,7 +16,7 @@ from scipy.interpolate import interp1d
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "reset_agn_lc_cache", "StellarVariabilityModels",
-           "ExtraGalacticVariabilityModels"]
+           "ExtraGalacticVariabilityModels", "MLTflaringMixin"]
 
 _AGN_LC_CACHE = {} # a global cache of agn light curve calculations
 _MLT_LC_CACHE = None
@@ -463,9 +463,9 @@ class MLTflaringMixin(Variability):
         _cm_per_parsec = 3.08576e16
         sphere_area = 4.0*numpy.pi*numpy.power(dd*_cm_per_parsec, 2)
 
-        flux_factor = self.photPrams.effarea/spher_area
+        flux_factor = self.photParams.effarea/sphere_area
 
-        dMags = numpy.zeros((6, self.num_variable_obj()))
+        dMags = numpy.zeros((6, self.num_variable_obj(params)))
         mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
         base_mags = {}
@@ -474,9 +474,11 @@ class MLTflaringMixin(Variability):
             if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                 'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
-                mm = self.column_by_name('lsst_%s' % mag_name)
+                mm = self.column_by_name('quiescent_lsst_%s' % mag_name)
                 base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
+                mm2 = ss.magFromFlux(base_fluxes[mag_name])
+                numpy.testing.assert_array_equal(mm,mm2)
 
         for i_obj in valid_dexes[0]:
             lc_name = params['lc'][i_obj].replace('.txt','')
@@ -487,11 +489,13 @@ class MLTflaringMixin(Variability):
                 t_interp -= (time_arr.max()-time_arr.min())
 
             for i_mag, mag_name in enumerate(mag_name_tuple):
-                if 'delta_lsst_%s' % mag_name in self._actually_calculated_columns:
+                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
                     flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
                     dflux *= flux_factor[i_obj]
-                    dMags[i_mag][i_obj] = ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
+                    dMags[i_mag][i_obj] = (ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
+                                           - base_mags[mag_name][i_obj])
 
         return dMags
 
