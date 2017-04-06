@@ -71,7 +71,7 @@ class variabilityUnitTest(unittest.TestCase):
         ct = 0
         for row in result:
             # apply variability to make sure that it does not fall down
-            galcat.applyVariability(row['varParamStr'])
+            galcat.applyVariability([row['varParamStr']])
             ct += 1
         self.assertGreater(ct, 0)  # to make sure that the test was actually performed
 
@@ -84,7 +84,7 @@ class variabilityUnitTest(unittest.TestCase):
         for row in result:
             ct += 1
             # apply variability to make sure it doesn't fall down
-            starcat.applyVariability(row['varParamStr'])
+            starcat.applyVariability([row['varParamStr']])
         self.assertGreater(ct, 0)  # to make sure that the test was actually performed
 
 
