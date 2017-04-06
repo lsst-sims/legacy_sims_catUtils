@@ -121,9 +121,11 @@ class Variability(object):
             for p_name in params[method_name]:
                 params[method_name][p_name] = numpy.array(params[method_name][p_name])
 
-        expmjd=self.obs_metadata.mjd.TAI
+        expmjd=None
         for method_name in numpy.unique(method_name_arr):
             if method_name != 'None':
+                if expmjd is None:
+                    expmjd = self.obs_metadata.mjd.TAI
                 if method_name not in self._methodRegistry:
                     raise RuntimeError("Your InstanceCatalog does not contain " \
                                        + "a variability method corresponding to '%s'" % method_name)
