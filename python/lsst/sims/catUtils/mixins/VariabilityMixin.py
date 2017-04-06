@@ -9,6 +9,7 @@ import numbers
 import json as json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_class, register_method, compound
+from lsst.sims.photUtils import Sed
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
@@ -36,6 +37,12 @@ class Variability(object):
     objects in the base catalog.  All methods should return a dictionary of
     magnitude offsets.
     """
+
+    _survey_start = 59580.0 # start time of the LSST survey being simulated (MJD)
+
+    # the file wherein light curves for MLT dwarf flares are stored
+    _mlt_lc_file = os.path.join(getPackageDir('sims_catUtils'),
+                                'data', 'mdwarf_flare_light_curves.npz')
 
     variabilityInitialized = False
 
@@ -228,17 +235,67 @@ class Variability(object):
         return magoff
 
     @register_method('applyMLTflaring')
-    def applyMlTflaring(self, params, expmjd):
-        if _MLT_LC_CACHE is None:
-            cache_file = os.path.join(getPackageDir('sims_catUtils'),
-                                      'data', 'mdwarf_flare_light_curves.npz')
+    def applyMlTflaring(self, valid_dexes, params, expmjd):
 
-            if not os.path.exists(cache_file):
+        if not hasattr(self, 'photParams'):
+            raise RuntimeError("To apply MLT dwarf flaring, your "
+                               "InstanceCatalog must have a member variable "
+                               "photParams which is an instantiation of the "
+                               "class PhotometricParameters, which can be "
+                               "imported from lsst.sims.photUtils. "
+                               "This is so that your InstanceCatalog has "
+                               "knowledge of the effective area of the LSST "
+                               "mirror.")
+
+        if _MLT_LC_CACHE is None:
+
+            if not os.path.exists(self._mlt_lc_file):
                 raise RuntimeError("The MLT flaring light curve file:\n"
-                                    + "\n%s\n" % cache_file
+                                    + "\n%s\n" % self._mlt_lc_file
                                     + "\ndoes not exist.")
 
-            _MLT_LC_CACHE = numpy.load(cache_file)
+            _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
+
+        # get the distance to each star in parsecs
+        _au_to_parsec = 1.0/206265.0
+        dd = _au_to_parsec/self.column_by_name('parallax')
+
+        # get the area of the sphere through which the star's energy
+        # is radiating to get to us (in cm^2)
+        _cm_per_parsec = 3.08576e16
+        sphere_area = 4.0*numpy.pi*numpy.power(dd*_cm_per_parsec, 2)
+
+        flux_factor = self.photPrams.effarea/spher_area
+
+        dMags = numpy.zeros((6, self.num_variable_obj()))
+        mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
+        base_fluxes = {}
+        base_mags = {}
+        ss = Sed()
+        for mag_name in mag_name_tuple:
+            if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                mm = self.column_by_name('lsst_%s' % mag_name)
+                base_mags[mag_name] = mm
+                base_fluxes[mag_name] = ss.fluxFromMag(mm)
+
+        for i_obj in valid_dexes[0]:
+            lc_name = params['lc'][i_obj].replace('.txt','')
+            time_arr = _MLT_LC_CACHE['%s_time' % lc_name] - params['t0'][i_obj]
+            t_interp = self.obs_metadata.mjd.TAI - self._survey_start
+
+            while t_interp > time_arr.max():
+                t_interp -= (time_arr.max()-time_arr.min())
+
+            for i_mag, mag_name in enumerate(mag_name_tuple):
+                if 'delta_lsst_%s' % mag_name in self._actually_calculated_columns:
+                    flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
+                    dflux = numpy.interp(t_interp, time_arr, flux_arr)
+                    dflux *= flux_factor[i_obj]
+                    dMags[i_mag][i_obj] = ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
+
+        return dMags
 
     @register_method('applyRRly')
     def applyRRly(self, valid_dexes, params, expmjd):
