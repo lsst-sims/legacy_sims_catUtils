@@ -482,6 +482,8 @@ class MLTflaringMixin(Variability):
 
         for i_obj in valid_dexes[0]:
             lc_name = params['lc'][i_obj].replace('.txt','')
+            if 'late'in lc_name:
+                lc_name = lc_name.replace('in','')
             time_arr = _MLT_LC_CACHE['%s_time' % lc_name] - params['t0'][i_obj]
             t_interp = self.obs_metadata.mjd.TAI - self._survey_start
 
