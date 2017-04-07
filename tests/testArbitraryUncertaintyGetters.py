@@ -32,7 +32,7 @@ class PhotometryCartoon(object):
                                                       bandpassDir = bandpassDir,
                                                       bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames)
+        return self._quiescentMagnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames)
 
     @compound('sigma_cartoon_u', 'sigma_cartoon_g', 'sigma_cartoon_r', 'sigma_cartoon_i', 'sigma_cartoon_z')
     def get_cartoon_uncertainty(self):

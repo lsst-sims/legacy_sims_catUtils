@@ -277,7 +277,7 @@ class cartoonPhotometryStars(PhotometryStars):
                                                              bandpassRoot = 'test_bandpass_')
 
 
-        output = self._magnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
+        output = self._quiescentMagnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
 
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
@@ -333,8 +333,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter('bulge', self.cartoonBandpassDict,
-                                     self.get_cartoon_bulge_mags._colnames)
+        return self._quiescentMagnitudeGetter('bulge', self.cartoonBandpassDict,
+                                              self.get_cartoon_bulge_mags._colnames)
 
 
     @compound('cdisk_u', 'cdisk_g', 'cdisk_r', 'cdisk_i', 'cdisk_z')
@@ -349,8 +349,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter('disk', self.cartoonBandpassDict,
-                                     self.get_cartoon_disk_mags._colnames)
+        return self._quiescentMagnitudeGetter('disk', self.cartoonBandpassDict,
+                                              self.get_cartoon_disk_mags._colnames)
 
 
     @compound('cagn_u', 'cagn_g', 'cagn_r', 'cagn_i', 'cagn_z')
@@ -365,8 +365,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter('agn', self.cartoonBandpassDict,
-                                     self.get_cartoon_agn_mags._colnames)
+        return self._quiescentMagnitudeGetter('agn', self.cartoonBandpassDict,
+                                              self.get_cartoon_agn_mags._colnames)
 
 
     @compound('ctotal_u', 'ctotal_g', 'ctotal_r', 'ctotal_i', 'ctotal_z')
@@ -436,7 +436,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
             self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                                                                     bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
+        return self._quiescentMagnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
 
 
 

@@ -53,7 +53,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
         if not hasattr(self, '_sedList'):
             return np.ones((6, 0))
 
-        mag = self._magnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames)
+        mag = self._quiescentMagnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames)
 
         mag += self._variabilityGetter(self.get_test_mags._colnames)
         return mag
@@ -108,8 +108,8 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        mag = self._magnitudeGetter('bulge', self.testBandpassDict,
-                                    self.get_test_bulge_mags._colnames)
+        mag = self._quiescentMagnitudeGetter('bulge', self.testBandpassDict,
+                                             self.get_test_bulge_mags._colnames)
         mag += self._variabilityGetter(self.get_test_bulge_mags._colnames)
         return mag
 
@@ -120,8 +120,8 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        mag = self._magnitudeGetter('disk', self.testBandpassDict,
-                                    self.get_test_disk_mags._colnames)
+        mag = self._quiescentMagnitudeGetter('disk', self.testBandpassDict,
+                                             self.get_test_disk_mags._colnames)
         mag += self._variabilityGetter(self.get_test_disk_mags._colnames)
         return mag
 
@@ -132,8 +132,8 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        mag = self._magnitudeGetter('agn', self.testBandpassDict,
-                                    self.get_test_agn_mags._colnames)
+        mag = self._quiescentMagnitudeGetter('agn', self.testBandpassDict,
+                                             self.get_test_agn_mags._colnames)
         mag += self._variabilityGetter(self.get_test_agn_mags._colnames)
         return mag
 
