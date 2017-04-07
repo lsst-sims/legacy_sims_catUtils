@@ -192,6 +192,41 @@ class PhotometryBase(object):
         visibility = numpy.where(probability <= completeness, 1, None)
         return visibility
 
+    def _variabilityGetter(self, columnNames):
+        """
+        Find columns named 'delta_*' and return them to be added
+        to '*' magnitude columns (i.e. look for delta_lsst_u so that
+        it can be added to lsst_u)
+
+        Parameters
+        ----------
+        columnNames is a list of the quiescent columns (lsst_u in the
+        example above) whose deltas we are looking for
+
+        Returns
+        -------
+        A numpy array in which each row is a delta magnitude and each
+        column is an astrophysical object/database row
+        """
+
+        num_obj = len(self.column_by_name(self.db_obj.idColKey))
+        delta = []
+
+        # figure out which of these columns we are actually calculating
+        indices = [ii for ii, name in enumerate(columnNames)
+                   if name in self._actually_calculated_columns]
+
+        for ix, columnName in enumerate(columnNames):
+            if indices is None or ix in indices:
+                delta_name = 'delta_' + columnName
+                if delta_name in self._all_available_columns:
+                    delta.append(self.column_by_name(delta_name))
+                else:
+                    delta.append(numpy.zeros(num_obj))
+            else:
+                delta.append(numpy.zeros(num_obj))
+
+        return numpy.array(delta)
 
 class PhotometryGalaxies(PhotometryBase):
     """
@@ -431,13 +466,6 @@ class PhotometryGalaxies(PhotometryBase):
                for ix in range(magnitudes.shape[0]):
                    magnitudes[ix] += cosmoDistMod
 
-        for ix, columnName in enumerate(columnNameList):
-            if indices is None or ix in indices:
-                delta_name = 'delta_' + columnName
-                if delta_name in self._all_available_columns:
-                    delta = self.column_by_name(delta_name)
-                    magnitudes[ix] += delta
-
         return magnitudes
 
 
@@ -491,9 +519,11 @@ class PhotometryGalaxies(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # actually calculate the magnitudes
-        return self._magnitudeGetter('bulge', self.lsstBandpassDict,
-                                     self.get_lsst_bulge_mags._colnames)
+        mag = self._magnitudeGetter('bulge', self.lsstBandpassDict,
+                                    self.get_lsst_bulge_mags._colnames)
 
+        mag += self._variabilityGetter(self.get_lsst_bulge_mags._colnames)
+        return mag
 
 
     @compound('uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk')
@@ -507,8 +537,11 @@ class PhotometryGalaxies(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # actually calculate the magnitudes
-        return self._magnitudeGetter('disk', self.lsstBandpassDict,
-                                     self.get_lsst_disk_mags._colnames)
+        mag = self._magnitudeGetter('disk', self.lsstBandpassDict,
+                                    self.get_lsst_disk_mags._colnames)
+
+        mag += self._variabilityGetter(self.get_lsst_disk_mags._colnames)
+        return mag
 
 
     @compound('uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
@@ -522,9 +555,11 @@ class PhotometryGalaxies(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # actually calculate the magnitudes
-        return self._magnitudeGetter('agn', self.lsstBandpassDict,
-                                     self.get_lsst_agn_mags._colnames)
+        mag = self._magnitudeGetter('agn', self.lsstBandpassDict,
+                                    self.get_lsst_agn_mags._colnames)
 
+        mag += self._variabilityGetter(self.get_lsst_agn_mags._colnames)
+        return mag
 
     @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')
     def get_lsst_total_mags(self):
@@ -644,16 +679,8 @@ class PhotometryStars(PhotometryBase):
                                   self.column_by_name('quiescent_lsst_z'),
                                   self.column_by_name('quiescent_lsst_y')])
 
-        # figure out which of these columns we are actually calculating
-        indices = [ii for ii, name in enumerate(self.get_lsst_magnitudes._colnames)
-                   if name in self._actually_calculated_columns]
-
-        for ix, columnName in enumerate(self.get_lsst_magnitudes._colnames):
-            if indices is None or ix in indices:
-                delta_name = 'delta_' + columnName
-                if delta_name in self._all_available_columns:
-                    delta = self.column_by_name(delta_name)
-                    magnitudes[ix] += delta
+        delta = self._variabilityGetter(self.get_lsst_magnitudes._colnames)
+        magnitudes += delta
 
         return magnitudes
 

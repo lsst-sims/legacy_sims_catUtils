@@ -53,8 +53,10 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
         if not hasattr(self, '_sedList'):
             return np.ones((6, 0))
 
-        return self._magnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames)
+        mag = self._magnitudeGetter(self.variabilityBandpassDict, self.get_test_mags._colnames)
 
+        mag += self._variabilityGetter(self.get_test_mags._colnames)
+        return mag
 
 class StellarVariabilityCatalogClass(StellarBaselineCatalogClass, FakeStellarVariabilityMixin):
     catalog_type = __file__ + 'stellar_variability_catalog_class'
@@ -106,8 +108,10 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        return self._magnitudeGetter('bulge', self.testBandpassDict,
-                                     self.get_test_bulge_mags._colnames)
+        mag = self._magnitudeGetter('bulge', self.testBandpassDict,
+                                    self.get_test_bulge_mags._colnames)
+        mag += self._variabilityGetter(self.get_test_bulge_mags._colnames)
+        return mag
 
     @compound('test_disk_u', 'test_disk_g', 'test_disk_r',
               'test_disk_i', 'test_disk_z', 'test_disk_y')
@@ -116,8 +120,10 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        return self._magnitudeGetter('disk', self.testBandpassDict,
-                                     self.get_test_disk_mags._colnames)
+        mag = self._magnitudeGetter('disk', self.testBandpassDict,
+                                    self.get_test_disk_mags._colnames)
+        mag += self._variabilityGetter(self.get_test_disk_mags._colnames)
+        return mag
 
     @compound('test_agn_u', 'test_agn_g', 'test_agn_r',
               'test_agn_i', 'test_agn_z', 'test_agn_y')
@@ -126,8 +132,10 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
         if not hasattr(self, 'testBandpassDict'):
             self.testBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        return self._magnitudeGetter('agn', self.testBandpassDict,
-                                     self.get_test_agn_mags._colnames)
+        mag = self._magnitudeGetter('agn', self.testBandpassDict,
+                                    self.get_test_agn_mags._colnames)
+        mag += self._variabilityGetter(self.get_test_agn_mags._colnames)
+        return mag
 
     @compound('test_u', 'test_g', 'test_r', 'test_i', 'test_z', 'test_y')
     def get_test_total_mags(self):
