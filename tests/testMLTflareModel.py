@@ -120,8 +120,6 @@ class MLT_flare_test_case(unittest.TestCase):
                              MLTflaringMixin, InstanceCatalog):
             column_outputs = ['id', 'lsst_u', 'lsst_g']
 
-        db.show_db_columns()
-
         flare_cat = FlaringCatalog(db, obs_metadata=obs)
         flare_cat._mlt_lc_file = self.mlt_lc_name
         flare_cat_name = os.path.join(self.scratch_dir, 'mlt_flaring_cat.txt')
