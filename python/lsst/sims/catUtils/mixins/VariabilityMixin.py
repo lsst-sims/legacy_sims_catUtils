@@ -127,17 +127,28 @@ class Variability(object):
         for ix, varCmd in enumerate(varParams_arr):
             if str(varCmd) != 'None':
                 varCmd = json.loads(varCmd)
+                if 'varMethodName' in varCmd:
+                    meth_key = 'varMethodName'
+                else:
+                    meth_key = 'm'
+
+                if 'pars' in varCmd:
+                    par_key = 'pars'
+                else:
+                    par_key = 'p'
             else:
                 varCmd = {'varMethodName': 'None', 'pars':{}}
+                meth_key = 'varMethodName'
+                par_key = 'pars'
 
-            if varCmd['varMethodName'] not in method_name_arr:
-                params[varCmd['varMethodName']] = {}
-                for p_name in varCmd['pars']:
-                    params[varCmd['varMethodName']][p_name] = [None]*len(varParams_arr)
+            if varCmd[meth_key] not in method_name_arr:
+                params[varCmd[meth_key]] = {}
+                for p_name in varCmd[par_key]:
+                    params[varCmd[meth_key]][p_name] = [None]*len(varParams_arr)
 
-            method_name_arr.append(varCmd['varMethodName'])
-            for p_name in varCmd['pars']:
-                params[varCmd['varMethodName']][p_name][ix] = varCmd['pars'][p_name]
+            method_name_arr.append(varCmd[meth_key])
+            for p_name in varCmd[par_key]:
+                params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
 
         method_name_arr = numpy.array(method_name_arr)
         for method_name in params:

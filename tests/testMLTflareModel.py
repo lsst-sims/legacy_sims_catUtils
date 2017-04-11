@@ -68,26 +68,26 @@ class MLT_flare_test_case(unittest.TestCase):
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.0, 31.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
-                       '{"varMethodName": "MLT",
-                         "pars": {"lc": "lc_1.txt", "t0": 456.2}}',
+                       '{"m": "MLT",
+                         "p": {"lc": "lc_1.txt", "t0": 456.2}}',
                        0.25, 2.4, 17.1)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.2, 32.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
-                       '{"varMethodName": "MLT",
-                         "pars": {"lc": "lc_1.txt", "t0": 41006.2}}',
+                       '{"m": "MLT",
+                         "p": {"lc": "lc_1.txt", "t0": 41006.2}}',
                        0.15, 1.8, 17.2)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.3, 10.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
-                       '{"varMethodName": "MLT",
-                         "pars": {"lc": "lc_2.txt", "t0": 117.2}}',
+                       '{"m": "MLT",
+                         "p": {"lc": "lc_2.txt", "t0": 117.2}}',
                        0.3, 2.6, 17.3)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 4, 25.4, 11.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
-                       '{"varMethodName": "MLT",
-                         "pars": {"lc": "lc_2.txt", "t0": 10456.2}}',
+                       '{"m": "MLT",
+                         "p": {"lc": "lc_2.txt", "t0": 10456.2}}',
                        0.22, 2.3, 17.4)''')
         conn.commit()
         conn.close()
