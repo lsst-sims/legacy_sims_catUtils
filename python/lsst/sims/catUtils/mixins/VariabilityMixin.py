@@ -425,7 +425,7 @@ class StellarVariabilityModels(Variability):
 
 class MLTflaringMixin(Variability):
 
-    @register_method('applyMLTflaring')
+    @register_method('MLT')
     def applyMlTflaring(self, valid_dexes, params, expmjd):
 
         parallax = self.column_by_name('parallax')
