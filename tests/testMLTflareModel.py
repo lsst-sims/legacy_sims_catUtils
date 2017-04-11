@@ -11,6 +11,9 @@ from lsst.sims.catUtils.mixins import MLTflaringMixin
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import PhotometryStars
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.photUtils import SedList, BandpassDict, Sed
+from lsst.sims.utils import radiansFromArcsec
+from lsst.sims.photUtils import PhotometricParameters
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -33,6 +36,8 @@ class MLT_test_DB(CatalogDBObject):
 
 class MLT_flare_test_case(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def setUpClass(cls):
         cls.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
@@ -43,14 +48,14 @@ class MLT_flare_test_case(unittest.TestCase):
 
         lc_files = {}
         amp = 1.0e32
-        lc_files['lc_1_time'] = np.arange(0.0, 3652.5, 0.7)
-        lc_files['lc_1_u'] = amp*np.power(np.sin(lc_files['lc_1_time']/100.0), 2)
-        lc_files['lc_1_g'] = amp*np.power(np.cos(lc_files['lc_1_time']/100.0), 2)
+        lc_files['lc_1_time'] = np.arange(0.0, 3652.51, 0.1)
+        lc_files['lc_1_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_1_time']/100.0), 2))
+        lc_files['lc_1_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_1_time']/100.0), 2))
 
         amp = 2.0e31
-        lc_files['lc_2_time'] = np.arange(0.0, 365.25, 1.3)
-        lc_files['lc_2_u'] = amp*np.power(np.sin(lc_files['lc_2_time']/50.0), 2)
-        lc_files['lc_2_g'] = amp*np.power(np.cos(lc_files['lc_2_time']/50.0), 2)
+        lc_files['lc_2_time'] = np.arange(0.0, 365.251, 0.01)
+        lc_files['lc_2_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_2_time']/50.0), 2))
+        lc_files['lc_2_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_2_time']/50.0), 2))
 
         with open(cls.mlt_lc_name, 'wb') as file_handle:
             np.savez(file_handle, **lc_files)
@@ -66,25 +71,25 @@ class MLT_flare_test_case(unittest.TestCase):
                         magNorm real)''')
         conn.commit()
 
-        cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.0, 31.0,
+        cursor.execute('''INSERT INTO mlt_test VALUES( 0, 25.0, 31.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_1.txt", "t0": 456.2}}',
                        0.25, 2.4, 17.1)''')
 
-        cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.2, 32.0,
+        cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.2, 32.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_1.txt", "t0": 41006.2}}',
                        0.15, 1.8, 17.2)''')
 
-        cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.3, 10.0,
+        cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.3, 10.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_2.txt", "t0": 117.2}}',
                        0.3, 2.6, 17.3)''')
 
-        cursor.execute('''INSERT INTO mlt_test VALUES( 4, 25.4, 11.0,
+        cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.4, 11.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_2.txt", "t0": 10456.2}}',
@@ -103,27 +108,116 @@ class MLT_flare_test_case(unittest.TestCase):
 
     def test_flare_magnitudes(self):
         """
-        Test that we get the expectedmagnitudes out
+        Test that we get the expected magnitudes out
         """
         db = MLT_test_DB(database=self.db_name, driver='sqlite')
 
-        obs = ObservationMetaData(mjd=60000.0)
-
         class QuiescentCatalog(PhotometryStars, InstanceCatalog):
             column_outputs = ['id', 'lsst_u', 'lsst_g']
-
-        quiet_cat = QuiescentCatalog(db, obs_metadata=obs)
-        quiet_cat_name = os.path.join(self.scratch_dir, 'mlt_quiet_cat.txt')
-        quiet_cat.write_catalog(quiet_cat_name)
 
         class FlaringCatalog(PhotometryStars, VariabilityStars,
                              MLTflaringMixin, InstanceCatalog):
             column_outputs = ['id', 'lsst_u', 'lsst_g']
 
-        flare_cat = FlaringCatalog(db, obs_metadata=obs)
-        flare_cat._mlt_lc_file = self.mlt_lc_name
+
+        # load the quiescent SEDs of the objects in our catalog
+        sed_list = SedList(['lte028-5.0+0.5a+0.0.BT-Settl.spec.gz']*4,
+                           [17.1, 17.2, 17.3, 17.4],
+                           galacticAvList = [2.4, 1.8 , 2.6, 2.3])
+
+        bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        # calculate the quiescent fluxes of the objects in our catalog
+        baseline_fluxes = bp_dict.fluxListForSedList(sed_list)
+
+        # this data is taken from the setUpClass() classmethod above
+        t0_list = [456.2, 41006.2, 117.2, 10456.2]
+        parallax_list = np.array([0.25, 0.15, 0.3, 0.22])
+        distance_list = 1.0/(206265.0*radiansFromArcsec(0.001*parallax_list))
+        distance_list *= 3.0857e16  # convert to cm
+
+        dtype = np.dtype([('id', int), ('u', float), ('g', float)])
+
+        photParams = PhotometricParameters()
+
+        ss = Sed()
+
+        quiet_cat_name = os.path.join(self.scratch_dir, 'mlt_quiet_cat.txt')
         flare_cat_name = os.path.join(self.scratch_dir, 'mlt_flaring_cat.txt')
-        flare_cat.write_catalog(flare_cat_name)
+
+        # loop over several MJDs and verify that, to within a
+        # milli-mag, our flaring model gives us the magnitudes
+        # expected, given the light curves specified in
+        # setUpClass()
+        for mjd in (59580.0, 60000.0, 70000.0, 80000.0):
+
+            obs = ObservationMetaData(mjd=mjd)
+
+            quiet_cat = QuiescentCatalog(db, obs_metadata=obs)
+            quiet_cat.write_catalog(quiet_cat_name)
+
+            flare_cat = FlaringCatalog(db, obs_metadata=obs)
+            flare_cat._mlt_lc_file = self.mlt_lc_name
+            flare_cat.write_catalog(flare_cat_name)
+
+            quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
+            flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
+
+            for ix in range(len(flaring_data)):
+                obj_id = flaring_data['id'][ix]
+                self.assertEqual(obj_id, ix)
+
+                # the models below are as specified in the
+                # setUpClass() method
+                if obj_id == 0 or obj_id == 1:
+                    amp = 1.0e32
+                    dt = 3652.5
+                    t_min = flare_cat._survey_start - t0_list[obj_id]
+
+                    tt = mjd - t_min
+                    while tt > dt:
+                        tt -= dt
+
+                    u_flux = amp*(1.0+np.power(np.sin(tt/100.0), 2))
+                    g_flux = amp*(1.0+np.power(np.cos(tt/100.0), 2))
+                else:
+                    amp = 2.0e31
+                    dt = 365.25
+                    t_min = flare_cat._survey_start - t0_list[obj_id]
+
+                    tt = mjd - t_min
+                    while tt > dt:
+                        tt -= dt
+                    u_flux = amp*(1.0+np.power(np.sin(tt/50.0), 2))
+                    g_flux = amp*(1.0+np.power(np.cos(tt/50.0), 2))
+
+                area = 4.0*np.pi*np.power(distance_list[obj_id], 2)
+                tot_u_flux = baseline_fluxes[obj_id][0] + u_flux*photParams.effarea/area
+                tot_g_flux = baseline_fluxes[obj_id][1] + g_flux*photParams.effarea/area
+
+                msg = ('failed on object %d\n u_quiet %e u_flare %e\n g_quiet %e g_flare %e' %
+                       (obj_id, quiescent_data['u'][obj_id], flaring_data['u'][obj_id],
+                        quiescent_data['g'][obj_id], flaring_data['g'][obj_id]))
+
+                self.assertEqual(quiescent_data['id'][obj_id], flaring_data['id'][obj_id], msg=msg)
+                self.assertAlmostEqual(ss.magFromFlux(baseline_fluxes[obj_id][0]),
+                                       quiescent_data['u'][obj_id], 3, msg=msg)
+                self.assertAlmostEqual(ss.magFromFlux(baseline_fluxes[obj_id][1]),
+                                       quiescent_data['g'][obj_id], 3, msg=msg)
+                self.assertAlmostEqual(ss.magFromFlux(tot_u_flux), flaring_data['u'][obj_id],
+                                       3, msg=msg)
+                self.assertAlmostEqual(ss.magFromFlux(tot_g_flux), flaring_data['g'][obj_id],
+                                       3, msg=msg)
+                self.assertGreater(np.abs(flaring_data['g'][obj_id]-quiescent_data['g'][obj_id]),
+                                   0.001, msg=msg)
+                self.assertGreater(np.abs(flaring_data['u'][obj_id]-quiescent_data['u'][obj_id]),
+                                   0.001, msg=msg)
+
+        if os.path.exists(quiet_cat_name):
+            os.unlink(quiet_cat_name)
+        if os.path.exists(flare_cat_name):
+            os.unlink(flare_cat_name)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
