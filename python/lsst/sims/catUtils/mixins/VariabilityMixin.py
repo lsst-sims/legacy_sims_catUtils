@@ -81,7 +81,7 @@ class Variability(object):
 
     # the file wherein light curves for MLT dwarf flares are stored
     _mlt_lc_file = os.path.join(getPackageDir('sims_catUtils'),
-                                'data', 'mdwarf_flare_light_curves.npz')
+                                'data', 'mdwarf_flare_light_curves_170412.npz')
 
     variabilityInitialized = False
 
@@ -543,9 +543,14 @@ class MLTflaringMixin(Variability):
         if _MLT_LC_CACHE is None:
 
             if not os.path.exists(self._mlt_lc_file):
+                catutils_data = os.path.join(getPackageDir('sims_catUtils'), 'data')
                 raise RuntimeError("The MLT flaring light curve file:\n"
                                     + "\n%s\n" % self._mlt_lc_file
-                                    + "\ndoes not exist.")
+                                    + "\ndoes not exist."
+                                    +"\n\n"
+                                    + "Go into %s " % catuils_data
+                                    + "and run get_mdwarf_flares.sh "
+                                    + "to get the data")
 
             _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
 
