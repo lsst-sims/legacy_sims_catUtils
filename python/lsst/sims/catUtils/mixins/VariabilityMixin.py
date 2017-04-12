@@ -1,3 +1,39 @@
+"""
+This module defines methods which implement the astrophysical
+variability models used by CatSim.  InstanceCatalogs apply
+variability by calling the applyVariability() method in
+the Variability class.  To add a new variability model to
+this framework, users should define a method which accepts
+as arguments:
+
+valid_dexes -- the output of numpy.where() indicating
+which astrophysical objects actually depend on the
+variability model.
+
+params -- a dict whose keys are the names of parameters
+required by the variability model and whose values
+are lists of the parameters required for the
+variability model for all astrophysical objects
+in the CatSim database (even those objects that do
+not depend on the model; these objects can have
+None in the parameter lists).
+
+expmjd -- the MJD of the observation.
+
+The method implementing the variability model should be
+marked with the decorator @register_method(key) where key
+is a string uniquely identifying the variability model.
+applyVariability() will call the variability method
+by reading in the json-ized dict varParamStr from the
+CatSim database.  varParamStr should look like
+
+{'m':method_name, 'p':{'p1': val1, 'p2': val2,...}}
+
+method_name is the register_method() key referring
+to the variabilty model. p1, p2, etc. are the parameters
+expected by the variability model.
+"""
+
 from builtins import range
 from builtins import object
 import numpy
@@ -34,8 +70,11 @@ def reset_agn_lc_cache():
 class Variability(object):
     """
     Variability class for adding temporal variation to the magnitudes of
-    objects in the base catalog.  All methods should return a dictionary of
-    magnitude offsets.
+    objects in the base catalog.
+
+    This class provides methods that all variability models rely on.
+    Actual implementations of variability models will be provided by
+    the *VariabilityModels classes.
     """
 
     _survey_start = 59580.0 # start time of the LSST survey being simulated (MJD)
@@ -70,9 +109,10 @@ class Variability(object):
         if self.variabilityInitiailized == True (which this method sets)
 
         @param [in] doCache controls whether or not the code caches calculated
-        light curves for future use (I think...this is older code)
-
+        light curves for future use
         """
+        # Docstring is a best approximation of what this method does.
+        # This is older code.
 
         self.variabilityInitialized=True
         #below are variables to cache the light curves of variability models
@@ -88,23 +128,17 @@ class Variability(object):
 
     def applyVariability(self, varParams_arr):
         """
-        varParams will be the varParamStr column from the data base
-
-        This method uses json to convert that into a machine-readable object
-
-        it uses the varMethodName to select the correct variability method from the
-        dict self._methodRegistry
-
-        it then feeds the pars array to that method, under the assumption
-        that the parameters needed by the method can be found therein
-
-        @param [in] varParams_arr is a numpy array of strings (readable by json)
-        that tells us which variability model to use
-
-        @param [out] output is a dict of magnitude offsets keyed to the filter name
-        e.g. output['u'] is the magnitude offset in the u band
-
+        Read in an array/list of varParamStr objects taken from the CatSim
+        database.  For each varParamStr, call the appropriate variability
+        model to calculate magnitude offsets that need to be applied to
+        the corresponding astrophysical offsets.  Return a 2-D numpy
+        array of magnitude offsets in which each row is an LSST band
+        in ugrizy order and each column is an astrophysical object from
+        the CatSim database.
         """
+
+        # construct a registry of all of the variability models
+        # available to the InstanceCatalog
         if not hasattr(self, '_methodRegistry'):
             self._methodRegistry = {}
             for methodname in dir(self):
@@ -116,31 +150,62 @@ class Variability(object):
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
 
+        # A numpy array of magnitude offsets.  Each row is
+        # an LSST band in ugrizy order.  Each columns is an
+        # astrophysical object from the CatSim database.
         deltaMag = numpy.zeros((6, len(varParams_arr)))
 
+        # When the InstanceCatalog calls all of its getters
+        # with an empty chunk to check column dependencies,
+        # call all of the variability models in the
+        # _methodRegistry to make sure that all of the column
+        # dependencies of the variability models are detected.
         if len(varParams_arr) == 0:
             for method_name in self._methodRegistry:
                 self._methodRegistry[method_name]([],{},0)
 
+        # Keep a list of all of the specific variability models
+        # that need to be called.  There is one entry for each
+        # astrophysical object in the CatSim database.
         method_name_arr = []
+
+        # Keep a dict keyed on all of the method names in
+        # method_name_arr.  params[method_name] will be another
+        # dict keyed on the names of the parameters required by
+        # the method method_name.  The values of this dict will
+        # be lists of parameter values for all astrophysical
+        # objects in the CatSim database.  Even objects that
+        # do no callon method_name will have entries in these
+        # lists (they will be set to None).
         params = {}
+
         for ix, varCmd in enumerate(varParams_arr):
             if str(varCmd) != 'None':
                 varCmd = json.loads(varCmd)
+
+                # find the key associated with the name of
+                # the specific variability model to be applied
                 if 'varMethodName' in varCmd:
                     meth_key = 'varMethodName'
                 else:
                     meth_key = 'm'
 
+                # find the key associated with the list of
+                # parameters to be supplied to the variability
+                # model
                 if 'pars' in varCmd:
                     par_key = 'pars'
                 else:
                     par_key = 'p'
             else:
+                # if there is no varParamStr, setup a null model
                 varCmd = {'varMethodName': 'None', 'pars':{}}
                 meth_key = 'varMethodName'
                 par_key = 'pars'
 
+            # if we have discovered a new variability model
+            # that needs to be called, initialize its entries
+            # in the params dict
             if varCmd[meth_key] not in method_name_arr:
                 params[varCmd[meth_key]] = {}
                 for p_name in varCmd[par_key]:
@@ -156,10 +221,16 @@ class Variability(object):
                 params[method_name][p_name] = numpy.array(params[method_name][p_name])
 
         expmjd=None
+
+        # Loop over all of the variability models that need to be called.
+        # Call each variability model on the astrophysical objects that
+        # require the model.  Add the result to deltaMag.
         for method_name in numpy.unique(method_name_arr):
             if method_name != 'None':
+
                 if expmjd is None:
                     expmjd = self.obs_metadata.mjd.TAI
+
                 if method_name not in self._methodRegistry:
                     raise RuntimeError("Your InstanceCatalog does not contain " \
                                        + "a variability method corresponding to '%s'"
@@ -176,7 +247,7 @@ class Variability(object):
                          inDays=True, interpFactory=None):
 
         """
-        Applies an a specified variability method.
+        Applies a specified variability method.
 
         The params for the method are provided in the dict params{}
 
@@ -188,7 +259,13 @@ class Variability(object):
         The method will return a dict of magnitude offsets.  The dict will
         be keyed to the filter names.
 
-        @param [in] params is a dict of parameters for the variability model
+        @param [in] valid_dexes is the result of numpy.where() indicating
+        which astrophysical objects from the CatSim database actually use
+        this variability model.
+
+        @param [in] params is a dict of parameters for the variability model.
+        The dict is keyed to the names of parameters.  The values are arrays
+        of parameter values.
 
         @param [in] keymap is a dict mapping from the parameter naming convention
         used by the database to the parameter naming convention used by the
@@ -202,8 +279,9 @@ class Variability(object):
         @param [in] interpFactory is the method used for interpolating
         the light curve
 
-        @param [out] magoff is a dict of magnitude offsets so that magoff['u'] is the offset in the u band
-
+        @param [out] magoff is a 2D numpy array of magnitude offsets.  Each
+        row is an LSST band in ugrizy order.  Each column is a different
+        astrophysical object from the CatSim database.
         """
         magoff = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd)
@@ -263,6 +341,9 @@ class Variability(object):
 
 
 class StellarVariabilityModels(Variability):
+    """
+    A mixin providing standard stellar variability models.
+    """
 
     @register_method('applyRRly')
     def applyRRly(self, valid_dexes, params, expmjd):
@@ -435,6 +516,9 @@ class StellarVariabilityModels(Variability):
 
 
 class MLTflaringMixin(Variability):
+    """
+    A mixin providing the model for cool dwarf stellar flares.
+    """
 
     @register_method('MLT')
     def applyMlTflaring(self, valid_dexes, params, expmjd):
@@ -514,6 +598,9 @@ class MLTflaringMixin(Variability):
 
 
 class ExtraGalacticVariabilityModels(Variability):
+    """
+    A mixin providing the model for AGN variability.
+    """
 
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd):
@@ -623,9 +710,10 @@ class ExtraGalacticVariabilityModels(Variability):
 
 class VariabilityStars(StellarVariabilityModels):
     """
-    This is a mixin which wraps the methods from the class Variability
-    into getters for InstanceCatalogs (specifically, InstanceCatalogs
-    of stars).  Getters in this method should define columns named like
+    This is a mixin which wraps the methods from the class
+    StellarVariabilityModels into getters for InstanceCatalogs
+    (specifically, InstanceCatalogs of stars).  Getters in
+    this method should define columns named like
 
     delta_columnName
 
@@ -654,9 +742,10 @@ class VariabilityStars(StellarVariabilityModels):
 
 class VariabilityGalaxies(ExtraGalacticVariabilityModels):
     """
-    This is a mixin which wraps the methods from the class Variability
-    into getters for InstanceCatalogs (specifically, InstanceCatalogs
-    of galaxies).  Getters in this method should define columns named like
+    This is a mixin which wraps the methods from the class
+    ExtraGalacticVariabilityModels into getters for InstanceCatalogs
+    (specifically, InstanceCatalogs of galaxies).  Getters in this
+    method should define columns named like
 
     delta_columnName
 
