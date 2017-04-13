@@ -577,8 +577,6 @@ class MLTflaringMixin(Variability):
                 mm = self.column_by_name('quiescent_lsst_%s' % mag_name)
                 base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
-                mm2 = ss.magFromFlux(base_fluxes[mag_name])
-                numpy.testing.assert_array_equal(mm,mm2)
 
         for i_obj in valid_dexes[0]:
             lc_name = params['lc'][i_obj].replace('.txt','')
