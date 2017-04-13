@@ -548,7 +548,7 @@ class MLTflaringMixin(Variability):
                                     + "\n%s\n" % self._mlt_lc_file
                                     + "\ndoes not exist."
                                     +"\n\n"
-                                    + "Go into %s " % catuils_scripts
+                                    + "Go into %s " % catutils_scripts
                                     + "and run get_mdwarf_flares.sh "
                                     + "to get the data")
 
