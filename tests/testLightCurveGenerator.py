@@ -79,7 +79,9 @@ class StellarLightCurveTest(unittest.TestCase):
                              ('magNorm', np.float),
                              ('galacticAv', np.float),
                              ('sedFilename', str, 300),
-                             ('varParamStr', str, 300)])
+                             ('varParamStr', str, 300),
+                             ('parallax', np.float),
+                             ('ebv', np.float)])
 
         # write the catalog as a text file to be ingested with fileDBObject
         cls.txt_name = os.path.join(cls.scratchDir, "stellar_lc_catalog.txt")
@@ -91,18 +93,20 @@ class StellarLightCurveTest(unittest.TestCase):
             decList = -90.0 + rng.random_sample(n_stars)*120.0
             magNormList = rng.random_sample(n_stars)*3.0+14.0
             AvList = rng.random_sample(n_stars)*0.2+0.1
+            pxList = rng.random_sample(n_stars)*0.1
             for ix in range(n_stars):
                 varparams = {'varMethodName': 'applyRRly',
                              'pars': {'tStartMjd': mjd0[ix],
                                       'filename': list_of_lc[lc_dex[ix]]}}
                 varparamstr = json.dumps(varparams)
-                output_file.write("%d;%lf;%lf;%lf;%lf;%lf;%lf;%s;%s\n"
+                output_file.write("%d;%lf;%lf;%lf;%lf;%lf;%lf;%s;%s;%lf;%lf\n"
                                   % (ix, raList[ix], decList[ix],
                                      np.radians(raList[ix]),
                                      np.radians(decList[ix]),
                                      magNormList[ix], AvList[ix],
                                      list_of_seds[sed_dex[ix]],
-                                     varparamstr))
+                                     varparamstr,pxList[ix],
+                                     AvList[ix]/3.1))
 
         cls.stellar_db = fileDBObject(cls.txt_name, delimiter=';',
                                       runtable='test', dtype=cls.dtype,
@@ -412,20 +416,20 @@ class StellarLightCurveTest(unittest.TestCase):
         c = conn.cursor()
         c.execute('''CREATE TABLE rrly
                   (id int, ra real, dec real, sedFilename text, magNorm real,
-                   varParamStr text, galacticAv real)''')
+                   varParamStr text, galacticAv real, parallax real, ebv real)''')
         conn.commit()
 
-        for ix, (rr, dd, mn) in \
+        for ix, (rr, dd, mn, px) in \
         enumerate(zip(rng.random_sample(4)*(raRange[1]-raRange[0])+raRange[0],
                       rng.random_sample(4)*(decRange[1]-decRange[0])+decRange[0],
-                      rng.random_sample(4)*5.0+16.0)):
+                      rng.random_sample(4)*5.0+16.0, rng.random_sample(4)*0.01)):
 
             if ix < 2:
-                cmd = '''INSERT INTO rrly VALUES(%d, %e, %e, '%s', %e, '%s', 0.1)''' % \
-                      (ix, rr, dd, sed_name, mn, varParamStr)
+                cmd = '''INSERT INTO rrly VALUES(%d, %e, %e, '%s', %e, '%s', 0.1, 0.032, %e)''' % \
+                      (ix, rr, dd, sed_name, mn, varParamStr, px)
             else:
-                cmd = '''INSERT INTO rrly VALUES(%d, %e, %e, '%s', %e, NULL, 0.1)''' % \
-                      (ix, rr, dd, sed_name, mn)
+                cmd = '''INSERT INTO rrly VALUES(%d, %e, %e, '%s', %e, NULL, 0.1, 0.032, %e)''' % \
+                      (ix, rr, dd, sed_name, mn, px)
 
             c.execute(cmd)
 
