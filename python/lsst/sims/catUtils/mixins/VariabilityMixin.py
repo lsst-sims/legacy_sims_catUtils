@@ -45,7 +45,7 @@ import numbers
 import json as json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_method, compound
-from lsst.sims.photUtils import Sed
+from lsst.sims.photUtils import Sed, BandpassDict
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
@@ -524,11 +524,15 @@ class MLTflaringMixin(Variability):
     def applyMlTflaring(self, valid_dexes, params, expmjd):
 
         parallax = self.column_by_name('parallax')
-
-        if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+        ebv = self.column_by_name('ebv')
 
         global _MLT_LC_CACHE
+
+        # this needs to occur before loading the MLT light curve cache,
+        # just in case the user wants to override the light curve cache
+        # file by hand before generating the catalog
+        if len(params) == 0:
+            return numpy.array([[],[],[],[],[],[]])
 
         if not hasattr(self, 'photParams'):
             raise RuntimeError("To apply MLT dwarf flaring, your "
@@ -553,6 +557,52 @@ class MLTflaringMixin(Variability):
                                     + "to get the data")
 
             _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
+
+        if not hasattr(self, '_mlt_dust_lookup'):
+            # Construct a look-up table to determine the factor
+            # by which to multiply the flares' flux to account for
+            # dust as a function of E(B-V).  Recall that we are
+            # modeling all MLT flares as 9000K blackbodies.
+
+            if not hasattr(self, 'lsstBandpassDict'):
+                raise RuntimeError('You are asking for MLT dwarf flaring '
+                                   'magnitudes in a catalog that has not '
+                                   'defined lsstBandpassDict.  The MLT '
+                                   'flaring magnitudes model does not know '
+                                   'how to apply dust extinction to the '
+                                   'flares without the member variable '
+                                   'lsstBandpassDict being defined.')
+
+            ebv_grid = numpy.arange(0.0, 7.01, 0.01)
+            bb_wavelen = numpy.arange(200.0, 1500.0, 0.1)
+            hc_over_k = 1.4387e7  # nm*K
+            temp = 9000.0  # black body temperature in Kelvin
+            exp_arg = hc_over_k/(temp*bb_wavelen)
+            exp_term = 1.0/(numpy.exp(exp_arg) - 1.0)
+            ln_exp_term = numpy.log(exp_term)
+
+            log_bb_flambda = -5.0*numpy.log(bb_wavelen) + ln_exp_term
+            bb_flambda = numpy.exp(log_bb_flambda)
+            bb_sed = Sed(wavelen=bb_wavelen, flambda=bb_flambda)
+
+            base_fluxes = self.lsstBandpassDict.fluxListForSed(bb_sed)
+
+            a_x, b_x = bb_sed.setupCCMab()
+            self._mlt_dust_lookup = {}
+            self._mlt_dust_lookup['ebv'] = ebv_grid
+            list_of_bp = self.lsstBandpassDict.keys()
+            for bp in list_of_bp:
+                self._mlt_dust_lookup[bp] = numpy.zeros(len(ebv_grid))
+            for iebv, ebv_val in enumerate(ebv_grid):
+                wv, fl = bb_sed.addCCMDust(a_x, b_x,
+                                           ebv=ebv_val,
+                                           wavelen=bb_wavelen,
+                                           flambda=bb_flambda)
+
+                dusty_bb = Sed(wavelen=wv, flambda=fl)
+                dusty_fluxes = self.lsstBandpassDict.fluxListForSed(dusty_bb)
+                for ibp, bp in enumerate(list_of_bp):
+                    self._mlt_dust_lookup[bp][iebv] = dusty_fluxes[ibp]/base_fluxes[ibp]
 
         # get the distance to each star in parsecs
         _au_to_parsec = 1.0/206265.0
@@ -594,6 +644,12 @@ class MLTflaringMixin(Variability):
                     flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
                     dflux *= flux_factor[i_obj]
+
+                    dust_factor = numpy.interp(ebv[i_obj],
+                                               self._mlt_dust_lookup['ebv'],
+                                               self._mlt_dust_lookup[mag_name])
+                    dflux *= dust_factor
+
                     dMags[i_mag][i_obj] = (ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
                                            - base_mags[mag_name][i_obj])
 

@@ -3,6 +3,7 @@ import unittest
 import os
 import numpy as np
 import sqlite3
+from astropy.analytic_functions import blackbody_lambda
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.db import CatalogDBObject
@@ -32,7 +33,8 @@ class MLT_test_DB(CatalogDBObject):
                ('decJ2000', 'decl*PI()/180.'),
                ('parallax', 'parallax*PI()/648000000.'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', str, 40)]
+               ('sedFilename', 'sedfilename', str, 40),
+               ('ebv', 'galacticAv/3.1')]
 
 class MLT_flare_test_case(unittest.TestCase):
 
@@ -130,8 +132,12 @@ class MLT_flare_test_case(unittest.TestCase):
         # calculate the quiescent fluxes of the objects in our catalog
         baseline_fluxes = bp_dict.fluxListForSedList(sed_list)
 
+        bb_wavelen = np.arange(100.0, 1600.0, 0.1)
+        bb_flambda = blackbody_lambda(bb_wavelen*10.0, 9000.0)
+
         # this data is taken from the setUpClass() classmethod above
         t0_list = [456.2, 41006.2, 117.2, 10456.2]
+        av_list = [2.4, 1.8 , 2.6, 2.3]
         parallax_list = np.array([0.25, 0.15, 0.3, 0.22])
         distance_list = 1.0/(206265.0*radiansFromArcsec(0.001*parallax_list))
         distance_list *= 3.0857e16  # convert to cm
@@ -191,9 +197,22 @@ class MLT_flare_test_case(unittest.TestCase):
                     u_flux = amp*(1.0+np.power(np.sin(tt/50.0), 2))
                     g_flux = amp*(1.0+np.power(np.cos(tt/50.0), 2))
 
+                # calculate the multiplicative effect of dust on a 9000K
+                # black body
+                bb_sed = Sed(wavelen=bb_wavelen, flambda=bb_flambda)
+                u_bb_flux = bb_sed.calcFlux(bp_dict['u'])
+                g_bb_flux = bb_sed.calcFlux(bp_dict['g'])
+                a_x, b_x = bb_sed.setupCCMab()
+                bb_sed.addCCMDust(a_x, b_x, A_v=av_list[obj_id])
+                u_bb_dusty_flux = bb_sed.calcFlux(bp_dict['u'])
+                g_bb_dusty_flux = bb_sed.calcFlux(bp_dict['g'])
+
+                dust_u = u_bb_dusty_flux/u_bb_flux
+                dust_g = g_bb_dusty_flux/g_bb_flux
+
                 area = 4.0*np.pi*np.power(distance_list[obj_id], 2)
-                tot_u_flux = baseline_fluxes[obj_id][0] + u_flux*photParams.effarea/area
-                tot_g_flux = baseline_fluxes[obj_id][1] + g_flux*photParams.effarea/area
+                tot_u_flux = baseline_fluxes[obj_id][0] + u_flux*dust_u*photParams.effarea/area
+                tot_g_flux = baseline_fluxes[obj_id][1] + g_flux*dust_g*photParams.effarea/area
 
                 msg = ('failed on object %d\n u_quiet %e u_flare %e\n g_quiet %e g_flare %e' %
                        (obj_id, quiescent_data['u'][obj_id], flaring_data['u'][obj_id],
