@@ -628,30 +628,35 @@ class MLTflaringMixin(Variability):
                 base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
-        for i_obj in valid_dexes[0]:
-            lc_name = params['lc'][i_obj].replace('.txt','')
-            if 'late'in lc_name:
-                lc_name = lc_name.replace('in','')
-            time_arr = self._survey_start + _MLT_LC_CACHE['%s_time' % lc_name] - params['t0'][i_obj]
-            t_interp = self.obs_metadata.mjd.TAI
+        lc_names_unique = numpy.unique(params['lc'].astype(str))
+        for lc_name in lc_names_unique:
+            use_this_lc = numpy.where(numpy.char.find(params['lc'], lc_name)==0)
 
-            while t_interp > time_arr.max():
-                t_interp -= (time_arr.max()-time_arr.min())
+            lc_name = lc_name.replace('.txt', '')
+            if 'late' in lc_name:
+                lc_name = lc_name.replace('in', '')
+            time_arr = self._survey_start + _MLT_LC_CACHE['%s_time' % lc_name]
+            dt = time_arr.max() - time_arr.min()
+
+            t_interp = self.obs_metadata.mjd.TAI + params['t0'][use_this_lc]
+            while t_interp.max() > time_arr.max():
+                bad_dexes = numpy.where(t_interp>time_arr.max())
+                t_interp[bad_dexes] -= dt
 
             for i_mag, mag_name in enumerate(mag_name_tuple):
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
                     flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
-                    dflux *= flux_factor[i_obj]
+                    dflux *= flux_factor[use_this_lc]
 
-                    dust_factor = numpy.interp(ebv[i_obj],
+                    dust_factor = numpy.interp(ebv[use_this_lc],
                                                self._mlt_dust_lookup['ebv'],
                                                self._mlt_dust_lookup[mag_name])
                     dflux *= dust_factor
 
-                    dMags[i_mag][i_obj] = (ss.magFromFlux(base_fluxes[mag_name][i_obj] + dflux)
-                                           - base_mags[mag_name][i_obj])
+                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(base_fluxes[mag_name][use_this_lc] + dflux)
+                                                 - base_mags[mag_name][use_this_lc])
 
         return dMags
 
