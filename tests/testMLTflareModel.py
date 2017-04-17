@@ -77,25 +77,25 @@ class MLT_flare_test_case(unittest.TestCase):
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_1.txt", "t0": 456.2}}',
-                       0.25, 2.4, 17.1)''')
+                       0.25, 2.432, 17.1)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.2, 32.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_1.txt", "t0": 41006.2}}',
-                       0.15, 1.8, 17.2)''')
+                       0.15, 1.876, 17.2)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.3, 10.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_2.txt", "t0": 117.2}}',
-                       0.3, 2.6, 17.3)''')
+                       0.3, 2.654, 17.3)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.4, 11.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
                          "p": {"lc": "lc_2.txt", "t0": 10456.2}}',
-                       0.22, 2.3, 17.4)''')
+                       0.22, 2.364, 17.4)''')
         conn.commit()
         conn.close()
 
@@ -125,7 +125,7 @@ class MLT_flare_test_case(unittest.TestCase):
         # load the quiescent SEDs of the objects in our catalog
         sed_list = SedList(['lte028-5.0+0.5a+0.0.BT-Settl.spec.gz']*4,
                            [17.1, 17.2, 17.3, 17.4],
-                           galacticAvList = [2.4, 1.8 , 2.6, 2.3])
+                           galacticAvList = [2.432, 1.876, 2.654, 2.364])
 
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
@@ -137,7 +137,7 @@ class MLT_flare_test_case(unittest.TestCase):
 
         # this data is taken from the setUpClass() classmethod above
         t0_list = [456.2, 41006.2, 117.2, 10456.2]
-        av_list = [2.4, 1.8 , 2.6, 2.3]
+        av_list = [2.432, 1.876, 2.654, 2.364]
         parallax_list = np.array([0.25, 0.15, 0.3, 0.22])
         distance_list = 1.0/(206265.0*radiansFromArcsec(0.001*parallax_list))
         distance_list *= 3.0857e16  # convert to cm
