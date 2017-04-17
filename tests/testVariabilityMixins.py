@@ -39,7 +39,7 @@ def makeRRlyTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE RRly
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -53,7 +53,7 @@ def makeRRlyTable(size=100, **kwargs):
                              'filename': lcFiles[rng.randint(0, len(lcFiles))]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -76,7 +76,7 @@ def makeCepheidTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE cepheid
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -91,7 +91,7 @@ def makeCepheidTable(size=100, **kwargs):
                              't0': 48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -109,7 +109,7 @@ def makeEbTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE eb
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -124,7 +124,7 @@ def makeEbTable(size=100, **kwargs):
                              't0': 48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -144,7 +144,7 @@ def makeMicrolensingTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE microlensing
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -159,7 +159,7 @@ def makeMicrolensingTable(size=100, **kwargs):
                     'pars': {'that': that[i], 'umin': umin[i], 't0': 52000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO microlensing VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO microlensing VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -183,7 +183,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE bhmicrolensing
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -197,7 +197,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
                              't0': 52000.0-mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -215,7 +215,7 @@ def makeAmcvnTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE amcvn
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -243,7 +243,7 @@ def makeAmcvnTable(size=100, **kwargs):
 
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO amcvn VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO amcvn VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -320,7 +320,7 @@ def makeHybridTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE hybrid
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -347,7 +347,7 @@ def makeHybridTable(size=100, **kwargs):
         if varParam is not None:
             paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO hybrid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO hybrid VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
