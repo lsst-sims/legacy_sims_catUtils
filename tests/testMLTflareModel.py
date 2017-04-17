@@ -214,8 +214,8 @@ class MLT_flare_test_case(unittest.TestCase):
                 tot_u_flux = baseline_fluxes[obj_id][0] + u_flux*dust_u*photParams.effarea/area
                 tot_g_flux = baseline_fluxes[obj_id][1] + g_flux*dust_g*photParams.effarea/area
 
-                msg = ('failed on object %d\n u_quiet %e u_flare %e\n g_quiet %e g_flare %e' %
-                       (obj_id, quiescent_data['u'][obj_id], flaring_data['u'][obj_id],
+                msg = ('failed on object %d; mjd %.2f\n u_quiet %e u_flare %e\n g_quiet %e g_flare %e' %
+                       (obj_id, mjd, quiescent_data['u'][obj_id], flaring_data['u'][obj_id],
                         quiescent_data['g'][obj_id], flaring_data['g'][obj_id]))
 
                 self.assertEqual(quiescent_data['id'][obj_id], flaring_data['id'][obj_id], msg=msg)
