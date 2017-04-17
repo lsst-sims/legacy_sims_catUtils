@@ -51,6 +51,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
+           "VariabilityAGN",
            "reset_agn_lc_cache", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin"]
 
@@ -772,7 +773,23 @@ class ExtraGalacticVariabilityModels(Variability):
         return dMags
 
 
-class VariabilityStars(StellarVariabilityModels, MLTflaringMixin):
+class _VariabilityPointSources(object):
+
+    @compound('delta_lsst_u', 'delta_lsst_g', 'delta_lsst_r',
+             'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y')
+    def get_stellar_variability(self):
+        """
+        Getter for the change in magnitudes due to stellar
+        variability.  The PhotometryStars mixin is clever enough
+        to automatically add this to the baseline magnitude.
+        """
+
+        varParams = self.column_by_name('varParamStr')
+        return self.applyVariability(varParams)
+
+
+class VariabilityStars(_VariabilityPointSources, StellarVariabilityModels,
+                       MLTflaringMixin):
     """
     This is a mixin which wraps the methods from the class
     StellarVariabilityModels into getters for InstanceCatalogs
@@ -790,18 +807,27 @@ class VariabilityStars(StellarVariabilityModels, MLTflaringMixin):
     an InstanceCatalog daughter class will activate variability for any column
     for which delta_columnName is defined.
     """
+    pass
 
-    @compound('delta_lsst_u', 'delta_lsst_g', 'delta_lsst_r',
-             'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y')
-    def get_stellar_variability(self):
-        """
-        Getter for the change in magnitudes due to stellar
-        variability.  The PhotometryStars mixin is clever enough
-        to automatically add this to the baseline magnitude.
-        """
 
-        varParams = self.column_by_name('varParamStr')
-        return self.applyVariability(varParams)
+class VariabilityAGN(_VariabilityPointSources, ExtraGalacticVariabilityModels):
+    """
+    This is a mixin which wraps the methods from the class
+    ExtraGalacticVariabilityModels into getters for InstanceCatalogs
+    of AGN.  Getters in this method should define columns named like
+
+    delta_columnName
+
+    where columnName is the name of the baseline (non-varying) magnitude
+    column to which delta_columnName will be added.  The getters in the
+    photometry mixins will know to find these columns and add them to
+    columnName, provided that the columns here follow this naming convention.
+
+    Thus: merely including VariabilityStars in the inheritance tree of
+    an InstanceCatalog daughter class will activate variability for any column
+    for which delta_columnName is defined.
+    """
+    pass
 
 
 class VariabilityGalaxies(ExtraGalacticVariabilityModels):
