@@ -117,6 +117,27 @@ class MLT_flare_test_case(unittest.TestCase):
         if os.path.exists(cls.db_name):
             os.unlink(cls.db_name)
 
+    def test_flare_lc_failure(self):
+        """
+        Test that the correct exception is thrown when you try
+        to interpolate from an MLT light curve cache that does not
+        exist
+        """
+        cat_name = os.path.join(getPackageDir('sims_catUtils'),
+                                'tests', 'scratchSpace',
+                                'flaring_cat_failure.txt')
+        db = MLT_test_DB(database=self.db_name, driver='sqlite')
+        obs = ObservationMetaData(mjd=67432.1)
+        flare_cat = FlaringCatalog(db, obs_metadata=obs)
+        flare_cat._mlt_lc_file = 'a_nonexistent_cache'
+        with self.assertRaises(RuntimeError) as context:
+            flare_cat.write_catalog(cat_name)
+        self.assertIn('get_mdwarf_flares.sh',
+                      context.exception.args[0])
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+
     def test_flare_magnitudes(self):
         """
         Test that we get the expected magnitudes out
