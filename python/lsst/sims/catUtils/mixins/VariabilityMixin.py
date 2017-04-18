@@ -629,9 +629,13 @@ class MLTflaringMixin(Variability):
                 base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
-        lc_names_unique = numpy.unique(params['lc'].astype(str))
+        lc_name_arr = params['lc'].astype(str)
+        lc_names_unique = numpy.unique(lc_name_arr)
         for lc_name in lc_names_unique:
-            use_this_lc = numpy.where(numpy.char.find(params['lc'], lc_name)==0)
+            if 'None' in lc_name:
+                continue
+
+            use_this_lc = numpy.where(numpy.char.find(lc_name_arr, lc_name)==0)
 
             lc_name = lc_name.replace('.txt', '')
             if 'late' in lc_name:
@@ -639,7 +643,7 @@ class MLTflaringMixin(Variability):
             time_arr = self._survey_start + _MLT_LC_CACHE['%s_time' % lc_name]
             dt = time_arr.max() - time_arr.min()
 
-            t_interp = self.obs_metadata.mjd.TAI + params['t0'][use_this_lc]
+            t_interp = (self.obs_metadata.mjd.TAI + params['t0'][use_this_lc]).astype(float)
             while t_interp.max() > time_arr.max():
                 bad_dexes = numpy.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
