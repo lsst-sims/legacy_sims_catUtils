@@ -57,6 +57,7 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
 
 _AGN_LC_CACHE = {} # a global cache of agn light curve calculations
 _MLT_LC_CACHE = None
+_MLT_LC_CACHE_NAME = None
 
 def reset_agn_lc_cache():
     """
@@ -528,6 +529,7 @@ class MLTflaringMixin(Variability):
         ebv = self.column_by_name('ebv')
 
         global _MLT_LC_CACHE
+        global _MLT_LC_CACHE_NAME
 
         # this needs to occur before loading the MLT light curve cache,
         # just in case the user wants to override the light curve cache
@@ -545,8 +547,7 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_CACHE is None:
-
+        if _MLT_LC_CACHE is None or _MLT_LC_CACHE_NAME != self._mlt_lc_file:
             if not os.path.exists(self._mlt_lc_file):
                 catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
                 raise RuntimeError("The MLT flaring light curve file:\n"
@@ -558,6 +559,7 @@ class MLTflaringMixin(Variability):
                                     + "to get the data")
 
             _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
+            _MLT_LC_CACHE_NAME = self._mlt_lc_file
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
