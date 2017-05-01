@@ -588,6 +588,7 @@ class MLTflaringMixin(Variability):
             exp_term = 1.0/(numpy.exp(exp_arg) - 1.0)
             ln_exp_term = numpy.log(exp_term)
 
+            # Blackbody f_lambda function;
             # discard normalizing factors; we only care about finding the
             # ratio of fluxes between the case with dust extinction and
             # the case without dust extinction
