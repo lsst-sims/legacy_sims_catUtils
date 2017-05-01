@@ -165,7 +165,10 @@ class Variability(object):
 
         # Keep a list of all of the specific variability models
         # that need to be called.  There is one entry for each
-        # astrophysical object in the CatSim database.
+        # astrophysical object in the CatSim database.  We will
+        # ultimately run np.where on method_name_arr to determine
+        # which objects need to be passed through which
+        # variability methods.
         method_name_arr = []
 
         # Keep a dict keyed on all of the method names in
