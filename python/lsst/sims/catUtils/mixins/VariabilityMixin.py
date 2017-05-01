@@ -527,7 +527,7 @@ class MLTflaringMixin(Variability):
                                 'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
 
     @register_method('MLT')
-    def applyMlTflaring(self, valid_dexes, params, expmjd):
+    def applyMLTflaring(self, valid_dexes, params, expmjd):
 
         parallax = self.column_by_name('parallax')
         ebv = self.column_by_name('ebv')
