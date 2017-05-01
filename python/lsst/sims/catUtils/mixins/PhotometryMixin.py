@@ -192,6 +192,41 @@ class PhotometryBase(object):
         visibility = numpy.where(probability <= completeness, 1, None)
         return visibility
 
+    def _variabilityGetter(self, columnNames):
+        """
+        Find columns named 'delta_*' and return them to be added
+        to '*' magnitude columns (i.e. look for delta_lsst_u so that
+        it can be added to lsst_u)
+
+        Parameters
+        ----------
+        columnNames is a list of the quiescent columns (lsst_u in the
+        example above) whose deltas we are looking for
+
+        Returns
+        -------
+        A numpy array in which each row is a delta magnitude and each
+        column is an astrophysical object/database row
+        """
+
+        num_obj = len(self.column_by_name(self.db_obj.idColKey))
+        delta = []
+
+        # figure out which of these columns we are actually calculating
+        indices = [ii for ii, name in enumerate(columnNames)
+                   if name in self._actually_calculated_columns]
+
+        for ix, columnName in enumerate(columnNames):
+            if indices is None or ix in indices:
+                delta_name = 'delta_' + columnName
+                if delta_name in self._all_available_columns:
+                    delta.append(self.column_by_name(delta_name))
+                else:
+                    delta.append(numpy.zeros(num_obj))
+            else:
+                delta.append(numpy.zeros(num_obj))
+
+        return numpy.array(delta)
 
 class PhotometryGalaxies(PhotometryBase):
     """
@@ -374,9 +409,9 @@ class PhotometryGalaxies(PhotometryBase):
                 return numpy.NaN
 
 
-    def _magnitudeGetter(self, componentName, bandpassDict, columnNameList):
+    def _quiescentMagnitudeGetter(self, componentName, bandpassDict, columnNameList):
         """
-        A generic getter for magnitudes of galaxy components.
+        A generic getter for quiescent magnitudes of galaxy components.
 
         @param [in] componentName is either 'bulge', 'disk', or 'agn'
 
@@ -417,7 +452,7 @@ class PhotometryGalaxies(PhotometryBase):
             else:
                 sedList = self._agnSedList
         else:
-            raise RuntimeError('_magnitudeGetter does not understand component %s ' \
+            raise RuntimeError('_quiescentMagnitudeGetter does not understand component %s ' \
                                % componentName)
 
         if sedList is None:
@@ -430,13 +465,6 @@ class PhotometryGalaxies(PhotometryBase):
             if len(cosmoDistMod)>0:
                for ix in range(magnitudes.shape[0]):
                    magnitudes[ix] += cosmoDistMod
-
-        for ix, columnName in enumerate(columnNameList):
-            if indices is None or ix in indices:
-                delta_name = 'delta_' + columnName
-                if delta_name in self._all_available_columns:
-                    delta = self.column_by_name(delta_name)
-                    magnitudes[ix] += delta
 
         return magnitudes
 
@@ -491,9 +519,11 @@ class PhotometryGalaxies(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # actually calculate the magnitudes
-        return self._magnitudeGetter('bulge', self.lsstBandpassDict,
-                                     self.get_lsst_bulge_mags._colnames)
+        mag = self._quiescentMagnitudeGetter('bulge', self.lsstBandpassDict,
+                                             self.get_lsst_bulge_mags._colnames)
 
+        mag += self._variabilityGetter(self.get_lsst_bulge_mags._colnames)
+        return mag
 
 
     @compound('uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk')
@@ -507,8 +537,11 @@ class PhotometryGalaxies(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # actually calculate the magnitudes
-        return self._magnitudeGetter('disk', self.lsstBandpassDict,
-                                     self.get_lsst_disk_mags._colnames)
+        mag = self._quiescentMagnitudeGetter('disk', self.lsstBandpassDict,
+                                             self.get_lsst_disk_mags._colnames)
+
+        mag += self._variabilityGetter(self.get_lsst_disk_mags._colnames)
+        return mag
 
 
     @compound('uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
@@ -522,9 +555,11 @@ class PhotometryGalaxies(PhotometryBase):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
         # actually calculate the magnitudes
-        return self._magnitudeGetter('agn', self.lsstBandpassDict,
-                                     self.get_lsst_agn_mags._colnames)
+        mag = self._quiescentMagnitudeGetter('agn', self.lsstBandpassDict,
+                                             self.get_lsst_agn_mags._colnames)
 
+        mag += self._variabilityGetter(self.get_lsst_agn_mags._colnames)
+        return mag
 
     @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')
     def get_lsst_total_mags(self):
@@ -588,7 +623,7 @@ class PhotometryStars(PhotometryBase):
                                           galacticAvList=galacticAvList)
 
 
-    def _magnitudeGetter(self, bandpassDict, columnNameList):
+    def _quiescentMagnitudeGetter(self, bandpassDict, columnNameList):
         """
         This method gets the magnitudes for an InstanceCatalog, returning them
         in a 2-D numpy array in which rows correspond to bandpasses and columns
@@ -598,8 +633,7 @@ class PhotometryStars(PhotometryBase):
         whose magnitudes are to be calculated
 
         @param [in] columnNameList is a list of the names of the magnitude columns
-        being calculated (so that any variability model can determine if a
-        'delta_column_name' exists
+        being calculated
 
         @param [out] magnitudes is a 2-D numpy array of magnitudes in which
         rows correspond to bandpasses in bandpassDict and columns correspond
@@ -613,7 +647,6 @@ class PhotometryStars(PhotometryBase):
         if len(indices) == len(columnNameList):
             indices = None
 
-
         self._loadSedList(bandpassDict.wavelenMatch)
 
         if not hasattr(self, '_sedList'):
@@ -621,26 +654,35 @@ class PhotometryStars(PhotometryBase):
         else:
             magnitudes = bandpassDict.magListForSedList(self._sedList, indices=indices).transpose()
 
-        for ix, columnName in enumerate(columnNameList):
-            if indices is None or ix in indices:
-                delta_name = 'delta_' + columnName
-                if delta_name in self._all_available_columns:
-                    delta = self.column_by_name(delta_name)
-                    magnitudes[ix] += delta
-
         return magnitudes
 
+    @compound('quiescent_lsst_u', 'quiescent_lsst_g', 'quiescent_lsst_r',
+              'quiescent_lsst_i', 'quiescent_lsst_z', 'quiescent_lsst_y')
+    def get_quiescent_lsst_magnitudes(self):
+
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        return self._quiescentMagnitudeGetter(self.lsstBandpassDict,
+                                              self.get_quiescent_lsst_magnitudes._colnames)
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_lsst_magnitudes(self):
         """
         getter for LSST stellar magnitudes
         """
-        if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames)
+        magnitudes = numpy.array([self.column_by_name('quiescent_lsst_u'),
+                                  self.column_by_name('quiescent_lsst_g'),
+                                  self.column_by_name('quiescent_lsst_r'),
+                                  self.column_by_name('quiescent_lsst_i'),
+                                  self.column_by_name('quiescent_lsst_z'),
+                                  self.column_by_name('quiescent_lsst_y')])
 
+        delta = self._variabilityGetter(self.get_lsst_magnitudes._colnames)
+        magnitudes += delta
+
+        return magnitudes
 
 class PhotometrySSM(PhotometryBase):
     """
@@ -650,7 +692,7 @@ class PhotometrySSM(PhotometryBase):
     # SED exactly once, calculate the colors and magnitudes, and then get actual magnitudes by adding
     # an offset based on magNorm.
 
-    def _magnitudeGetter(self, bandpassDict, columnNameList, bandpassTag='lsst'):
+    def _quiescentMagnitudeGetter(self, bandpassDict, columnNameList, bandpassTag='lsst'):
         """
         Method that actually does the work calculating magnitudes for solar system objects.
 
@@ -727,7 +769,7 @@ class PhotometrySSM(PhotometryBase):
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        return self._magnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames)
+        return self._quiescentMagnitudeGetter(self.lsstBandpassDict, self.get_lsst_magnitudes._colnames)
 
 
     def get_magFilter(self):

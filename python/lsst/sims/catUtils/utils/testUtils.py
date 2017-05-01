@@ -229,7 +229,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
         c.execute('''CREATE TABLE StarAllForceseek
                   (simobjid int, ra real, decl real, magNorm real,
                   mudecl real, mura real, galacticAv real, vrad real, varParamStr text,
-                  sedFilename text, parallax real)''')
+                  sedFilename text, parallax real, ebv real)''')
     except:
         raise RuntimeError("Error creating StarAllForceseek table.")
 
@@ -368,9 +368,10 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
 
         varParam = {'varMethodName': 'testVar', 'pars': {'period': period[i], 'amplitude': amp[i]}}
         paramStr = json.dumps(varParam)
-        cmd = '''INSERT INTO StarAllForceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, '%s', '%s', %f)''' %\
+        cmd = '''INSERT INTO StarAllForceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, '%s', '%s', %f, %f)''' %\
               (i, raStar[i], decStar[i], magnormStar[i], mudecl[i], mura[i],
-               galacticAv[i], vrad[i], paramStr, star_seds[i%len(star_seds)], parallax[i])
+               galacticAv[i], vrad[i], paramStr, star_seds[i%len(star_seds)], parallax[i],
+               galacticAv[i]/3.1)
 
         c.execute(cmd)
 

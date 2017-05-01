@@ -6,12 +6,14 @@ import numpy as np
 import sqlite3
 import json
 import lsst.utils.tests
+from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
+from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 
 from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
@@ -19,41 +21,6 @@ from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
 
 def setup_module(module):
     lsst.utils.tests.init()
-
-
-def makeMflareTable(size=10, **kwargs):
-    """
-    Make a test database to serve information to the flare test
-    """
-
-    rng = np.random.RandomState(110)
-
-    # a haphazard sample of mdwarf SEDs
-    sedFiles = ['m2.0Full.dat', 'm5.1Full.dat', 'm4.9Full.dat']
-
-    # a haphazard sample of mflare light curves
-    lcFiles = ['flare_lc_bin3_4.dat', 'flare_lc_bin1_4.dat', 'flare_lc_bin3_3.dat']
-
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
-    c = conn.cursor()
-    try:
-        c.execute('''CREATE TABLE mFlare
-                     (varsimobjid int, variability text, sedfilename text)''')
-        conn.commit()
-    except:
-        raise RuntimeError("Error creating database.")
-
-    for i in range(size):
-        sedFile = sedFiles[rng.randint(0, len(sedFiles))]
-        varParam = {'varMethodName': 'applyMflare',
-                    'pars': {'t0': 48000.0, 'lcfilename': lcFiles[rng.randint(0, len(lcFiles))],
-                             'dt': 0.00069444418, 'length': 1825}}
-        paramStr = json.dumps(varParam)
-
-        qstr = '''INSERT INTO mFlare VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
-        c.execute(qstr)
-    conn.commit()
-    conn.close()
 
 
 def makeRRlyTable(size=100, **kwargs):
@@ -72,7 +39,7 @@ def makeRRlyTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE RRly
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -86,7 +53,7 @@ def makeRRlyTable(size=100, **kwargs):
                              'filename': lcFiles[rng.randint(0, len(lcFiles))]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -109,7 +76,7 @@ def makeCepheidTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE cepheid
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -124,7 +91,7 @@ def makeCepheidTable(size=100, **kwargs):
                              't0': 48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -142,7 +109,7 @@ def makeEbTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE eb
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -157,7 +124,7 @@ def makeEbTable(size=100, **kwargs):
                              't0': 48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -177,7 +144,7 @@ def makeMicrolensingTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE microlensing
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -192,7 +159,7 @@ def makeMicrolensingTable(size=100, **kwargs):
                     'pars': {'that': that[i], 'umin': umin[i], 't0': 52000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO microlensing VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO microlensing VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -216,7 +183,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE bhmicrolensing
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -230,7 +197,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
                              't0': 52000.0-mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -248,20 +215,20 @@ def makeAmcvnTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE amcvn
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
 
     rng = np.random.RandomState(32)
-    doesBurst = rng.randint(0, 1, size=size)
+    doesBurst = rng.randint(0, 2, size=size)
     burst_freq = rng.randint(10, 150, size=size)
-    burst_scale = 115
+    burst_scale = 115.0
     amp_burst = rng.random_sample(size)*8.0
     color_excess_during_burst = rng.random_sample(size)*0.2-0.4
     amplitude = rng.random_sample(size)*0.2
     period = rng.random_sample(size)*200.0
-    mjDisplacement = rng.random_sample(size)*50.0
+    mjDisplacement = rng.random_sample(size)*500.0
     for i in range(size):
         sedFile = sedFiles[rng.randint(0, len(sedFiles))]
         varParam = {'varMethodName': 'applyAmcvn',
@@ -272,11 +239,11 @@ def makeAmcvnTable(size=100, **kwargs):
                              'color_excess_during_burst': color_excess_during_burst[i],
                              'amplitude': amplitude[i],
                              'period': period[i],
-                             't0': 52000.0+mjDisplacement[i]}}
+                             't0': 51500.0-mjDisplacement[i]}}
 
         paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO amcvn VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO amcvn VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -353,7 +320,7 @@ def makeHybridTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE hybrid
-                     (varsimobjid int, variability text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -375,12 +342,12 @@ def makeHybridTable(size=100, **kwargs):
                                  't0': 48000.0+mjDisplacement[i]}}
         else:
             varParam = {'varMethodName': 'testVar',
-                        'pars': {'period': 5.0, 'amplitude': 2.0}}
+                        'pars': {'period': rng.random_sample()*100.0, 'amplitude': 2.0}}
 
         if varParam is not None:
             paramStr = json.dumps(varParam)
 
-        qstr = '''INSERT INTO hybrid VALUES (%i, '%s', '%s')''' % (i, paramStr, sedFile)
+        qstr = '''INSERT INTO hybrid VALUES (%i, '%s', '%s', 0.01, 0.7)''' % (i, paramStr, sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
@@ -394,11 +361,6 @@ class variabilityDB(CatalogDBObject):
                ('sedFilename', 'sedfilename', str, 40),
                ('varParamStr', 'variability', str, 600)]
 
-
-class mflareDB(variabilityDB):
-    objid = 'mflareTest'
-    tableid = 'mFlare'
-    objectTypeId = 53
 
 
 class hybridDB(variabilityDB):
@@ -507,9 +469,42 @@ class VariabilityTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.0)
+        self.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
+                                        'tests', 'scratchSpace')
 
     def tearDown(self):
         del self.obs_metadata
+
+    def verify_catalogs(self, cat_name):
+        """
+        Verify that a catalog generated by the unit tests below contains
+        the rows it ought to.
+
+        This is done by looking for a corresponding catalog in
+        tests/testData and verifying that the two catalogs have identical
+        rows.
+
+        Parameters
+        ----------
+        cat_name is the full path to the test-generated catalog.  The
+        comparison catalog will be found in tests/testData
+        """
+
+        control_dir = os.path.join(getPackageDir('sims_catUtils'),
+                                   'tests', 'testData')
+        control_name = cat_name.split('/')[-1]
+        control_name = os.path.join(control_dir, control_name)
+        with open(control_name, 'r') as control_file:
+            control_lines = control_file.readlines()
+
+        with open(cat_name, 'r') as test_file:
+            test_lines = test_file.readlines()
+
+        for tt in test_lines:
+            self.assertIn(tt, control_lines)
+
+        for cc in control_lines:
+            self.assertIn(cc, test_lines)
 
     def testHybridVariability(self):
         """
@@ -518,84 +513,69 @@ class VariabilityTest(unittest.TestCase):
         the register_method and register_class decorators do not mangle inheritance of
         methods from mixins.
         """
+        cat_name = os.path.join(self.scratch_dir, 'hybridTestCatalog.dat')
         makeHybridTable()
         myDB = CatalogDBObject.from_objid('hybridTest')
         myCatalog = StellarVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('hybridTestCatalog.dat'):
-            os.unlink('hybridTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
         # make sure order of mixin inheritance does not matter
         myCatalog = OtherVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('hybridTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('hybridTestCatalog.dat'):
-            os.unlink('hybridTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
         # make sure that, if a catalog does not contain a variability method,
         # an error is thrown; verify that it contains the correct error message
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         with self.assertRaises(RuntimeError) as context:
-            myCatalog.write_catalog('hybridTestCatalog.dat')
+            myCatalog.write_catalog(cat_name)
 
         expectedMessage = "Your InstanceCatalog does not contain a variability method"
         expectedMessage += " corresponding to 'testVar'"
         self.assertEqual(context.exception.args[0], expectedMessage)
 
-        if os.path.exists('hybridTestCatalog.dat'):
-            os.unlink('hybridTestCatalog.dat')
-
-    def testInheritance(self):
-        """
-        Directly test the contents of the _methodRegistrys for
-        StellarVariabilityCatalog and StellarVariabilityCatalogWithTest
-        to make sure that method inheritance was handled correctly
-        """
-
-        for m1 in StellarVariabilityCatalog._methodRegistry:
-            self.assertIn(m1, StellarVariabilityCatalogWithTest._methodRegistry)
-            self.assertIn(m1, OtherVariabilityCatalogWithTest._methodRegistry)
-
-        self.assertIn('testVar', StellarVariabilityCatalogWithTest._methodRegistry)
-        self.assertIn('testVar', OtherVariabilityCatalogWithTest._methodRegistry)
-        self.assertNotIn('testVar', StellarVariabilityCatalog._methodRegistry)
-
-    def testMflares(self):
-        makeMflareTable()
-        myDB = CatalogDBObject.from_objid('mflareTest')
-        myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('mFlareTestCatalog.dat', chunk_size=1000)
-
-        if os.path.exists('mFlareTestCatalog.dat'):
-            os.unlink('mFlareTestCatalog.dat')
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testRRlyrae(self):
+        cat_name = os.path.join(self.scratch_dir, 'rrlyTestCatalog.dat')
         makeRRlyTable()
         myDB = CatalogDBObject.from_objid('rrlyTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('rrlyTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('rrlyTestCatalog.dat'):
-            os.unlink('rrlyTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testCepheids(self):
+        cat_name = os.path.join(self.scratch_dir, 'cepheidTestCatalog.dat')
         makeCepheidTable()
         myDB = CatalogDBObject.from_objid('cepheidTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('cepheidTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('cepheidTestCatalog.dat'):
-            os.unlink('cepheidTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testEb(self):
+        cat_name = os.path.join(self.scratch_dir, 'ebTestCatalog.dat')
         makeEbTable()
         myDB = CatalogDBObject.from_objid('ebTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('ebTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('ebTestCatalog.dat'):
-            os.unlink('ebTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testMicrolensing(self):
         # Note:  this test assumes that the parameters for the microlensing variability
@@ -605,13 +585,15 @@ class VariabilityTest(unittest.TestCase):
         # The varParamStr formalism is how the applyMicrolensing methods are written, however,
         # so that is what we will test.
 
+        cat_name = os.path.join(self.scratch_dir, 'microlensTestCatalog.dat')
         makeMicrolensingTable()
         myDB = CatalogDBObject.from_objid('microlensTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('microlensTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('microlensTestCatalog.dat'):
-            os.unlink('microlensTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testBHMicrolensing(self):
         # Note:  this test assumes that the parameters for the BHmicrolensing variability
@@ -621,13 +603,15 @@ class VariabilityTest(unittest.TestCase):
         # The varParamStr formalism is how the applyBHMicrolens method is written, however,
         # so that is what we will test.
 
+        cat_name = os.path.join(self.scratch_dir, 'bhmicrolensTestCatalog.dat')
         makeBHMicrolensingTable()
         myDB = CatalogDBObject.from_objid('bhmicrolensTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('bhmicrolensTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('bhmicrolensTestCatalog.dat'):
-            os.unlink('bhmicrolensTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testAmcvn(self):
         # Note:  this test assumes that the parameters for the Amcvn variability
@@ -637,23 +621,27 @@ class VariabilityTest(unittest.TestCase):
         # The varParamStr formalism is how the applyAmcvn method is written, however,
         # so that is what we will test.
 
+        cat_name = os.path.join(self.scratch_dir, 'amcvnTestCatalog.dat')
         makeAmcvnTable()
         myDB = CatalogDBObject.from_objid('amcvnTest')
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('amcvnTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('amcvnTestCatalog.dat'):
-            os.unlink('amcvnTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
     def testAgn(self):
 
+        cat_name = os.path.join(self.scratch_dir, 'agnTestCatalog.dat')
         makeAgnTable()
         myDB = CatalogDBObject.from_objid('agnTest')
         myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog('agnTestCatalog.dat', chunk_size=1000)
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        if os.path.exists('agnTestCatalog.dat'):
-            os.unlink('agnTestCatalog.dat')
+        self.verify_catalogs(cat_name)
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
 
 class AgnCacheTest(unittest.TestCase):
@@ -672,10 +660,9 @@ class AgnCacheTest(unittest.TestCase):
         """
 
         rng = np.random.RandomState(8374)
-
-        var = Variability()
-
         nn = 5
+        var = ExtraGalacticVariabilityModels()
+
         seed_list = rng.random_integers(0, 20000, nn)
         toff_list = rng.random_sample(nn)*10000.0+40000.0
         sfz_list = rng.random_sample(nn)*2.0
@@ -688,11 +675,11 @@ class AgnCacheTest(unittest.TestCase):
 
         param_list = []
         for ix in range(nn):
-            params = {'agn_sfu': sfu_list[ix], 'agn_sfg': sfg_list[ix],
-                      'agn_sfr': sfr_list[ix], 'agn_sfi': sfi_list[ix],
-                      'agn_sfz': sfz_list[ix], 'agn_sfy': sfy_list[ix],
-                      't0_mjd': toff_list[ix], 'agn_tau': tau_list[ix],
-                      'seed': seed_list[ix]}
+            params = {'agn_sfu': np.array([sfu_list[ix]]), 'agn_sfg': np.array([sfg_list[ix]]),
+                      'agn_sfr': np.array([sfr_list[ix]]), 'agn_sfi': np.array([sfi_list[ix]]),
+                      'agn_sfz': np.array([sfz_list[ix]]), 'agn_sfy': np.array([sfy_list[ix]]),
+                      't0_mjd': np.array([toff_list[ix]]), 'agn_tau': np.array([tau_list[ix]]),
+                      'seed': np.array([seed_list[ix]])}
             param_list.append(params)
 
         mjd_list = rng.random_sample(100)*10000.0+50000.0
@@ -702,17 +689,17 @@ class AgnCacheTest(unittest.TestCase):
 
         for mjd in mjd_list:
             for pp in param_list:
-                dd = var.applyAgn(pp, mjd)
-                for kk in dd:
-                    caching_output.append(dd[kk])
+                dd = var.applyAgn(np.where(np.array([True])), pp, mjd)
+                for ix in range(6):
+                    caching_output.append(dd[ix])
 
         uncached_output = []
         for mjd in mjd_list:
             for pp in param_list:
                 reset_agn_lc_cache()
-                dd = var.applyAgn(pp, mjd)
-                for kk in dd:
-                    uncached_output.append(dd[kk])
+                dd = var.applyAgn(np.where(np.array([True])), pp, mjd)
+                for ix in range(6):
+                    uncached_output.append(dd[ix])
 
         np.testing.assert_array_almost_equal(np.array(caching_output), np.array(uncached_output), decimal=10)
 

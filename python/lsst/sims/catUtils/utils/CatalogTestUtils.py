@@ -12,7 +12,7 @@ import sqlite3
 import json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catalogs.decorators import register_method, register_class, compound
+from lsst.sims.catalogs.decorators import register_method, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils.SignalToNoise import calcSkyCountsPerPixelForM5
 from lsst.sims.photUtils import BandpassDict, SedList
@@ -187,18 +187,27 @@ def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
     conn.commit()
     conn.close()
 
-@register_class
+
 class TestVariabilityMixin(Variability):
     """
     This is a mixin which provides a dummy variability method for use in unit tests
     """
     @register_method('testVar')
-    def applySineVar(self, varParams, expmjd):
-        period = varParams['period']
-        amplitude = varParams['amplitude']
+    def applySineVar(self, valid_dexes, varParams, expmjd):
+
+        if len(varParams) == 0:
+            return numpy.array([[],[],[],[],[],[]])
+
+        period = varParams['period'][valid_dexes]
+        amplitude = varParams['amplitude'][valid_dexes]
         phase = expmjd%period
-        magoff = amplitude*numpy.sin(2*numpy.pi*phase)
-        return {'u':magoff, 'g':magoff, 'r':magoff, 'i':magoff, 'z':magoff, 'y':magoff}
+        magoff = numpy.zeros((6, self.num_variable_obj(varParams)))
+        delta = amplitude*numpy.sin(2*numpy.pi*phase.astype(float))
+        delta = delta.astype(float)
+        for ix in range(6):
+            magoff[ix][valid_dexes] += delta
+        return magoff
+
 
 class testDefaults(object):
     """
@@ -268,7 +277,7 @@ class cartoonPhotometryStars(PhotometryStars):
                                                              bandpassRoot = 'test_bandpass_')
 
 
-        output = self._magnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
+        output = self._quiescentMagnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
 
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
@@ -324,8 +333,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter('bulge', self.cartoonBandpassDict,
-                                     self.get_cartoon_bulge_mags._colnames)
+        return self._quiescentMagnitudeGetter('bulge', self.cartoonBandpassDict,
+                                              self.get_cartoon_bulge_mags._colnames)
 
 
     @compound('cdisk_u', 'cdisk_g', 'cdisk_r', 'cdisk_i', 'cdisk_z')
@@ -340,8 +349,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter('disk', self.cartoonBandpassDict,
-                                     self.get_cartoon_disk_mags._colnames)
+        return self._quiescentMagnitudeGetter('disk', self.cartoonBandpassDict,
+                                              self.get_cartoon_disk_mags._colnames)
 
 
     @compound('cagn_u', 'cagn_g', 'cagn_r', 'cagn_i', 'cagn_z')
@@ -356,8 +365,8 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
                                                                    bandpassDir=bandpassDir,
                                                                    bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter('agn', self.cartoonBandpassDict,
-                                     self.get_cartoon_agn_mags._colnames)
+        return self._quiescentMagnitudeGetter('agn', self.cartoonBandpassDict,
+                                              self.get_cartoon_agn_mags._colnames)
 
 
     @compound('ctotal_u', 'ctotal_g', 'ctotal_r', 'ctotal_i', 'ctotal_z')
@@ -427,7 +436,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
             self.cartoonBandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                                                                     bandpassRoot = 'test_bandpass_')
 
-        return self._magnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
+        return self._quiescentMagnitudeGetter(self.cartoonBandpassDict, self.get_magnitudes._colnames)
 
 
 

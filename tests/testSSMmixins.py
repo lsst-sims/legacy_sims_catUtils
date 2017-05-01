@@ -48,8 +48,8 @@ class Compound_SSM_photCat(InstanceCatalog, PhotometrySSM):
                                                       bandpassDir=bandpassDir,
                                                       bandpassRoot='test_bandpass_')
 
-        return self._magnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames,
-                                     bandpassTag='cartoon')
+        return self._quiescentMagnitudeGetter(self.cartoonBandpassDict, self.get_cartoon_mags._colnames,
+                                              bandpassTag='cartoon')
 
 
 class SSM_dmagCat(InstanceCatalog, PhotometrySSM):
