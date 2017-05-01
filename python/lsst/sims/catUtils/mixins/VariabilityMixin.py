@@ -81,10 +81,6 @@ class Variability(object):
 
     _survey_start = 59580.0 # start time of the LSST survey being simulated (MJD)
 
-    # the file wherein light curves for MLT dwarf flares are stored
-    _mlt_lc_file = os.path.join(getPackageDir('sims_data'),
-                                'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
-
     variabilityInitialized = False
 
     def num_variable_obj(self, params):
@@ -521,6 +517,10 @@ class MLTflaringMixin(Variability):
     """
     A mixin providing the model for cool dwarf stellar flares.
     """
+
+    # the file wherein light curves for MLT dwarf flares are stored
+    _mlt_lc_file = os.path.join(getPackageDir('sims_data'),
+                                'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
 
     @register_method('MLT')
     def applyMlTflaring(self, valid_dexes, params, expmjd):
