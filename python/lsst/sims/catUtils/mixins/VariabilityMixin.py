@@ -648,6 +648,14 @@ class MLTflaringMixin(Variability):
             use_this_lc = numpy.where(numpy.char.find(lc_name_arr, lc_name)==0)
 
             lc_name = lc_name.replace('.txt', '')
+
+            # 2017 May 1
+            # There isn't supposed to be a 'late_inactive' light curve.
+            # Unfortunately, I (Scott Daniel) assigned 'late_inactive'
+            # light curves to some of the stars on our database.  Rather
+            # than fix the database table (which will take about a week of
+            # compute time), I am going to fix the problem here by mapping
+            # 'late_inactive' into 'late_active'.
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
             time_arr = self._survey_start + _MLT_LC_CACHE['%s_time' % lc_name]
