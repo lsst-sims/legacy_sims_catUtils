@@ -104,7 +104,8 @@ class Variability(object):
     def initializeVariability(self, doCache=False):
         """
         It will only be called from applyVariability, and only
-        if self.variabilityInitiailized == True (which this method sets)
+        if self.variabilityInitiailized == False (which this method then
+        sets to True)
 
         @param [in] doCache controls whether or not the code caches calculated
         light curves for future use
