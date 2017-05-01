@@ -150,7 +150,7 @@ class Variability(object):
             self.initializeVariability(doCache=True)
 
         # A numpy array of magnitude offsets.  Each row is
-        # an LSST band in ugrizy order.  Each columns is an
+        # an LSST band in ugrizy order.  Each column is an
         # astrophysical object from the CatSim database.
         deltaMag = numpy.zeros((6, len(varParams_arr)))
 
