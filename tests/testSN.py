@@ -295,6 +295,23 @@ class SNObject_tests(unittest.TestCase):
         # Test 2.
         self.assertEqual(peakabsMag, HiPeakAbsMag)
 
+    def test_bandFluxErrorWorks(self):
+        """
+        test that bandflux errors work even if the flux is negative
+        """
+        times = self.mjdobs
+
+        e = self.SN_extincted.catsimBandFluxError(times,
+                                                  self.lsstBandPass['r'],
+                                                  m5=24.5, fluxinMaggies=-1.0)
+        assert isinstance(e, np.float)
+        print(e)
+        assert not(np.isinf(e) or np.isnan(e))
+
+    
+
+
+
 
 @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
 class SNIaCatalog_tests(unittest.TestCase):

@@ -713,7 +713,8 @@ class SNObject(sncosmo.Model):
                                           bandpass=bandpassobject)
         return SEDfromSNcosmo.calcFlux(bandpass=bandpassobject) / 3631.0
  
-    def catsimBandMag(self, bandpassobject, time, fluxinMaggies=None):
+    def catsimBandMag(self, bandpassobject, time, fluxinMaggies=None,
+                      noNan=False):
         """
         return the magnitude in the bandpass in the AB magnitude system
 
@@ -723,6 +724,10 @@ class SNObject(sncosmo.Model):
             LSST Catsim bandpass instance for a particular bandpass
         time : mandatory, float
             MJD at which this is evaluated
+        fluxinMaggies: float, defaults to None
+            provide the flux in maggies, if not provided, this will be evaluated
+        noNan : Bool, defaults to False
+            If True, will default to 200.0 rather than give nan values
         Returns
         -------
         float value of band magnitude in AB system
@@ -733,6 +738,9 @@ class SNObject(sncosmo.Model):
         if fluxinMaggies is None:
             fluxinMaggies = self.catsimBandFlux(bandpassobject=bandpassobject,
                                                 time=time)
+        if noNan:
+            if fluxinMaggies <= 0.:
+                return 200.0
         return -2.5 * np.log10(fluxinMaggies)
 
     def catsimBandFluxError(self, time, bandpassobject, m5,
@@ -768,10 +776,11 @@ class SNObject(sncosmo.Model):
                                                 bandpassobject=bandpassobject)
         if magnitude is None:
             mag = self.catsimBandMag(time=time, fluxinMaggies=fluxinMaggies,
-                                     bandpassobject=bandpassobject)
+                                     bandpassobject=bandpassobject, noNan=True)
         else:
             mag = magnitude
 
+        fluxinMaggies = 10.0**(-0.4 * mag)
         if photParams is None:
             photParams = PhotometricParameters()
 
@@ -807,7 +816,8 @@ class SNObject(sncosmo.Model):
 
         if magnitude is None:
             mag = self.catsimBandMag(time=time,
-                                     bandpassobject=bandpassobject)
+                                     bandpassobject=bandpassobject,
+                                     noNan=True)
         else:
             mag = magnitude
 
