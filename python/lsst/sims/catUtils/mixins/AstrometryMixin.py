@@ -10,12 +10,13 @@ from lsst.sims.utils import _icrsFromObserved
 from lsst.sims.utils import _pupilCoordsFromObserved
 from lsst.sims.utils import rotationMatrixFromVectors
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
+from lsst.sims.coordUtils.LsstCameraUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies", "AstrometrySSM",
            "PhoSimAstrometryBase", "PhoSimAstrometryStars", "PhoSimAstrometryGalaxies",
            "PhoSimAstrometrySSM",
-           "CameraCoords"]
+           "CameraCoords", "CameraCoordsLSST"]
 
 
 class AstrometryBase(object):
@@ -84,6 +85,16 @@ class CameraCoords(AstrometryBase):
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
         return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=self.camera)
+
+
+class CameraCoordsLSST(CameraCoords):
+
+    @cached
+    def get_chipName(self):
+        """Get the chip name if there is one for each catalog entry"""
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        return chipNameFromPupilCoordsLSST(xPupil, yPupil,
+                                           allow_multiple_chips=self.allow_multiple_chips)
 
 
 class AstrometryGalaxies(AstrometryBase):
