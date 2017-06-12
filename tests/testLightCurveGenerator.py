@@ -213,6 +213,7 @@ class StellarLightCurveTest(unittest.TestCase):
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        self.assertGreater(len(chunk_light_curves), 2)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
@@ -264,6 +265,7 @@ class StellarLightCurveTest(unittest.TestCase):
         self.assertEqual(len(pointings), 1)
 
         control_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(control_light_curves), 2)
 
         test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings,
                                                                            lc_per_field=lc_limit)
@@ -298,6 +300,7 @@ class StellarLightCurveTest(unittest.TestCase):
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        self.assertGreater(len(chunk_light_curves), 2)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
@@ -346,6 +349,7 @@ class StellarLightCurveTest(unittest.TestCase):
         gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
         lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 2)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
@@ -603,6 +607,7 @@ class AgnLightCurveTest(unittest.TestCase):
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        self.assertGreater(len(chunk_light_curves), 2)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
@@ -654,6 +659,7 @@ class AgnLightCurveTest(unittest.TestCase):
         self.assertEqual(len(pointings), 1)
 
         control_lc, truth = lc_gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(control_lc), 2)
         test_lc, truth = lc_gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
         self.assertGreater(len(control_lc), len(test_lc))
         self.assertEqual(len(test_lc), lc_limit)
@@ -670,6 +676,7 @@ class AgnLightCurveTest(unittest.TestCase):
         gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
         lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 2)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
