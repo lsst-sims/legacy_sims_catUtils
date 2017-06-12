@@ -536,6 +536,10 @@ class StellarLightCurveTest(unittest.TestCase):
         self.assertGreater(len(lc_constrained), 0)
         self.assertLess(len(lc_constrained), len(lc_unconstrained))
 
+        # create catalogs based on all of the pointings in 'pointings';
+        # verify that the objects in those catalogs appear correctly
+        # in the constrained and unconstrained light curves.
+
         class ConstraintCatalogClass(InstanceCatalog):
             column_outputs= ['uniqueId', 'ebv']
 
