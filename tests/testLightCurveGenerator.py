@@ -238,16 +238,27 @@ class StellarLightCurveTest(unittest.TestCase):
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
 
+        ct = 0
         for obs in obs_list:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = test_light_curves[star_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the same number of objects and observations were found in the
+        # catalogs and the LightCurveGenerator output
+        total_ct = 0
+        for obj_name in test_light_curves:
+            for bandpass in test_light_curves[obj_name]:
+                total_ct += len(test_light_curves[obj_name][bandpass]['mjd'])
+        self.assertEqual(ct, total_ct)
+
 
     def test_limited_stellar_light_curves(self):
         """
@@ -326,16 +337,26 @@ class StellarLightCurveTest(unittest.TestCase):
                                               expMJD=mjdRange,
                                               boundLength=1.75)
 
+        ct = 0
         for obs in obs_list:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = test_light_curves[star_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the same number of objects and observations were found in the
+        # catalogs and the LightCurveGenerator output
+        total_ct = 0
+        for obj_name in test_light_curves:
+            for bandpass in test_light_curves[obj_name]:
+                total_ct += len(test_light_curves[obj_name][bandpass]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_multiband_light_curves(self):
         """
@@ -361,11 +382,13 @@ class StellarLightCurveTest(unittest.TestCase):
         self.assertGreater(len(control_pointings_g), 0)
         self.assertGreater(len(control_pointings_r), 0)
 
+        ct = 0
         for obs in control_pointings_r:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['r']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
@@ -377,11 +400,20 @@ class StellarLightCurveTest(unittest.TestCase):
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['g']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the same number of objects and observations were found in the
+        # catalogs and the LightCurveGenerator output
+        total_ct = 0
+        for obj_name in lc_dict:
+            for bandpass in lc_dict[obj_name]:
+                total_ct += len(lc_dict[obj_name][bandpass]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_constraint(self):
         """
@@ -632,16 +664,26 @@ class AgnLightCurveTest(unittest.TestCase):
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
 
+        ct = 0
         for obs in obs_list:
             cat = agnControlCatalog(self.agn_db,
                                     obs_metadata=obs)
 
             for agn_obj in cat.iter_catalog():
+                ct += 1
                 lc = test_light_curves[agn_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
+
+        # Verify that the catalogs and LightCurveGenerator returned the
+        # same number of observations
+        total_ct = 0
+        for obj_name in test_light_curves:
+            for band in test_light_curves[obj_name]:
+                total_ct += len(test_light_curves[obj_name][band]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_limited_agn_light_curves(self):
         """
@@ -688,11 +730,13 @@ class AgnLightCurveTest(unittest.TestCase):
         self.assertGreater(len(control_pointings_g), 0)
         self.assertGreater(len(control_pointings_r), 0)
 
+        ct = 0
         for obs in control_pointings_r:
             cat = agnControlCatalog(self.agn_db,
                                     obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['r']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
@@ -704,11 +748,20 @@ class AgnLightCurveTest(unittest.TestCase):
                                     obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['g']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the catalogs and LightCurveGenerator returned the
+        # same number of observations
+        total_ct = 0
+        for obj_name in lc_dict:
+            for band in lc_dict[obj_name]:
+                total_ct += len(lc_dict[obj_name][band]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_agn_constraint(self):
         """
