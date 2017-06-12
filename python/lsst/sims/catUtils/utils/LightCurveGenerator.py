@@ -556,7 +556,10 @@ class StellarLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _stellarLightCurveCatalog
-        self._constraint = 'varParamStr IS NOT NULL'
+        if 'constraint' in kwargs:
+            self._constraint = kwargs['constraint']
+        else:
+            self._constraint = 'varParamStr IS NOT NULL'
         super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
 
 
@@ -579,5 +582,8 @@ class AgnLightCurveGenerator(LightCurveGenerator):
 
     def __init__(self, *args, **kwargs):
         self._lightCurveCatalogClass = _agnLightCurveCatalog
-        self._constraint = 'varParamStr IS NOT NULL'
+        if 'constraint' in kwargs:
+            self._constraint = kwargs['constraint']
+        else:
+            self._constraint = 'varParamStr IS NOT NULL'
         super(AgnLightCurveGenerator, self).__init__(*args, **kwargs)
