@@ -513,6 +513,56 @@ class StellarLightCurveTest(unittest.TestCase):
         if os.path.exists(dummy_cat_name):
             os.unlink(dummy_cat_name)
 
+    def test_manual_constraint(self):
+        """
+        Test that a constraint put in by hand is properly applied
+        """
+
+        raRange = (78.0, 89.0)
+        decRange = (-74.0, -60.0)
+        bandpass = 'g'
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+        (lc_unconstrained,
+         truth_unconstrianed) = lc_gen.light_curves_from_pointings(pointings)
+
+        (lc_constrained,
+         truth_constrained) = lc_gen.light_curves_from_pointings(pointings,
+                                                                 constraint = 'ebv>0.05')
+
+        self.assertGreater(len(lc_constrained), 0)
+        self.assertLess(len(lc_constrained), len(lc_unconstrained))
+
+        class ConstraintCatalogClass(InstanceCatalog):
+            column_outputs= ['uniqueId', 'ebv']
+
+        ct_unconstrained = 0
+        ct_constrained = 0
+        for field in pointings:
+            for obs in field:
+                cat = ConstraintCatalogClass(self.stellar_db, obs_metadata=obs)
+                for star_obj in cat.iter_catalog():
+                    if star_obj[1]>0.05:
+                        self.assertIn(star_obj[0], lc_constrained)
+                        ct_constrained += 1
+                    self.assertIn(star_obj[0], lc_unconstrained)
+                    ct_unconstrained += 1
+
+        total_ct = 0
+        for obj_name in lc_unconstrained:
+            for band in lc_unconstrained[obj_name]:
+                total_ct += len(lc_unconstrained[obj_name][band]['mjd'])
+        self.assertEqual(ct_unconstrained, total_ct)
+
+        total_ct = 0
+        for obj_name in lc_constrained:
+            for band in lc_constrained[obj_name]:
+                total_ct += len(lc_constrained[obj_name][band]['mjd'])
+        self.assertEqual(ct_constrained, total_ct)
+
 
 class AgnLightCurveTest(unittest.TestCase):
 
