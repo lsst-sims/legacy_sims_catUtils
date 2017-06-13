@@ -277,7 +277,7 @@ class LightCurveGenerator(object):
                                                                   fieldDec=dec,
                                                                   telescopeFilter=bp,
                                                                   expMJD=expMJD,
-                                                                  boundLength=1.75)
+                                                                  boundLength=boundLength)
                 obs_list += sub_list
 
         if len(obs_list) == 0:
