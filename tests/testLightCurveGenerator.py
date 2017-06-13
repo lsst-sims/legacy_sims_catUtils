@@ -213,6 +213,7 @@ class StellarLightCurveTest(unittest.TestCase):
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        self.assertGreater(len(chunk_light_curves), 2)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
@@ -237,16 +238,27 @@ class StellarLightCurveTest(unittest.TestCase):
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
 
+        ct = 0
         for obs in obs_list:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = test_light_curves[star_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the same number of objects and observations were found in the
+        # catalogs and the LightCurveGenerator output
+        total_ct = 0
+        for obj_name in test_light_curves:
+            for bandpass in test_light_curves[obj_name]:
+                total_ct += len(test_light_curves[obj_name][bandpass]['mjd'])
+        self.assertEqual(ct, total_ct)
+
 
     def test_limited_stellar_light_curves(self):
         """
@@ -264,6 +276,7 @@ class StellarLightCurveTest(unittest.TestCase):
         self.assertEqual(len(pointings), 1)
 
         control_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(control_light_curves), 2)
 
         test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings,
                                                                            lc_per_field=lc_limit)
@@ -298,6 +311,7 @@ class StellarLightCurveTest(unittest.TestCase):
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        self.assertGreater(len(chunk_light_curves), 2)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
@@ -323,16 +337,26 @@ class StellarLightCurveTest(unittest.TestCase):
                                               expMJD=mjdRange,
                                               boundLength=1.75)
 
+        ct = 0
         for obs in obs_list:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = test_light_curves[star_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the same number of objects and observations were found in the
+        # catalogs and the LightCurveGenerator output
+        total_ct = 0
+        for obj_name in test_light_curves:
+            for bandpass in test_light_curves[obj_name]:
+                total_ct += len(test_light_curves[obj_name][bandpass]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_multiband_light_curves(self):
         """
@@ -346,6 +370,7 @@ class StellarLightCurveTest(unittest.TestCase):
         gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
         lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 2)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
@@ -357,11 +382,13 @@ class StellarLightCurveTest(unittest.TestCase):
         self.assertGreater(len(control_pointings_g), 0)
         self.assertGreater(len(control_pointings_r), 0)
 
+        ct = 0
         for obs in control_pointings_r:
             cat = stellarControlCatalog(self.stellar_db,
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['r']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
@@ -373,11 +400,20 @@ class StellarLightCurveTest(unittest.TestCase):
                                         obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['g']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the same number of objects and observations were found in the
+        # catalogs and the LightCurveGenerator output
+        total_ct = 0
+        for obj_name in lc_dict:
+            for bandpass in lc_dict[obj_name]:
+                total_ct += len(lc_dict[obj_name][bandpass]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_constraint(self):
         """
@@ -476,6 +512,60 @@ class StellarLightCurveTest(unittest.TestCase):
 
         if os.path.exists(dummy_cat_name):
             os.unlink(dummy_cat_name)
+
+    def test_manual_constraint(self):
+        """
+        Test that a constraint put in by hand is properly applied
+        """
+
+        raRange = (78.0, 89.0)
+        decRange = (-74.0, -60.0)
+        bandpass = 'g'
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, self.opsimDb)
+
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+        (lc_unconstrained,
+         truth_unconstrianed) = lc_gen.light_curves_from_pointings(pointings)
+
+        (lc_constrained,
+         truth_constrained) = lc_gen.light_curves_from_pointings(pointings,
+                                                                 constraint = 'ebv>0.05')
+
+        self.assertGreater(len(lc_constrained), 0)
+        self.assertLess(len(lc_constrained), len(lc_unconstrained))
+
+        # create catalogs based on all of the pointings in 'pointings';
+        # verify that the objects in those catalogs appear correctly
+        # in the constrained and unconstrained light curves.
+
+        class ConstraintCatalogClass(InstanceCatalog):
+            column_outputs= ['uniqueId', 'ebv']
+
+        ct_unconstrained = 0
+        ct_constrained = 0
+        for field in pointings:
+            for obs in field:
+                cat = ConstraintCatalogClass(self.stellar_db, obs_metadata=obs)
+                for star_obj in cat.iter_catalog():
+                    if star_obj[1]>0.05:
+                        self.assertIn(star_obj[0], lc_constrained)
+                        ct_constrained += 1
+                    self.assertIn(star_obj[0], lc_unconstrained)
+                    ct_unconstrained += 1
+
+        total_ct = 0
+        for obj_name in lc_unconstrained:
+            for band in lc_unconstrained[obj_name]:
+                total_ct += len(lc_unconstrained[obj_name][band]['mjd'])
+        self.assertEqual(ct_unconstrained, total_ct)
+
+        total_ct = 0
+        for obj_name in lc_constrained:
+            for band in lc_constrained[obj_name]:
+                total_ct += len(lc_constrained[obj_name][band]['mjd'])
+        self.assertEqual(ct_constrained, total_ct)
 
 
 class AgnLightCurveTest(unittest.TestCase):
@@ -603,6 +693,7 @@ class AgnLightCurveTest(unittest.TestCase):
         # Now test that specifying a small chunk_size does not change the output
         # light curves
         chunk_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings, chunk_size=1)
+        self.assertGreater(len(chunk_light_curves), 2)
 
         for unique_id in test_light_curves:
             self.assertEqual(len(test_light_curves[unique_id][bandpass]['mjd']),
@@ -627,16 +718,26 @@ class AgnLightCurveTest(unittest.TestCase):
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
 
+        ct = 0
         for obs in obs_list:
             cat = agnControlCatalog(self.agn_db,
                                     obs_metadata=obs)
 
             for agn_obj in cat.iter_catalog():
+                ct += 1
                 lc = test_light_curves[agn_obj[0]][bandpass]
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-agn_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-agn_obj[4]), 1.0e-7)
+
+        # Verify that the catalogs and LightCurveGenerator returned the
+        # same number of observations
+        total_ct = 0
+        for obj_name in test_light_curves:
+            for band in test_light_curves[obj_name]:
+                total_ct += len(test_light_curves[obj_name][band]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_limited_agn_light_curves(self):
         """
@@ -654,6 +755,7 @@ class AgnLightCurveTest(unittest.TestCase):
         self.assertEqual(len(pointings), 1)
 
         control_lc, truth = lc_gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(control_lc), 2)
         test_lc, truth = lc_gen.light_curves_from_pointings(pointings, lc_per_field=lc_limit)
         self.assertGreater(len(control_lc), len(test_lc))
         self.assertEqual(len(test_lc), lc_limit)
@@ -670,6 +772,7 @@ class AgnLightCurveTest(unittest.TestCase):
         gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
         lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
+        self.assertGreater(len(lc_dict), 2)
 
         obs_gen = ObservationMetaDataGenerator(database=self.opsimDb, driver='sqlite')
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
@@ -681,11 +784,13 @@ class AgnLightCurveTest(unittest.TestCase):
         self.assertGreater(len(control_pointings_g), 0)
         self.assertGreater(len(control_pointings_r), 0)
 
+        ct = 0
         for obs in control_pointings_r:
             cat = agnControlCatalog(self.agn_db,
                                     obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['r']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
@@ -697,11 +802,20 @@ class AgnLightCurveTest(unittest.TestCase):
                                     obs_metadata=obs)
 
             for star_obj in cat.iter_catalog():
+                ct += 1
                 lc = lc_dict[star_obj[0]]['g']
                 dex = np.argmin(np.abs(lc['mjd']-obs.mjd.TAI))
                 self.assertLess(np.abs(lc['mjd'][dex]-obs.mjd.TAI), 1.0e-7)
                 self.assertLess(np.abs(lc['mag'][dex]-star_obj[3]), 1.0e-7)
                 self.assertLess(np.abs(lc['error'][dex]-star_obj[4]), 1.0e-7)
+
+        # Verify that the catalogs and LightCurveGenerator returned the
+        # same number of observations
+        total_ct = 0
+        for obj_name in lc_dict:
+            for band in lc_dict[obj_name]:
+                total_ct += len(lc_dict[obj_name][band]['mjd'])
+        self.assertEqual(ct, total_ct)
 
     def test_agn_constraint(self):
         """

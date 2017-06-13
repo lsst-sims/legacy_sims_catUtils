@@ -227,7 +227,10 @@ class LightCurveGenerator(object):
     def _filter_chunk(self, chunk):
         return chunk
 
-    def get_pointings(self, ra, dec, bandpass=('u', 'g', 'r', 'i', 'z', 'y'), expMJD=None):
+    def get_pointings(self, ra, dec,
+                      bandpass=('u', 'g', 'r', 'i', 'z', 'y'),
+                      expMJD=None,
+                      boundLength=1.75):
         """
         Inputs
         -------
@@ -243,6 +246,10 @@ class LightCurveGenerator(object):
         Defaults to None, in which case, the light curves over the entire
         10 year survey are returned.
 
+        boundLength is the radius in degrees of the field of view of each
+        returned ObservationMetaData (default=1.75, the radius of the LSST
+        field of view).
+
         Outputs
         -------
         A 2-D list of ObservationMetaData objects.  Each row is a list of
@@ -256,7 +263,7 @@ class LightCurveGenerator(object):
                                                               fieldDec=dec,
                                                               telescopeFilter=bandpass,
                                                               expMJD=expMJD,
-                                                              boundLength=1.75)
+                                                              boundLength=boundLength)
         else:
             # obs_list will be populated with a list of lists of ObservationMetaData.
             # These ObervationMetaData will have pointingRA, pointingDec, filters,
@@ -270,7 +277,7 @@ class LightCurveGenerator(object):
                                                                   fieldDec=dec,
                                                                   telescopeFilter=bp,
                                                                   expMJD=expMJD,
-                                                                  boundLength=1.75)
+                                                                  boundLength=boundLength)
                 obs_list += sub_list
 
         if len(obs_list) == 0:
@@ -319,7 +326,7 @@ class LightCurveGenerator(object):
 
         return obs_groups_out
 
-    def _get_query_from_group(self, grp, chunk_size, lc_per_field=None):
+    def _get_query_from_group(self, grp, chunk_size, lc_per_field=None, constraint=None):
         """
         Take a group of ObervationMetaData that all point to the same region
         of the sky.  Query the CatSim database for all of the celestial objects
@@ -333,7 +340,20 @@ class LightCurveGenerator(object):
 
         lc_per_field specifies the maximum number of light curves to return
         per field of view (None implies no constraint).
+
+        constraint is a string containing a SQL constraint to be applied to
+        all database queries associated with generating these light curves
+        (optional).
         """
+
+        if self._constraint is not None and constraint is not None:
+            master_constraint = self._constraint + ' AND ' + constraint
+        elif self._constraint is not None and constraint is None:
+            master_constraint = self._constraint
+        elif self._constraint is None and constraint is not None:
+            master_constraint = constraint
+        else:
+            master_constraint = None
 
         cat = self._lightCurveCatalogClass(self._catalogdb, obs_metadata=grp[0])
 
@@ -341,7 +361,7 @@ class LightCurveGenerator(object):
 
         query_result = cat.db_obj.query_columns(colnames=cat._active_columns,
                                                 obs_metadata=cat.obs_metadata,
-                                                constraint=self._constraint,
+                                                constraint=master_constraint,
                                                 limit=lc_per_field,
                                                 chunk_size=chunk_size)
 
@@ -438,7 +458,8 @@ class LightCurveGenerator(object):
 
             _sed_cache = {}  # before moving on to the next chunk of objects
 
-    def light_curves_from_pointings(self, pointings, chunk_size=100000, lc_per_field=None):
+    def light_curves_from_pointings(self, pointings, chunk_size=100000,
+                                    lc_per_field=None, constraint=None):
         """
         Generate light curves for all of the objects in a particular region
         of sky in a particular bandpass.
@@ -459,6 +480,10 @@ class LightCurveGenerator(object):
         lc_per_field (optional; default None) is an int specifying the maximum
         number of light curves to return per field of view (None implies no
         constraint).
+
+        constraint is a string containing a SQL constraint to be applied to
+        all database queries associated with generating these light curves
+        (optional).
 
         Output:
         -------
@@ -510,7 +535,8 @@ class LightCurveGenerator(object):
             print('starting query')
 
             t_before_query = time.time()
-            query_result = self._get_query_from_group(grp, chunk_size, lc_per_field=lc_per_field)
+            query_result = self._get_query_from_group(grp, chunk_size, lc_per_field=lc_per_field,
+                                                      constraint=constraint)
 
             print('query took ', time.time()-t_before_query)
 
