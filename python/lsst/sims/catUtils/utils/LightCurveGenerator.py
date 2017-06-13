@@ -227,7 +227,10 @@ class LightCurveGenerator(object):
     def _filter_chunk(self, chunk):
         return chunk
 
-    def get_pointings(self, ra, dec, bandpass=('u', 'g', 'r', 'i', 'z', 'y'), expMJD=None):
+    def get_pointings(self, ra, dec,
+                      bandpass=('u', 'g', 'r', 'i', 'z', 'y'),
+                      expMJD=None,
+                      boundLength=1.75):
         """
         Inputs
         -------
@@ -243,6 +246,10 @@ class LightCurveGenerator(object):
         Defaults to None, in which case, the light curves over the entire
         10 year survey are returned.
 
+        boundLength is the radius in degrees of the field of view of each
+        returned ObservationMetaData (default=1.75, the radius of the LSST
+        field of view).
+
         Outputs
         -------
         A 2-D list of ObservationMetaData objects.  Each row is a list of
@@ -256,7 +263,7 @@ class LightCurveGenerator(object):
                                                               fieldDec=dec,
                                                               telescopeFilter=bandpass,
                                                               expMJD=expMJD,
-                                                              boundLength=1.75)
+                                                              boundLength=boundLength)
         else:
             # obs_list will be populated with a list of lists of ObservationMetaData.
             # These ObervationMetaData will have pointingRA, pointingDec, filters,
