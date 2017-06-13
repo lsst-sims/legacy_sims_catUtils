@@ -58,7 +58,8 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
         self._brightness_name = 'flux'
         super(SNIaLightCurveGenerator, self).__init__(*args, **kwargs)
 
-    def light_curves_from_pointings(self, pointings, chunk_size=100000, lc_per_field=None):
+    def light_curves_from_pointings(self, pointings, chunk_size=100000, lc_per_field=None,
+                                    constraint=None):
         if lc_per_field is not None:
             warnings.warn("You have set lc_per_field in the SNIaLightCurveGenerator. "
                           "This will limit the number of candidate galaxies queried from the "
@@ -70,16 +71,18 @@ class SNIaLightCurveGenerator(LightCurveGenerator):
 
         return LightCurveGenerator.light_curves_from_pointings(self, pointings,
                                                                chunk_size=chunk_size,
-                                                               lc_per_field=lc_per_field)
+                                                               lc_per_field=lc_per_field,
+                                                               constraint=constraint)
 
-    def _get_query_from_group(self, grp, chunk_size, lc_per_field=None):
+    def _get_query_from_group(self, grp, chunk_size, lc_per_field=None, constraint=None):
         """
         Override _get_query_from_group.  The probabilistic nature of SNe requires
         that we always actually do the query with lc_per_field=None (since we can't be
         guaranteed that any given galaxy, though it contains a SN, will have an SN that
         is going off during our time of interest).
         """
-        return LightCurveGenerator._get_query_from_group(self, grp, chunk_size, lc_per_field=None)
+        return LightCurveGenerator._get_query_from_group(self, grp, chunk_size, lc_per_field=None,
+                                                         constraint=constraint)
 
     class _filterCatalogClass(_sniaLightCurveCatalog):
         column_outputs = ["uniqueId", "t0"]
