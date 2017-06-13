@@ -727,7 +727,8 @@ class SNObject(sncosmo.Model):
         fluxinMaggies: float, defaults to None
             provide the flux in maggies, if not provided, this will be evaluated
         noNan : Bool, defaults to False
-            If True, will default to 200.0 rather than give nan values
+            If True, an AB magnitude of 200.0 rather than nan values is
+            associated with a flux of 0.
         Returns
         -------
         float value of band magnitude in AB system
@@ -750,7 +751,13 @@ class SNObject(sncosmo.Model):
         """
         return the flux uncertainty in the bandpass in units 'maggies'
         (the flux the AB magnitude reference spectrum would have in the
-        same band.)
+        same band.) for a source of given brightness. The source brightness
+        may be calculated, but the need for calculation is overridden by a
+        provided flux in bandpass (in units of maggies) which itself may be
+        overridden by a provided magnitude. If the provided/calculated flux
+        is 0. or negative the magnitude calculated is taken to be 200.0 rather
+        than a np.nan.
+
 
         Parameters
         ----------
@@ -759,17 +766,23 @@ class SNObject(sncosmo.Model):
         bandpassobject: mandatory, `lsst.sims.photUtils.BandPass` object
             A particular bandpass which is an instantiation of one of
             (u, g, r, i, z, y)
-        m5 :
-        photParams :
-        magnitude :
+        m5 : float, mandatory
+            fiveSigma Depth for the sky observation
+        photParams : instance of `sims.photUtils.PhotometricParameters`, defaults to `None` 
+            describes the hardware parameters of the Observing system
+        magnitude : float, defaults to None
+            AB magnitude of source in bandpass.
+        fluxinMaggies : float, defaults to None
+            flux in Maggies for source in bandpass
         Returns
         -------
         float
 
         Examples
         --------
-        .. note: If there is an unphysical value of sed in
-        the wavelength range, it produces a flux of  `np.nan`
+        .. note: If there is an unphysical value of sed the fluxinMaggies might
+        be `np.nan`. The magnitude calculated from this is calculated using `noNan`
+         and is therefore 200.0 rather than `np.nan`. 
         """
         if fluxinMaggies is None:
             fluxinMaggies = self.catsimBandFlux(time=time,
@@ -780,7 +793,10 @@ class SNObject(sncosmo.Model):
         else:
             mag = magnitude
 
+        # recalculate fluxinMaggies as the previous one might have been `np.nan`
+        # the noise is contaminated if this is `np.nan`
         fluxinMaggies = 10.0**(-0.4 * mag)
+
         if photParams is None:
             photParams = PhotometricParameters()
 
