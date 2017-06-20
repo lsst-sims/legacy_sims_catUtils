@@ -56,8 +56,10 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin"]
 
 _AGN_LC_CACHE = {} # a global cache of agn light curve calculations
-_MLT_LC_CACHE = None
-_MLT_LC_CACHE_NAME = None
+_MLT_LC_NPZ = None
+_MLT_LC_NPZ_NAME = None
+_MLT_LC_TIME_CACHE = {}
+_MLT_LC_FLUX_CACHE = {}
 
 def reset_agn_lc_cache():
     """
@@ -532,8 +534,10 @@ class MLTflaringMixin(Variability):
         parallax = self.column_by_name('parallax')
         ebv = self.column_by_name('ebv')
 
-        global _MLT_LC_CACHE
-        global _MLT_LC_CACHE_NAME
+        global _MLT_LC_NPZ
+        global _MLT_LC_NPZ_NAME
+        global _MLT_LC_TIME_CACHE
+        global _MLT_LC_FLUX_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
         # just in case the user wants to override the light curve cache
@@ -551,7 +555,7 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_CACHE is None or _MLT_LC_CACHE_NAME != self._mlt_lc_file:
+        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file:
             if not os.path.exists(self._mlt_lc_file):
                 catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
                 raise RuntimeError("The MLT flaring light curve file:\n"
@@ -562,8 +566,8 @@ class MLTflaringMixin(Variability):
                                     + "and run get_mdwarf_flares.sh "
                                     + "to get the data")
 
-            _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
-            _MLT_LC_CACHE_NAME = self._mlt_lc_file
+            _MLT_LC_NPZ = numpy.load(self._mlt_lc_file)
+            _MLT_LC_NPZ_NAME = self._mlt_lc_file
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
@@ -659,16 +663,11 @@ class MLTflaringMixin(Variability):
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
 
-            if not hasattr(self, '_local_mlt_time_cache'):
-                self._local_mlt_time_cache = {}
-            if not hasattr(self, '_local_mlt_flux_cache'):
-                self._local_mlt_flux_cache = {}
-
-            if lc_name in self._local_mlt_time_cache:
-                raw_time_arr = self._local_mlt_time_cache[lc_name]
+            if lc_name in _MLT_LC_TIME_CACHE:
+                raw_time_arr = _MLT_LC_TIME_CACHE[lc_name]
             else:
-                raw_time_arr = _MLT_LC_CACHE['%s_time' % lc_name]
-                self._local_mlt_time_cache[lc_name] = raw_time_arr
+                raw_time_arr = _MLT_LC_NPZ['%s_time' % lc_name]
+                _MLT_LC_TIME_CACHE[lc_name] = raw_time_arr
 
             time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
@@ -683,11 +682,11 @@ class MLTflaringMixin(Variability):
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
                     flux_name = '%s_%s' % (lc_name, mag_name)
-                    if flux_name in self._local_mlt_flux_cache:
-                        flux_arr = self._local_mlt_flux_cache[flux_name]
+                    if flux_name in _MLT_LC_FLUX_CACHE:
+                        flux_arr = _MLT_LC_FLUX_CACHE[flux_name]
                     else:
-                        flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
-                        self._local_mlt_flux_cache[flux_name] = flux_arr
+                        flux_arr = _MLT_LC_NPZ[flux_name]
+                        _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
 
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
                     dflux *= flux_factor[use_this_lc]
