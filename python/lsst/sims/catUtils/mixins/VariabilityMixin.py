@@ -658,7 +658,19 @@ class MLTflaringMixin(Variability):
             # 'late_inactive' into 'late_active'.
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
-            time_arr = self._survey_start + _MLT_LC_CACHE['%s_time' % lc_name]
+
+            if not hasattr(self, '_local_mlt_time_cache'):
+                self._local_mlt_time_cache = {}
+            if not hasattr(self, '_local_mlt_flux_cache'):
+                self._local_mlt_flux_cache = {}
+
+            if lc_name in self._local_mlt_time_cache:
+                raw_time_arr = self._local_mlt_time_cache[lc_name]
+            else:
+                raw_time_arr = _MLT_LC_CACHE['%s_time' % lc_name]
+                self._local_mlt_time_cache[lc_name] = raw_time_arr
+
+            time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
 
             t_interp = (self.obs_metadata.mjd.TAI + params['t0'][use_this_lc]).astype(float)
@@ -669,7 +681,14 @@ class MLTflaringMixin(Variability):
             for i_mag, mag_name in enumerate(mag_name_tuple):
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
-                    flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
+
+                    flux_name = '%s_%s' % (lc_name, mag_name)
+                    if flux_name in self._local_mlt_flux_cache:
+                        flux_arr = self._local_mlt_flux_cache[flux_name]
+                    else:
+                        flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
+                        self._local_mlt_flux_cache[flux_name] = flux_arr
+
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
                     dflux *= flux_factor[use_this_lc]
 
