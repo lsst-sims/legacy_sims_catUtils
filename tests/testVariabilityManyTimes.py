@@ -257,6 +257,7 @@ class Variability_at_many_times_case(unittest.TestCase):
             self.assertEqual(dmag_test.shape, (6, n_obj))
             for i_band in range(6):
                 for i_obj in range(n_obj):
+                    self.assertTrue(isinstance(dmag_test[i_band][i_obj], numbers.Number))
                     self.assertEqual(dmag_test[i_band][i_obj],
                                      dmag_vector[i_band][i_obj][i_time])
 
