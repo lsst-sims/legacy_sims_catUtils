@@ -556,10 +556,20 @@ class MLTflaringMixin(Variability):
                                 'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
 
     @register_method('MLT')
-    def applyMLTflaring(self, valid_dexes, params, expmjd):
+    def applyMLTflaring(self, valid_dexes, params, expmjd,
+                        parallax=None, ebv=None, quiescent_mags=None):
 
-        parallax = self.column_by_name('parallax')
-        ebv = self.column_by_name('ebv')
+        if parallax is None:
+            parallax = self.column_by_name('parallax')
+        if ebv is None:
+            ebv = self.column_by_name('ebv')
+        if quiescent_mags is None:
+            quiescent_mags = {}
+            for mag_name in ('u', 'g', 'r', 'i', 'z', 'y'):
+                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                    quiescent_mags[mag_name] = self.column_by_name('quiescent_lsst_%s' % mag_name)
 
         global _MLT_LC_NPZ
         global _MLT_LC_NPZ_NAME
@@ -666,7 +676,7 @@ class MLTflaringMixin(Variability):
             if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                 'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
-                mm = self.column_by_name('quiescent_lsst_%s' % mag_name)
+                mm = quiescent_mags[mag_name]
                 base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
