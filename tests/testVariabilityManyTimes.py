@@ -235,6 +235,31 @@ class Variability_at_many_times_case(unittest.TestCase):
                     self.assertEqual(dmag_test[i_band][i_obj],
                                      dmag_vector[i_band][i_obj][i_time])
 
+    def test_BHMicrolens_many(self):
+        rng = np.random.RandomState(5132)
+        params = {}
+        params['filename'] = ['microlens/bh_binary_source/lc_14_25_75_8000_0_0.05_316',
+                              'microlens/bh_binary_source/lc_14_25_4000_8000_0_phi1.09_0.005_100',
+                              'microlens/bh_binary_source/lc_14_25_75_8000_0_tets2.09_0.005_316']
+
+        n_obj = len(params['filename'])
+        params['t0'] = rng.random_sample(n_obj)*10.0+59580.0
+
+        mjd_arr = rng.random_sample(12)*4.0+59590.0
+        n_time = len(mjd_arr)
+        valid_dexes = [np.arange(n_obj, dtype=int)]
+
+        dmag_vector = self.star_var.applyBHMicrolens(valid_dexes, params, mjd_arr)
+        self.assertEqual(dmag_vector.shape, (6, n_obj, n_time))
+
+        for i_time, mjd in enumerate(mjd_arr):
+            dmag_test = self.star_var.applyBHMicrolens(valid_dexes, params, mjd)
+            self.assertEqual(dmag_test.shape, (6, n_obj))
+            for i_band in range(6):
+                for i_obj in range(n_obj):
+                    self.assertEqual(dmag_test[i_band][i_obj],
+                                     dmag_vector[i_band][i_obj][i_time])
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
