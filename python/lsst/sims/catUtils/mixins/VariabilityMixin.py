@@ -408,11 +408,20 @@ class StellarVariabilityModels(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        dMags = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
-        epochs = expmjd - params['t0'][valid_dexes].astype(float)
-        umin = params['umin'].astype(float)[valid_dexes]
-        that = params['that'].astype(float)[valid_dexes]
+        if isinstance(expmjd_in, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            epochs = expmjd - params['t0'][valid_dexes].astype(float)
+            umin = params['umin'].astype(float)[valid_dexes]
+            that = params['that'].astype(float)[valid_dexes]
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            # cast epochs, umin, that into 2-D numpy arrays; the first index will iterate
+            # over objects; the second index will iterate over times in expmjd
+            epochs = numpy.array([expmjd - t0 for t0 in params['t0'][valid_dexes].astype(float)])
+            umin = numpy.array([[uu]*len(expmjd) for uu in params['umin'].astype(float)[valid_dexes]])
+            that = numpy.array([[tt]*len(expmjd) for tt in params['that'].astype(float)[valid_dexes]])
+
         u = numpy.sqrt(umin**2 + ((2.0*epochs/that)**2))
         magnification = (u**2+2.0)/(u*numpy.sqrt(u**2+4.0))
         dmag = -2.5*numpy.log10(magnification)
