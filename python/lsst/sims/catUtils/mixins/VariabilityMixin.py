@@ -513,7 +513,10 @@ class StellarVariabilityModels(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd_in, numbers.Number):
+            magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            magoff = numpy.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename_arr = params['filename']
         toff_arr = params['t0'].astype(float)
