@@ -680,7 +680,11 @@ class MLTflaringMixin(Variability):
 
         flux_factor = self.photParams.effarea/sphere_area
 
-        dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+
         mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
         base_mags = {}
@@ -722,7 +726,14 @@ class MLTflaringMixin(Variability):
             time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
 
-            t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
+            if isinstance(expmjd, numbers.Number):
+                t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
+            else:
+                n_obj = len(use_this_lc[0])
+                n_time = len(expmjd)
+                t_interp = numpy.ones(shape=(n_obj, n_time))*expmjd
+                t_interp += numpy.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+
             while t_interp.max() > time_arr.max():
                 bad_dexes = numpy.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
@@ -739,15 +750,30 @@ class MLTflaringMixin(Variability):
                         _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
 
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
-                    dflux *= flux_factor[use_this_lc]
+
+                    if isinstance(expmjd, numbers.Number):
+                        dflux *= flux_factor[use_this_lc]
+                    else:
+                        dflux *= numpy.array([flux_factor[use_this_lc]]*n_time).transpose()
 
                     dust_factor = numpy.interp(ebv[use_this_lc],
                                                self._mlt_dust_lookup['ebv'],
                                                self._mlt_dust_lookup[mag_name])
+
+                    if not isinstance(expmjd, numbers.Number):
+                        dust_factor = numpy.array([dust_factor]*n_time).transpose()
+
                     dflux *= dust_factor
 
-                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(base_fluxes[mag_name][use_this_lc] + dflux)
-                                                 - base_mags[mag_name][use_this_lc])
+                    if isinstance(expmjd, numbers.Number):
+                        local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                        local_base_mags = base_mags[mag_name][use_this_lc]
+                    else:
+                        local_base_fluxes = numpy.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_mags = numpy.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+
+                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
+                                                 - local_base_mags)
 
         return dMags
 
