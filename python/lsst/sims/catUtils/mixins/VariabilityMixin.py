@@ -536,6 +536,8 @@ class StellarVariabilityModels(Variability):
             #Should be 8kpc away at least.
             magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
             mag_val = magnification(epoch)
+            # If we are interpolating out of the light curve's domain, set
+            # the magnification equal to 1
             mag_val = numpy.where(numpy.isnan(mag_val), 1.0, mag_val)
             moff = -2.5*numpy.log(mag_val)
             for ii in range(6):
