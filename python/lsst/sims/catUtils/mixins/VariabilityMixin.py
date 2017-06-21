@@ -571,6 +571,11 @@ class MLTflaringMixin(Variability):
         with the quiescent magnitudes of the objects
         """
 
+        if parallax is None:
+            parallax = self.column_by_name('parallax')
+        if ebv is None:
+            ebv = self.column_by_name('ebv')
+
         global _MLT_LC_NPZ
         global _MLT_LC_NPZ_NAME
         global _MLT_LC_TIME_CACHE
@@ -582,10 +587,6 @@ class MLTflaringMixin(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        if parallax is None:
-            parallax = self.column_by_name('parallax')
-        if ebv is None:
-            ebv = self.column_by_name('ebv')
         if quiescent_mags is None:
             quiescent_mags = {}
             for mag_name in ('u', 'g', 'r', 'i', 'z', 'y'):
