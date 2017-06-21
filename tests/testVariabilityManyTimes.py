@@ -29,7 +29,7 @@ class Variability_at_many_times_case(unittest.TestCase):
 
         n_obj = len(params['filename'])
 
-        params['tStartMjd'] = rng.random_sample(4)*1000.0+40000.0
+        params['tStartMjd'] = rng.random_sample(n_obj)*1000.0+40000.0
 
         mjd_arr = rng.random_sample(10)*3653.3+59580.0
 
