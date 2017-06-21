@@ -103,6 +103,31 @@ class Variability_at_many_times_case(unittest.TestCase):
                     self.assertEqual(dmag_test[i_band][i_obj],
                                      dmag_vector[i_band][i_obj][i_time])
 
+    def test_MicroLens_many(self):
+        rng = np.random.RandomState(65123)
+        n_obj = 5
+        that = rng.random_sample(n_obj)*40.0+40.0
+        umin = rng.random_sample(n_obj)
+        mjDisplacement = rng.random_sample(n_obj)*50.0
+        params = {}
+        params['that'] = that
+        params['umin'] = umin
+        params['t0'] = mjDisplacement+51580.0
+
+        mjd_arr = rng.random_sample(17)*3653.3+59580.0
+        n_time = len(mjd_arr)
+        valid_dexes = [np.arange(n_obj, dtype=int)]
+        dmag_vector = self.star_var.applyMicrolens(valid_dexes, params, mjd_arr)
+        self.assertEqual(dmag_vector.shape, (6, n_obj, n_time))
+
+        for i_time, mjd in enumerate(mjd_arr):
+            dmag_test = self.star_var.applyMicrolens(valid_dexes, params, mjd)
+            self.assertEqual(dmag_test.shape, (6, n_obj))
+            for i_band in range(6):
+                for i_obj in range(n_obj):
+                    self.assertEqual(dmag_test[i_band][i_obj],
+                                     dmag_vector[i_band][i_obj][i_time])
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
