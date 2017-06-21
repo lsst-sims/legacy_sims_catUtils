@@ -51,6 +51,37 @@ class Variability_at_many_times_case(unittest.TestCase):
                     self.assertEqual(dmag_vector[i_band][i_star][i_time],
                                      dmag_test[i_band][i_star])
 
+    def test_Cepeheid_may(self):
+        rng = np.random.RandomState(8123)
+        params = {}
+        params['lcfile'] = ['cepheid_lc/classical_longPer_specfile',
+                            'cepheid_lc/classical_medPer_specfile',
+                            'cepheid_lc/classical_shortPer_specfile',
+                            'cepheid_lc/classical_shortPer_specfile',
+                            'cepheid_lc/popII_longPer_specfile',
+                            'cepheid_lc/popII_shortPer_specfile']
+
+        n_obj = len(params['lcfile'])
+
+        params['t0'] = rng.random_sample(n_obj)*1000.0+40000.0
+
+        mjd_arr = rng.random_sample(10)*3653.3 + 59580.0
+
+        n_time = len(mjd_arr)
+
+        valid_dexes = [np.arange(n_obj, dtype=int)]
+
+        dmag_vector = self.star_var.applyCepheid(valid_dexes, params, mjd_arr)
+        self.assertEqual(dmag_vector.shape, (6, n_obj, n_time))
+
+        for i_time, mjd in enumerate(mjd_arr):
+            dmag_test = self.star_var.applyCepheid(valid_dexes, params, mjd)
+            for i_band in range(6):
+                for i_obj in range(n_obj):
+                    self.assertEqual(dmag_test[i_band][i_obj],
+                                     dmag_vector[i_band][i_obj][i_time])
+
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
