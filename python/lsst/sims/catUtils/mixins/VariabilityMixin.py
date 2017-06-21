@@ -440,19 +440,27 @@ class StellarVariabilityModels(Variability):
         #At some point, either this method or the Amcvn tables in the
         #database will need to be changed.
 
-        if not isinstance(expmjd_in, numbers.Number):
-            raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
-
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
         maxyears = 10.
-        dMag = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd_in, numbers.Number):
+            dMag = numpy.zeros((6, self.num_variable_obj(params)))
+            amplitude = params['amplitude'].astype(float)[valid_dexes]
+            t0_arr = params['t0'].astype(float)[valid_dexes]
+            period = params['period'].astype(float)[valid_dexes]
+            epoch_arr = expmjd_in
+        else:
+            dMag = numpy.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
+            n_time = len(expmjd_in)
+            t0_arr = numpy.array([[tt]*n_time for tt in params['t0'].astype(float)[valid_dexes]])
+            amplitude = numpy.array([[aa]*n_time for aa in params['amplitude'].astype(float)[valid_dexes]])
+            period = numpy.array([[pp]*n_time for pp in params['period'].astype(float)[valid_dexes]])
+            epoch_arr = numpy.array([expmjd_in]*len(valid_dexes[0]))
+
         epoch = expmjd_in
 
-        amplitude = params['amplitude'].astype(float)[valid_dexes]
         t0 = params['t0'].astype(float)[valid_dexes]
-        period = params['period'].astype(float)[valid_dexes]
         burst_freq = params['burst_freq'].astype(float)[valid_dexes]
         burst_scale = params['burst_scale'].astype(float)[valid_dexes]
         amp_burst = params['amp_burst'].astype(float)[valid_dexes]
@@ -460,7 +468,7 @@ class StellarVariabilityModels(Variability):
         does_burst = params['does_burst'][valid_dexes]
 
         # get the light curve of the typical variability
-        uLc   = amplitude*numpy.cos((epoch - t0)/period)
+        uLc   = amplitude*numpy.cos((epoch_arr - t0_arr)/period)
         gLc   = copy.deepcopy(uLc)
         rLc   = copy.deepcopy(uLc)
         iLc   = copy.deepcopy(uLc)

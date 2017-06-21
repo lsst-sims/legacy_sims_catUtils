@@ -1,8 +1,75 @@
 import unittest
 import lsst.utils.tests
 import numpy as np
+import copy
+import numbers
 
 from lsst.sims.catUtils.mixins import StellarVariabilityModels
+
+
+def applyAmcvn_original(valid_dexes, params, expmjd_in):
+    """
+    Copied from VariabilityMixin.py before attempt was made
+    to make applyAmcvn handle vectors of MJD.  We will use
+    this method to verify that we have not broken the logic
+    inside of applyAmcvn.
+    """
+
+    if not isinstance(expmjd_in, numbers.Number):
+        raise RuntimeError("cannot pass multiple MJD to "
+                           "applyAmcvn_original")
+
+    if len(params) == 0:
+        return np.array([[],[],[],[],[],[]])
+
+    n_obj = len(params[params.keys()[0]])
+
+    maxyears = 10.
+    dMag = np.zeros((6, n_obj))
+    epoch = expmjd_in
+
+    amplitude = params['amplitude'].astype(float)[valid_dexes]
+    t0 = params['t0'].astype(float)[valid_dexes]
+    period = params['period'].astype(float)[valid_dexes]
+    burst_freq = params['burst_freq'].astype(float)[valid_dexes]
+    burst_scale = params['burst_scale'].astype(float)[valid_dexes]
+    amp_burst = params['amp_burst'].astype(float)[valid_dexes]
+    color_excess = params['color_excess_during_burst'].astype(float)[valid_dexes]
+    does_burst = params['does_burst'][valid_dexes]
+
+    # get the light curve of the typical variability
+    uLc   = amplitude*np.cos((epoch - t0)/period)
+    gLc   = copy.deepcopy(uLc)
+    rLc   = copy.deepcopy(uLc)
+    iLc   = copy.deepcopy(uLc)
+    zLc   = copy.deepcopy(uLc)
+    yLc   = copy.deepcopy(uLc)
+
+    # add in the flux from any bursting
+    local_bursting_dexes = np.where(does_burst==1)
+    for i_burst in local_bursting_dexes[0]:
+        adds = 0.0
+        for o in np.linspace(t0[i_burst] + burst_freq[i_burst],\
+                                t0[i_burst] + maxyears*365.25, \
+                                np.ceil(maxyears*365.25/burst_freq[i_burst])):
+            tmp = np.exp( -1*(epoch - o)/burst_scale[i_burst])/np.exp(-1.)
+            adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
+        ## add some blue excess during the outburst
+        uLc[i_burst] += adds +  2.0*color_excess[i_burst]
+        gLc[i_burst] += adds + color_excess[i_burst]
+        rLc[i_burst] += adds + 0.5*color_excess[i_burst]
+        iLc[i_burst] += adds
+        zLc[i_burst] += adds
+        yLc[i_burst] += adds
+
+    dMag[0][valid_dexes] += uLc
+    dMag[1][valid_dexes] += gLc
+    dMag[2][valid_dexes] += rLc
+    dMag[3][valid_dexes] += iLc
+    dMag[4][valid_dexes] += zLc
+    dMag[5][valid_dexes] += yLc
+    return dMag
+
 
 
 def setup_module(module):
@@ -125,6 +192,46 @@ class Variability_at_many_times_case(unittest.TestCase):
             self.assertEqual(dmag_test.shape, (6, n_obj))
             for i_band in range(6):
                 for i_obj in range(n_obj):
+                    self.assertEqual(dmag_test[i_band][i_obj],
+                                     dmag_vector[i_band][i_obj][i_time])
+
+    def test_Amcvn_many(self):
+        rng = np.random.RandomState(71242)
+        n_obj = 20
+        doesBurst = rng.randint(0, 2, size=n_obj)
+        burst_freq = rng.randint(10, 150, size=n_obj)
+        burst_scale = np.array([1500.0]*n_obj)
+        amp_burst = rng.random_sample(n_obj)*8.0
+        color_excess_during_burst = rng.random_sample(n_obj)*0.2-0.4
+        amplitude = rng.random_sample(n_obj)*0.2
+        period = rng.random_sample(n_obj)*200.0
+        mjDisplacement = rng.random_sample(n_obj)*500.0
+        params = {}
+        params['does_burst'] = doesBurst
+        params['burst_freq'] = burst_freq
+        params['burst_scale'] = burst_scale
+        params['amp_burst'] = amp_burst
+        params['color_excess_during_burst'] = color_excess_during_burst
+        params['amplitude'] = amplitude
+        params['period'] = period
+        params['t0'] = 51500.0-mjDisplacement
+
+        mjd_arr = rng.random_sample(100)*3653.3+59580.0
+        n_time = len(mjd_arr)
+
+        valid_dexes = [np.arange(n_obj, dtype=int)]
+
+        dmag_vector = self.star_var.applyAmcvn(valid_dexes, params, mjd_arr)
+
+        self.assertEqual(dmag_vector.shape, (6, n_obj, n_time))
+        for i_time, mjd in enumerate(mjd_arr):
+            dmag_test = self.star_var.applyAmcvn(valid_dexes, params, mjd)
+            self.assertEqual(dmag_test.shape, (6, n_obj))
+            dmag_old = applyAmcvn_original(valid_dexes, params,mjd)
+            for i_obj in range(n_obj):
+                for i_band in range(6):
+                    self.assertEqual(dmag_test[i_band][i_obj],
+                                     dmag_old[i_band][i_obj])
                     self.assertEqual(dmag_test[i_band][i_obj],
                                      dmag_vector[i_band][i_obj][i_time])
 
