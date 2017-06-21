@@ -558,8 +558,18 @@ class MLTflaringMixin(Variability):
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
                         parallax=None, ebv=None, quiescent_mags=None):
+        """
+        parallax, ebv, and quiescent_mags are optional kwargs for use if you are
+        calling this method outside the context of an InstanceCatalog (presumably
+        with a numpy array of expmjd)
 
+        parallax is the parallax of your objects in radians
 
+        ebv is the E(B-V) value for your objects
+
+        quiescent_mags is a dict keyed on ('u', 'g', 'r', 'i', 'z', 'y')
+        with the quiescent magnitudes of the objects
+        """
 
         global _MLT_LC_NPZ
         global _MLT_LC_NPZ_NAME
