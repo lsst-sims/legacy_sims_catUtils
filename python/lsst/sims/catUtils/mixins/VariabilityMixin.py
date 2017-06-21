@@ -672,7 +672,7 @@ class MLTflaringMixin(Variability):
             time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
 
-            t_interp = (self.obs_metadata.mjd.TAI + params['t0'][use_this_lc]).astype(float)
+            t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
             while t_interp.max() > time_arr.max():
                 bad_dexes = numpy.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
