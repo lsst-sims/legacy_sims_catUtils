@@ -825,7 +825,12 @@ class _VariabilityPointSources(object):
         """
 
         varParams = self.column_by_name('varParamStr')
-        return self.applyVariability(varParams)
+        dmag = self.applyVariability(varParams)
+        if dmag.shape != (6, len(varParams)):
+            raise RuntimeError("applyVariability is returning "
+                               "an array of shape %s\n" % dmag.shape
+                               + "should be (6, %d)" % len(varParams))
+        return dmag
 
 
 class VariabilityStars(_VariabilityPointSources, StellarVariabilityModels,
@@ -900,4 +905,9 @@ class VariabilityGalaxies(ExtraGalacticVariabilityModels):
         the baseline magnitude.
         """
         varParams = self.column_by_name("varParamStr")
-        return self.applyVariability(varParams)
+        dmag = self.applyVariability(varParams)
+        if dmag.shape != (6, len(varParams)):
+            raise RuntimeError("applyVariability is returning "
+                               "an array of shape %s\n" % dmag.shape
+                               + "should be (6, %d)" % len(varParams))
+        return dmag
