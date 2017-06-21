@@ -532,7 +532,9 @@ class StellarVariabilityModels(Variability):
             #black hole.  These also can be used to simulate binary systems.
             #Should be 8kpc away at least.
             magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
-            moff = -2.5*numpy.log(magnification(epoch))
+            mag_val = magnification(epoch)
+            mag_val = numpy.where(numpy.isnan(mag_val), 1.0, mag_val)
+            moff = -2.5*numpy.log(mag_val)
             for ii in range(6):
                 magoff[ii][ix] = moff
 
