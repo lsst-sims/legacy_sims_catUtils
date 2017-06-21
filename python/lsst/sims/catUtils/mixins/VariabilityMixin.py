@@ -287,7 +287,10 @@ class Variability(object):
         row is an LSST band in ugrizy order.  Each column is a different
         astrophysical object from the CatSim database.
         """
-        magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd, numbers.Number):
+            magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            magoff = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
         expmjd = numpy.asarray(expmjd)
         for ix in valid_dexes[0]:
             filename = params[keymap['filename']][ix]
