@@ -633,8 +633,15 @@ class FastLightCurveGenerator(LightCurveGenerator):
 
         row_ct = 0
 
-        # a dict containing one ObservationMetaData for each
-        # bandpass we are actually using
+        # assemble dicts needed for data precalculation
+        #
+        # quiescent_ob_dict contains one ObservationMetaData per bandpass
+        #
+        # mjd_arr_dict is a dict of all of the mjd values needed per bandpass
+        #
+        # time_lookup_dict is a dict of dicts; for each bandpass it will
+        # provide a dict that allows you to convert mjd to index in the
+        # mjd_arr_dict[bp] array.
         quiescent_obs_dict = {}
         mjd_arr_dict = {}
         time_lookup_dict = {}
@@ -668,6 +675,8 @@ class FastLightCurveGenerator(LightCurveGenerator):
             if chunk is not None:
                 quiescent_mags = {}
                 d_mags = {}
+                # pre-calculate quiescent magnitudes
+                # and delta magnitude arrays
                 for bp in quiescent_obs_dict:
                     cat = cat_dict[bp]
                     cat.obs_metadata = quiescent_obs_dict[bp]
@@ -686,6 +695,12 @@ class FastLightCurveGenerator(LightCurveGenerator):
                     cat = cat_dict[bp]
                     cat.obs_metadata = obs
                     time_dex = time_lookup_dict[bp][obs.mjd.TAI]
+
+                    # build up a column_cache of the pre-calculated
+                    # magnitudes from above that can be passed into
+                    # our catalog iterators so that the catalogs will
+                    # not spend time computing things that have already
+                    # been calculated
                     local_column_cache = {}
                     delta_name = self.delta_name_mapper(bp)
                     total_name = self.total_name_mapper(bp)
