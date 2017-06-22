@@ -294,8 +294,6 @@ class AgnVariability_at_many_times_case(unittest.TestCase):
         dmag_vector = agn_model.applyAgn(valid_dexes, params, mjd_arr)
         self.assertEqual(dmag_vector.shape, (6, n_obj,n_time))
 
-        print 'starting one-at-a-time'
-        print 'max time ',mjd_arr.max()
         for i_time, mjd in enumerate(mjd_arr):
             dmag_test = agn_model.applyAgn(valid_dexes, params, mjd)
             self.assertEqual(dmag_test.shape, (6, n_obj))
