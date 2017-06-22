@@ -127,7 +127,7 @@ class Variability(object):
 
 
 
-    def applyVariability(self, varParams_arr):
+    def applyVariability(self, varParams_arr, expmjd=None):
         """
         Read in an array/list of varParamStr objects taken from the CatSim
         database.  For each varParamStr, call the appropriate variability
@@ -151,10 +151,15 @@ class Variability(object):
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
 
-        # A numpy array of magnitude offsets.  Each row is
-        # an LSST band in ugrizy order.  Each column is an
-        # astrophysical object from the CatSim database.
-        deltaMag = numpy.zeros((6, len(varParams_arr)))
+
+        if isinstance(expmjd, numbers.Number) or expmjd is None:
+            # A numpy array of magnitude offsets.  Each row is
+            # an LSST band in ugrizy order.  Each column is an
+            # astrophysical object from the CatSim database.
+            deltaMag = numpy.zeros((6, len(varParams_arr)))
+        else:
+            # the last dimension varies over time
+            deltaMag = numpy.zeros((6, len(varParams_arr), len(expmjd)))
 
         # When the InstanceCatalog calls all of its getters
         # with an empty chunk to check column dependencies,
@@ -223,8 +228,6 @@ class Variability(object):
         for method_name in params:
             for p_name in params[method_name]:
                 params[method_name][p_name] = numpy.array(params[method_name][p_name])
-
-        expmjd=None
 
         # Loop over all of the variability models that need to be called.
         # Call each variability model on the astrophysical objects that
