@@ -27,7 +27,7 @@ class _baseLightCurveCatalog(InstanceCatalog):
 
     column_outputs = ["uniqueId", "raJ2000", "decJ2000",
                       "lightCurveMag", "sigma_lightCurveMag",
-                      "truthInfo"]
+                      "truthInfo", "quiescent_lightCurveMag"]
 
     def iter_catalog(self, chunk_size=None, query_cache=None):
         """
@@ -124,7 +124,7 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
         else:
             self._sedList = copy.copy(_sed_cache[cache_name])
 
-    @compound("lightCurveMag", "sigma_lightCurveMag")
+    @compound("lightCurveMag", "sigma_lightCurveMag", "quiescent_lightCurveMag")
     def get_lightCurvePhotometry(self):
         """
         A getter which returns the magnitudes and uncertainties in magnitudes
@@ -138,8 +138,11 @@ class _stellarLightCurveCatalog(_baseLightCurveCatalog, VariabilityStars, Photom
             raise RuntimeError("_stellarLightCurveCatalog cannot handle bandpass "
                                "%s" % str(self.obs_metadata.bandpass))
 
-        return np.array([self.column_by_name("lsst_%s" % self.obs_metadata.bandpass),
-                         self.column_by_name("sigma_lsst_%s" % self.obs_metadata.bandpass)])
+        bp = self.obs_metadata.bandpass
+
+        return np.array([self.column_by_name("lsst_%s" % bp),
+                         self.column_by_name("sigma_lsst_%s" % bp),
+                         self.column_by_name("lsst_%s" % bp) - self.column_by_name("delta_lsst_%s" % bp)])
 
 
 class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, PhotometryGalaxies):
@@ -175,7 +178,7 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
         else:
             self._agnSedList = copy.copy(_sed_cache[cache_name])
 
-    @compound("lightCurveMag", "sigma_lightCurveMag")
+    @compound("lightCurveMag", "sigma_lightCurveMag", "quiescent_lightCurveMag")
     def get_lightCurvePhotometry(self):
         """
         A getter which returns the magnitudes and uncertainties in magnitudes
@@ -189,8 +192,11 @@ class _agnLightCurveCatalog(_baseLightCurveCatalog, VariabilityGalaxies, Photome
             raise RuntimeError("_agnLightCurveCatalog cannot handle bandpass "
                                "%s" % str(self.obs_metadata.bandpass))
 
-        return np.array([self.column_by_name("%sAgn" % self.obs_metadata.bandpass),
-                         self.column_by_name("sigma_%sAgn" % self.obs_metadata.bandpass)])
+        bp = self.obs_metadata.bandpass
+
+        return np.array([self.column_by_name("%sAgn" % bp),
+                         self.column_by_name("sigma_%sAgn" % bp),
+                         self.column_by_name("%sAgn" % bp) - self.column_by_name("delta_%sAgn" % bp)])
 
 
 class LightCurveGenerator(object):
