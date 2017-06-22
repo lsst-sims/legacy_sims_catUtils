@@ -791,7 +791,13 @@ class ExtraGalacticVariabilityModels(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            expmjd_arr = [expmjd]
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            expmjd_arr = expmjd
+
         toff_arr = params['t0_mjd'].astype(float)
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
@@ -802,89 +808,94 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        for ix in valid_dexes[0]:
-            toff = toff_arr[ix]
-            seed = seed_arr[ix]
-            tau = tau_arr[ix]
+        for i_time, expmjd_val in enumerate(expmjd_arr):
+            for ix in valid_dexes[0]:
+                toff = toff_arr[ix]
+                seed = seed_arr[ix]
+                tau = tau_arr[ix]
 
-            sfint = {}
-            sfint['u'] = sfu_arr[ix]
-            sfint['g'] = sfg_arr[ix]
-            sfint['r'] = sfr_arr[ix]
-            sfint['i'] = sfi_arr[ix]
-            sfint['z'] = sfz_arr[ix]
-            sfint['y'] = sfy_arr[ix]
+                sfint = {}
+                sfint['u'] = sfu_arr[ix]
+                sfint['g'] = sfg_arr[ix]
+                sfint['r'] = sfr_arr[ix]
+                sfint['i'] = sfi_arr[ix]
+                sfint['z'] = sfz_arr[ix]
+                sfint['y'] = sfy_arr[ix]
 
-            # A string made up of this AGNs variability parameters that ought
-            # to uniquely identify it.
-            #
-            agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
-            %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
-              sfint['y'], tau, toff)
+                # A string made up of this AGNs variability parameters that ought
+                # to uniquely identify it.
+                #
+                agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
+                %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
+                  sfint['y'], tau, toff)
 
-            resumption = False
+                resumption = False
 
-            # Check to see if this AGN has already been simulated.
-            # If it has, see if the previously simulated MJD is
-            # earlier than the first requested MJD.  If so,
-            # use that previous simulation as the starting point.
-            #
-            if agn_ID in _AGN_LC_CACHE:
-                if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd:
-                    resumption = True
+                # Check to see if this AGN has already been simulated.
+                # If it has, see if the previously simulated MJD is
+                # earlier than the first requested MJD.  If so,
+                # use that previous simulation as the starting point.
+                #
+                if agn_ID in _AGN_LC_CACHE:
+                    if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd_val:
+                        resumption = True
 
-            if resumption:
-                rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
-                start_date = _AGN_LC_CACHE[agn_ID]['mjd']
-                dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
-            else:
-                start_date = toff
-                rng = numpy.random.RandomState(seed)
-                dx_0 = {}
-                for k in sfint:
-                    dx_0[k]=0.0
+                if resumption:
+                    rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
+                    start_date = _AGN_LC_CACHE[agn_ID]['mjd']
+                    dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
+                else:
+                    start_date = toff
+                    rng = numpy.random.RandomState(seed)
+                    dx_0 = {}
+                    for k in sfint:
+                        dx_0[k]=0.0
 
-            endepoch = expmjd - start_date
+                endepoch = expmjd_val - start_date
 
-            if endepoch < 0:
-                raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
-                                   "Not applying variability. "+
-                                   "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
-                                   "in applyAgn variability method")
+                if endepoch < 0:
+                    raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
+                                       "Not applying variability. "+
+                                       "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
+                                       "in applyAgn variability method")
 
-            dt = tau/100.
-            nbins = int(math.ceil(endepoch/dt))
+                dt = tau/100.
+                nbins = int(math.ceil(endepoch/dt))
 
-            x1 = (nbins-1)*dt
-            x2 = (nbins)*dt
+                x1 = (nbins-1)*dt
+                x2 = (nbins)*dt
 
-            dt = dt/tau
-            es = rng.normal(0., 1., nbins)*math.sqrt(dt)
-            dx_cached = {}
+                dt = dt/tau
+                es = rng.normal(0., 1., nbins)*math.sqrt(dt)
+                dx_cached = {}
 
-            for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
-                dx2 = dx_0[k]
-                for i in range(nbins):
-                    #The second term differs from Zeljko's equation by sqrt(2.)
-                    #because he assumes stdev = sfint/sqrt(2)
-                    dx1 = dx2
-                    dx2 = -dx1*dt + sfint[k]*es[i] + dx1
+                for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
+                    dx2 = dx_0[k]
+                    for i in range(nbins):
+                        #The second term differs from Zeljko's equation by sqrt(2.)
+                        #because he assumes stdev = sfint/sqrt(2)
+                        dx1 = dx2
+                        dx2 = -dx1*dt + sfint[k]*es[i] + dx1
 
-                dx_cached[k] = dx2
-                dMags[ik][ix] = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                    dx_cached[k] = dx2
+                    dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                    if isinstance(expmjd, numbers.Number):
+                        dMags[ik][ix] = dm_val
+                    else:
+                        dMags[ik][ix][i_time] = dm_val
 
-            # Reset that AGN light curve cache once it contains
-            # one million objects (to prevent it from taking up
-            # too much memory).
-            if len(_AGN_LC_CACHE)>1000000:
-                reset_agn_lc_cache()
+                # Reset that AGN light curve cache once it contains
+                # one million objects (to prevent it from taking up
+                # too much memory).
+                if len(_AGN_LC_CACHE)>1000000:
+                    reset_agn_lc_cache()
 
-            if agn_ID not in _AGN_LC_CACHE:
-                _AGN_LC_CACHE[agn_ID] = {}
+                if agn_ID not in _AGN_LC_CACHE:
+                    _AGN_LC_CACHE[agn_ID] = {}
 
-            _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
-            _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
-            _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
+                _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
+                _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
+                _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
 
         return dMags
 
