@@ -379,17 +379,17 @@ class StellarVariabilityModels(Variability):
             return numpy.array([[],[],[],[],[],[]])
 
         keymap = {'filename':'lcfile', 't0':'t0'}
-        dMags = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
-                                      inDays=False,
-                                      interpFactory=InterpolatedUnivariateSpline)
-        if len(dMags)>0:
-            if dMags.min()<0.0:
+        d_fluxes = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
+                                         inDays=False,
+                                          interpFactory=InterpolatedUnivariateSpline)
+        if len(d_fluxes)>0:
+            if d_fluxes.min()<0.0:
                 raise RuntimeError("Negative delta flux in applyEb")
         if isinstance(expmjd, numbers.Number):
             dMags = numpy.zeros((6, self.num_variable_obj(params)))
         else:
             dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
-        dmag_vals = -2.5*numpy.log10(dMags)
+        dmag_vals = -2.5*numpy.log10(d_fluxes)
         dMags += numpy.where(numpy.logical_not(numpy.logical_or(numpy.isnan(dmag_vals), numpy.isinf(dmag_vals))),
                              dmag_vals, 0.0)
         return dMags
