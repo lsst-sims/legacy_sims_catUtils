@@ -5,6 +5,7 @@ import copy
 import numbers
 
 from lsst.sims.catUtils.mixins import StellarVariabilityModels
+from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 
 def applyAmcvn_original(valid_dexes, params, expmjd_in):
@@ -75,9 +76,9 @@ def applyAmcvn_original(valid_dexes, params, expmjd_in):
 def setup_module(module):
     lsst.utils.tests.init()
 
-class Variability_at_many_times_case(unittest.TestCase):
+class StellarVariability_at_many_times_case(unittest.TestCase):
     """
-    This test case will verify that all of the variability
+    This test case will verify that all of the stellar variability
     models in CatSim deal correctly with receiving a vector
     of time values.
     """
@@ -260,6 +261,49 @@ class Variability_at_many_times_case(unittest.TestCase):
                     self.assertTrue(isinstance(dmag_test[i_band][i_obj], numbers.Number))
                     self.assertEqual(dmag_test[i_band][i_obj],
                                      dmag_vector[i_band][i_obj][i_time])
+
+
+class AgnVariability_at_many_times_case(unittest.TestCase):
+    """
+    This test case will verify that the AGN variability
+    model in CatSim deals correctly with receiving a vector
+    of time values.
+    """
+
+    longMessage = True
+
+    def test_agn_many(self):
+        agn_model = ExtraGalacticVariabilityModels()
+        rng = np.random.RandomState(7153)
+        params  = {}
+        n_obj = 5
+        params['agn_tau'] = rng.random_sample(n_obj)*100.0+100.0
+        params['agn_sfu'] = rng.random_sample(n_obj)*2.0
+        params['agn_sfg'] = rng.random_sample(n_obj)*2.0
+        params['agn_sfr'] = rng.random_sample(n_obj)*2.0
+        params['agn_sfi'] = rng.random_sample(n_obj)*2.0
+        params['agn_sfz'] = rng.random_sample(n_obj)*2.0
+        params['agn_sfy'] = rng.random_sample(n_obj)*2.0
+        params['t0_mjd'] = 48000.0+rng.random_sample(n_obj)*5.0
+        params['seed'] = rng.randint(0, 20000, size=n_obj)
+
+        mjd_arr = np.sort(rng.random_sample(6)*3653.3+59580.0)
+        n_time = len(mjd_arr)
+
+        valid_dexes = [np.arange(n_obj, dtype=int)]
+        dmag_vector = agn_model.applyAgn(valid_dexes, params, mjd_arr)
+        self.assertEqual(dmag_vector.shape, (6, n_obj,n_time))
+
+        print 'starting one-at-a-time'
+        print 'max time ',mjd_arr.max()
+        for i_time, mjd in enumerate(mjd_arr):
+            dmag_test = agn_model.applyAgn(valid_dexes, params, mjd)
+            self.assertEqual(dmag_test.shape, (6, n_obj))
+            for i_band in range(6):
+                for i_obj in range(n_obj):
+                    self.assertEqual(dmag_vector[i_band][i_obj][i_time],
+                                     dmag_test[i_band][i_obj],
+                                     msg='failed on band %d obj %d time %d' % (i_band, i_obj, i_time))
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
