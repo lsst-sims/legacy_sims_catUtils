@@ -349,6 +349,104 @@ class MLT_flare_test_case(unittest.TestCase):
                     else:
                         self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
 
+    def test_MLT_many_mjd_some_invalid(self):
+        """
+        This test will verify that applyMLTflaring responds properly when given
+        an array/vector of MJD values in the case where some stars are not
+        marked as valid MLT stars.
+        """
+        db = MLT_test_DB(database=self.db_name, driver='sqlite')
+        rng = np.random.RandomState(16)
+        mjd_arr = rng.random_sample(17)*3653.3+59580.0
+        objid = []
+        parallax = []
+        ebv = []
+        quiescent_u = []
+        quiescent_g = []
+        delta_u = []
+        delta_g = []
+        varparams = []
+        for mjd in mjd_arr:
+            obs = ObservationMetaData(mjd=mjd)
+            cat = FlaringCatalog(db, obs_metadata=obs,
+                                 column_outputs=['parallax', 'ebv',
+                                                 'quiescent_lsst_u',
+                                                 'quiescent_lsst_g',
+                                                 'varParamStr',
+                                                 'delta_lsst_u',
+                                                 'delta_lsst_g'])
+
+            n_obj = 0
+            for line in cat.iter_catalog():
+                n_obj += 1
+                objid.append(line[0])
+                parallax.append(line[3])
+                ebv.append(line[4])
+                quiescent_u.append(line[5])
+                quiescent_g.append(line[6])
+                varparams.append(line[7])
+                delta_u.append(line[8])
+                delta_g.append(line[9])
+
+        objid = np.array(objid)
+        parallax = np.array(parallax)
+        ebv = np.array(ebv)
+        quiescent_u = np.array(quiescent_u)
+        quiescent_g = np.array(quiescent_g)
+        delta_u = np.array(delta_u)
+        delta_g = np.array(delta_g)
+
+        self.assertEqual(len(parallax), n_obj*len(mjd_arr))
+        np.testing.assert_array_equal(objid, np.array([0,1,2,3]*len(mjd_arr)))
+
+        quiescent_mags = {}
+        quiescent_mags['u'] = quiescent_u
+        quiescent_mags['g'] = quiescent_g
+
+        params = {}
+        params['lc'] = []
+        params['t0'] = []
+        for ix in range(n_obj):
+            local_dict = json.loads(varparams[ix])
+            params['lc'].append(local_dict['p']['lc'])
+            params['t0'].append(local_dict['p']['t0'])
+        params['lc'] = np.array(params['lc'])
+        params['t0'] = np.array(params['t0'])
+
+        mlt_obj = MLTflaringMixin()
+        mlt_obj.photParams = PhotometricParameters()
+        mlt_obj.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        mlt_obj._mlt_lc_file = cat._mlt_lc_file
+        mlt_obj._actually_calculated_columns = ['delta_lsst_u', 'delta_lsst_g']
+        valid_dex = [] # applyMLT does not actually use valid_dex; it looks for non-None params['lc']
+        for ix in range(n_obj):
+            if ix not in (1,2):
+                params['lc'][ix] = None
+        delta_mag_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                   parallax=parallax,
+                                                   ebv=ebv,
+                                                   quiescent_mags=quiescent_mags)
+        n_time = len(mjd_arr)
+        self.assertEqual(delta_mag_vector.shape, (6, n_obj, n_time))
+
+        for i_time, mjd in enumerate(mjd_arr):
+            for i_obj in range(n_obj):
+                if i_obj not in (1,2):
+                    for i_band in range(6):
+                        self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
+                    continue
+
+                for i_band in range(6):
+                    if i_band==0:
+                        self.assertEqual(delta_mag_vector[i_band][i_obj][i_time],
+                                         delta_u[i_time*n_obj + i_obj])
+                    elif i_band==1:
+                        self.assertEqual(delta_mag_vector[i_band][i_obj][i_time],
+                                         delta_g[i_time*n_obj + i_obj])
+                    else:
+                        self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
+
+
 
 class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
     """
