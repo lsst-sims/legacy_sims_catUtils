@@ -684,8 +684,8 @@ class FastLightCurveGenerator(LightCurveGenerator):
                     for star_obj in cat.iter_catalog(query_cache=[chunk]):
                         local_quiescent_mags.append(star_obj[6])
                     quiescent_mags[bp] = np.array(local_quiescent_mags)
-                    if 'delta_lsst_%s' % bp not in cat._actually_calculated_columns:
-                        cat._actually_calculated_columns.append('delta_lsst_%s' % bp)
+                    if self.delta_name_mapper(bp) not in cat._actually_calculated_columns:
+                        cat._actually_calculated_columns.append(self.delta_name_mapper(bp))
                     varparamstr = cat.column_by_name('varParamStr')
                     temp_d_mags = cat.applyVariability(varparamstr, mjd_arr_dict[bp])
                     d_mags[bp] = temp_d_mags[{'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}[bp]].transpose()
