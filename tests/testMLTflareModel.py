@@ -367,6 +367,9 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
         cls.mlt_lc_name = os.path.join(cls.scratch_dir,
                                        'test_mlt_mixed_with_none_lc_file.npz')
 
+        if os.path.exists(cls.mlt_lc_name):
+            os.unlink(cls.mlt_lc_name)
+
         lc_files = {}
         amp = 1.0e32
         lc_files['lc_1_time'] = np.arange(0.0, 3652.51, 0.1)
@@ -383,6 +386,9 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
         # Create a database of stars using these light curves
         cls.db_name = os.path.join(cls.scratch_dir, 'test_mlt_mixed_with_none_db.db')
+
+        if os.path.exists(cls.db_name):
+            os.unlink(cls.db_name)
 
         conn = sqlite3.connect(cls.db_name)
         cursor = conn.cursor()
