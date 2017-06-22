@@ -4,6 +4,7 @@ from builtins import str
 from builtins import object
 import numpy as np
 import copy
+from collections import OrderedDict
 
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.mixins import PhotometryStars, VariabilityStars
@@ -14,8 +15,12 @@ from lsst.sims.utils import haversine
 
 import time
 
-__all__ = ["StellarLightCurveGenerator", "AgnLightCurveGenerator",
-           "_baseLightCurveCatalog", "LightCurveGenerator"]
+__all__ = ["StellarLightCurveGenerator",
+           "FastStellarLightCurveGenerator",
+           "AgnLightCurveGenerator",
+           "_baseLightCurveCatalog",
+           "LightCurveGenerator",
+           "FastLightCurveGenerator"]
 
 # a global cache to store SedLists loaded by the light curve catalogs
 _sed_cache = {}
@@ -29,7 +34,7 @@ class _baseLightCurveCatalog(InstanceCatalog):
                       "lightCurveMag", "sigma_lightCurveMag",
                       "truthInfo", "quiescent_lightCurveMag"]
 
-    def iter_catalog(self, chunk_size=None, query_cache=None):
+    def iter_catalog(self, chunk_size=None, query_cache=None, column_cache=None):
         """
         Returns an iterator over rows of the catalog.
 
@@ -47,6 +52,9 @@ class _baseLightCurveCatalog(InstanceCatalog):
             input for those who want to repeatedly examine the same patch of sky
             without actually querying the database over and over again.  If it is set
             to None (default), this method will handle the database query.
+
+        column_cache : a dict that will be copied over into the catalogs self._column_cache.
+            Should be left as None, unless you know what you are doing.
         """
 
         if query_cache is None:
@@ -60,7 +68,7 @@ class _baseLightCurveCatalog(InstanceCatalog):
             # Otherwise iterate over the query cache
             transform_keys = list(self.transformations.keys())
             for chunk in query_cache:
-                self._set_current_chunk(chunk)
+                self._set_current_chunk(chunk, column_cache=column_cache)
                 chunk_cols = [self.transformations[col](self.column_by_name(col))
                               if col in transform_keys else
                               self.column_by_name(col)
@@ -569,6 +577,175 @@ class LightCurveGenerator(object):
         return output_dict, self.truth_dict
 
 
+class FastLightCurveGenerator(LightCurveGenerator):
+    """
+    This LightCurveGenerator sub-class will be specifically designed for variability
+    models that are implemented as
+
+    mag = quiescent_mag + delta_mag(t)
+
+    where quiescent_mag does not change as a function of time.
+
+    It will re-implement the _light_curves_from_query() method so that quiescent_mag
+    is only calculated once, and delta_mag(t) is calculated in a vectorized fashion.
+    """
+
+    def _light_curves_from_query(self, cat_dict, query_result, grp, lc_per_field=None):
+        """
+        Read in an iterator over database rows and return light curves for
+        all of the objects contained.
+
+        Input parameters:
+        -----------------
+        cat_dict is a dict of InstanceCatalogs keyed on bandpass name.  There
+        only needs to be one InstanceCatalog per bandpass name.  These dummy
+        catalogs provide the methods needed to calculate synthetic photometry.
+
+        query_result is an iterator over database rows that correspond to
+        celestial objects in our field of view.
+
+        grp is a list of ObservationMetaData objects that all point to the
+        region of sky containing the objects in query_result.  cat_dict
+        should contain an InstanceCatalog for each bandpass represented in
+        grp.
+
+        lc_per_field is an optional int specifying the number of objects per
+        OpSim field to return.  Ordinarily, this is handled at the level of
+        querying the database, but, when querying our tiled galaxy tables,
+        it is impossible to impose a row limit on the query.  Therefore,
+        we may have to place the lc_per_field restriction here.
+
+        Output
+        ------
+        This method does not output anything.  It adds light curves to the
+        instance member variables self.mjd_dict, self.bright_dict, self.sig_dict,
+        and self.truth_dict.
+        """
+
+        print('using fast light curve generator')
+
+        global _sed_cache
+
+        # local_gamma_cache will cache the InstanceCatalog._gamma_cache
+        # values used by the photometry mixins to efficiently calculate
+        # photometric uncertainties in each catalog.
+        local_gamma_cache = {}
+
+        row_ct = 0
+
+        # a dict containing one ObservationMetaData for each
+        # bandpass we are actually using
+        quiescent_obs_dict = {}
+        mjd_arr_dict = {}
+        time_lookup_dict = {}
+        for obs in grp:
+            bp = obs.bandpass
+            if bp not in quiescent_obs_dict:
+                quiescent_obs_dict[bp] = obs
+            if bp not in mjd_arr_dict:
+                mjd_arr_dict[bp] = []
+            mjd_arr_dict[bp].append(obs.mjd.TAI)
+            if bp not in time_lookup_dict:
+                time_lookup_dict[bp] = {}
+            time_lookup_dict[bp][obs.mjd.TAI] = len(mjd_arr_dict[obs.bandpass])-1
+
+        for bp in mjd_arr_dict:
+            mjd_arr_dict[bp] = np.array(mjd_arr_dict[bp])
+
+        for raw_chunk in query_result:
+            chunk = self._filter_chunk(raw_chunk)
+            if lc_per_field is not None:
+
+                if row_ct >= lc_per_field:
+                    break
+
+                if row_ct + len(chunk) > lc_per_field:
+                    chunk = chunk[:lc_per_field-row_ct]
+                    row_ct += len(chunk)
+                else:
+                    row_ct += len(chunk)
+
+            if chunk is not None:
+                quiescent_mags = {}
+                d_mags = {}
+                for bp in quiescent_obs_dict:
+                    cat = cat_dict[bp]
+                    cat.obs_metadata = quiescent_obs_dict[bp]
+                    local_quiescent_mags = []
+                    for star_obj in cat.iter_catalog(query_cache=[chunk]):
+                        local_quiescent_mags.append(star_obj[6])
+                    quiescent_mags[bp] = np.array(local_quiescent_mags)
+                    if 'delta_lsst_%s' % bp not in cat._actually_calculated_columns:
+                        cat._actually_calculated_columns.append('delta_lsst_%s' % bp)
+                    varparamstr = cat.column_by_name('varParamStr')
+                    temp_d_mags = cat.applyVariability(varparamstr, mjd_arr_dict[bp])
+                    d_mags[bp] = temp_d_mags[{'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}[bp]].transpose()
+
+                for ix, obs in enumerate(grp):
+                    bp = obs.bandpass
+                    cat = cat_dict[bp]
+                    cat.obs_metadata = obs
+                    time_dex = time_lookup_dict[bp][obs.mjd.TAI]
+                    local_column_cache = {}
+                    delta_name = self.delta_name_mapper(bp)
+                    total_name = self.total_name_mapper(bp)
+
+                    if delta_name in cat._compound_column_names:
+                        compound_key = None
+                        for key in cat._column_cache:
+                            if isinstance(cat._column_cache[key], OrderedDict):
+                                if delta_name in cat._column_cache[key]:
+                                    compound_key = key
+                                    break
+                        local_column_cache[compound_key] = OrderedDict([(delta_name, d_mags[bp][time_dex])])
+                    else:
+                        local_column_cache[delta_name] = d_mags[bp][time_dex]
+
+                    if total_name in cat._compound_column_names:
+                        compound_key = None
+                        for key in cat._column_cache:
+                            if isinstance(cat._column_cache[key], OrderedDict):
+                                if total_name in cat._column_cache[key]:
+                                    compound_key = key
+                                    break
+                        local_column_cache[compound_key] = OrderedDict([(total_name, quiescent_mags[bp]+d_mags[bp][time_dex])])
+                    else:
+                        local_column_cache[total_name] = quiescent_mags[bp] + d_mags[bp][time_dex]
+
+                    if ix in local_gamma_cache:
+                        cat._gamma_cache = local_gamma_cache[ix]
+                    else:
+                        cat._gamma_cache = {}
+
+                    for star_obj in \
+                        cat.iter_catalog(query_cache=[chunk], column_cache=local_column_cache):
+
+                        if not np.isnan(star_obj[3]) and not np.isinf(star_obj[3]):
+
+                            if star_obj[0] not in self.truth_dict:
+                                self.truth_dict[star_obj[0]] = star_obj[5]
+
+                            if star_obj[0] not in self.mjd_dict:
+                                self.mjd_dict[star_obj[0]] = {}
+                                self.bright_dict[star_obj[0]] = {}
+                                self.sig_dict[star_obj[0]] = {}
+
+                            bp = cat.obs_metadata.bandpass
+                            if bp not in self.mjd_dict[star_obj[0]]:
+                                self.mjd_dict[star_obj[0]][bp] = []
+                                self.bright_dict[star_obj[0]][bp] = []
+                                self.sig_dict[star_obj[0]][bp] = []
+
+                            self.mjd_dict[star_obj[0]][bp].append(cat.obs_metadata.mjd.TAI)
+                            self.bright_dict[star_obj[0]][bp].append(star_obj[3])
+                            self.sig_dict[star_obj[0]][bp].append(star_obj[4])
+
+                    if ix not in local_gamma_cache:
+                        local_gamma_cache[ix] = cat._gamma_cache
+
+            _sed_cache = {}  # before moving on to the next chunk of objects
+
+
 class StellarLightCurveGenerator(LightCurveGenerator):
     """
     This class will find all of the OpSim pointings in a particular region
@@ -590,6 +767,15 @@ class StellarLightCurveGenerator(LightCurveGenerator):
         self._lightCurveCatalogClass = _stellarLightCurveCatalog
         self._constraint = 'varParamStr IS NOT NULL'
         super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
+
+
+class FastStellarLightCurveGenerator(FastLightCurveGenerator, StellarLightCurveGenerator):
+
+    def delta_name_mapper(self, bp):
+        return 'delta_lsst_%s' % bp
+
+    def total_name_mapper(self, bp):
+        return 'lsst_%s' % bp
 
 
 class AgnLightCurveGenerator(LightCurveGenerator):
