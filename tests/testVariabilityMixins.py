@@ -42,7 +42,7 @@ def makeRRlyTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     mjDisplacement = (rng.random_sample(size)-50.0)*50.0
@@ -79,7 +79,7 @@ def makeCepheidTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
@@ -112,7 +112,7 @@ def makeEbTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
@@ -147,7 +147,7 @@ def makeMicrolensingTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     that = rng.random_sample(size)*40.0+40.0
@@ -186,7 +186,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     mjDisplacement = rng.random_sample(size)*5.0*365.25
@@ -218,7 +218,7 @@ def makeAmcvnTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     doesBurst = rng.randint(0, 2, size=size)
@@ -266,7 +266,7 @@ def makeAgnTable(size=100, **kwargs):
                       sedFilenameBulge text, sedFilenameDisk text, sedFilenameAgn text)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     agn_tau = rng.random_sample(size)*100.0+100.0
@@ -323,7 +323,7 @@ def makeHybridTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
