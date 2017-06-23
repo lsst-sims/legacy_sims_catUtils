@@ -10,10 +10,12 @@ from lsst.utils import getPackageDir
 from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.catUtils.utils import FastStellarLightCurveGenerator
 from lsst.sims.catUtils.utils import StellarLightCurveGenerator
+from lsst.sims.catUtils.utils import AgnLightCurveGenerator
+from lsst.sims.catUtils.utils import FastAgnLightCurveGenerator
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 
-class FastStellar_lc_gen_case(unittest.TestCase):
+class FastStellar_stellar_lc_gen_case(unittest.TestCase):
 
     longMessage = True
 
@@ -163,6 +165,134 @@ class FastStellar_lc_gen_case(unittest.TestCase):
 
         for obj_id in fast_truth:
             self.assertEqual(fast_truth[obj_id], slow_truth[obj_id])
+
+
+class Fast_agn_lc_gen_test_case(unittest.TestCase):
+
+    longMessge = True
+
+    @classmethod
+    def setUpClass(cls):
+        rng = np.random.RandomState(119)
+
+        cls.txt_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
+        cls.txt_cat_name = os.path.join(cls.txt_cat_name, "scratchSpace", "fast_agn_lc_cat.txt")
+
+        n_galaxies = 20
+
+        sed_dir = os.path.join(getPackageDir("sims_sed_library"), "galaxySED")
+        list_of_seds = os.listdir(sed_dir)
+        disk_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+        bulge_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+
+        avBulge = rng.random_sample(n_galaxies)*0.3+0.1
+        avDisk = rng.random_sample(n_galaxies)*0.3+0.1
+
+        mjdList = rng.random_sample(n_galaxies)*10.0+49330.0
+        redshiftList = rng.random_sample(n_galaxies)*1.5+0.01
+
+        tauList = rng.random_sample(n_galaxies)*1.0+1.0
+        sfuList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfgList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfrList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfiList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfzList = rng.random_sample(n_galaxies)*2.0+1.0
+        sfyList = rng.random_sample(n_galaxies)*2.0+1.0
+
+        raList = rng.random_sample(n_galaxies)*7.0+78.0
+        decList = rng.random_sample(n_galaxies)*4.0-69.0
+
+        normDisk = rng.random_sample(n_galaxies)*5.0+20.0
+        normBulge = rng.random_sample(n_galaxies)*5.0+20.0
+        normAgn = rng.random_sample(n_galaxies)*5.0+20.0
+
+        with open(cls.txt_cat_name, "w") as output_file:
+            for ix in range(n_galaxies):
+                varParam = {'varMethodName': 'applyAgn',
+                            'pars': {'agn_tau': tauList[ix], 'agn_sfu': sfuList[ix],
+                                     'agn_sfg': sfgList[ix], 'agn_sfr': sfrList[ix],
+                                     'agn_sfi': sfiList[ix], 'agn_sfz': sfzList[ix],
+                                     'agn_sfy': sfyList[ix], 't0_mjd': mjdList[ix],
+                                     'seed': rng.randint(0, 200000)}}
+
+                paramStr = json.dumps(varParam)
+
+                output_file.write("%d;%f;%f;" % (ix, raList[ix], decList[ix])
+                                  + "%f;%f;" % (np.radians(raList[ix]), np.radians(decList[ix]))
+                                  + "%f;" % (redshiftList[ix])
+                                  + "%s;%f;%f;" % (list_of_seds[disk_sed_dexes[ix]],
+                                                   avDisk[ix], normDisk[ix])
+                                  + "%s;%f;%f;" % (list_of_seds[bulge_sed_dexes[ix]],
+                                                   avBulge[ix], normBulge[ix])
+                                  + "agn.spec;%s;%f\n" % (paramStr, normAgn[ix]))
+
+        dtype = np.dtype([
+                         ('galid', np.int),
+                         ('raDeg', np.float), ('decDeg', np.float),
+                         ('raJ2000', np.float), ('decJ2000', np.float),
+                         ('redshift', np.float),
+                         ('sedFilenameDisk', str, 300), ('internalAvDisk', np.float),
+                         ('magNormDisk', np.float),
+                         ('sedFilenameBulge', str, 300), ('internalAvBulge', np.float),
+                         ('magNormBulge', np.float),
+                         ('sedFilenameAgn', str, 300), ('varParamStr', str, 600),
+                         ('magNormAgn', np.float)
+                         ])
+
+        cls.agn_db = fileDBObject(cls.txt_cat_name, delimiter=';',
+                                  runtable='test', dtype=dtype,
+                                  idColKey='galid')
+
+        cls.agn_db.raColName = 'raDeg'
+        cls.agn_db.decColName = 'decDeg'
+        cls.agn_db.objectTypeId = 112
+
+        # what follows is a hack to deal with the fact thar
+        # our varParamStr values are longer than 256 characters
+        # which is the default maximum length that a
+        # CatalogDBObject expects a string to be
+        #
+        cls.agn_db.dbTypeMap['STRING'] = (str, 600)
+        cls.agn_db.columns = None
+        cls.agn_db._make_default_columns()
+        cls.agn_db._make_column_map()
+        cls.agn_db._make_type_map()
+
+        cls.opsimDb = os.path.join(getPackageDir("sims_data"), "OpSimData")
+        cls.opsimDb = os.path.join(cls.opsimDb, "opsimblitz1_1133_sqlite.db")
+
+    @classmethod
+    def tearDownClass(cls):
+        sims_clean_up()
+        if os.path.exists(cls.txt_cat_name):
+            os.unlink(cls.txt_cat_name)
+
+    def test_fast_agn_light_curves(self):
+        raRange = (78.0, 85.0)
+        decRange = (-69.0, -65.0)
+        bandpass = ('g', 'r')
+
+        slow_lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
+        pointings = slow_lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        slow_lc, slow_truth = slow_lc_gen.light_curves_from_pointings(pointings)
+
+        self.assertGreater(len(slow_lc), 2)  # make sure we got some light curves
+
+        fast_lc_gen = FastAgnLightCurveGenerator(self.agn_db, self.opsimDb)
+        pointings = fast_lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        fast_lc, fast_truth = fast_lc_gen.light_curves_from_pointings(pointings)
+
+        self.assertEqual(len(slow_lc), len(fast_lc))
+        self.assertEqual(len(slow_truth), len(fast_truth))
+
+        for obj_id in slow_lc:
+            self.assertEqual(len(fast_lc[obj_id]), len(slow_lc[obj_id]))
+            for bp in fast_lc[obj_id]:
+                self.assertEqual(len(fast_lc[obj_id][bp]), len(slow_lc[obj_id][bp]))
+                for data_key in fast_lc[obj_id][bp]:
+                    self.assertEqual(fast_lc[obj_id][bp][data_key].shape, slow_lc[obj_id][bp][data_key].shape)
+                    self.assertLess(np.abs(fast_lc[obj_id][bp][data_key]-slow_lc[obj_id][bp][data_key]).max(),
+                                    2.0e-10, msg='failed on %d, %s, %s' % (obj_id, bp, data_key))
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ import time
 __all__ = ["StellarLightCurveGenerator",
            "FastStellarLightCurveGenerator",
            "AgnLightCurveGenerator",
+           "FastAgnLightCurveGenerator",
            "_baseLightCurveCatalog",
            "LightCurveGenerator",
            "FastLightCurveGenerator"]
@@ -815,3 +816,13 @@ class AgnLightCurveGenerator(LightCurveGenerator):
         self._lightCurveCatalogClass = _agnLightCurveCatalog
         self._constraint = 'varParamStr IS NOT NULL'
         super(AgnLightCurveGenerator, self).__init__(*args, **kwargs)
+
+
+class FastAgnLightCurveGenerator(FastLightCurveGenerator,
+                                 AgnLightCurveGenerator):
+
+    def delta_name_mapper(self, bp):
+        return 'delta_%sAgn' % bp
+
+    def total_name_mapper(self, bp):
+        return '%sAgn' % bp
