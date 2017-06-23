@@ -3,22 +3,48 @@ This module defines methods which implement the astrophysical
 variability models used by CatSim.  InstanceCatalogs apply
 variability by calling the applyVariability() method in
 the Variability class.  To add a new variability model to
-this framework, users should define a method which accepts
-as arguments:
+this framework, users should define a method which
+returns the delta magnitude of the variable source
+in the LSST bands and accepts as arguments:
 
-valid_dexes -- the output of numpy.where() indicating
-which astrophysical objects actually depend on the
-variability model.
+    valid_dexes -- the output of numpy.where() indicating
+    which astrophysical objects actually depend on the
+    variability model.
 
-params -- a dict whose keys are the names of parameters
-required by the variability model and whose values
-are lists of the parameters required for the
-variability model for all astrophysical objects
-in the CatSim database (even those objects that do
-not depend on the model; these objects can have
-None in the parameter lists).
+    params -- a dict whose keys are the names of parameters
+    required by the variability model and whose values
+    are lists of the parameters required for the
+    variability model for all astrophysical objects
+    in the CatSim database (even those objects that do
+    not depend on the model; these objects can have
+    None in the parameter lists).
 
-expmjd -- the MJD of the observation.
+    expmjd -- the MJD of the observation.  This must be
+    able to accept a float or a numpy array.
+
+If expmjd is a float, the variability model should
+return a 2-D numpy array in which the first index
+varies over the band and the second index varies
+over the object, i.e.
+
+    out_dmag[0][2] is the delta magnitude of the 2nd object
+    in the u band
+
+    out_dmag[3][15] is the delta magnitude of the 15th object
+    in the i band.
+
+If expmjd is a numpy array, the variability should
+return a 3-D numpy array in which the first index
+varies over the band, the second index varies over
+the object, and the third index varies over the
+time step, i.e.
+
+    out_dmag[0][2][15] is the delta magnitude of the 2nd
+    object in the u band at the 15th value of expmjd
+
+    out_dmag[3][11][2] is the delta magnitude of the
+    11th object in the i band at the 2nd value of
+    expmjd
 
 The method implementing the variability model should be
 marked with the decorator @register_method(key) where key
