@@ -784,7 +784,8 @@ class StellarLightCurveGenerator(LightCurveGenerator):
         super(StellarLightCurveGenerator, self).__init__(*args, **kwargs)
 
 
-class FastStellarLightCurveGenerator(FastLightCurveGenerator, StellarLightCurveGenerator):
+class FastStellarLightCurveGenerator(FastLightCurveGenerator,
+                                     StellarLightCurveGenerator):
 
     def delta_name_mapper(self, bp):
         return 'delta_lsst_%s' % bp
