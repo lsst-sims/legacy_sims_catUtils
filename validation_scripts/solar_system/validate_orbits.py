@@ -49,6 +49,7 @@ def equatorial_from_ecliptic(lon, lat):
 import numpy as np
 import os
 import cStringIO
+from lsst.sims.movingObjects import Orbits
 from lsst.sims.catUtils.baseCatalogModels import MBAObj
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
@@ -110,13 +111,14 @@ def validate_orbits(obs, db, des_dir=None):
         list_of_files = os.listdir(des_dir)
         first_file = True
         for file_name in list_of_files:
-            if not file_name.endswith('.des'):
+            if not file_name.endswith('.s3m'):
                 continue
             with open(os.path.join(des_dir, file_name), 'r') as input_file:
                 for ix, line in enumerate(input_file):
                     if ix==0:
                         if first_file:
                             validate_orbits.header = line
+                            print 'read haeder from ',file_name
                             first_file = False
                         continue
                     split_line = line.strip().split()
@@ -129,9 +131,16 @@ def validate_orbits(obs, db, des_dir=None):
     results = db.query_columns(colnames=colnames, obs_metadata=obs,
                                chunk_size=10000)
 
-    n_obj = 0
     for chunk in results:
-        n_obj += len(chunk)
+        orbit_obj = Orbits()
+        orbit_buffer = cStringIO.StringIO()
+        orbit_buffer.write(validate_orbits.header)
+        for asteroid in chunk:
+            ast_name = validate_orbits.name_lookup[asteroid['objid']]
+            orbit_buffer.write(validate_orbits.des_cache[ast_name])
+        orbit_obj.readOrbits(orbit_buffer)
+        orbit_buffer.close()
+
 
 
 try:
@@ -152,6 +161,6 @@ obs = ObservationMetaData(mjd=60121.67,
 
 des_dir = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
                        'Development', 'garage', 'yusraNeoCode', 'data',
-                       'desFilesFull')
+                       'raw')
 
 validate_orbits(obs, mba_db, des_dir=des_dir)
