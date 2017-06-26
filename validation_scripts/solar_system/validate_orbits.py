@@ -142,25 +142,26 @@ def validate_orbits(obs, db, des_dir=None):
         orbit_buffer.close()
 
 
+if __name__ == "__main__":
 
-try:
-    # if you are on UW campus/VPN
-    mba_db = MBAObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
-                    port=1433, driver='mssql+pymssql')
-except:
-    # if you need to use the SSH tunnel to connect to fatboy
-    mba_db = MBAObj()
+    try:
+        # if you are on UW campus/VPN
+        mba_db = MBAObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
+                        port=1433, driver='mssql+pymssql')
+    except:
+        # if you need to use the SSH tunnel to connect to fatboy
+        mba_db = MBAObj()
 
-ra, dec = equatorial_from_ecliptic(213.0, 1.1)
+    ra, dec = equatorial_from_ecliptic(213.0, 1.1)
 
-obs = ObservationMetaData(mjd=60121.67,
-                          pointingRA=ra,
-                          pointingDec=dec,
-                          boundLength=1.75,
-                          boundType='circle')
+    obs = ObservationMetaData(mjd=60121.67,
+                              pointingRA=ra,
+                              pointingDec=dec,
+                              boundLength=1.75,
+                              boundType='circle')
 
-des_dir = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
-                       'Development', 'garage', 'yusraNeoCode', 'data',
-                       'raw')
+    des_dir = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
+                           'Development', 'garage', 'yusraNeoCode', 'data',
+                           'raw')
 
-validate_orbits(obs, mba_db, des_dir=des_dir)
+    validate_orbits(obs, mba_db, des_dir=des_dir)
