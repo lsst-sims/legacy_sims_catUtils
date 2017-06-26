@@ -48,6 +48,37 @@ def equatorial_from_ecliptic(lon, lat):
 from lsst.sims.catUtils.baseCatalogModels import MBAObj
 from lsst.sims.utils import ObservationMetaData
 
+def validate_orbits(obs, db):
+    """
+    Take a telescope pointing, find all of the asteroids within that
+    pointing, and validate the orbits as parametrized on fatboy against
+    the orbits as directly evaluated by pyoorb
+
+    Parameters
+    ----------
+    obs is an ObservationMetaData characterizing the telescope pointing
+
+    db is a CatalogDBObject connecting to the Solar System object table
+    we are currently validating
+
+    Returns
+    -------
+    The maximum difference between the position parametrized on fatboy
+    and the position calculated by pyoorb in milliarcseconds.
+
+    The number of objects tested.
+    """
+
+    colnames = ['objid', 'raJ2000', 'decJ2000']
+
+    results = db.query_columns(colnames=colnames, obs_metadata=obs,
+                               chunk_size=10000)
+
+    n_obj = 0
+    for chunk in results:
+        n_obj += len(chunk)
+
+
 try:
     # if you are on UW campus/VPN
     mba_db = MBAObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
@@ -64,17 +95,3 @@ obs = ObservationMetaData(mjd=60121.67,
                           boundLength=1.75,
                           boundType='circle')
 
-colnames = ['raJ2000', 'decJ2000']
-
-import time
-
-t_start = time.time()
-results = mba_db.query_columns(colnames=colnames,
-                               obs_metadata=obs,
-                               chunk_size=10000)
-
-line_ct = 0
-for chunk in results:
-    print chunk
-    line_ct += len(chunk)
-print 'got %d in %e' % (line_ct, time.time()-t_start)
