@@ -12,6 +12,7 @@ by running
     gcc -lm -o coord coordtrans.c
 """
 
+from __future__ import with_statement
 from subprocess import check_output
 
 def equatorial_from_ecliptic(lon, lat):
@@ -45,10 +46,16 @@ def equatorial_from_ecliptic(lon, lat):
     ra_dec = ra_dec.strip().split()
     return 15.0*float(ra_dec[0]), float(ra_dec[1])
 
+import numpy as np
+import os
+import cStringIO
 from lsst.sims.catUtils.baseCatalogModels import MBAObj
+from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
-def validate_orbits(obs, db):
+import time
+
+def validate_orbits(obs, db, des_dir=None):
     """
     Take a telescope pointing, find all of the asteroids within that
     pointing, and validate the orbits as parametrized on fatboy against
@@ -61,6 +68,9 @@ def validate_orbits(obs, db):
     db is a CatalogDBObject connecting to the Solar System object table
     we are currently validating
 
+    des_dir is the directory containing the .des files with the original
+    orbit paramters
+
     Returns
     -------
     The maximum difference between the position parametrized on fatboy
@@ -68,6 +78,51 @@ def validate_orbits(obs, db):
 
     The number of objects tested.
     """
+
+    if not hasattr(validate_orbits, 'name_lookup'):
+        # construct a lookup table associating objid with
+        # the names of the objects as stored in the .des files
+        dtype = np.dtype([('name', str, 8), ('id', int)])
+        try:
+            name_db = DBObject(database='LSSTSSM', host='fatboy.phys.washington.edu',
+                               port=1433, driver='mssql+pymssql')
+        except:
+            name_db = DBObject(database='LSTSSM', host='localhost',
+                               port=51433, driver='mssql+pymssql')
+
+        query = 'SELECT name, ssmid from C14_mba_name_map'
+        chunk_iter = name_db.get_arbitrary_chunk_iterator(query=query, dtype=dtype,
+                                                          chunk_size=10000)
+
+        validate_orbits.name_lookup = {}
+        for chunk in chunk_iter:
+            for line in chunk:
+                validate_orbits.name_lookup[line['id']] = line['name']
+
+        print 'built name look up dict'
+
+    if not hasattr(validate_orbits, 'des_dir') or validate_orbits.des_dir != des_dir:
+        # create a StringIO object containing all of the data from
+        # the original .des files
+        validate_orbits.des_dir = des_dir
+        validate_orbits.des_cache = {}
+        validate_orbits.header = None
+        list_of_files = os.listdir(des_dir)
+        first_file = True
+        for file_name in list_of_files:
+            if not file_name.endswith('.des'):
+                continue
+            with open(os.path.join(des_dir, file_name), 'r') as input_file:
+                for ix, line in enumerate(input_file):
+                    if ix==0:
+                        if first_file:
+                            validate_orbits.header = line
+                            first_file = False
+                        continue
+                    split_line = line.strip().split()
+                    validate_orbits.des_cache[split_line[0]] = line
+
+    print 'finished initialization %d' % len(validate_orbits.des_cache)
 
     colnames = ['objid', 'raJ2000', 'decJ2000']
 
@@ -95,3 +150,8 @@ obs = ObservationMetaData(mjd=60121.67,
                           boundLength=1.75,
                           boundType='circle')
 
+des_dir = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
+                       'Development', 'garage', 'yusraNeoCode', 'data',
+                       'desFilesFull')
+
+validate_orbits(obs, mba_db, des_dir=des_dir)
