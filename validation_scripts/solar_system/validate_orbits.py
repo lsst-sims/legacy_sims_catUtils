@@ -49,10 +49,12 @@ def equatorial_from_ecliptic(lon, lat):
 import numpy as np
 import os
 import cStringIO
-from lsst.sims.movingObjects import Orbits
+from lsst.sims.movingObjects import Orbits, PyOrbEphemerides
 from lsst.sims.catUtils.baseCatalogModels import MBAObj
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.utils import _angularSeparation
+from lsst.sims.utils import arcsecFromRadians
 
 import time
 
@@ -79,6 +81,10 @@ def validate_orbits(obs, db, des_dir=None):
 
     The number of objects tested.
     """
+
+    if not hasattr(validate_orbits, 'ephemerides'):
+        # construct a PyOrbEphemrides instantiation
+        validate_orbits.ephemerides = PyOrbEphemerides()
 
     if not hasattr(validate_orbits, 'name_lookup'):
         # construct a lookup table associating objid with
@@ -129,18 +135,34 @@ def validate_orbits(obs, db, des_dir=None):
     colnames = ['objid', 'raJ2000', 'decJ2000']
 
     results = db.query_columns(colnames=colnames, obs_metadata=obs,
-                               chunk_size=10000)
+                               chunk_size=100)
 
+    t_start = time.time()
+    max_displacement = -1.0
+    n_obj = 0
     for chunk in results:
+        n_obj += len(chunk)
         orbit_obj = Orbits()
         orbit_buffer = cStringIO.StringIO()
         orbit_buffer.write(validate_orbits.header)
         for asteroid in chunk:
             ast_name = validate_orbits.name_lookup[asteroid['objid']]
             orbit_buffer.write(validate_orbits.des_cache[ast_name])
+        orbit_buffer.seek(0)
         orbit_obj.readOrbits(orbit_buffer)
+        validate_orbits.ephemerides.setOrbits(orbit_obj)
+        eph_list = validate_orbits.ephemerides.generateEphemerides(np.array([obs.mjd.UTC]), byObject=False)
+        ra_vec = np.radians(np.array([rr for rr in eph_list['ra'][0]]))
+        dec_vec = np.radians(np.array([dd for dd in eph_list['dec'][0]]))
+        dd = 1000.0*arcsecFromRadians(_angularSeparation(chunk['raJ2000'], chunk['decJ2000'],
+                                                         ra_vec, dec_vec))
         orbit_buffer.close()
+        ellapsed = time.time()-t_start
+        print 'local_max',dd.max(),max_displacement,ellapsed,ellapsed/n_obj
+        if dd.max() > max_displacement:
+            max_displacement = dd.max()
 
+    return max_displacement, n_obj
 
 if __name__ == "__main__":
 
@@ -164,4 +186,6 @@ if __name__ == "__main__":
                            'Development', 'garage', 'yusraNeoCode', 'data',
                            'raw')
 
-    validate_orbits(obs, mba_db, des_dir=des_dir)
+    max_d, n_obj = validate_orbits(obs, mba_db, des_dir=des_dir)
+
+    print max_d, n_obj
