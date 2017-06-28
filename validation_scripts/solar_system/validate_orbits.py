@@ -12,7 +12,7 @@ by running
     gcc -lm -o coord coordtrans.c
 """
 
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 from subprocess import check_output
 
 def equatorial_from_ecliptic(lon, lat):
@@ -109,7 +109,7 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
             for line in chunk:
                 validate_orbits.name_lookup[line['id']] = line['name']
 
-        print 'built name look up dict'
+        print('built name look up dict')
 
     if not hasattr(validate_orbits, 'data_dir') or validate_orbits.data_dir != data_dir:
         # create a StringIO object containing all of the data from
@@ -131,18 +131,18 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
                     if ix==0:
                         if first_file:
                             validate_orbits.header = line
-                            print 'read haeder from ',file_name
+                            print('read header from %s' % file_name)
                             first_file = False
                         continue
                     split_line = line.strip().split()
                     validate_orbits.des_cache[split_line[0]] = line
 
-    print 'finished initialization %d' % len(validate_orbits.des_cache)
+    print('finished initialization %d' % len(validate_orbits.des_cache))
 
     colnames = ['objid', 'raJ2000', 'decJ2000']
 
     results = db.query_columns(colnames=colnames, obs_metadata=obs,
-                               chunk_size=100)
+                               chunk_size=10000)
 
     t_start = time.time()
     max_displacement = -1.0
@@ -165,8 +165,9 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
                                                          ra_vec, dec_vec))
         orbit_buffer.close()
         ellapsed = time.time()-t_start
-        print 'local_max',dd.max(),max_displacement,ellapsed,ellapsed/n_obj
         if dd.max() > max_displacement:
+            max_dex = np.argmax(dd)
+            print('object %d displacement %e TAI %.12f' % (chunk['objid'][max_dex], dd.max(), obs.mjd.TAI))
             max_displacement = dd.max()
 
     return max_displacement, n_obj
@@ -208,15 +209,28 @@ if __name__ == "__main__":
         # if you need to use the SSH tunnel to connect to fatboy
         mba_db = MBAObj()
 
-    ra, dec = equatorial_from_ecliptic(213.0, 1.1)
+    rng = np.random.RandomState(args.seed)
+    lon_list = rng.random_sample(args.n_fields)*360.0
+    lat_list = rng.random_sample(args.n_fields)*10.0-5.0
+    mjd_list = rng.random_sample(args.n_fields)*3653.0+59580.0
 
-    obs = ObservationMetaData(mjd=60121.67,
-                              pointingRA=ra,
-                              pointingDec=dec,
-                              boundLength=1.75,
-                              boundType='circle')
+    max_d = -1.0
+    n_obj = 0
+    for lon, lat, mjd in zip(lon_list,lat_list, mjd_list):
+        ra, dec = equatorial_from_ecliptic(lon, lat)
 
-    max_d, n_obj = validate_orbits(obs, mba_db, data_files=data_files,
-                                   data_dir=args.data_dir)
+        obs = ObservationMetaData(mjd=mjd,
+                                  pointingRA=ra,
+                                  pointingDec=dec,
+                                  boundLength=1.75,
+                                  boundType='circle')
 
-    print max_d, n_obj
+        local_max_d, local_n_obj = validate_orbits(obs, mba_db,
+                                                   data_files=data_files,
+                                                   data_dir=args.data_dir)
+
+        if local_max_d>max_d:
+            max_d = local_max_d
+        n_obj += local_n_obj
+
+    print('max_d %e; n_obj %d ' % (max_d, n_obj))
