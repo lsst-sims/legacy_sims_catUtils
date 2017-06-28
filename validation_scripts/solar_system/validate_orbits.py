@@ -58,7 +58,7 @@ from lsst.sims.utils import arcsecFromRadians
 
 import time
 
-def validate_orbits(obs, db, des_dir=None):
+def validate_orbits(obs, db, data_files=None, data_dir=None):
     """
     Take a telescope pointing, find all of the asteroids within that
     pointing, and validate the orbits as parametrized on fatboy against
@@ -71,7 +71,10 @@ def validate_orbits(obs, db, des_dir=None):
     db is a CatalogDBObject connecting to the Solar System object table
     we are currently validating
 
-    des_dir is the directory containing the .des files with the original
+    data_files is a list of the data files containing the original orbit
+    parameters
+
+    data_dir is the directory containing the data files with the original
     orbit paramters
 
     Returns
@@ -108,18 +111,22 @@ def validate_orbits(obs, db, des_dir=None):
 
         print 'built name look up dict'
 
-    if not hasattr(validate_orbits, 'des_dir') or validate_orbits.des_dir != des_dir:
+    if not hasattr(validate_orbits, 'data_dir') or validate_orbits.data_dir != data_dir:
         # create a StringIO object containing all of the data from
         # the original .des files
-        validate_orbits.des_dir = des_dir
+        validate_orbits.data_dir = data_dir
         validate_orbits.des_cache = {}
         validate_orbits.header = None
-        list_of_files = os.listdir(des_dir)
         first_file = True
-        for file_name in list_of_files:
+        for file_name in data_files:
             if not file_name.endswith('.s3m'):
                 continue
-            with open(os.path.join(des_dir, file_name), 'r') as input_file:
+            if data_dir is not None:
+                full_name = os.path.join(data_dir, file_name)
+            else:
+                full_name = file_name
+
+            with open(full_name, 'r') as input_file:
                 for ix, line in enumerate(input_file):
                     if ix==0:
                         if first_file:
@@ -164,7 +171,34 @@ def validate_orbits(obs, db, des_dir=None):
 
     return max_displacement, n_obj
 
+import argparse
+
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--data', type=str, default=None, nargs='+',
+                        help='List of files containing the original orbit '
+                             'parameters to be used in validating the model')
+
+    parser.add_argument('--data_dir', type=str, default=None,
+                        help='Directory containing the files from DATA')
+
+    parser.add_argument('--n_fields', type=int, default=1,
+                        help='Number of random fields of view to validate')
+
+    parser.add_argument('--seed', type=int, default=99,
+                        help='seed for random number generator')
+
+    args = parser.parse_args()
+    if args.data is None:
+        if args.data_dir is None:
+            raise RuntimeError("Need to specify at least DATA_DIR, if not DATA")
+        data_files = os.listdir(args.data_dir)
+    elif isinstance(args.data, list):
+        data_files = [args.data]
+    else:
+        data_files = args.data
 
     try:
         # if you are on UW campus/VPN
@@ -182,10 +216,7 @@ if __name__ == "__main__":
                               boundLength=1.75,
                               boundType='circle')
 
-    des_dir = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
-                           'Development', 'garage', 'yusraNeoCode', 'data',
-                           'raw')
-
-    max_d, n_obj = validate_orbits(obs, mba_db, des_dir=des_dir)
+    max_d, n_obj = validate_orbits(obs, mba_db, data_files=data_files,
+                                   data_dir=args.data_dir)
 
     print max_d, n_obj
