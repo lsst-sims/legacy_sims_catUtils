@@ -92,7 +92,7 @@ def verify_month(month):
         elapsed = time.time()-t_start
         expected = overhead + 2.09e8*elapsed/row_ct
         expected = expected/(24.0*60.0*60.0)
-        print('%d %.2f %.2f %d' % (row_ct,elapsed+overhead, expected, sub_divisions))
+        #print('%d %.2f %.2f %d' % (row_ct,elapsed+overhead, expected, sub_divisions))
 
     invalid = np.where(np.abs(prev_end-(month+30.0))>tol)
     try:
