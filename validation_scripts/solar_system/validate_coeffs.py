@@ -75,7 +75,16 @@ def verify_month(month):
             mjd_end_vec = chunk['mjd_end'][i_start:i_end]
 
             invalid = np.where(np.abs(mjd_start_vec-prev_end[id_vec])>tol)
-            assert len(invalid[0]) == 0
+            try:
+                assert len(invalid[0]) == 0
+            except AssertionError:
+                msg = "Found a gap in coverage\n"
+                msg += "IDs: %s\n" % str(id_vec[invalid])
+                msg += "MJD_start: %s\n" % str(mjd_start_vec[invalid])
+                msg += "MJD_end: %s\n" % str(mjd_end_vec[invalid])
+                msg += "prev_end: %s\n" % str(prev_end[id_vec][invalid])
+                raise RuntimeError(msg)
+
             prev_end[id_vec] = mjd_end_vec
 
         row_ct += n_chunk
@@ -85,7 +94,14 @@ def verify_month(month):
         print row_ct,elapsed+overhead, expected, sub_divisions
 
     invalid = np.where(np.abs(prev_end-(month+30.0))>tol)
-    assert len(invalid[0]) == 1
+    try:
+        assert len(invalid[0]) == 1
+    except AssertionError:
+        msg = "Failed on final check of prev_end\n"
+        msg += "month %d\n" % month
+        msg += "IDs: %s\n" % invalid[0]
+        msg += "pref_end: %s\n" % prev_end[invalid]
+        raise RuntimeError(msg)
 
     print 'that took ',time.time()-t_start
     return row_ct
