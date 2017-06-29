@@ -58,7 +58,8 @@ from lsst.sims.utils import arcsecFromRadians
 
 import time
 
-def validate_orbits(obs, db, data_files=None, data_dir=None):
+def validate_orbits(obs, db, data_files=None, data_dir=None,
+                    chunk_size=10000):
     """
     Take a telescope pointing, find all of the asteroids within that
     pointing, and validate the orbits as parametrized on fatboy against
@@ -76,6 +77,9 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
 
     data_dir is the directory containing the data files with the original
     orbit paramters
+
+    chunk_size is an int indicating how many asteroids to process at once
+    (this will balance performance versus memory usage)
 
     Returns
     -------
@@ -146,7 +150,7 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
     colnames = ['objid', 'raJ2000', 'decJ2000']
 
     results = db.query_columns(colnames=colnames, obs_metadata=obs,
-                               chunk_size=10000)
+                               chunk_size=chunk_size)
 
     t_start = time.time()
     for chunk in results:
@@ -193,6 +197,10 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=99,
                         help='seed for random number generator')
 
+    parser.add_argument('--chunk_size', type=int, default=10000,
+                        help='number of asteroids to process at once; '
+                             'affect performance and memory usage')
+
     args = parser.parse_args()
     if args.data is None:
         if args.data_dir is None:
@@ -229,7 +237,8 @@ if __name__ == "__main__":
 
         local_max_d, local_n_obj = validate_orbits(obs, mba_db,
                                                    data_files=data_files,
-                                                   data_dir=args.data_dir)
+                                                   data_dir=args.data_dir,
+                                                   chunk_size=args.chunk_size)
 
         if local_max_d>max_d:
             max_d = local_max_d
