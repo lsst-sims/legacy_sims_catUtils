@@ -10,6 +10,9 @@ Running this script will require installing and setting up sims_movingObjects.
 You will also need to compile the coordinate transformation code coordtrans.c
 by running
     gcc -lm -o coord coordtrans.c
+
+Note: testing this script on 20 random pointings showed that it took 18 hours
+to validate 500,000 asteroids
 """
 
 from __future__ import with_statement, print_function
