@@ -4,6 +4,7 @@ that every object in our model has a set of coefficients assigned for every
 time period simulated.
 """
 
+from __future__ import with_statement, print_function
 from lsst.sims.catalogs.db import DBObject
 import numpy as np
 import time
@@ -12,7 +13,7 @@ def verify_month(month):
     """
     month is the starting MJD of the month to be verified (an int)
 
-    returns the number of rows verified
+    returns a message summarizing the results
     """
 
     if not hasattr(verify_month, 'db'):
@@ -79,11 +80,11 @@ def verify_month(month):
                 assert len(invalid[0]) == 0
             except AssertionError:
                 msg = "Found a gap in coverage\n"
-                msg += "IDs: %s\n" % str(id_vec[invalid])
-                msg += "MJD_start: %s\n" % str(mjd_start_vec[invalid])
-                msg += "MJD_end: %s\n" % str(mjd_end_vec[invalid])
-                msg += "prev_end: %s\n" % str(prev_end[id_vec][invalid])
-                raise RuntimeError(msg)
+                msg += "    IDs: %s\n" % str(id_vec[invalid])
+                msg += "    MJD_start: %s\n" % str(mjd_start_vec[invalid])
+                msg += "    MJD_end: %s\n" % str(mjd_end_vec[invalid])
+                msg += "    prev_end: %s\n" % str(prev_end[id_vec][invalid])
+                return msg
 
             prev_end[id_vec] = mjd_end_vec
 
@@ -91,22 +92,49 @@ def verify_month(month):
         elapsed = time.time()-t_start
         expected = overhead + 2.09e8*elapsed/row_ct
         expected = expected/(24.0*60.0*60.0)
-        print row_ct,elapsed+overhead, expected, sub_divisions
+        print('%d %.2f %.2f %d' % (row_ct,elapsed+overhead, expected, sub_divisions))
 
     invalid = np.where(np.abs(prev_end-(month+30.0))>tol)
     try:
         assert len(invalid[0]) == 1
     except AssertionError:
         msg = "Failed on final check of prev_end\n"
-        msg += "month %d\n" % month
-        msg += "IDs: %s\n" % invalid[0]
-        msg += "pref_end: %s\n" % prev_end[invalid]
-        raise RuntimeError(msg)
+        msg += "    month %d\n" % month
+        msg += "    IDs: %s\n" % invalid[0]
+        msg += "    prev_end: %s\n" % prev_end[invalid]
+        return msg
 
-    print 'that took ',time.time()-t_start
-    return row_ct
+    return 'Success; validated %d' % row_ct
 
+
+import argparse
+import os
 
 if __name__ == "__main__":
 
-    n_rows = verify_month(59580)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--month', type=int, default=None,
+                        nargs='+',
+                        help='List of MJDs denoting the database tables '
+                             'to verify (5980 + n*30)')
+    parser.add_argument('--out_file', type=str, default='mba_validation_log.txt',
+                        help='file to write results to')
+
+    args = parser.parse_args()
+    if args.month is None:
+        exit(0)
+    elif not isinstance(args.month, list):
+        month_list = [args.month]
+    else:
+        month_list = args.month
+
+    if os.path.exists(args.out_file):
+        raise RuntimeError('%s exists' % args.out_file)
+
+    for month in month_list:
+        t_start = time.time()
+        msg = verify_month(month)
+        elapsed = time.time()-t_start
+        with open(args.out_file, 'a') as out_file:
+            out_file.write('month %d completed in %.2f hours: %s\n' %
+                           (month, elapsed/3600.0, msg))
