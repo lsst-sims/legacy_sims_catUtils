@@ -28,32 +28,52 @@ id_list = results['id']
 print id_list
 print len(id_list)
 
-dtype = np.dtype([('id', int), ('start', float), ('end', float)])
+dtype = np.dtype([('id', int), ('mjd_start', float), ('mjd_end', float)])
 
 import time
 t_start = time.time()
 query = 'SELECT ssmid, mjd_start, mjd_end FROM C14_MBA_59580 '
 query += 'ORDER BY mjd_start' % id_list[0]
 
-prev_end = np.zeros(len(id_list)+1)
+prev_end = np.ones(len(id_list)+1, dtype=float)*59580.0
 
-tol = 1.0e-6
+tol = 1.0e-9
 
-results = db.get_arbitrary_chunk_iterator(query, dtype=dtype, chunk_size=10000)
+results = db.get_arbitrary_chunk_iterator(query, dtype=dtype, chunk_size=100000)
 row_ct = 0
+overhead = time.time()-t_start
+t_start = time.time()
 for chunk in results:
-    for line in chunk:
-        row_ct += 1
-        if prev_end[line['id']]<1.0:
-            assert np.abs(line['start']-59580.0)<tol
-        else:
-            assert np.abs(line['start']-prev_end[line['id']])<tol
-        prev_end[line['id']] = line['end']
-        if row_ct%1000==0:
-            elapsed = time.time()-t_start
-            expected = 2.09e8*elapsed/row_ct
-            expected = expected/(24.0*60.0*60.0)
-            print row_ct,elapsed, expected
+    n_chunk = len(chunk)
+    sub_divisions = 0
+    is_okay = False
+    while not is_okay:
+        sub_divisions += 1
+        is_okay = True
+        for i_sub in range(sub_divisions):
+            i_start = n_chunk*i_sub/sub_divisions
+            i_end = n_chunk*(i_sub+1)/sub_divisions
+            unq = np.unique(chunk['id'][i_start:i_end])
+            if len(unq) != i_end-i_start:
+                is_okay = False
+                break
+
+    for i_sub in range(sub_divisions):
+        i_start = n_chunk*i_sub/sub_divisions
+        i_end = n_chunk*(i_sub+1)/sub_divisions
+        id_vec = chunk['id'][i_start:i_end]
+        mjd_start_vec = chunk['mjd_start'][i_start:i_end]
+        mjd_end_vec = chunk['mjd_end'][i_start:i_end]
+
+        invalid = np.where(np.abs(mjd_start_vec-prev_end[id_vec])>tol)
+        assert len(invalid[0]) == 0
+        prev_end[id_vec] = mjd_end_vec
+
+    row_ct += n_chunk
+    elapsed = time.time()-t_start
+    expected = overhead + 2.09e8*elapsed/row_ct
+    expected = expected/(24.0*60.0*60.0)
+    print row_ct,elapsed+overhead, expected, sub_divisions
 
 invalid = np.where(np.abs(prev_end-59610.0)>tol)
 assert len(invalid[0]) == 1
