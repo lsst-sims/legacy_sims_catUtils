@@ -137,7 +137,7 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
                     split_line = line.strip().split()
                     validate_orbits.des_cache[split_line[0]] = line
 
-    print('finished initialization %d' % len(validate_orbits.des_cache))
+        print('finished initialization %d' % len(validate_orbits.des_cache))
 
     colnames = ['objid', 'raJ2000', 'decJ2000']
 
