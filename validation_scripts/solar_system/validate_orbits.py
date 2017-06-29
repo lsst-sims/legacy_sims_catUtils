@@ -89,6 +89,10 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
         # construct a PyOrbEphemrides instantiation
         validate_orbits.ephemerides = PyOrbEphemerides()
 
+    if not hasattr(validate_orbits, 'max_d'):
+        validate_orbits.max_d = -1.0
+        validate_orbits.n_obj = 0
+
     if not hasattr(validate_orbits, 'name_lookup'):
         # construct a lookup table associating objid with
         # the names of the objects as stored in the .des files
@@ -145,10 +149,8 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
                                chunk_size=10000)
 
     t_start = time.time()
-    max_displacement = -1.0
-    n_obj = 0
     for chunk in results:
-        n_obj += len(chunk)
+        validate_orbits.n_obj += len(chunk)
         orbit_obj = Orbits()
         orbit_buffer = cStringIO.StringIO()
         orbit_buffer.write(validate_orbits.header)
@@ -165,12 +167,12 @@ def validate_orbits(obs, db, data_files=None, data_dir=None):
                                                          ra_vec, dec_vec))
         orbit_buffer.close()
         ellapsed = time.time()-t_start
-        if dd.max() > max_displacement:
+        if dd.max() > validate_orbits.max_d:
             max_dex = np.argmax(dd)
             print('object %d displacement %e TAI %.12f' % (chunk['objid'][max_dex], dd.max(), obs.mjd.TAI))
-            max_displacement = dd.max()
+            validate_orbits.max_d = dd.max()
 
-    return max_displacement, n_obj
+    return validate_orbits.max_d, validate_orbits.n_obj
 
 import argparse
 
