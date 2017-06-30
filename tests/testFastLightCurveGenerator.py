@@ -73,8 +73,8 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
         cls.txt_name = os.path.join(cls.scratchDir, "fast_stellar_lc_catalog.txt")
         with open(cls.txt_name, "w") as output_file:
             output_file.write('# a silly header\n')
-            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars/2)
-            lc_dex = rng.random_integers(0, len(list_of_rrly_lc)-1, size=cls.n_stars/2)
+            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars//2)
+            lc_dex = rng.random_integers(0, len(list_of_rrly_lc)-1, size=cls.n_stars//2)
             mjd0 = rng.random_sample(cls.n_stars/2)*10000.0+40000.0
             raList = rng.random_sample(cls.n_stars/2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
             decList = cls.decRange[0] + rng.random_sample(cls.n_stars/2)*(cls.decRange[1]-cls.decRange[1])
@@ -95,8 +95,8 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
                                      varparamstr,pxList[ix],
                                      AvList[ix]/3.1))
 
-            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars/2)
-            lc_dex = rng.random_integers(1, 2, size=cls.n_stars/2)
+            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars//2)
+            lc_dex = rng.random_integers(1, 2, size=cls.n_stars//2)
             mjd0 = rng.random_sample(cls.n_stars/2)*10000.0+40000.0
             raList = rng.random_sample(cls.n_stars/2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
             decList = cls.decRange[0] + rng.random_sample(cls.n_stars/2)*(cls.decRange[1]-cls.decRange[1])
