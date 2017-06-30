@@ -118,20 +118,13 @@ import os
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--month', type=int, default=None,
-                        nargs='+',
-                        help='List of MJDs denoting the database tables '
-                             'to verify (5980 + n*30)')
+    parser.add_argument('--start_month', type=int, default=None)
+    parser.add_argument('--n_month', type=int, default=None)
     parser.add_argument('--out_file', type=str, default='mba_validation_log.txt',
                         help='file to write results to')
 
     args = parser.parse_args()
-    if args.month is None:
-        exit(0)
-    elif not isinstance(args.month, list):
-        month_list = [args.month]
-    else:
-        month_list = args.month
+    month_list = range(args.start_month, args.start_month+args.n_month*30+1, 30)
 
     if os.path.exists(args.out_file):
         raise RuntimeError('%s exists' % args.out_file)
