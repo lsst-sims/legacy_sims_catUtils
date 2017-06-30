@@ -23,7 +23,7 @@ def applyAmcvn_original(valid_dexes, params, expmjd_in):
     if len(params) == 0:
         return np.array([[],[],[],[],[],[]])
 
-    n_obj = len(params[params.keys()[0]])
+    n_obj = len(params[list(params.keys())[0]])
 
     maxyears = 10.
     dMag = np.zeros((6, n_obj))
