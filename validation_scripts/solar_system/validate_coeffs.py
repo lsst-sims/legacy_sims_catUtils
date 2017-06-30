@@ -48,7 +48,7 @@ def verify_month(month):
 
     prev_end = np.ones(verify_month.n_id+1, dtype=float)*month
 
-    tol = 1.0e-9
+    tol = 1.0e-10
 
     results = verify_month.db.get_arbitrary_chunk_iterator(query, dtype=dtype,
                                                            chunk_size=10000)
