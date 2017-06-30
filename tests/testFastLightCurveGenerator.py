@@ -103,7 +103,7 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
             magNormList = rng.random_sample(cls.n_stars/2)*3.0+14.0
             AvList = rng.random_sample(cls.n_stars/2)*0.2+0.1
             pxList = rng.random_sample(cls.n_stars/2)*0.1
-            for ix in range(cls.n_stars/2):
+            for ix in range(cls.n_stars//2):
                 varparams = {'m':'MLT', 'p':{'lc':'lc_%d' % lc_dex[ix], 't0':rng.random_sample()*1000.0}}
                 varparamstr = json.dumps(varparams)
                 output_file.write("%d;%lf;%lf;%lf;%lf;%lf;%lf;%s;%s;%lf;%lf\n"
