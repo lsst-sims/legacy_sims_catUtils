@@ -86,8 +86,9 @@ def verify_month(month):
                 zip(id_vec[invalid], mjd_start_vec[invalid], mjd_end_vec[invalid],
                     prev_end[id_vec][invalid]):
 
-                    msg += "id %d\nmjd_start %.12f\nmjd_end %.12f\nprev_end %.12f\n\n" % \
-                    (id_val, start_val, end_val, prev_val)
+                    delta = np.abs(start_val-prev_val)
+                    msg += "id %d\nmjd_start %.12f\nmjd_end %.12f\nprev_end %.12f\ndelta %e\n\n" % \
+                    (id_val, start_val, end_val, prev_val, delta)
 
             prev_end[id_vec] = mjd_end_vec
 
