@@ -3,22 +3,48 @@ This module defines methods which implement the astrophysical
 variability models used by CatSim.  InstanceCatalogs apply
 variability by calling the applyVariability() method in
 the Variability class.  To add a new variability model to
-this framework, users should define a method which accepts
-as arguments:
+this framework, users should define a method which
+returns the delta magnitude of the variable source
+in the LSST bands and accepts as arguments:
 
-valid_dexes -- the output of numpy.where() indicating
-which astrophysical objects actually depend on the
-variability model.
+    valid_dexes -- the output of numpy.where() indicating
+    which astrophysical objects actually depend on the
+    variability model.
 
-params -- a dict whose keys are the names of parameters
-required by the variability model and whose values
-are lists of the parameters required for the
-variability model for all astrophysical objects
-in the CatSim database (even those objects that do
-not depend on the model; these objects can have
-None in the parameter lists).
+    params -- a dict whose keys are the names of parameters
+    required by the variability model and whose values
+    are lists of the parameters required for the
+    variability model for all astrophysical objects
+    in the CatSim database (even those objects that do
+    not depend on the model; these objects can have
+    None in the parameter lists).
 
-expmjd -- the MJD of the observation.
+    expmjd -- the MJD of the observation.  This must be
+    able to accept a float or a numpy array.
+
+If expmjd is a float, the variability model should
+return a 2-D numpy array in which the first index
+varies over the band and the second index varies
+over the object, i.e.
+
+    out_dmag[0][2] is the delta magnitude of the 2nd object
+    in the u band
+
+    out_dmag[3][15] is the delta magnitude of the 15th object
+    in the i band.
+
+If expmjd is a numpy array, the variability should
+return a 3-D numpy array in which the first index
+varies over the band, the second index varies over
+the object, and the third index varies over the
+time step, i.e.
+
+    out_dmag[0][2][15] is the delta magnitude of the 2nd
+    object in the u band at the 15th value of expmjd
+
+    out_dmag[3][11][2] is the delta magnitude of the
+    11th object in the i band at the 2nd value of
+    expmjd
 
 The method implementing the variability model should be
 marked with the decorator @register_method(key) where key
@@ -56,8 +82,10 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin"]
 
 _AGN_LC_CACHE = {} # a global cache of agn light curve calculations
-_MLT_LC_CACHE = None
-_MLT_LC_CACHE_NAME = None
+_MLT_LC_NPZ = None
+_MLT_LC_NPZ_NAME = None
+_MLT_LC_TIME_CACHE = {}
+_MLT_LC_FLUX_CACHE = {}
 
 def reset_agn_lc_cache():
     """
@@ -125,7 +153,7 @@ class Variability(object):
 
 
 
-    def applyVariability(self, varParams_arr):
+    def applyVariability(self, varParams_arr, expmjd=None):
         """
         Read in an array/list of varParamStr objects taken from the CatSim
         database.  For each varParamStr, call the appropriate variability
@@ -149,10 +177,15 @@ class Variability(object):
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
 
-        # A numpy array of magnitude offsets.  Each row is
-        # an LSST band in ugrizy order.  Each column is an
-        # astrophysical object from the CatSim database.
-        deltaMag = numpy.zeros((6, len(varParams_arr)))
+
+        if isinstance(expmjd, numbers.Number) or expmjd is None:
+            # A numpy array of magnitude offsets.  Each row is
+            # an LSST band in ugrizy order.  Each column is an
+            # astrophysical object from the CatSim database.
+            deltaMag = numpy.zeros((6, len(varParams_arr)))
+        else:
+            # the last dimension varies over time
+            deltaMag = numpy.zeros((6, len(varParams_arr), len(expmjd)))
 
         # When the InstanceCatalog calls all of its getters
         # with an empty chunk to check column dependencies,
@@ -222,8 +255,6 @@ class Variability(object):
             for p_name in params[method_name]:
                 params[method_name][p_name] = numpy.array(params[method_name][p_name])
 
-        expmjd=None
-
         # Loop over all of the variability models that need to be called.
         # Call each variability model on the astrophysical objects that
         # require the model.  Add the result to deltaMag.
@@ -285,7 +316,10 @@ class Variability(object):
         row is an LSST band in ugrizy order.  Each column is a different
         astrophysical object from the CatSim database.
         """
-        magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd, numbers.Number):
+            magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            magoff = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
         expmjd = numpy.asarray(expmjd)
         for ix in valid_dexes[0]:
             filename = params[keymap['filename']][ix]
@@ -374,13 +408,19 @@ class StellarVariabilityModels(Variability):
             return numpy.array([[],[],[],[],[],[]])
 
         keymap = {'filename':'lcfile', 't0':'t0'}
-        dMags = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
-                                      inDays=False,
-                                      interpFactory=InterpolatedUnivariateSpline)
-        if len(dMags)>0:
-            if dMags.min()<0.0:
+        d_fluxes = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
+                                         inDays=False,
+                                          interpFactory=InterpolatedUnivariateSpline)
+        if len(d_fluxes)>0:
+            if d_fluxes.min()<0.0:
                 raise RuntimeError("Negative delta flux in applyEb")
-        dMags = -2.5*numpy.log10(dMags)
+        if isinstance(expmjd, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+        dmag_vals = -2.5*numpy.log10(d_fluxes)
+        dMags += numpy.where(numpy.logical_not(numpy.logical_or(numpy.isnan(dmag_vals), numpy.isinf(dmag_vals))),
+                             dmag_vals, 0.0)
         return dMags
 
     @register_method('applyMicrolensing')
@@ -403,11 +443,20 @@ class StellarVariabilityModels(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        dMags = numpy.zeros((6, self.num_variable_obj(params)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
-        epochs = expmjd - params['t0'][valid_dexes].astype(float)
-        umin = params['umin'].astype(float)[valid_dexes]
-        that = params['that'].astype(float)[valid_dexes]
+        if isinstance(expmjd_in, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            epochs = expmjd - params['t0'][valid_dexes].astype(float)
+            umin = params['umin'].astype(float)[valid_dexes]
+            that = params['that'].astype(float)[valid_dexes]
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            # cast epochs, umin, that into 2-D numpy arrays; the first index will iterate
+            # over objects; the second index will iterate over times in expmjd
+            epochs = numpy.array([expmjd - t0 for t0 in params['t0'][valid_dexes].astype(float)])
+            umin = numpy.array([[uu]*len(expmjd) for uu in params['umin'].astype(float)[valid_dexes]])
+            that = numpy.array([[tt]*len(expmjd) for tt in params['that'].astype(float)[valid_dexes]])
+
         u = numpy.sqrt(umin**2 + ((2.0*epochs/that)**2))
         magnification = (u**2+2.0)/(u*numpy.sqrt(u**2+4.0))
         dmag = -2.5*numpy.log10(magnification)
@@ -426,19 +475,27 @@ class StellarVariabilityModels(Variability):
         #At some point, either this method or the Amcvn tables in the
         #database will need to be changed.
 
-        if not isinstance(expmjd_in, numbers.Number):
-            raise RuntimeError("Cannot pass multiple expMJD into applyAmcvn")
-
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
         maxyears = 10.
-        dMag = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd_in, numbers.Number):
+            dMag = numpy.zeros((6, self.num_variable_obj(params)))
+            amplitude = params['amplitude'].astype(float)[valid_dexes]
+            t0_arr = params['t0'].astype(float)[valid_dexes]
+            period = params['period'].astype(float)[valid_dexes]
+            epoch_arr = expmjd_in
+        else:
+            dMag = numpy.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
+            n_time = len(expmjd_in)
+            t0_arr = numpy.array([[tt]*n_time for tt in params['t0'].astype(float)[valid_dexes]])
+            amplitude = numpy.array([[aa]*n_time for aa in params['amplitude'].astype(float)[valid_dexes]])
+            period = numpy.array([[pp]*n_time for pp in params['period'].astype(float)[valid_dexes]])
+            epoch_arr = numpy.array([expmjd_in]*len(valid_dexes[0]))
+
         epoch = expmjd_in
 
-        amplitude = params['amplitude'].astype(float)[valid_dexes]
         t0 = params['t0'].astype(float)[valid_dexes]
-        period = params['period'].astype(float)[valid_dexes]
         burst_freq = params['burst_freq'].astype(float)[valid_dexes]
         burst_scale = params['burst_scale'].astype(float)[valid_dexes]
         amp_burst = params['amp_burst'].astype(float)[valid_dexes]
@@ -446,7 +503,7 @@ class StellarVariabilityModels(Variability):
         does_burst = params['does_burst'][valid_dexes]
 
         # get the light curve of the typical variability
-        uLc   = amplitude*numpy.cos((epoch - t0)/period)
+        uLc   = amplitude*numpy.cos((epoch_arr - t0_arr)/period)
         gLc   = copy.deepcopy(uLc)
         rLc   = copy.deepcopy(uLc)
         iLc   = copy.deepcopy(uLc)
@@ -491,7 +548,10 @@ class StellarVariabilityModels(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd_in, numbers.Number):
+            magoff = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            magoff = numpy.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename_arr = params['filename']
         toff_arr = params['t0'].astype(float)
@@ -510,7 +570,11 @@ class StellarVariabilityModels(Variability):
             #black hole.  These also can be used to simulate binary systems.
             #Should be 8kpc away at least.
             magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
-            moff = -2.5*numpy.log(magnification(epoch))
+            mag_val = magnification(epoch)
+            # If we are interpolating out of the light curve's domain, set
+            # the magnification equal to 1
+            mag_val = numpy.where(numpy.isnan(mag_val), 1.0, mag_val)
+            moff = -2.5*numpy.log(mag_val)
             for ii in range(6):
                 magoff[ii][ix] = moff
 
@@ -527,19 +591,44 @@ class MLTflaringMixin(Variability):
                                 'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
 
     @register_method('MLT')
-    def applyMLTflaring(self, valid_dexes, params, expmjd):
+    def applyMLTflaring(self, valid_dexes, params, expmjd,
+                        parallax=None, ebv=None, quiescent_mags=None):
+        """
+        parallax, ebv, and quiescent_mags are optional kwargs for use if you are
+        calling this method outside the context of an InstanceCatalog (presumably
+        with a numpy array of expmjd)
 
-        parallax = self.column_by_name('parallax')
-        ebv = self.column_by_name('ebv')
+        parallax is the parallax of your objects in radians
 
-        global _MLT_LC_CACHE
-        global _MLT_LC_CACHE_NAME
+        ebv is the E(B-V) value for your objects
+
+        quiescent_mags is a dict keyed on ('u', 'g', 'r', 'i', 'z', 'y')
+        with the quiescent magnitudes of the objects
+        """
+
+        if parallax is None:
+            parallax = self.column_by_name('parallax')
+        if ebv is None:
+            ebv = self.column_by_name('ebv')
+
+        global _MLT_LC_NPZ
+        global _MLT_LC_NPZ_NAME
+        global _MLT_LC_TIME_CACHE
+        global _MLT_LC_FLUX_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
         # just in case the user wants to override the light curve cache
         # file by hand before generating the catalog
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
+
+        if quiescent_mags is None:
+            quiescent_mags = {}
+            for mag_name in ('u', 'g', 'r', 'i', 'z', 'y'):
+                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                    quiescent_mags[mag_name] = self.column_by_name('quiescent_lsst_%s' % mag_name)
 
         if not hasattr(self, 'photParams'):
             raise RuntimeError("To apply MLT dwarf flaring, your "
@@ -551,7 +640,7 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_CACHE is None or _MLT_LC_CACHE_NAME != self._mlt_lc_file:
+        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file:
             if not os.path.exists(self._mlt_lc_file):
                 catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
                 raise RuntimeError("The MLT flaring light curve file:\n"
@@ -562,8 +651,8 @@ class MLTflaringMixin(Variability):
                                     + "and run get_mdwarf_flares.sh "
                                     + "to get the data")
 
-            _MLT_LC_CACHE = numpy.load(self._mlt_lc_file)
-            _MLT_LC_CACHE_NAME = self._mlt_lc_file
+            _MLT_LC_NPZ = numpy.load(self._mlt_lc_file)
+            _MLT_LC_NPZ_NAME = self._mlt_lc_file
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
@@ -626,7 +715,11 @@ class MLTflaringMixin(Variability):
 
         flux_factor = self.photParams.effarea/sphere_area
 
-        dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+
         mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
         base_mags = {}
@@ -635,7 +728,7 @@ class MLTflaringMixin(Variability):
             if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                 'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
-                mm = self.column_by_name('quiescent_lsst_%s' % mag_name)
+                mm = quiescent_mags[mag_name]
                 base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
@@ -658,10 +751,24 @@ class MLTflaringMixin(Variability):
             # 'late_inactive' into 'late_active'.
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
-            time_arr = self._survey_start + _MLT_LC_CACHE['%s_time' % lc_name]
+
+            if lc_name in _MLT_LC_TIME_CACHE:
+                raw_time_arr = _MLT_LC_TIME_CACHE[lc_name]
+            else:
+                raw_time_arr = _MLT_LC_NPZ['%s_time' % lc_name]
+                _MLT_LC_TIME_CACHE[lc_name] = raw_time_arr
+
+            time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
 
-            t_interp = (self.obs_metadata.mjd.TAI + params['t0'][use_this_lc]).astype(float)
+            if isinstance(expmjd, numbers.Number):
+                t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
+            else:
+                n_obj = len(use_this_lc[0])
+                n_time = len(expmjd)
+                t_interp = numpy.ones(shape=(n_obj, n_time))*expmjd
+                t_interp += numpy.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+
             while t_interp.max() > time_arr.max():
                 bad_dexes = numpy.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
@@ -669,17 +776,39 @@ class MLTflaringMixin(Variability):
             for i_mag, mag_name in enumerate(mag_name_tuple):
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
-                    flux_arr = _MLT_LC_CACHE['%s_%s' % (lc_name, mag_name)]
+
+                    flux_name = '%s_%s' % (lc_name, mag_name)
+                    if flux_name in _MLT_LC_FLUX_CACHE:
+                        flux_arr = _MLT_LC_FLUX_CACHE[flux_name]
+                    else:
+                        flux_arr = _MLT_LC_NPZ[flux_name]
+                        _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
+
                     dflux = numpy.interp(t_interp, time_arr, flux_arr)
-                    dflux *= flux_factor[use_this_lc]
+
+                    if isinstance(expmjd, numbers.Number):
+                        dflux *= flux_factor[use_this_lc]
+                    else:
+                        dflux *= numpy.array([flux_factor[use_this_lc]]*n_time).transpose()
 
                     dust_factor = numpy.interp(ebv[use_this_lc],
                                                self._mlt_dust_lookup['ebv'],
                                                self._mlt_dust_lookup[mag_name])
+
+                    if not isinstance(expmjd, numbers.Number):
+                        dust_factor = numpy.array([dust_factor]*n_time).transpose()
+
                     dflux *= dust_factor
 
-                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(base_fluxes[mag_name][use_this_lc] + dflux)
-                                                 - base_mags[mag_name][use_this_lc])
+                    if isinstance(expmjd, numbers.Number):
+                        local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                        local_base_mags = base_mags[mag_name][use_this_lc]
+                    else:
+                        local_base_fluxes = numpy.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_mags = numpy.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+
+                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
+                                                 - local_base_mags)
 
         return dMags
 
@@ -697,7 +826,13 @@ class ExtraGalacticVariabilityModels(Variability):
         if len(params) == 0:
             return numpy.array([[],[],[],[],[],[]])
 
-        dMags = numpy.zeros((6, self.num_variable_obj(params)))
+        if isinstance(expmjd, numbers.Number):
+            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            expmjd_arr = [expmjd]
+        else:
+            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            expmjd_arr = expmjd
+
         toff_arr = params['t0_mjd'].astype(float)
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
@@ -708,89 +843,94 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        for ix in valid_dexes[0]:
-            toff = toff_arr[ix]
-            seed = seed_arr[ix]
-            tau = tau_arr[ix]
+        for i_time, expmjd_val in enumerate(expmjd_arr):
+            for ix in valid_dexes[0]:
+                toff = toff_arr[ix]
+                seed = seed_arr[ix]
+                tau = tau_arr[ix]
 
-            sfint = {}
-            sfint['u'] = sfu_arr[ix]
-            sfint['g'] = sfg_arr[ix]
-            sfint['r'] = sfr_arr[ix]
-            sfint['i'] = sfi_arr[ix]
-            sfint['z'] = sfz_arr[ix]
-            sfint['y'] = sfy_arr[ix]
+                sfint = {}
+                sfint['u'] = sfu_arr[ix]
+                sfint['g'] = sfg_arr[ix]
+                sfint['r'] = sfr_arr[ix]
+                sfint['i'] = sfi_arr[ix]
+                sfint['z'] = sfz_arr[ix]
+                sfint['y'] = sfy_arr[ix]
 
-            # A string made up of this AGNs variability parameters that ought
-            # to uniquely identify it.
-            #
-            agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
-            %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
-              sfint['y'], tau, toff)
+                # A string made up of this AGNs variability parameters that ought
+                # to uniquely identify it.
+                #
+                agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
+                %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
+                  sfint['y'], tau, toff)
 
-            resumption = False
+                resumption = False
 
-            # Check to see if this AGN has already been simulated.
-            # If it has, see if the previously simulated MJD is
-            # earlier than the first requested MJD.  If so,
-            # use that previous simulation as the starting point.
-            #
-            if agn_ID in _AGN_LC_CACHE:
-                if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd:
-                    resumption = True
+                # Check to see if this AGN has already been simulated.
+                # If it has, see if the previously simulated MJD is
+                # earlier than the first requested MJD.  If so,
+                # use that previous simulation as the starting point.
+                #
+                if agn_ID in _AGN_LC_CACHE:
+                    if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd_val:
+                        resumption = True
 
-            if resumption:
-                rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
-                start_date = _AGN_LC_CACHE[agn_ID]['mjd']
-                dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
-            else:
-                start_date = toff
-                rng = numpy.random.RandomState(seed)
-                dx_0 = {}
-                for k in sfint:
-                    dx_0[k]=0.0
+                if resumption:
+                    rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
+                    start_date = _AGN_LC_CACHE[agn_ID]['mjd']
+                    dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
+                else:
+                    start_date = toff
+                    rng = numpy.random.RandomState(seed)
+                    dx_0 = {}
+                    for k in sfint:
+                        dx_0[k]=0.0
 
-            endepoch = expmjd - start_date
+                endepoch = expmjd_val - start_date
 
-            if endepoch < 0:
-                raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
-                                   "Not applying variability. "+
-                                   "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
-                                   "in applyAgn variability method")
+                if endepoch < 0:
+                    raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
+                                       "Not applying variability. "+
+                                       "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
+                                       "in applyAgn variability method")
 
-            dt = tau/100.
-            nbins = int(math.ceil(endepoch/dt))
+                dt = tau/100.
+                nbins = int(math.ceil(endepoch/dt))
 
-            x1 = (nbins-1)*dt
-            x2 = (nbins)*dt
+                x1 = (nbins-1)*dt
+                x2 = (nbins)*dt
 
-            dt = dt/tau
-            es = rng.normal(0., 1., nbins)*math.sqrt(dt)
-            dx_cached = {}
+                dt = dt/tau
+                es = rng.normal(0., 1., nbins)*math.sqrt(dt)
+                dx_cached = {}
 
-            for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
-                dx2 = dx_0[k]
-                for i in range(nbins):
-                    #The second term differs from Zeljko's equation by sqrt(2.)
-                    #because he assumes stdev = sfint/sqrt(2)
-                    dx1 = dx2
-                    dx2 = -dx1*dt + sfint[k]*es[i] + dx1
+                for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
+                    dx2 = dx_0[k]
+                    for i in range(nbins):
+                        #The second term differs from Zeljko's equation by sqrt(2.)
+                        #because he assumes stdev = sfint/sqrt(2)
+                        dx1 = dx2
+                        dx2 = -dx1*dt + sfint[k]*es[i] + dx1
 
-                dx_cached[k] = dx2
-                dMags[ik][ix] = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                    dx_cached[k] = dx2
+                    dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                    if isinstance(expmjd, numbers.Number):
+                        dMags[ik][ix] = dm_val
+                    else:
+                        dMags[ik][ix][i_time] = dm_val
 
-            # Reset that AGN light curve cache once it contains
-            # one million objects (to prevent it from taking up
-            # too much memory).
-            if len(_AGN_LC_CACHE)>1000000:
-                reset_agn_lc_cache()
+                # Reset that AGN light curve cache once it contains
+                # one million objects (to prevent it from taking up
+                # too much memory).
+                if len(_AGN_LC_CACHE)>1000000:
+                    reset_agn_lc_cache()
 
-            if agn_ID not in _AGN_LC_CACHE:
-                _AGN_LC_CACHE[agn_ID] = {}
+                if agn_ID not in _AGN_LC_CACHE:
+                    _AGN_LC_CACHE[agn_ID] = {}
 
-            _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
-            _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
-            _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
+                _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
+                _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
+                _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
 
         return dMags
 
@@ -807,7 +947,12 @@ class _VariabilityPointSources(object):
         """
 
         varParams = self.column_by_name('varParamStr')
-        return self.applyVariability(varParams)
+        dmag = self.applyVariability(varParams)
+        if dmag.shape != (6, len(varParams)):
+            raise RuntimeError("applyVariability is returning "
+                               "an array of shape %s\n" % dmag.shape
+                               + "should be (6, %d)" % len(varParams))
+        return dmag
 
 
 class VariabilityStars(_VariabilityPointSources, StellarVariabilityModels,
@@ -882,4 +1027,9 @@ class VariabilityGalaxies(ExtraGalacticVariabilityModels):
         the baseline magnitude.
         """
         varParams = self.column_by_name("varParamStr")
-        return self.applyVariability(varParams)
+        dmag = self.applyVariability(varParams)
+        if dmag.shape != (6, len(varParams)):
+            raise RuntimeError("applyVariability is returning "
+                               "an array of shape %s\n" % dmag.shape
+                               + "should be (6, %d)" % len(varParams))
+        return dmag

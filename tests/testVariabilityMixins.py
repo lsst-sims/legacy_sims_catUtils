@@ -42,7 +42,7 @@ def makeRRlyTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     mjDisplacement = (rng.random_sample(size)-50.0)*50.0
@@ -79,7 +79,7 @@ def makeCepheidTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
@@ -112,7 +112,7 @@ def makeEbTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
@@ -147,7 +147,7 @@ def makeMicrolensingTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     that = rng.random_sample(size)*40.0+40.0
@@ -186,7 +186,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     mjDisplacement = rng.random_sample(size)*5.0*365.25
@@ -218,7 +218,7 @@ def makeAmcvnTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     doesBurst = rng.randint(0, 2, size=size)
@@ -266,7 +266,7 @@ def makeAgnTable(size=100, **kwargs):
                       sedFilenameBulge text, sedFilenameDisk text, sedFilenameAgn text)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     agn_tau = rng.random_sample(size)*100.0+100.0
@@ -323,7 +323,7 @@ def makeHybridTable(size=100, **kwargs):
                      (varsimobjid int, variability text, sedfilename text, parallax real, ebv real)''')
         conn.commit()
     except:
-        raise RuntimeError("Error creating database.")
+        return
 
     rng = np.random.RandomState(32)
     periods = rng.random_sample(size)*50.0
@@ -456,6 +456,8 @@ class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, VariabilityG
 
 class VariabilityTest(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def setUpClass(cls):
         if os.path.exists('VariabilityTestDatabase.db'):
@@ -543,6 +545,59 @@ class VariabilityTest(unittest.TestCase):
 
         if os.path.exists(cat_name):
             os.unlink(cat_name)
+
+    def testApplyVariabilityWithManyMJD(self):
+        """
+        Use the hybrid variability catalog class from testHybridVariability to
+        verify that, if we pass an array of expmjd into applyVariability, we get
+        the expected result out.
+        """
+
+        makeHybridTable()
+        hybrid_db = hybridDB()
+        hybrid_cat = StellarVariabilityCatalogWithTest(hybrid_db, obs_metadata=self.obs_metadata,
+                                                       column_outputs=['varParamStr'])
+        rng = np.random.RandomState(88)
+        mjd_arr = rng.random_sample(14)*3653.0+59580.0
+        n_time = len(mjd_arr)
+        varparams =[]
+        n_ceph = 0
+        n_test = 0
+        for line in hybrid_cat.iter_catalog():
+            varparams.append(line[-1])
+            if 'Cepheid' in line[-1]:
+                n_ceph += 1
+            if 'testVar' in line[-1]:
+                n_test +=1
+
+        self.assertGreater(n_ceph, 0)
+        self.assertGreater(n_test, 0)
+
+        n_obj=len(varparams)
+
+        new_hybrid_cat = StellarVariabilityCatalogWithTest(hybrid_db, obs_metadata=self.obs_metadata)
+        delta_mag_vector = new_hybrid_cat.applyVariability(varparams, expmjd=mjd_arr)
+        self.assertEqual(delta_mag_vector.shape, (6, len(varparams), len(mjd_arr)))
+
+        n_mags = 0
+        for i_time, mjd in enumerate(mjd_arr):
+            obs = ObservationMetaData(mjd=mjd)
+            control_hybrid_cat = StellarVariabilityCatalogWithTest(hybrid_db, obs_metadata=obs,
+                                                                   column_outputs=['delta_lsst_u',
+                                                                                   'delta_lsst_g',
+                                                                                   'delta_lsst_r',
+                                                                                   'delta_lsst_i',
+                                                                                   'delta_lsst_z',
+                                                                                   'delta_lsst_y'])
+
+            for i_obj, star_obj in enumerate(control_hybrid_cat.iter_catalog()):
+                for i_band in range(6):
+                    n_mags += 1
+                    self.assertEqual(delta_mag_vector[i_band][i_obj][i_time],
+                                     star_obj[-6+i_band],
+                                     msg = 'failed on time %d; obj %d; band %d' % (i_time, i_obj, i_band))
+
+        self.assertEqual(n_mags, 6*n_obj*n_time)
 
     def testRRlyrae(self):
         cat_name = os.path.join(self.scratch_dir, 'rrlyTestCatalog.dat')

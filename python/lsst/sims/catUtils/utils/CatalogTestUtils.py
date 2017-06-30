@@ -7,6 +7,7 @@ To date (30 October 2014) testPhotometryMixins.py and testCosmologyMixins.py imp
 from builtins import range
 from builtins import object
 import numpy
+import numbers
 import os
 import sqlite3
 import json
@@ -199,9 +200,15 @@ class TestVariabilityMixin(Variability):
             return numpy.array([[],[],[],[],[],[]])
 
         period = varParams['period'][valid_dexes]
-        amplitude = varParams['amplitude'][valid_dexes]
-        phase = expmjd%period
-        magoff = numpy.zeros((6, self.num_variable_obj(varParams)))
+        if isinstance(expmjd, numbers.Number):
+            magoff = numpy.zeros((6, self.num_variable_obj(varParams)))
+            phase = expmjd%period
+            amplitude = varParams['amplitude'][valid_dexes]
+        else:
+            magoff = numpy.zeros((6, self.num_variable_obj(varParams), len(expmjd)))
+            phase = numpy.array([expmjd%pp for pp in period])
+            amplitude = numpy.array([[aa]*len(expmjd)
+                                     for aa in varParams['amplitude'][valid_dexes]])
         delta = amplitude*numpy.sin(2*numpy.pi*phase.astype(float))
         delta = delta.astype(float)
         for ix in range(6):
