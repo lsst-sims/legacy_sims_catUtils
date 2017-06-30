@@ -75,12 +75,12 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
             output_file.write('# a silly header\n')
             sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars//2)
             lc_dex = rng.random_integers(0, len(list_of_rrly_lc)-1, size=cls.n_stars//2)
-            mjd0 = rng.random_sample(cls.n_stars/2)*10000.0+40000.0
-            raList = rng.random_sample(cls.n_stars/2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
-            decList = cls.decRange[0] + rng.random_sample(cls.n_stars/2)*(cls.decRange[1]-cls.decRange[1])
-            magNormList = rng.random_sample(cls.n_stars/2)*3.0+14.0
-            AvList = rng.random_sample(cls.n_stars/2)*0.2+0.1
-            pxList = rng.random_sample(cls.n_stars/2)*0.1
+            mjd0 = rng.random_sample(cls.n_stars//2)*10000.0+40000.0
+            raList = rng.random_sample(cls.n_stars//2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
+            decList = cls.decRange[0] + rng.random_sample(cls.n_stars//2)*(cls.decRange[1]-cls.decRange[1])
+            magNormList = rng.random_sample(cls.n_stars//2)*3.0+14.0
+            AvList = rng.random_sample(cls.n_stars//2)*0.2+0.1
+            pxList = rng.random_sample(cls.n_stars//2)*0.1
             for ix in range(cls.n_stars//2):
                 varparams = {'varMethodName': 'applyRRly',
                              'pars': {'tStartMjd': mjd0[ix],
@@ -97,12 +97,12 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
 
             sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars//2)
             lc_dex = rng.random_integers(1, 2, size=cls.n_stars//2)
-            mjd0 = rng.random_sample(cls.n_stars/2)*10000.0+40000.0
-            raList = rng.random_sample(cls.n_stars/2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
-            decList = cls.decRange[0] + rng.random_sample(cls.n_stars/2)*(cls.decRange[1]-cls.decRange[1])
-            magNormList = rng.random_sample(cls.n_stars/2)*3.0+14.0
-            AvList = rng.random_sample(cls.n_stars/2)*0.2+0.1
-            pxList = rng.random_sample(cls.n_stars/2)*0.1
+            mjd0 = rng.random_sample(cls.n_stars//2)*10000.0+40000.0
+            raList = rng.random_sample(cls.n_stars//2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
+            decList = cls.decRange[0] + rng.random_sample(cls.n_stars//2)*(cls.decRange[1]-cls.decRange[1])
+            magNormList = rng.random_sample(cls.n_stars//2)*3.0+14.0
+            AvList = rng.random_sample(cls.n_stars//2)*0.2+0.1
+            pxList = rng.random_sample(cls.n_stars//2)*0.1
             for ix in range(cls.n_stars//2):
                 varparams = {'m':'MLT', 'p':{'lc':'lc_%d' % lc_dex[ix], 't0':rng.random_sample()*1000.0}}
                 varparamstr = json.dumps(varparams)
