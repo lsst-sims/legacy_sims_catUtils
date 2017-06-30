@@ -80,10 +80,13 @@ def verify_month(month):
                 assert len(invalid[0]) == 0
             except AssertionError:
                 msg = "Found a gap in coverage\n"
-                msg += "    IDs: %s\n" % str(id_vec[invalid])
-                msg += "    MJD_start: %s\n" % str(mjd_start_vec[invalid])
-                msg += "    MJD_end: %s\n" % str(mjd_end_vec[invalid])
-                msg += "    prev_end: %s\n" % str(prev_end[id_vec][invalid])
+                for id_val, start_val, end_val, prev_val in \
+                zip(id_vec[invalid], mjd_start_vec[invalid], mjd_end_vec[invalid],
+                    prev_end[id_vec][invalid]):
+
+                    msg += "id %d\nmjd_start %.12f\nmjd_end %.12f\nprev_end %.12f\n\n" % \
+                    (id_val, start_val, end_val, prev_val)
+
                 return msg
 
             prev_end[id_vec] = mjd_end_vec
@@ -100,8 +103,8 @@ def verify_month(month):
     except AssertionError:
         msg = "Failed on final check of prev_end\n"
         msg += "    month %d\n" % month
-        msg += "    IDs: %s\n" % invalid[0]
-        msg += "    prev_end: %s\n" % prev_end[invalid]
+        for id_val, end_val in zip(invalid[0], prev_end[invalid]):
+            msg+="id %d\nprev_end %.12f\n\n" % (id_val, end_val)
         return msg
 
     return 'Success; validated %d' % row_ct
