@@ -81,7 +81,7 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
             magNormList = rng.random_sample(cls.n_stars/2)*3.0+14.0
             AvList = rng.random_sample(cls.n_stars/2)*0.2+0.1
             pxList = rng.random_sample(cls.n_stars/2)*0.1
-            for ix in range(cls.n_stars/2):
+            for ix in range(cls.n_stars//2):
                 varparams = {'varMethodName': 'applyRRly',
                              'pars': {'tStartMjd': mjd0[ix],
                                       'filename': list_of_rrly_lc[lc_dex[ix]]}}
