@@ -286,6 +286,7 @@ class MLT_flare_test_case(unittest.TestCase):
                                                  'delta_lsst_u',
                                                  'delta_lsst_g'])
 
+            cat._mlt_lc_file = self.mlt_lc_name
             n_obj = 0
             for line in cat.iter_catalog():
                 n_obj += 1
@@ -376,6 +377,7 @@ class MLT_flare_test_case(unittest.TestCase):
                                                  'delta_lsst_u',
                                                  'delta_lsst_g'])
 
+            cat._mlt_lc_file = self.mlt_lc_name
             n_obj = 0
             for line in cat.iter_catalog():
                 n_obj += 1
