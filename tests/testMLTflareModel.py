@@ -450,6 +450,38 @@ class MLT_flare_test_case(unittest.TestCase):
                     else:
                         self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
 
+    def test_mlt_clean_up(self):
+        """
+        Test that the MLT cache is correctly loaded after sims_clean_up is
+        called.
+        """
+        db = MLT_test_DB(database=self.db_name, driver='sqlite')
+        obs = ObservationMetaData(mjd=60000.0)
+        cat = FlaringCatalog(db, obs_metadata=obs)
+        cat_name_1 = os.path.join(self.scratch_dir,'mlt_clean_test_cat_1.txt')
+        cat.write_catalog(cat_name_1)
+        sims_clean_up()
+
+        # re-generate the same catalog and verify that its
+        # contents are unchanged
+        db = MLT_test_DB(database=self.db_name, driver='sqlite')
+        obs = ObservationMetaData(mjd=60000.0)
+        cat = FlaringCatalog(db, obs_metadata=obs)
+        cat_name_2 = os.path.join(self.scratch_dir,'mlt_clean_test_cat_2.txt')
+        cat.write_catalog(cat_name_2)
+        with open(cat_name_1, 'r') as in_file_1:
+            lines_1 = in_file_1.readlines()
+        with open(cat_name_2, 'r') as in_file_2:
+            lines_2 = in_file_2.readlines()
+        self.assertGreater(len(lines_1), 1)
+        self.assertEqual(len(lines_1), len(lines_2))
+        for line in lines_1:
+            self.assertIn(line, lines_2)
+
+        if os.path.exists(cat_name_1):
+            os.unlink(cat_name_1)
+        if os.path.exists(cat_name_2):
+            os.unlink(cat_name_2)
 
 
 class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
