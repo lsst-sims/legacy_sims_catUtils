@@ -641,7 +641,7 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file:
+        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file or _MLT_LC_NPZ.fid is None:
             if not os.path.exists(self._mlt_lc_file):
                 catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
                 raise RuntimeError("The MLT flaring light curve file:\n"
