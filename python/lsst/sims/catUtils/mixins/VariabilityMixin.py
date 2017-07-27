@@ -72,6 +72,7 @@ import json as json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_method, compound
 from lsst.sims.photUtils import Sed, BandpassDict
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
@@ -652,6 +653,7 @@ class MLTflaringMixin(Variability):
                                     + "to get the data")
 
             _MLT_LC_NPZ = numpy.load(self._mlt_lc_file)
+            sims_clean_up.targets.append(_MLT_LC_NPZ)
             _MLT_LC_NPZ_NAME = self._mlt_lc_file
 
         if not hasattr(self, '_mlt_dust_lookup'):
