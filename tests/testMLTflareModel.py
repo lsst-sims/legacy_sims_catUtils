@@ -16,6 +16,7 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.photUtils import SedList, BandpassDict, Sed
 from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.photUtils import PhotometricParameters
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -112,6 +113,7 @@ class MLT_flare_test_case(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.mlt_lc_name):
             os.unlink(cls.mlt_lc_name)
 
@@ -525,6 +527,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.mlt_lc_name):
             os.unlink(cls.mlt_lc_name)
 
@@ -777,6 +780,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.mlt_lc_name):
             os.unlink(cls.mlt_lc_name)
 
