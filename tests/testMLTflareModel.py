@@ -458,6 +458,7 @@ class MLT_flare_test_case(unittest.TestCase):
         db = MLT_test_DB(database=self.db_name, driver='sqlite')
         obs = ObservationMetaData(mjd=60000.0)
         cat = FlaringCatalog(db, obs_metadata=obs)
+        cat._mlt_lc_file = self.mlt_lc_name
         cat_name_1 = os.path.join(self.scratch_dir,'mlt_clean_test_cat_1.txt')
         cat.write_catalog(cat_name_1)
         sims_clean_up()
@@ -467,6 +468,7 @@ class MLT_flare_test_case(unittest.TestCase):
         db = MLT_test_DB(database=self.db_name, driver='sqlite')
         obs = ObservationMetaData(mjd=60000.0)
         cat = FlaringCatalog(db, obs_metadata=obs)
+        cat._mlt_lc_file = self.mlt_lc_name
         cat_name_2 = os.path.join(self.scratch_dir,'mlt_clean_test_cat_2.txt')
         cat.write_catalog(cat_name_2)
         with open(cat_name_1, 'r') as in_file_1:
