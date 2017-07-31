@@ -661,6 +661,8 @@ class MLTflaringMixin(Variability):
             _MLT_LC_NPZ = numpy.load(self._mlt_lc_file)
             sims_clean_up.targets.append(_MLT_LC_NPZ)
             _MLT_LC_NPZ_NAME = self._mlt_lc_file
+            _MLT_LC_TIME_CACHE = {}
+            _MLT_LC_FLUX_CACHE = {}
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
