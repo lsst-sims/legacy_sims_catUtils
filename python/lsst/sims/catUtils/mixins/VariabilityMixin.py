@@ -82,11 +82,17 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "reset_agn_lc_cache", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin"]
 
-_AGN_LC_CACHE = {} # a global cache of agn light curve calculations
-_MLT_LC_NPZ = None
-_MLT_LC_NPZ_NAME = None
-_MLT_LC_TIME_CACHE = {}
-_MLT_LC_FLUX_CACHE = {}
+_AGN_LC_CACHE = {}  # a global cache of agn light curve calculations
+
+_MLT_LC_NPZ = None  # this will be loaded from a .npz file
+                    # (.npz files are the result of numpy.savez())
+
+_MLT_LC_NPZ_NAME = None  # the name of the .npz file to beloaded
+
+_MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
+
+_MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
+
 
 def reset_agn_lc_cache():
     """
