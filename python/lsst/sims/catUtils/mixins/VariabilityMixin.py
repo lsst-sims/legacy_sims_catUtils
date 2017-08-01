@@ -72,6 +72,7 @@ import json as json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_method, compound
 from lsst.sims.photUtils import Sed, BandpassDict
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
@@ -81,11 +82,17 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "reset_agn_lc_cache", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin"]
 
-_AGN_LC_CACHE = {} # a global cache of agn light curve calculations
-_MLT_LC_NPZ = None
-_MLT_LC_NPZ_NAME = None
-_MLT_LC_TIME_CACHE = {}
-_MLT_LC_FLUX_CACHE = {}
+_AGN_LC_CACHE = {}  # a global cache of agn light curve calculations
+
+_MLT_LC_NPZ = None  # this will be loaded from a .npz file
+                    # (.npz files are the result of numpy.savez())
+
+_MLT_LC_NPZ_NAME = None  # the name of the .npz file to beloaded
+
+_MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
+
+_MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
+
 
 def reset_agn_lc_cache():
     """
@@ -640,7 +647,7 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file:
+        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file or _MLT_LC_NPZ.fid is None:
             if not os.path.exists(self._mlt_lc_file):
                 catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
                 raise RuntimeError("The MLT flaring light curve file:\n"
@@ -652,7 +659,10 @@ class MLTflaringMixin(Variability):
                                     + "to get the data")
 
             _MLT_LC_NPZ = numpy.load(self._mlt_lc_file)
+            sims_clean_up.targets.append(_MLT_LC_NPZ)
             _MLT_LC_NPZ_NAME = self._mlt_lc_file
+            _MLT_LC_TIME_CACHE = {}
+            _MLT_LC_FLUX_CACHE = {}
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor

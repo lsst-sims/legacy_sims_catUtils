@@ -14,7 +14,7 @@ from lsst.sims.catUtils.utils import testStarsDBObj, testGalaxyDiskDBObj
 from lsst.sims.catUtils.mixins import PhoSimAstrometryBase
 from lsst.sims.catUtils.mixins import PhoSimAstrometryStars
 from lsst.sims.catUtils.mixins import PhoSimAstrometryGalaxies
-
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -56,6 +56,7 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.db_name):
             os.unlink(cls.db_name)
 
