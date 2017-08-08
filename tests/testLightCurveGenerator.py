@@ -26,6 +26,10 @@ from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catUtils.utils import AgnLightCurveGenerator
 
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class stellarControlCatalog(InstanceCatalog,
                             PhotometryStars, VariabilityStars):
     catalog_type = __file__ + 'stellar_control_catalog'
