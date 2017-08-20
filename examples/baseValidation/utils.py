@@ -129,7 +129,7 @@ def get_TotalSDSSMags(result, bandpasses=('u','g','r','i','z')):
     datadir = os.environ.get("SIMS_SED_LIBRARY_DIR")
     tpath = os.getenv('SDSS_THROUGHPUTS')
     bands = {"u":None, "g":None, "r":None, "i":None, "z":None}
-    for k in bands.keys():
+    for k in bands:
         bands[k] = Bandpass()
         bands[k].readThroughput(os.path.join(tpath, "sdss_%s.dat"%k))
     # Set up phi, the wavelength-normalized system response for each filter,
@@ -155,7 +155,7 @@ def get_TotalSDSSMags(result, bandpasses=('u','g','r','i','z')):
     imsimband = Bandpass()
     imsimband.imsimBandpass()
     sedDict = {}
-    retMags = dict([(k, []) for k in bands.keys()])
+    retMags = dict([(k, []) for k in bands])
     a_int = None
     b_int = None
     tmpwavelen = None
@@ -206,7 +206,7 @@ def get_TotalMags(result, bandpasses=('u','g','r','i','z','y')):
     datadir = os.environ.get("SIMS_SED_LIBRARY_DIR")
     tpath = os.getenv('LSST_THROUGHPUTS_DEFAULT')
     bands = {"u":None, "g":None, "r":None, "i":None, "z":None, "y":None}
-    for k in bands.keys():
+    for k in bands:
         bands[k] = Bandpass()
         bands[k].readThroughput(os.path.join(tpath, "total_%s.dat"%k))
     # Set up phi, the wavelength-normalized system response for each filter,
@@ -232,7 +232,7 @@ def get_TotalMags(result, bandpasses=('u','g','r','i','z','y')):
     imsimband = Bandpass()
     imsimband.imsimBandpass()
     sedDict = {}
-    retMags = dict([(k, []) for k in bands.keys()])
+    retMags = dict([(k, []) for k in bands])
     a_int = None
     b_int = None
     tmpwavelen = None
@@ -435,7 +435,7 @@ def loadFile(file, colTypeMap, baseCatalog=None):
     colnames = hdr.rstrip().split(",")
     if baseCatalog:
         for name in colnames:
-            if name in baseCatalog.keys():
+            if name in baseCatalog:
                 continue
             else:
                 raise ValueError("input base catalog does not have key %s"%(name))

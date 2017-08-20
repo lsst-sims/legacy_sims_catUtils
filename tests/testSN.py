@@ -120,7 +120,7 @@ class SNObject_tests(unittest.TestCase):
         entries for all keys and does not contain keys with None type Values.
         """
         myDict = self.SN_extincted.SNstate
-        for key in myDict.keys():
+        for key in myDict:
             assert myDict[key] is not None
 
     def test_attributeDefaults(self):
@@ -461,7 +461,7 @@ class SNIaCatalog_tests(unittest.TestCase):
                  'cosmologicalDistanceModulus', 'mwebv']
         s = "Testing Equality across {0:2d} pointings for reported properties"
         s += " of SN {1:8d} of the property "
-        for key in lcs.groups.keys():
+        for key in lcs.groups:
             df = lcs.get_group(key)
             for prop in props:
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
@@ -482,7 +482,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         newlcs = self.buildLCfromInstanceCatFilenames(fnameList)
         oldlcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
 
-        for key in oldlcs.groups.keys():
+        for key in oldlcs.groups:
             df_old = oldlcs.get_group(key)
             df_old.sort_values(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
