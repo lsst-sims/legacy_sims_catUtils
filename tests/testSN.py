@@ -283,7 +283,7 @@ class SNObject_tests(unittest.TestCase):
         # Test 1.
         self.assertGreater(low_x0, orig_x0)
         # Test 2.
-        self.assertEqual(peakabsMag, lowPeakAbsMag)
+        self.assertAlmostEqual(peakabsMag, lowPeakAbsMag, places=14)
 
         # Test Case for higher redshift
         self.SN_extincted.redshift(z=highz, cosmo=cosmo)
@@ -293,7 +293,7 @@ class SNObject_tests(unittest.TestCase):
         # Test 1.
         self.assertLess(high_x0, orig_x0)
         # Test 2.
-        self.assertEqual(peakabsMag, HiPeakAbsMag)
+        self.assertAlmostEqual(peakabsMag, HiPeakAbsMag, places=14)
 
     def test_bandFluxErrorWorks(self):
         """
