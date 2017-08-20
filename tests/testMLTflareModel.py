@@ -4,6 +4,8 @@ import os
 import numpy as np
 import sqlite3
 import json
+import tempfile
+import shutil
 from astropy.analytic_functions import blackbody_lambda
 import lsst.utils.tests
 from lsst.utils import getPackageDir
@@ -17,6 +19,9 @@ from lsst.sims.photUtils import SedList, BandpassDict, Sed
 from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -53,8 +58,8 @@ class MLT_flare_test_case(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
-                                       'tests', 'scratchSpace')
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix="MLT_flare_test_case-")
+
         # Create a dummy mlt light curve file
         cls.mlt_lc_name = os.path.join(cls.scratch_dir,
                                        'test_mlt_lc_file.npz')
@@ -119,6 +124,9 @@ class MLT_flare_test_case(unittest.TestCase):
 
         if os.path.exists(cls.db_name):
             os.unlink(cls.db_name)
+
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def test_flare_lc_failure(self):
         """
@@ -497,14 +505,11 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
-                                       'tests', 'scratchSpace')
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='MLT_flare_mixed_with_none_model_test_case-')
+
         # Create a dummy mlt light curve file
         cls.mlt_lc_name = os.path.join(cls.scratch_dir,
                                        'test_mlt_mixed_with_none_lc_file.npz')
-
-        if os.path.exists(cls.mlt_lc_name):
-            os.unlink(cls.mlt_lc_name)
 
         lc_files = {}
         amp = 1.0e32
@@ -522,9 +527,6 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
         # Create a database of stars using these light curves
         cls.db_name = os.path.join(cls.scratch_dir, 'test_mlt_mixed_with_none_db.db')
-
-        if os.path.exists(cls.db_name):
-            os.unlink(cls.db_name)
 
         conn = sqlite3.connect(cls.db_name)
         cursor = conn.cursor()
@@ -567,6 +569,9 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
         if os.path.exists(cls.db_name):
             os.unlink(cls.db_name)
+
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def test_flare_magnitudes_mixed_with_none(self):
         """
@@ -741,8 +746,8 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
-                                       'tests', 'scratchSpace')
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='MLT_flare_mixed_with_dummy_model_test_case-')
+
         # Create a dummy mlt light curve file
         cls.mlt_lc_name = os.path.join(cls.scratch_dir,
                                        'test_mlt_mixed_with_dummy_lc_file.npz')
@@ -823,6 +828,9 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
 
         if os.path.exists(cls.dummy_lc_name):
             os.unlink(cls.dummy_lc_name)
+
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def test_flare_magnitudes_mixed_with_dummy(self):
         """

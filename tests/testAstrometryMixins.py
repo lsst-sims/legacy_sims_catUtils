@@ -5,6 +5,8 @@ import os
 import unittest
 import math
 import palpy as pal
+import tempfile
+import shutil
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
@@ -20,17 +22,21 @@ from lsst.sims.catalogs.utils import (myTestStars, makeStarTestDB,
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies, CameraCoords
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+TEST_STAR_DATABASE = 'AstrometryTestStarDatabase.db'
+TEST_GALAXY_DATABASE = 'AstrometryTestGalaxyDatabase.db'
+
 
 def setup_module(module):
     lsst.utils.tests.init()
 
 
 class AstrometryTestStars(myTestStars):
-    database = 'AstrometryTestStarDatabase.db'
+    database = TEST_STAR_DATABASE
 
 
 class AstrometryTestGalaxies(myTestGals):
-    database = 'AstrometryTestGalaxyDatabase.db'
+    database = TEST_GALAXY_DATABASE
 
 
 class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
@@ -111,15 +117,13 @@ class astrometryUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create test databases
-        cls.starDBName = 'AstrometryTestStarDatabase.db'
-        cls.galDBName = 'AstrometryTestGalaxyDatabase.db'
-        if os.path.exists(cls.starDBName):
-            os.unlink(cls.starDBName)
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix="astrometryUnitTest-")
+        cls.starDBName = os.path.join(cls.scratch_dir, TEST_STAR_DATABASE)
+        cls.galDBName = os.path.join(cls.scratch_dir, TEST_GALAXY_DATABASE)
+
         makeStarTestDB(filename=cls.starDBName,
                        size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
-        if os.path.exists(cls.galDBName):
-            os.unlink(cls.galDBName)
         makeGalTestDB(filename=cls.galDBName,
                       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
@@ -131,10 +135,12 @@ class astrometryUnitTest(unittest.TestCase):
 
         if os.path.exists(cls.galDBName):
             os.unlink(cls.galDBName)
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def setUp(self):
-        self.starDBObject = AstrometryTestStars()
-        self.galaxyDBObject = AstrometryTestGalaxies()
+        self.starDBObject = AstrometryTestStars(database=self.starDBName)
+        self.galaxyDBObject = AstrometryTestGalaxies(database=self.galDBName)
 
         # below are metadata values that need to be set in order for
         # get_getFocalPlaneCoordinates to work.  If we had been querying the database,
@@ -163,45 +169,30 @@ class astrometryUnitTest(unittest.TestCase):
         """
         Try writing a catalog with all possible Astrometric columns
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'starWritingTest.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
         stars = testStellarCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
 
-        stars.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            stars.write_catalog(catName)
 
-        dtypeList = [(name, np.float) for name in stars._column_outputs]
-        testData = np.genfromtxt(catName, delimiter=', ', dtype=np.dtype(dtypeList))
+            dtypeList = [(name, np.float) for name in stars._column_outputs]
+            testData = np.genfromtxt(catName, delimiter=', ', dtype=np.dtype(dtypeList))
 
         self.assertGreater(len(testData), 0)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def testWritingOfGalaxies(self):
         """
         Try writing a catalog with all possible Astrometric columns
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'galWritingTest.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
         galaxies = testGalaxyCatalog(self.galaxyDBObject, obs_metadata=self.obs_metadata)
         galaxies.delimiter = ';'
-        galaxies.write_catalog(catName)
 
-        dtypeList = [(name, np.float) for name in galaxies._column_outputs]
-        testData = np.genfromtxt(catName, dtype=np.dtype(dtypeList), delimiter=';')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            galaxies.write_catalog(catName)
+
+            dtypeList = [(name, np.float) for name in galaxies._column_outputs]
+            testData = np.genfromtxt(catName, dtype=np.dtype(dtypeList), delimiter=';')
 
         self.assertGreater(len(testData), 0)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def testUtilityMethods(self):
         """
@@ -210,22 +201,17 @@ class astrometryUnitTest(unittest.TestCase):
         that they are consistent.
         """
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'AstrometryUtilityCatalog.txt')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            self.cat.write_catalog(catName)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
+            dtype = [('id', int),
+                     ('raICRS', float), ('decICRS', float),
+                     ('parallax', float), ('radial_velocity', float),
+                     ('x_pupil', float), ('y_pupil', float), ('chipName', str, 11),
+                     ('xPix', float), ('yPix', float),
+                     ('xFocalPlane', float), ('yFocalPlane', float)]
 
-        self.cat.write_catalog(catName)
-
-        dtype = [('id', int),
-                 ('raICRS', float), ('decICRS', float),
-                 ('parallax', float), ('radial_velocity', float),
-                 ('x_pupil', float), ('y_pupil', float), ('chipName', str, 11),
-                 ('xPix', float), ('yPix', float),
-                 ('xFocalPlane', float), ('yFocalPlane', float)]
-
-        baselineData = np.genfromtxt(catName, dtype=dtype, delimiter=';')
+            baselineData = np.genfromtxt(catName, dtype=dtype, delimiter=';')
 
         self.assertGreater(len(baselineData), 0)
 
@@ -304,9 +290,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertGreater(is_none, 0)
         self.assertLess(is_none, len(baselineData))
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testParallax(self):
         """
         This test will output a catalog of ICRS and observed positions.
@@ -319,15 +302,12 @@ class astrometryUnitTest(unittest.TestCase):
         # create and write a catalog that performs astrometric transformations
         # on a cartoon star database
         cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
-        parallaxName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                    'scratchSpace', 'parallaxCatalog.sav')
 
-        if os.path.exists(parallaxName):
-            os.unlink(parallaxName)
+        with lsst.utils.tests.getTempFilePath('.sav') as parallaxName:
+            cat.write_catalog(parallaxName)
 
-        cat.write_catalog(parallaxName)
+            data = np.genfromtxt(parallaxName, delimiter=',')
 
-        data = np.genfromtxt(parallaxName, delimiter=',')
         self.assertGreater(len(data), 0)
 
         epoch = cat.db_obj.epoch
@@ -350,9 +330,6 @@ class astrometryUnitTest(unittest.TestCase):
 
             self.assertAlmostEqual(raObserved[0], np.radians(vv[2]), 7)
             self.assertAlmostEqual(decObserved[0], np.radians(vv[3]), 7)
-
-        if os.path.exists(parallaxName):
-            os.unlink(parallaxName)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

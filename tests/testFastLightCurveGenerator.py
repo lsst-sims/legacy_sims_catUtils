@@ -3,6 +3,8 @@ import unittest
 import os
 import numpy as np
 import json
+import tempfile
+import shutil
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
@@ -15,6 +17,9 @@ from lsst.sims.catUtils.utils import FastAgnLightCurveGenerator
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
+
 class FastStellar_stellar_lc_gen_case(unittest.TestCase):
 
     longMessage = True
@@ -25,8 +30,7 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
         Create a fake catalog of RR Lyrae stars and MLT dwarves with flaring
         light curves. Store it in cls.stellar_db
         """
-        cls.scratchDir = os.path.join(getPackageDir("sims_catUtils"))
-        cls.scratchDir = os.path.join(cls.scratchDir, "tests", "scratchSpace")
+        cls.scratchDir = tempfile.mkdtemp(dir=ROOT, prefix='FastStellar_stellar_lc_gen_case-')
 
         cls.raRange = (78.0, 85.0)
         cls.decRange = (-69.0, -65.0)
@@ -133,6 +137,8 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
             os.unlink(cls.txt_name)
         if os.path.exists(cls.mlt_lc_file_name):
             os.unlink(cls.mlt_lc_file_name)
+        if os.path.exists(cls.scratchDir):
+            shutil.rmtree(cls.scratchDir)
 
     def test_fast_stellar_lc_gen(self):
 
@@ -175,9 +181,6 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
     def setUpClass(cls):
         rng = np.random.RandomState(119)
 
-        cls.txt_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
-        cls.txt_cat_name = os.path.join(cls.txt_cat_name, "scratchSpace", "fast_agn_lc_cat.txt")
-
         n_galaxies = 20
 
         sed_dir = os.path.join(getPackageDir("sims_sed_library"), "galaxySED")
@@ -206,42 +209,43 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
         normBulge = rng.random_sample(n_galaxies)*5.0+20.0
         normAgn = rng.random_sample(n_galaxies)*5.0+20.0
 
-        with open(cls.txt_cat_name, "w") as output_file:
-            for ix in range(n_galaxies):
-                varParam = {'varMethodName': 'applyAgn',
-                            'pars': {'agn_tau': tauList[ix], 'agn_sfu': sfuList[ix],
-                                     'agn_sfg': sfgList[ix], 'agn_sfr': sfrList[ix],
-                                     'agn_sfi': sfiList[ix], 'agn_sfz': sfzList[ix],
-                                     'agn_sfy': sfyList[ix], 't0_mjd': mjdList[ix],
-                                     'seed': rng.randint(0, 200000)}}
+        with lsst.utils.tests.getTempFilePath('.txt') as txt_cat_name:
+            with open(txt_cat_name, "w") as output_file:
+                for ix in range(n_galaxies):
+                    varParam = {'varMethodName': 'applyAgn',
+                                'pars': {'agn_tau': tauList[ix], 'agn_sfu': sfuList[ix],
+                                         'agn_sfg': sfgList[ix], 'agn_sfr': sfrList[ix],
+                                         'agn_sfi': sfiList[ix], 'agn_sfz': sfzList[ix],
+                                         'agn_sfy': sfyList[ix], 't0_mjd': mjdList[ix],
+                                         'seed': rng.randint(0, 200000)}}
 
-                paramStr = json.dumps(varParam)
+                    paramStr = json.dumps(varParam)
 
-                output_file.write("%d;%f;%f;" % (ix, raList[ix], decList[ix])
-                                  + "%f;%f;" % (np.radians(raList[ix]), np.radians(decList[ix]))
-                                  + "%f;" % (redshiftList[ix])
-                                  + "%s;%f;%f;" % (list_of_seds[disk_sed_dexes[ix]],
-                                                   avDisk[ix], normDisk[ix])
-                                  + "%s;%f;%f;" % (list_of_seds[bulge_sed_dexes[ix]],
-                                                   avBulge[ix], normBulge[ix])
-                                  + "agn.spec;%s;%f\n" % (paramStr, normAgn[ix]))
+                    output_file.write("%d;%f;%f;" % (ix, raList[ix], decList[ix])
+                                      + "%f;%f;" % (np.radians(raList[ix]), np.radians(decList[ix]))
+                                      + "%f;" % (redshiftList[ix])
+                                      + "%s;%f;%f;" % (list_of_seds[disk_sed_dexes[ix]],
+                                                       avDisk[ix], normDisk[ix])
+                                      + "%s;%f;%f;" % (list_of_seds[bulge_sed_dexes[ix]],
+                                                       avBulge[ix], normBulge[ix])
+                                      + "agn.spec;%s;%f\n" % (paramStr, normAgn[ix]))
 
-        dtype = np.dtype([
-                         ('galid', np.int),
-                         ('raDeg', np.float), ('decDeg', np.float),
-                         ('raJ2000', np.float), ('decJ2000', np.float),
-                         ('redshift', np.float),
-                         ('sedFilenameDisk', str, 300), ('internalAvDisk', np.float),
-                         ('magNormDisk', np.float),
-                         ('sedFilenameBulge', str, 300), ('internalAvBulge', np.float),
-                         ('magNormBulge', np.float),
-                         ('sedFilenameAgn', str, 300), ('varParamStr', str, 600),
-                         ('magNormAgn', np.float)
-                         ])
+                dtype = np.dtype([
+                                 ('galid', np.int),
+                                 ('raDeg', np.float), ('decDeg', np.float),
+                                 ('raJ2000', np.float), ('decJ2000', np.float),
+                                 ('redshift', np.float),
+                                 ('sedFilenameDisk', str, 300), ('internalAvDisk', np.float),
+                                 ('magNormDisk', np.float),
+                                 ('sedFilenameBulge', str, 300), ('internalAvBulge', np.float),
+                                 ('magNormBulge', np.float),
+                                 ('sedFilenameAgn', str, 300), ('varParamStr', str, 600),
+                                 ('magNormAgn', np.float)
+                                 ])
 
-        cls.agn_db = fileDBObject(cls.txt_cat_name, delimiter=';',
-                                  runtable='test', dtype=dtype,
-                                  idColKey='galid')
+                cls.agn_db = fileDBObject(txt_cat_name, delimiter=';',
+                                          runtable='test', dtype=dtype,
+                                          idColKey='galid')
 
         cls.agn_db.raColName = 'raDeg'
         cls.agn_db.decColName = 'decDeg'
@@ -264,8 +268,6 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
-        if os.path.exists(cls.txt_cat_name):
-            os.unlink(cls.txt_cat_name)
 
     def test_fast_agn_light_curves(self):
         raRange = (78.0, 85.0)

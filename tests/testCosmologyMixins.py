@@ -4,6 +4,7 @@ import os
 import unittest
 import lsst.utils.tests
 import numpy as np
+import tempfile
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import ObservationMetaData
@@ -14,6 +15,8 @@ from lsst.sims.catalogs.utils import myTestGals, makeGalTestDB
 
 from lsst.sims.catUtils.utils import testGalaxies
 from lsst.sims.catUtils.mixins import CosmologyMixin
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -54,7 +57,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dbName = 'cosmologyTestDB.db'
+        cls.dbName = tempfile.mktemp(prefix='cosmologyTestDB-', suffix=".db", dir=ROOT)
         cls.dbSize = 100
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
@@ -71,14 +74,6 @@ class CosmologyMixinUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.obs = ObservationMetaData(mjd=59580.0)
-        self.catName = 'cosmologyCatalog.txt'
-        if os.path.exists(self.catName):
-            os.unlink(self.catName)
-
-    def tearDown(self):
-        if os.path.exists(self.catName):
-            os.unlink(self.catName)
-        del self.catName
 
     def testCosmologyCatalog(self):
         """
@@ -86,7 +81,8 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         """
         dbObj = myTestGals(database=self.dbName)
         cat = cosmologicalGalaxyCatalog(dbObj, obs_metadata=self.obs)
-        cat.write_catalog(self.catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
 
     def testCatalogDistanceModulus(self):
         """

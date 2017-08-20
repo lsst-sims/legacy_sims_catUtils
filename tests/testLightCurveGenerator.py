@@ -6,6 +6,8 @@ import os
 import json
 import sqlite3
 import numpy as np
+import tempfile
+import shutil
 import lsst
 # import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
@@ -24,6 +26,8 @@ from lsst.sims.catalogs.db import CatalogDBObject
 
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catUtils.utils import AgnLightCurveGenerator
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -62,8 +66,7 @@ class StellarLightCurveTest(unittest.TestCase):
         """
         Create a fake catalog of RR Lyrae stars.  Store it in cls.stellar_db
         """
-        cls.scratchDir = os.path.join(getPackageDir("sims_catUtils"))
-        cls.scratchDir = os.path.join(cls.scratchDir, "tests", "scratchSpace")
+        cls.scratchDir = tempfile.mkdtemp(dir=ROOT, prefix='StellarLigghtCurveTest-')
 
         rng = np.random.RandomState(88)
         n_stars = 10000
@@ -128,6 +131,8 @@ class StellarLightCurveTest(unittest.TestCase):
         sims_clean_up()
         if os.path.exists(cls.txt_name):
             os.unlink(cls.txt_name)
+        if os.path.exists(cls.scratchDir):
+            shutil.rmtree(cls.scratchDir)
 
     def test_get_pointings(self):
         """
@@ -446,11 +451,7 @@ class StellarLightCurveTest(unittest.TestCase):
         varParamStr = json.dumps(varparams)
 
         # create the dummy database
-        db_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
-        db_name = os.path.join(db_name, "scratchSpace", "stellar_constraint_cat_sqlite.db")
-
-        if os.path.exists(db_name):
-            os.unlink(db_name)
+        db_name = tempfile.mktemp(prefix='stellar_constraint_cata_sqlite-', suffix='.db', dir=ROOT)
 
         conn = sqlite3.connect(db_name)
         c = conn.cursor()
@@ -503,19 +504,13 @@ class StellarLightCurveTest(unittest.TestCase):
             os.unlink(db_name)
 
         # verify that an InstanceCatalog finds all 4 stars
-        dummy_cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests')
-        dummy_cat_name = os.path.join(dummy_cat_name, 'scratchSpace')
-        dummy_cat_name = os.path.join(dummy_cat_name, 'stellar_constraint_control.txt')
-
         obs = ptngs[0][0]
         cat = stellarControlCatalog(star_db, obs_metadata=obs)
-        cat.write_catalog(dummy_cat_name)
-        with open(dummy_cat_name, 'r') as input_file:
-            lines = input_file.readlines()
-            self.assertEqual(len(lines), 5)
-
-        if os.path.exists(dummy_cat_name):
-            os.unlink(dummy_cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as dummy_cat_name:
+            cat.write_catalog(dummy_cat_name)
+            with open(dummy_cat_name, 'r') as input_file:
+                lines = input_file.readlines()
+                self.assertEqual(len(lines), 5)
 
     def test_manual_constraint(self):
         """
@@ -578,8 +573,7 @@ class AgnLightCurveTest(unittest.TestCase):
     def setUpClass(cls):
         rng = np.random.RandomState(119)
 
-        cls.txt_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
-        cls.txt_cat_name = os.path.join(cls.txt_cat_name, "scratchSpace", "agn_lc_cat.txt")
+        cls.txt_cat_name = tempfile.mktemp(prefix='agn_lc_cat', suffix='.txt', dir=ROOT)
 
         n_galaxies = 20
 
@@ -852,12 +846,7 @@ class AgnLightCurveTest(unittest.TestCase):
         varParamStr = json.dumps(varparams)
 
         # create the dummy database
-        db_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
-        db_name = os.path.join(db_name, "scratchSpace", "agn_constraint_cat_sqlite.db")
-
-        if os.path.exists(db_name):
-            os.unlink(db_name)
-
+        db_name = tempfile.mktemp(prefix="agn_constraint_cat_sqlite", suffix=".db", dir=ROOT)
         conn = sqlite3.connect(db_name)
         c = conn.cursor()
         c.execute('''CREATE TABLE agn
@@ -921,19 +910,13 @@ class AgnLightCurveTest(unittest.TestCase):
             os.unlink(db_name)
 
         # verify that an InstanceCatalog finds all 4 stars
-        dummy_cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests')
-        dummy_cat_name = os.path.join(dummy_cat_name, 'scratchSpace')
-        dummy_cat_name = os.path.join(dummy_cat_name, 'agn_constraint_control.txt')
-
         obs = ptngs[0][0]
         cat = agnControlCatalog(agn_db, obs_metadata=obs)
-        cat.write_catalog(dummy_cat_name)
-        with open(dummy_cat_name, 'r') as input_file:
-            lines = input_file.readlines()
-            self.assertEqual(len(lines), 5)
-
-        if os.path.exists(dummy_cat_name):
-            os.unlink(dummy_cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as dummy_cat_name:
+            cat.write_catalog(dummy_cat_name)
+            with open(dummy_cat_name, 'r') as input_file:
+                lines = input_file.readlines()
+                self.assertEqual(len(lines), 5)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

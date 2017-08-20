@@ -1,5 +1,7 @@
 import unittest
 import os
+import shutil
+import tempfile
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 
@@ -56,8 +58,11 @@ class StarCatalog(InstanceCatalog):
 class CompoundCatalogTest(unittest.TestCase):
 
     def setUp(self):
-        self.baseDir = os.path.join(getPackageDir('sims_catUtils'),
-                                    'tests', 'scratchSpace')
+        self.baseDir = tempfile.mkdtemp(dir=ROOT, prefix='compoundCatalogTest-')
+
+    def tearDown(self):
+        if os.path.exists(self.baseDir):
+            shutil.rmtree(self.baseDir)
 
     @unittest.skipIf(not _testCompoundCatalogs_is_connected,
                      "We are not connected to fatboy")
@@ -97,25 +102,18 @@ class CompoundCatalogTest(unittest.TestCase):
 
         totalCat.write_catalog(testFileName, write_header=False, chunk_size=10000)
 
-        controlFile = open(controlFileName, 'r')
-        control = controlFile.readlines()
+        with open(controlFileName, 'r') as controlFile:
+            control = controlFile.readlines()
         controlFile.close()
 
-        testFile = open(testFileName, 'r')
-        test = testFile.readlines()
-        testFile.close()
+        with open(testFileName, 'r') as testFile:
+            test = testFile.readlines()
 
         for line in control:
             self.assertIn(line, test)
 
         for line in test:
             self.assertIn(line, control)
-
-        if os.path.exists(controlFileName):
-            os.unlink(controlFileName)
-
-        if os.path.exists(testFileName):
-            os.unlink(testFileName)
 
     @unittest.skipIf(not _testCompoundCatalogs_is_connected,
                      "We are not connected to fatboy")
@@ -158,25 +156,17 @@ class CompoundCatalogTest(unittest.TestCase):
 
         totalCat.write_catalog(testFileName, write_header=False, chunk_size=10000)
 
-        controlFile = open(controlFileName, 'r')
-        control = controlFile.readlines()
-        controlFile.close()
+        with open(controlFileName, 'r') as controlFile:
+            control = controlFile.readlines()
 
-        testFile = open(testFileName, 'r')
-        test = testFile.readlines()
-        testFile.close()
+        with open(testFileName, 'r') as testFile:
+            test = testFile.readlines()
 
         for line in control:
             self.assertIn(line, test)
 
         for line in test:
             self.assertIn(line, control)
-
-        if os.path.exists(controlFileName):
-            os.unlink(controlFileName)
-
-        if os.path.exists(testFileName):
-            os.unlink(testFileName)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
