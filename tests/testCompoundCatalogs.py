@@ -104,7 +104,6 @@ class CompoundCatalogTest(unittest.TestCase):
 
         with open(controlFileName, 'r') as controlFile:
             control = controlFile.readlines()
-        controlFile.close()
 
         with open(testFileName, 'r') as testFile:
             test = testFile.readlines()
