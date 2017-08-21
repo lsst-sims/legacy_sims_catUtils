@@ -77,8 +77,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
 
     def test_ssm_catalog_creation(self):
 
-        output_cat = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'catsim_ssm_test')
-
         t = time.time()
         # Fake opsim data.
         database = os.path.join(getPackageDir('SIMS_DATA'), 'OpSimData/opsimblitz1_1133_sqlite.db')
@@ -101,9 +99,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
 
         try:
             ssmObj = SolarSystemObj()
-
-            if os.path.exists(output_cat):
-                os.unlink(output_cat)
 
             for obsMeta in obsMetaDataResults:
                 # But moving objects databases are not currently complete for all years.
@@ -129,11 +124,12 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 mySsmDb.photParams = photParams
 
                 try:
-                    mySsmDb.write_catalog(output_cat, write_header=write_header, write_mode=write_mode)
+                    with lsst.utils.tests.getTempFilePath('.txt') as output_cat:
+                        mySsmDb.write_catalog(output_cat, write_header=write_header, write_mode=write_mode)
 
-                    # verify that we did not write an empty catalog
-                    with open(output_cat, 'r') as input_file:
-                        lines = input_file.readlines()
+                        # verify that we did not write an empty catalog
+                        with open(output_cat, 'r') as input_file:
+                            lines = input_file.readlines()
                         self.assertGreater(len(lines), 1)
                 except:
                     # This is because the solar system object 'tables'
@@ -153,9 +149,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 dt, t = dtime(t)
                 print('To query solar system objects: %f seconds (obs MJD time %f)' % (dt, obs.mjd.TAI))
 
-                if os.path.exists(output_cat):
-                    os.unlink(output_cat)
-
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
             msg = sys.exc_info()[1].args[0]
@@ -167,9 +160,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 pass
             else:
                 raise
-
-        if os.path.exists(output_cat):
-            os.unlink(output_cat)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

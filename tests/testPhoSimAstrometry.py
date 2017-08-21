@@ -1,6 +1,7 @@
 import unittest
 import os
 import numpy as np
+import tempfile
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
@@ -15,6 +16,9 @@ from lsst.sims.catUtils.mixins import PhoSimAstrometryBase
 from lsst.sims.catUtils.mixins import PhoSimAstrometryStars
 from lsst.sims.catUtils.mixins import PhoSimAstrometryGalaxies
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -48,9 +52,7 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
                                        'tests', 'scratchSpace')
-        cls.db_name = os.path.join(cls.scratch_dir, 'PhoSimAstDB.db')
-        if os.path.exists(cls.db_name):
-            os.unlink(cls.db_name)
+        cls.db_name = tempfile.mktemp(dir=ROOT, prefix='PhoSimAstDB', suffix='.db')
         cls.obs = makePhoSimTestDB(filename=cls.db_name,
                                    size=1000)
 
@@ -65,16 +67,13 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         Test that we can go from raPhoSim, decPhoSim to ICRS coordinates
         in the case of stars (in radians)
         """
-        cat_name = os.path.join(self.scratch_dir, 'phosim_ast_star_cat_rad.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
         db = testStarsDBObj(driver='sqlite', database=self.db_name)
         cat = StarTestCatalog(db, obs_metadata=self.obs)
-        cat.write_catalog(cat_name)
-        dtype = np.dtype([('raICRS', float), ('decICRS', float),
-                          ('raPhoSim', float), ('decPhoSim', float)])
-        data = np.genfromtxt(cat_name, dtype=dtype)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
+            dtype = np.dtype([('raICRS', float), ('decICRS', float),
+                             ('raPhoSim', float), ('decPhoSim', float)])
+            data = np.genfromtxt(cat_name, dtype=dtype)
         self.assertGreater(len(data), 100)
         ra_pho_rad = np.radians(data['raPhoSim'])
         dec_pho_rad = np.radians(data['decPhoSim'])
@@ -102,8 +101,6 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         dist_bad = arcsecFromRadians(dist_bad)
         self.assertGreater(dist_bad.min(), dist.max())
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
         del db
 
     def test_stellar_astrometry_degrees(self):
@@ -111,16 +108,13 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         Test that we can go from raPhoSim, decPhoSim to ICRS coordinates
         in the case of stars (in degrees)
         """
-        cat_name = os.path.join(self.scratch_dir, 'phosim_ast_star_cat_deg.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
         db = testStarsDBObj(driver='sqlite', database=self.db_name)
         cat = StarTestCatalog(db, obs_metadata=self.obs)
-        cat.write_catalog(cat_name)
-        dtype = np.dtype([('raICRS', float), ('decICRS', float),
-                          ('raPhoSim', float), ('decPhoSim', float)])
-        data = np.genfromtxt(cat_name, dtype=dtype)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
+            dtype = np.dtype([('raICRS', float), ('decICRS', float),
+                             ('raPhoSim', float), ('decPhoSim', float)])
+            data = np.genfromtxt(cat_name, dtype=dtype)
         self.assertGreater(len(data), 100)
 
         # verify that, when transforming back to ICRS, we are within
@@ -144,8 +138,6 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         dist_bad = 3600.0*dist_bad
         self.assertGreater(dist_bad.min(), dist.max())
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
         del db
 
     def test_galaxy_astrometry_radians(self):
@@ -153,16 +145,13 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         Test that we can go from raPhoSim, decPhoSim to ICRS coordinates
         in the case of galaxies (in radians)
         """
-        cat_name = os.path.join(self.scratch_dir, 'phosim_ast_gal_cat_rad.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
         db = testGalaxyDiskDBObj(driver='sqlite', database=self.db_name)
         cat = GalaxyTestCatalog(db, obs_metadata=self.obs)
-        cat.write_catalog(cat_name)
-        dtype = np.dtype([('raICRS', float), ('decICRS', float),
-                          ('raPhoSim', float), ('decPhoSim', float)])
-        data = np.genfromtxt(cat_name, dtype=dtype)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
+            dtype = np.dtype([('raICRS', float), ('decICRS', float),
+                             ('raPhoSim', float), ('decPhoSim', float)])
+            data = np.genfromtxt(cat_name, dtype=dtype)
         self.assertGreater(len(data), 100)
         ra_pho_rad = np.radians(data['raPhoSim'])
         dec_pho_rad = np.radians(data['decPhoSim'])
@@ -190,8 +179,6 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         dist_bad = arcsecFromRadians(dist_bad)
         self.assertGreater(dist_bad.min(), dist.max())
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
         del db
 
     def test_galaxy_astrometry_degrees(self):
@@ -199,16 +186,13 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         Test that we can go from raPhoSim, decPhoSim to ICRS coordinates
         in the case of galaxies (in degrees)
         """
-        cat_name = os.path.join(self.scratch_dir, 'phosim_ast_gal_cat_deg.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
         db = testGalaxyDiskDBObj(driver='sqlite', database=self.db_name)
         cat = GalaxyTestCatalog(db, obs_metadata=self.obs)
-        cat.write_catalog(cat_name)
-        dtype = np.dtype([('raICRS', float), ('decICRS', float),
-                          ('raPhoSim', float), ('decPhoSim', float)])
-        data = np.genfromtxt(cat_name, dtype=dtype)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
+            dtype = np.dtype([('raICRS', float), ('decICRS', float),
+                             ('raPhoSim', float), ('decPhoSim', float)])
+            data = np.genfromtxt(cat_name, dtype=dtype)
         self.assertGreater(len(data), 100)
 
         # verify that, when transforming back to ICRS, we are within
@@ -232,8 +216,6 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         dist_bad = 3600.0*dist_bad
         self.assertGreater(dist_bad.min(), dist.max())
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
         del db
 
 

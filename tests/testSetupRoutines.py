@@ -1,6 +1,8 @@
 from builtins import zip
 from builtins import object
 import numpy as np
+import tempfile
+import shutil
 
 import os
 import unittest
@@ -15,6 +17,8 @@ from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.catUtils.utils import setupPhotometryCatalog
 from lsst.sims.catUtils.utils import makeStarDatabase, makeGalaxyDatabase
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -132,22 +136,22 @@ class testGalaxyDBObject(CatalogDBObject):
 class InstanceCatalogSetupUnittest(unittest.TestCase):
 
     @classmethod
-    def tearDownClass(self):
+    def setUpClass(cls):
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='InstanceCatalogSetupUnittest-')
+
+    @classmethod
+    def tearDownClass(cls):
         sims_clean_up()
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def setUp(self):
         self.driver = 'sqlite'
-        self.StarDBName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+        self.StarDBName = os.path.join(self.scratch_dir,
                                        'testSetup_setupTestStars.db')
 
-        self.GalaxyDBName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
+        self.GalaxyDBName = os.path.join(self.scratch_dir,
                                          'testSetup_setupTestGalaxies.db')
-
-        if os.path.exists(self.StarDBName):
-            os.unlink(self.StarDBName)
-
-        if os.path.exists(self.GalaxyDBName):
-            os.unlink(self.GalaxyDBName)
 
         self.pointingRA = 50.0
         self.pointingDec = -5.0
@@ -313,18 +317,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                                   column_outputs=['lsst_g', 'sigma_lsst_g',
                                                                   'lsst_i', 'sigma_lsst_i']))
 
-        testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'testSetUp_testActual_testSetupCat.txt')
-
-        baseName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'testSetUp_testActual_baseSetupCat.txt')
-
-        if os.path.exists(testName):
-            os.unlink(testName)
-
-        if os.path.exists(baseName):
-            os.unlink(baseName)
-
         basedtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
                               ('lsst_g', np.float), ('sigma_lsst_g', np.float),
                               ('lsst_i', np.float), ('sigma_lsst_i', np.float)])
@@ -338,11 +330,14 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              dbConnection=dbo,
                                              catalogClass=testCatClass)
 
-            testCat.write_catalog(testName)
-            baselineCat.write_catalog(baseName)
+            with lsst.utils.tests.getTempFilePath('.txt') as testName:
+                testCat.write_catalog(testName)
+                testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
 
-            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
-            baseData = np.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            with lsst.utils.tests.getTempFilePath('.txt') as baseName:
+                baselineCat.write_catalog(baseName)
+                baseData = np.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+
             self.assertGreater(len(testData), 0)
             self.assertGreater(len(baseData), 0)
 
@@ -361,8 +356,9 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
                                              dbConnection=dbo,
                                              catalogClass=testCatClass)
-            testCat.write_catalog(testName)
-            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            with lsst.utils.tests.getTempFilePath('.txt') as testName:
+                testCat.write_catalog(testName)
+                testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
@@ -375,11 +371,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                 ct += 1
 
             self.assertGreater(ct, 0)
-
-            if os.path.exists(testName):
-                os.unlink(testName)
-            if os.path.exists(baseName):
-                os.unlink(baseName)
 
     def testActualCatalogWithUncertainty(self):
         """
@@ -404,18 +395,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                                   column_outputs=['lsst_g', 'lsst_i',
                                                                   'sigma_lsst_g', 'sigma_lsst_i']))
 
-        testName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'testSetup_testSetupCatUncertainty.txt')
-
-        baseName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'testSetup_baseSetupCatUncertainty.txt')
-
-        if os.path.exists(testName):
-            os.unlink(testName)
-
-        if os.path.exists(baseName):
-            os.unlink(baseName)
-
         basedtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
                               ('lsst_g', np.float), ('lsst_i', np.float),
                               ('sigma_lsst_g', np.float), ('sigma_lsst_i', np.float)])
@@ -430,11 +409,12 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             testdtype = np.dtype([('raObserved', np.float), ('decObserved', np.float),
                                   ('lsst_g', np.float), ('sigma_lsst_g', np.float)])
 
-            testCat.write_catalog(testName)
-            baselineCat.write_catalog(baseName)
-
-            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
-            baseData = np.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+            with lsst.utils.tests.getTempFilePath('.txt') as testName:
+                testCat.write_catalog(testName)
+                testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            with lsst.utils.tests.getTempFilePath('.txt') as baseName:
+                baselineCat.write_catalog(baseName)
+                baseData = np.genfromtxt(baseName, dtype=basedtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             self.assertGreater(len(baseData), 0)
 
@@ -458,8 +438,9 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                              dbConnection=dbo,
                                              catalogClass=testCatClass,
                                              uncertainty=True)
-            testCat.write_catalog(testName)
-            testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
+            with lsst.utils.tests.getTempFilePath('.txt') as testName:
+                testCat.write_catalog(testName)
+                testData = np.genfromtxt(testName, dtype=testdtype, delimiter=',')
             self.assertGreater(len(testData), 0)
             ct = 0
             for b, t in zip(baseData, testData):
@@ -478,11 +459,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                 ct += 1
 
             self.assertGreater(ct, 0)
-
-            if os.path.exists(testName):
-                os.unlink(testName)
-            if os.path.exists(baseName):
-                os.unlink(baseName)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

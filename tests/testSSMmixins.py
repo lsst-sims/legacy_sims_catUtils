@@ -76,16 +76,15 @@ class SSMphotometryTest(unittest.TestCase):
         """
         Test that PhotometrySSM properly calculates LSST magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'lsstSsmPhotCat.txt')
-
         cat = LSST_SSM_photCat(self.photDB)
-        cat.write_catalog(catName)
 
         dtype = np.dtype([('id', np.int), ('u', np.float), ('g', np.float),
                           ('r', np.float), ('i', np.float), ('z', np.float),
                           ('y', np.float)])
 
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
@@ -101,19 +100,12 @@ class SSMphotometryTest(unittest.TestCase):
             for jj, bpName in enumerate(['u', 'g', 'r', 'i', 'z', 'y']):
                 self.assertAlmostEqual(controlMags[ii][jj], testData[bpName][ii], 10)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testManyMagSystems(self):
         """
         Test that the SSM photometry mixin can simultaneously calculate magnitudes
         in multiple bandpass systems
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'),
-                               'tests', 'scratchSpace', 'compoundSsmPhotCat.txt')
-
         cat = Compound_SSM_photCat(self.photDB)
-        cat.write_catalog(catName)
 
         dtype = np.dtype([('id', np.int), ('lsst_u', np.float), ('lsst_g', np.float),
                           ('lsst_r', np.float), ('lsst_i', np.float), ('lsst_z', np.float),
@@ -122,7 +114,9 @@ class SSMphotometryTest(unittest.TestCase):
                           ('cartoon_r', np.float), ('cartoon_i', np.float),
                           ('cartoon_z', np.float)])
 
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
@@ -146,17 +140,11 @@ class SSMphotometryTest(unittest.TestCase):
             for jj, bpName in enumerate(['cartoon_u', 'cartoon_g', 'cartoon_r', 'cartoon_i', 'cartoon_z']):
                 self.assertAlmostEqual(controlCartoonMags[ii][jj], testData[bpName][ii], 10)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testDmagExceptions(self):
         """
         Test that the dmagTrailing and dmagDetection getters raise expected
         exceptions
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'),
-                               'tests', 'scratchSpace', 'ssmDmagCatExceptions.txt')
-
         obs = ObservationMetaData()
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
@@ -172,12 +160,10 @@ class SSMphotometryTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
             cat.photParams = None
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
         self.assertIn("does not have an associated PhotometricParameters",
                       context.exception.args[0])
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def testDmag(self):
         """
@@ -186,15 +172,15 @@ class SSMphotometryTest(unittest.TestCase):
 
         obs = ObservationMetaData(bandpassName = 'u', seeing=1.48)
         photParams = PhotometricParameters()
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmDmagCat.txt')
 
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
 
         cat = SSM_dmagCat(self.photDB, obs_metadata=obs)
-        cat.write_catalog(catName)
 
         dtype = np.dtype([('id', np.int), ('dmagTrail', np.float), ('dmagDetect', np.float)])
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         a_trail = 0.76
@@ -216,9 +202,6 @@ class SSMphotometryTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(dmagTrailControl, testData['dmagTrail'], 10)
         np.testing.assert_array_almost_equal(dmagDetectControl, testData['dmagDetect'], 10)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
 
 class SSM_astrometryCat(InstanceCatalog, AstrometrySSM):
@@ -251,9 +234,6 @@ class SSMastrometryTest(unittest.TestCase):
         into observed RA, Dec
         """
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                               'scratchSpace', 'ssmAstrometryCat.txt')
-
         dtype = np.dtype([('id', np.int),
                           ('raObserved', np.float), ('decObserved', np.float)])
 
@@ -268,9 +248,10 @@ class SSMastrometryTest(unittest.TestCase):
             obs = ObservationMetaData(pointingRA=raPointing, pointingDec=decPointing, mjd=mjd)
 
             cat = SSM_astrometryCat(self.astDB, obs_metadata=obs)
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
-            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+                testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
             self.assertGreater(len(testData), 0)
 
             raObservedControl, decObservedControl = _observedFromICRS(controlData['raJ2000'],
@@ -281,28 +262,21 @@ class SSMastrometryTest(unittest.TestCase):
             np.testing.assert_array_almost_equal(raObservedControl, testData['raObserved'], 10)
             np.testing.assert_array_almost_equal(decObservedControl, testData['decObserved'], 10)
 
-            if os.path.exists(catName):
-                os.unlink(catName)
-
     def testSkyVelocity(self):
         """
         Test that getter for sky velocity correctly calculates its output
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'ssmVelocityCat.txt')
-
         controlData = np.genfromtxt(self.dbFile, dtype=self.dtype)
         controlVel = np.sqrt(np.power(controlData['velRa'], 2) + np.power(controlData['velDec'], 2))
 
         cat = SSM_velocityCat(self.astDB)
-        cat.write_catalog(catName)
         dtype = np.dtype([('id', np.int), ('vel', np.float)])
-        testData = np.genfromtxt(catName, dtype=dtype)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype)
         self.assertGreater(len(testData), 0)
 
         np.testing.assert_array_almost_equal(testData['vel'], controlVel, 10)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

@@ -3,6 +3,7 @@ from builtins import range
 import os
 import unittest
 import sqlite3
+import tempfile
 import numpy as np
 import lsst.utils.tests
 from lsst.sims.utils.CodeUtilities import sims_clean_up
@@ -13,6 +14,8 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
 from lsst.sims.catUtils.utils import testGalaxyBulgeDBObj
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.utils import getPackageDir
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -437,12 +440,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         expected header entries are there.
         """
 
-        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                   'scratchSpace')
-        dbName = os.path.join(scratch_dir, 'obsMetaDataGeneratorTest.db')
-        catName = os.path.join(scratch_dir, 'testPhoSimFromObsMetaDataGenerator.txt')
-        if os.path.exists(dbName):
-            os.unlink(dbName)
+        dbName = tempfile.mktemp(dir=ROOT, prefix='obsMetaDataGeneratorTest-', suffix='.db')
         makePhoSimTestDB(filename=dbName)
         bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=dbName)
         gen = self.gen
@@ -450,10 +448,8 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
                                              telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
         testCat.phoSimHeaderMap = {}
-        testCat.write_catalog(catName)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testCat.write_catalog(catName)
 
         if os.path.exists(dbName):
             os.unlink(dbName)
@@ -468,11 +464,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace')
-        cls.opsim_db_name = os.path.join(scratch_dir, 'mock_opsim_sqlite.db')
-
-        if os.path.exists(cls.opsim_db_name):
-            os.unlink(cls.opsim_db_name)
+        cls.opsim_db_name = tempfile.mktemp(dir=ROOT, prefix='mock_opsim_sqlite-', suffix='.db')
 
         conn = sqlite3.connect(cls.opsim_db_name)
         c = conn.cursor()
@@ -553,11 +545,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
         Test that if the mock OpSim database does not have all required columns, an exception
         is raised.
         """
-        scratch_dir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace')
-        opsim_db_name = os.path.join(scratch_dir, 'incomplete_mock_opsim_sqlite.db')
-
-        if os.path.exists(opsim_db_name):
-            os.unlink(opsim_db_name)
+        opsim_db_name = tempfile.mktemp(dir=ROOT, prefix='incomplete_mock_opsim_sqlite-', suffix='.db')
 
         conn = sqlite3.connect(opsim_db_name)
         c = conn.cursor()
