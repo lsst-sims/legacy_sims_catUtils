@@ -230,22 +230,22 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
                                                        avBulge[ix], normBulge[ix])
                                       + "agn.spec;%s;%f\n" % (paramStr, normAgn[ix]))
 
-                dtype = np.dtype([
-                                 ('galid', np.int),
-                                 ('raDeg', np.float), ('decDeg', np.float),
-                                 ('raJ2000', np.float), ('decJ2000', np.float),
-                                 ('redshift', np.float),
-                                 ('sedFilenameDisk', str, 300), ('internalAvDisk', np.float),
-                                 ('magNormDisk', np.float),
-                                 ('sedFilenameBulge', str, 300), ('internalAvBulge', np.float),
-                                 ('magNormBulge', np.float),
-                                 ('sedFilenameAgn', str, 300), ('varParamStr', str, 600),
-                                 ('magNormAgn', np.float)
-                                 ])
+            dtype = np.dtype([
+                             ('galid', np.int),
+                             ('raDeg', np.float), ('decDeg', np.float),
+                             ('raJ2000', np.float), ('decJ2000', np.float),
+                             ('redshift', np.float),
+                             ('sedFilenameDisk', str, 300), ('internalAvDisk', np.float),
+                             ('magNormDisk', np.float),
+                             ('sedFilenameBulge', str, 300), ('internalAvBulge', np.float),
+                             ('magNormBulge', np.float),
+                             ('sedFilenameAgn', str, 300), ('varParamStr', str, 600),
+                             ('magNormAgn', np.float)
+                             ])
 
-                cls.agn_db = fileDBObject(txt_cat_name, delimiter=';',
-                                          runtable='test', dtype=dtype,
-                                          idColKey='galid')
+            cls.agn_db = fileDBObject(txt_cat_name, delimiter=';',
+                                      runtable='test', dtype=dtype,
+                                      idColKey='galid')
 
         cls.agn_db.raColName = 'raDeg'
         cls.agn_db.decColName = 'decDeg'
