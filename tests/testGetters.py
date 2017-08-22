@@ -2,6 +2,7 @@ from builtins import range
 import os
 import numpy as np
 import unittest
+import tempfile
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
@@ -15,6 +16,8 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcMagError_sed
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.photUtils.utils import setM5
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -62,9 +65,7 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         lsstDefaults = LSSTdefaults()
-        cls.dbName = 'uncertaintyTestDB.db'
-        if os.path.exists(cls.dbName):
-            os.unlink(cls.dbName)
+        cls.dbName = tempfile.mktemp(prefix='uncertaintyTestDB-', suffix='.db', dir=ROOT)
 
         default_obs_metadata = makePhoSimTestDB(filename=cls.dbName, size=10, radius = 5.0)
         bandpass = ['u', 'g', 'r', 'i', 'z', 'y']

@@ -21,6 +21,8 @@ import os
 import sqlite3
 import numpy as np
 import unittest
+import tempfile
+import shutil
 
 # External packages used
 # import pandas as pd
@@ -58,6 +60,8 @@ try:
     get_config_dir()
 except:
     _skip_sn_tests = True
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -120,7 +124,7 @@ class SNObject_tests(unittest.TestCase):
         entries for all keys and does not contain keys with None type Values.
         """
         myDict = self.SN_extincted.SNstate
-        for key in myDict.keys():
+        for key in myDict:
             assert myDict[key] is not None
 
     def test_attributeDefaults(self):
@@ -283,7 +287,7 @@ class SNObject_tests(unittest.TestCase):
         # Test 1.
         self.assertGreater(low_x0, orig_x0)
         # Test 2.
-        self.assertEqual(peakabsMag, lowPeakAbsMag)
+        self.assertAlmostEqual(peakabsMag, lowPeakAbsMag, places=14)
 
         # Test Case for higher redshift
         self.SN_extincted.redshift(z=highz, cosmo=cosmo)
@@ -293,7 +297,7 @@ class SNObject_tests(unittest.TestCase):
         # Test 1.
         self.assertLess(high_x0, orig_x0)
         # Test 2.
-        self.assertEqual(peakabsMag, HiPeakAbsMag)
+        self.assertAlmostEqual(peakabsMag, HiPeakAbsMag, places=14)
 
     def test_bandFluxErrorWorks(self):
         """
@@ -308,7 +312,7 @@ class SNObject_tests(unittest.TestCase):
         print(e)
         assert not(np.isinf(e) or np.isnan(e))
 
-    
+
 
 
 
@@ -320,8 +324,7 @@ class SNIaCatalog_tests(unittest.TestCase):
     def setUpClass(cls):
 
         # Set directory where scratch work will be done
-        cls.scratchDir = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                      'scratchSpace')
+        cls.scratchDir = tempfile.mkdtemp(dir=ROOT, prefix='scratchSpace-')
 
         # ObsMetaData instance with spatial window within which we will
         # put galaxies in a fake galaxy catalog
@@ -403,7 +406,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         sncatalog.suppressDimSN = True
         sncatalog.midSurveyTime = sncatalog.mjdobs - 20.
         sncatalog.snFrequency = 1.0
-        cls.fullCatalog = cls.scratchDir + '/testSNCatalogTest.dat'
+        cls.fullCatalog = os.path.join(cls.scratchDir, 'testSNCatalogTest.dat')
         sncatalog.write_catalog(cls.fullCatalog)
 
         # Create a SNCatalog based on GalDB, and having times of explosions
@@ -424,6 +427,8 @@ class SNIaCatalog_tests(unittest.TestCase):
 
         if os.path.exists(cls.fullCatalog):
             os.unlink(cls.fullCatalog)
+        if os.path.exists(cls.scratchDir):
+            shutil.rmtree(cls.scratchDir)
 
     def test_writingfullCatalog(self):
         """
@@ -461,7 +466,7 @@ class SNIaCatalog_tests(unittest.TestCase):
                  'cosmologicalDistanceModulus', 'mwebv']
         s = "Testing Equality across {0:2d} pointings for reported properties"
         s += " of SN {1:8d} of the property "
-        for key in lcs.groups.keys():
+        for key in lcs.groups:
             df = lcs.get_group(key)
             for prop in props:
                 print(s.format(len(df), df.snid.iloc[0]) + prop)
@@ -482,7 +487,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         newlcs = self.buildLCfromInstanceCatFilenames(fnameList)
         oldlcs = self.buildLCfromInstanceCatFilenames(self.fnameList)
 
-        for key in oldlcs.groups.keys():
+        for key in oldlcs.groups:
             df_old = oldlcs.get_group(key)
             df_old.sort_values(['time', 'band'], inplace=True)
             df_new = newlcs.get_group(key)
@@ -622,8 +627,8 @@ class SNIaLightCurveTest(unittest.TestCase):
         dec_list = rng.random_sample(n_sne) * 4.0 - 69.0
         zz_list = rng.random_sample(n_sne) * 1.0 + 0.05
 
-        cls.input_cat_name = os.path.join(getPackageDir("sims_catUtils"), "tests")
-        cls.input_cat_name = os.path.join(cls.input_cat_name, "scratchSpace", "sne_input_cat.txt")
+        cls.scratchDir = tempfile.mkdtemp(dir=ROOT, prefix='scratchSpace-')
+        cls.input_cat_name = os.path.join(cls.scratchDir, "sne_input_cat.txt")
 
         with open(cls.input_cat_name, "w") as output_file:
             for ix in range(n_sne):
@@ -653,6 +658,8 @@ class SNIaLightCurveTest(unittest.TestCase):
         sims_clean_up()
         if os.path.exists(cls.input_cat_name):
             os.unlink(cls.input_cat_name)
+        if os.path.exists(cls.scratchDir):
+            shutil.rmtree(cls.scratchDir)
 
     def test_sne_light_curves(self):
         """

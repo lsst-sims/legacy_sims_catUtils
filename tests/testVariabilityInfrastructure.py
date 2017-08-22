@@ -5,6 +5,8 @@ from builtins import object
 import os
 import numpy as np
 import unittest
+import shutil
+import tempfile
 import lsst.utils.tests
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.utils import makeStarTestDB, myTestStars
@@ -13,6 +15,8 @@ from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.catUtils.mixins import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils import BandpassDict
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -175,26 +179,19 @@ class VariabilityDesignTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.starDbName = 'VariabilityInfrastructureTestStarDB.db'
-        if os.path.exists(cls.starDbName):
-            os.unlink(cls.starDbName)
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='VariabilityDesignTest-')
 
+        cls.starDbName = os.path.join(cls.scratch_dir, 'VariabilityInfrastructureTestStarDB.db')
         makeStarTestDB(filename=cls.starDbName)
 
-        cls.galaxyDbName = 'VariabilityInfrastructureTestGalaxyDB.db'
-        if os.path.exists(cls.galaxyDbName):
-            os.unlink(cls.galaxyDbname)
-
+        cls.galaxyDbName = os.path.join(cls.scratch_dir, 'VariabilityInfrastructureTestGalaxyDB.db')
         makeGalTestDB(filename=cls.galaxyDbName)
 
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
-        if os.path.exists(cls.starDbName):
-            os.unlink(cls.starDbName)
-
-        if os.path.exists(cls.galaxyDbName):
-            os.unlink(cls.galaxyDbName)
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def setUp(self):
         self.starDB = myTestStars(database=self.starDbName)

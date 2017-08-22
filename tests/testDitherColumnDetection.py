@@ -4,10 +4,14 @@ import unittest
 import os
 import sqlite3
 import numpy as np
+import tempfile
+import shutil
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -25,17 +29,15 @@ class ObsMetaDataGenDitherTestClass(unittest.TestCase):
     def tearDownClass(cls):
         if os.path.exists(cls.fake_db_name):
             os.unlink(cls.fake_db_name)
+        if os.path.exists(cls.scratch_space):
+            shutil.rmtree(cls.scratch_space)
 
     @classmethod
     def setUpClass(cls):
-        cls.scratch_space = os.path.join(getPackageDir('sims_catUtils'),
-                                         'tests', 'scratchSpace')
+        cls.scratch_space = tempfile.mkdtemp(dir=ROOT, prefix='ObsMetaDataGenDitherTestClass-')
 
         cls.fake_db_name = os.path.join(cls.scratch_space,
                                         'dither_test_fake_opsim_sqlite.db')
-
-        if os.path.exists(cls.fake_db_name):
-            os.unlink(cls.fake_db_name)
 
         conn = sqlite3.connect(cls.fake_db_name)
         curs = conn.cursor()

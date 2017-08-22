@@ -79,16 +79,11 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
         inputFile = os.path.join(inputDir, 'IndicesTestCatalogStars.txt')
         db = fileDBObject(inputFile, dtype=db_dtype, runtable='test', idColKey='id')
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'cartoonStarCat.txt')
         cat = CartoonStars(db, obs_metadata=obs)
-        cat.write_catalog(catName)
-
-        dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
-
-        controlData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
+            controlData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
 
         db_columns = db.query_columns(['id', 'raJ2000', 'decJ2000', 'sedFilename', 'magNorm', 'galacticAv'])
 
@@ -137,17 +132,12 @@ class CartoonUncertaintyTestCase(unittest.TestCase):
         inputDir = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData')
         inputFile = os.path.join(inputDir, 'IndicesTestCatalogStars.txt')
         db = fileDBObject(inputFile, dtype=db_dtype, runtable='test', idColKey='id')
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'cartoonStarCat.txt')
         cat = CartoonStars(db, obs_metadata=obs, column_outputs=['lsst_u', 'lsst_g',
                                                                  'sigma_lsst_u', 'sigma_lsst_g'])
-        cat.write_catalog(catName)
-
-        dtype = np.dtype([(name, np.float) for name in cat._column_outputs])
-
-        controlData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            dtype = np.dtype([(name, np.float) for name in cat._column_outputs])
+            controlData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
 
         db_columns = db.query_columns(['id', 'raJ2000', 'decJ2000', 'sedFilename', 'magNorm', 'galacticAv'])
 

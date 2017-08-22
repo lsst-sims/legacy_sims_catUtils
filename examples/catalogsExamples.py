@@ -64,7 +64,7 @@ def examplePhoSimCatalogs():
                                'filetype':'phoSim_catalog_ZPOINT',
                                'obsMetadata':obs_metadata}
 
-    for objKey in objectDict.keys():
+    for objKey in objectDict:
         dbobj = objectDict[objKey]['dbobj']
         t = dbobj.getCatalog(objectDict[objKey]['filetype'],
                              obs_metadata=objectDict[objKey]['obsMetadata'],

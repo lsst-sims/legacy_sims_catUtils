@@ -29,11 +29,6 @@ class CameraCoordLSST_testCase(unittest.TestCase):
     """
 
     def test_different_cameras(self):
-        scratch_dir = os.path.join(getPackageDir('sims_catUtils'),'tests',
-                                   'scratchSpace')
-
-        db_text_file = os.path.join(scratch_dir, 'cameraCoord_db_text.txt')
-
         rng = np.random.RandomState(6512)
 
         pointing_ra = 15.0
@@ -48,31 +43,28 @@ class CameraCoordLSST_testCase(unittest.TestCase):
         mudec_list = radiansFromArcsec(0.005)*rng.random_sample(n_obj)
         vrad_list = 100.0*rng.random_sample(n_obj)
 
-        with open(db_text_file, 'w') as out_file:
-            for ix, (rdeg, ddeg, rrad, drad, px, mura, mudec, vrad) in \
-            enumerate(zip(ra_list, dec_list,
-                          np.radians(ra_list), np.radians(dec_list),
-                          px_list, mura_list, mudec_list, vrad_list)):
+        with lsst.utils.tests.getTempFilePath('.txt') as db_text_file:
+            with open(db_text_file, 'w') as out_file:
+                for ix, (rdeg, ddeg, rrad, drad, px, mura, mudec, vrad) in \
+                    enumerate(zip(ra_list, dec_list,
+                              np.radians(ra_list), np.radians(dec_list),
+                              px_list, mura_list, mudec_list, vrad_list)):
 
-                out_file.write('%d %e %e %e %e %e %e %e %e\n' % (ix, rdeg, ddeg,
-                                                                 rrad, drad,
-                                                                 px,
-                                                                 mura, mudec,
-                                                                 vrad))
+                    out_file.write('%d %e %e %e %e %e %e %e %e\n' % (ix, rdeg, ddeg,
+                                                                     rrad, drad,
+                                                                     px,
+                                                                     mura, mudec,
+                                                                     vrad))
 
-        dtype = np.dtype([('id', int), ('raDeg', float), ('decDeg', float),
-                          ('raJ2000', float), ('decJ2000', float),
-                          ('parallax', float),
-                          ('properMotionRa', float), ('properMotionDec', float),
-                          ('radialVelocity', float)])
+            dtype = np.dtype([('id', int), ('raDeg', float), ('decDeg', float),
+                             ('raJ2000', float), ('decJ2000', float),
+                             ('parallax', float),
+                             ('properMotionRa', float), ('properMotionDec', float),
+                             ('radialVelocity', float)])
 
-
-        db = fileDBObject(db_text_file, dtype=dtype, idColKey='id')
-        db.raColName = 'raDeg'
-        db.decColName = 'decDeg'
-
-        if os.path.exists(db_text_file):
-            os.unlink(db_text_file)
+            db = fileDBObject(db_text_file, dtype=dtype, idColKey='id')
+            db.raColName = 'raDeg'
+            db.decColName = 'decDeg'
 
 
         class CameraCoordsCatalog(AstrometryStars, CameraCoords,

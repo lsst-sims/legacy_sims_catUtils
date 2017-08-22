@@ -5,6 +5,8 @@ import unittest
 import numpy as np
 import sqlite3
 import json
+import tempfile
+import shutil
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
@@ -18,12 +20,15 @@ from lsst.sims.catUtils.utils import TestVariabilityMixin
 
 from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
 
+VARIABILITY_DB = 'VariabilityTestDatabase.db'
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 
 def setup_module(module):
     lsst.utils.tests.init()
 
 
-def makeRRlyTable(size=100, **kwargs):
+def makeRRlyTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the rrlyrae test
     """
@@ -35,7 +40,7 @@ def makeRRlyTable(size=100, **kwargs):
     lcFiles = ['rrly_lc/RRc/959802_per.txt', 'rrly_lc/RRc/1078860_per.txt', 'rrly_lc/RRab/98874_per.txt',
                'rrly_lc/RRab/3879827_per.txt']
 
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE RRly
@@ -59,7 +64,7 @@ def makeRRlyTable(size=100, **kwargs):
     conn.close()
 
 
-def makeCepheidTable(size=100, **kwargs):
+def makeCepheidTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the cepheid test
     """
@@ -72,7 +77,7 @@ def makeCepheidTable(size=100, **kwargs):
                'cepheid_lc/classical_shortPer_specfile', 'cepheid_lc/classical_shortPer_specfile',
                'cepheid_lc/popII_longPer_specfile', 'cepheid_lc/popII_shortPer_specfile']
 
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE cepheid
@@ -97,7 +102,7 @@ def makeCepheidTable(size=100, **kwargs):
     conn.close()
 
 
-def makeEbTable(size=100, **kwargs):
+def makeEbTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the Eb test
     """
@@ -105,7 +110,7 @@ def makeEbTable(size=100, **kwargs):
     # a haphazard sample of eclipsing binary light curves
     lcFiles = ['eb_lc/EB.2294.inp', 'eb_lc/EB.1540.inp', 'eb_lc/EB.2801.inp']
 
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE eb
@@ -130,7 +135,7 @@ def makeEbTable(size=100, **kwargs):
     conn.close()
 
 
-def makeMicrolensingTable(size=100, **kwargs):
+def makeMicrolensingTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the microlensing test
     """
@@ -140,7 +145,7 @@ def makeMicrolensingTable(size=100, **kwargs):
 
     # there are two microlensing methods; they should be equivalent
     method = ['applyMicrolensing', 'applyMicrolens']
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE microlensing
@@ -165,7 +170,7 @@ def makeMicrolensingTable(size=100, **kwargs):
     conn.close()
 
 
-def makeBHMicrolensingTable(size=100, **kwargs):
+def makeBHMicrolensingTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the BHmicrolensing test
     """
@@ -179,7 +184,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
                'microlens/bh_binary_source/lc_14_25_4000_8000_0_phi1.09_0.005_100',
                'microlens/bh_binary_source/lc_14_25_75_8000_0_tets2.09_0.005_316']
 
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE bhmicrolensing
@@ -203,7 +208,7 @@ def makeBHMicrolensingTable(size=100, **kwargs):
     conn.close()
 
 
-def makeAmcvnTable(size=100, **kwargs):
+def makeAmcvnTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the AMCVN test
     """
@@ -211,7 +216,7 @@ def makeAmcvnTable(size=100, **kwargs):
     # a haphazard sample of white dwarf SEDs
     sedFiles = ['bergeron_He_4750_70.dat_4950', 'bergeron_50000_85.dat_54000']
 
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE amcvn
@@ -249,14 +254,14 @@ def makeAmcvnTable(size=100, **kwargs):
     conn.close()
 
 
-def makeAgnTable(size=100, **kwargs):
+def makeAgnTable(size=100, database=VARIABILITY_DB, **kwargs):
     """
     Make a test database to serve information to the microlensing test
     """
 
     # a haphazard sample of galaxy SEDs
     sedFiles = ['Exp.31E06.0005Z.spec', 'Inst.79E06.1Z.spec', 'Const.50E07.0005Z.spec']
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE agn
@@ -301,7 +306,7 @@ def makeAgnTable(size=100, **kwargs):
     conn.close()
 
 
-def makeHybridTable(size=100, **kwargs):
+def makeHybridTable(size=100, database='VariabilityTestDatabase.db', **kwargs):
     """
     Make a test database that contains a mix of Cepheid variables
     and 'testVar' variables (variables that use the applySineVar
@@ -316,7 +321,7 @@ def makeHybridTable(size=100, **kwargs):
                'cepheid_lc/classical_shortPer_specfile', 'cepheid_lc/classical_shortPer_specfile',
                'cepheid_lc/popII_longPer_specfile', 'cepheid_lc/popII_shortPer_specfile']
 
-    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    conn = sqlite3.connect(database)
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE hybrid
@@ -355,7 +360,7 @@ def makeHybridTable(size=100, **kwargs):
 
 class variabilityDB(CatalogDBObject):
     driver = 'sqlite'
-    database = 'VariabilityTestDatabase.db'
+    database = VARIABILITY_DB
     idColKey = 'varsimobjid'
     columns = [('id', 'varsimobjid', int),
                ('sedFilename', 'sedfilename', str, 40),
@@ -460,19 +465,19 @@ class VariabilityTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if os.path.exists('VariabilityTestDatabase.db'):
-            os.unlink('VariabilityTestDatabase.db')
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='VariabilityTest-')
+        cls.variability_db = os.path.join(cls.scratch_dir, VARIABILITY_DB)
 
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
-        if os.path.exists('VariabilityTestDatabase.db'):
-            os.unlink('VariabilityTestDatabase.db')
+        if os.path.exists(cls.variability_db):
+            os.unlink(cls.variability_db)
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.0)
-        self.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
-                                        'tests', 'scratchSpace')
 
     def tearDown(self):
         del self.obs_metadata
@@ -494,7 +499,7 @@ class VariabilityTest(unittest.TestCase):
 
         control_dir = os.path.join(getPackageDir('sims_catUtils'),
                                    'tests', 'testData')
-        control_name = cat_name.split('/')[-1]
+        _, control_name = os.path.split(cat_name)
         control_name = os.path.join(control_dir, control_name)
         with open(control_name, 'r') as control_file:
             control_lines = control_file.readlines()
@@ -516,35 +521,37 @@ class VariabilityTest(unittest.TestCase):
         methods from mixins.
         """
         cat_name = os.path.join(self.scratch_dir, 'hybridTestCatalog.dat')
-        makeHybridTable()
-        myDB = CatalogDBObject.from_objid('hybridTest')
+        makeHybridTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('hybridTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
-        myCatalog.write_catalog(cat_name, chunk_size=1000)
 
+        myCatalog.write_catalog(cat_name, chunk_size=1000)
         self.verify_catalogs(cat_name)
+
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
         # make sure order of mixin inheritance does not matter
         myCatalog = OtherVariabilityCatalogWithTest(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
-
         self.verify_catalogs(cat_name)
+
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
         # make sure that, if a catalog does not contain a variability method,
         # an error is thrown; verify that it contains the correct error message
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
+
         with self.assertRaises(RuntimeError) as context:
             myCatalog.write_catalog(cat_name)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
 
         expectedMessage = "Your InstanceCatalog does not contain a variability method"
         expectedMessage += " corresponding to 'testVar'"
         self.assertEqual(context.exception.args[0], expectedMessage)
-
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
     def testApplyVariabilityWithManyMJD(self):
         """
@@ -553,8 +560,8 @@ class VariabilityTest(unittest.TestCase):
         the expected result out.
         """
 
-        makeHybridTable()
-        hybrid_db = hybridDB()
+        makeHybridTable(database=self.variability_db)
+        hybrid_db = hybridDB(database=self.variability_db)
         hybrid_cat = StellarVariabilityCatalogWithTest(hybrid_db, obs_metadata=self.obs_metadata,
                                                        column_outputs=['varParamStr'])
         rng = np.random.RandomState(88)
@@ -601,8 +608,8 @@ class VariabilityTest(unittest.TestCase):
 
     def testRRlyrae(self):
         cat_name = os.path.join(self.scratch_dir, 'rrlyTestCatalog.dat')
-        makeRRlyTable()
-        myDB = CatalogDBObject.from_objid('rrlyTest')
+        makeRRlyTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('rrlyTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
@@ -612,8 +619,8 @@ class VariabilityTest(unittest.TestCase):
 
     def testCepheids(self):
         cat_name = os.path.join(self.scratch_dir, 'cepheidTestCatalog.dat')
-        makeCepheidTable()
-        myDB = CatalogDBObject.from_objid('cepheidTest')
+        makeCepheidTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('cepheidTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
@@ -623,8 +630,8 @@ class VariabilityTest(unittest.TestCase):
 
     def testEb(self):
         cat_name = os.path.join(self.scratch_dir, 'ebTestCatalog.dat')
-        makeEbTable()
-        myDB = CatalogDBObject.from_objid('ebTest')
+        makeEbTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('ebTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
@@ -641,8 +648,8 @@ class VariabilityTest(unittest.TestCase):
         # so that is what we will test.
 
         cat_name = os.path.join(self.scratch_dir, 'microlensTestCatalog.dat')
-        makeMicrolensingTable()
-        myDB = CatalogDBObject.from_objid('microlensTest')
+        makeMicrolensingTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('microlensTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
@@ -659,8 +666,8 @@ class VariabilityTest(unittest.TestCase):
         # so that is what we will test.
 
         cat_name = os.path.join(self.scratch_dir, 'bhmicrolensTestCatalog.dat')
-        makeBHMicrolensingTable()
-        myDB = CatalogDBObject.from_objid('bhmicrolensTest')
+        makeBHMicrolensingTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('bhmicrolensTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
@@ -677,8 +684,8 @@ class VariabilityTest(unittest.TestCase):
         # so that is what we will test.
 
         cat_name = os.path.join(self.scratch_dir, 'amcvnTestCatalog.dat')
-        makeAmcvnTable()
-        myDB = CatalogDBObject.from_objid('amcvnTest')
+        makeAmcvnTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('amcvnTest', database=self.variability_db)
         myCatalog = StellarVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
@@ -689,8 +696,8 @@ class VariabilityTest(unittest.TestCase):
     def testAgn(self):
 
         cat_name = os.path.join(self.scratch_dir, 'agnTestCatalog.dat')
-        makeAgnTable()
-        myDB = CatalogDBObject.from_objid('agnTest')
+        makeAgnTable(database=self.variability_db)
+        myDB = CatalogDBObject.from_objid('agnTest', database=self.variability_db)
         myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 

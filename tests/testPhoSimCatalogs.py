@@ -4,6 +4,8 @@ from builtins import object
 import os
 import numpy as np
 import unittest
+import tempfile
+import shutil
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
@@ -31,6 +33,8 @@ try:
     get_config_dir()
 except:
     _skip_sn_tests = True
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def createTestSNDB():
@@ -67,11 +71,7 @@ def createTestSNDB():
     c_list = rng.random_sample(n_obj)*2.0
     z_list = rng.random_sample(n_obj)*1.1 + 0.1
 
-    txt_file_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                 'test_phosim_sn_source.txt')
-
-    if os.path.exists(txt_file_name):
-        os.unlink(txt_file_name)
+    txt_file_name = tempfile.mktemp(dir=ROOT, prefix='test_phosim_sn_source', suffix='.txt')
 
     dtype = np.dtype([('id', int), ('snra', float), ('sndec', float),
                       ('t0', float), ('x0', float), ('x1', float),
@@ -114,15 +114,22 @@ class PhoSimCatalogTest(unittest.TestCase):
     longMessage = True
 
     @classmethod
+    def setUpClass(cls):
+        cls.scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='PhoSimCatalogTest-')
+
+    @classmethod
     def tearDownClass(cls):
         sims_clean_up()
+        if os.path.exists(cls.scratch_dir):
+            shutil.rmtree(cls.scratch_dir)
 
     def setUp(self):
-        self.obs_metadata = makePhoSimTestDB(size=10)
-        self.bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
-        self.starDB = testStarsDBObj(driver='sqlite', database='PhoSimTestDatabase.db')
+        self.tempDB = os.path.join(self.scratch_dir, 'PhoSimTestDatabase.db')
+        self.obs_metadata = makePhoSimTestDB(size=10, filename=self.tempDB)
+        self.bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=self.tempDB)
+        self.diskDB = testGalaxyDiskDBObj(driver='sqlite', database=self.tempDB)
+        self.agnDB = testGalaxyAgnDBObj(driver='sqlite', database=self.tempDB)
+        self.starDB = testStarsDBObj(driver='sqlite', database=self.tempDB)
         filter_translation = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
         alt, az, pa = altAzPaFromRaDec(self.obs_metadata.pointingRA,
                                        self.obs_metadata.pointingDec,
@@ -146,8 +153,8 @@ class PhoSimCatalogTest(unittest.TestCase):
         del self.bulgeDB
         del self.diskDB
         del self.agnDB
-        if os.path.exists('PhoSimTestDatabase.db'):
-            os.unlink('PhoSimTestDatabase.db')
+        if os.path.exists(self.tempDB):
+            os.unlink(self.tempDB)
 
     def verify_catalog(self, file_name):
         """
@@ -185,47 +192,48 @@ class PhoSimCatalogTest(unittest.TestCase):
         Test that an exception gets raised if you try to make a PhoSim InstanceCatalog
         with an ObservationMetaData that lacks RA, Dec, mjd, bandpass, or rotSkyPos
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'bad_obs_test_phosim_cat.txt')
         obs = ObservationMetaData(pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0, bandpassName='u')
         with self.assertRaises(TypeError):
             cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
             cat.phoSimHeaderMap = {}
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         obs = ObservationMetaData(pointingRA=19.0, mjd=43000.0, rotSkyPos=19.0, bandpassName='u')
         with self.assertRaises(TypeError):
             cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
             cat.phoSimHeaderMap = {}
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, rotSkyPos=19.0, bandpassName='u')
         with self.assertRaises(RuntimeError):
             cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
             cat.phoSimHeaderMap = {}
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, bandpassName='u')
         with self.assertRaises(TypeError):
             cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
             cat.phoSimHeaderMap = {}
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0)
         with self.assertRaises(KeyError):
             cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
             cat.phoSimHeaderMap = {}
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         obs = ObservationMetaData(pointingRA=88.0, pointingDec=19.0, mjd=43000.0, rotSkyPos=19.0,
                                   bandpassName='u')
 
         cat = PhoSimCatalogPoint(self.starDB, obs_metadata=obs)
         cat.phoSimHeaderMap = {}
-        cat.write_catalog(catName)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
 
     def testCatalog(self):
         """
@@ -237,19 +245,14 @@ class PhoSimCatalogTest(unittest.TestCase):
         testAgn = PhoSimCatalogZPoint(self.agnDB, obs_metadata = self.obs_metadata)
         testStar = PhoSimCatalogPoint(self.starDB, obs_metadata = self.obs_metadata)
 
-        catName = os.path.join(getPackageDir('sims_catUtils'),
-                               'tests', 'scratchSpace', 'phoSimTestCatalog.txt')
-
         testBulge.phoSimHeaderMap = test_header_map
-        testBulge.write_catalog(catName)
-        testDisk.write_catalog(catName, write_header=False, write_mode='a')
-        testAgn.write_catalog(catName, write_header=False, write_mode='a')
-        testStar.write_catalog(catName, write_header=False, write_mode='a')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testBulge.write_catalog(catName)
+            testDisk.write_catalog(catName, write_header=False, write_mode='a')
+            testAgn.write_catalog(catName, write_header=False, write_mode='a')
+            testStar.write_catalog(catName, write_header=False, write_mode='a')
 
-        self.verify_catalog(catName)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
+            self.verify_catalog(catName)
 
     def testHeaderMap(self):
         """
@@ -260,18 +263,17 @@ class PhoSimCatalogTest(unittest.TestCase):
                                      'rotation_of_the_telescope': ('rottelpos', np.degrees),
                                      'other_rotation': ('rottelpos', lambda x: x*x)}
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'header_map_phosim_catalog.txt')
-        testBulge.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testBulge.write_catalog(catName)
 
-        with open(catName, 'r') as input_file:
-            input_header = {}
-            for line in input_file:
-                vv = line.split()
-                if vv[0] != 'object':
-                    input_header[vv[0]] = vv[1]
-                else:
-                    break
+            with open(catName, 'r') as input_file:
+                input_header = {}
+                for line in input_file:
+                    vv = line.split()
+                    if vv[0] != 'object':
+                        input_header[vv[0]] = vv[1]
+                    else:
+                        break
 
         self.assertIn('rightascension', input_header)
         self.assertIn('declination', input_header)
@@ -293,9 +295,6 @@ class PhoSimCatalogTest(unittest.TestCase):
                                delta=1.0e-6*self.obs_metadata.OpsimMetaData['rottelpos']**2)
         self.assertEqual(len(input_header), 10)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testBlankHeaderMap(self):
         """
         Test behavior of a blank header map
@@ -303,18 +302,17 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
         testBulge.phoSimHeaderMap = {}
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'blank_header_map_phosim_catalog.txt')
-        testBulge.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testBulge.write_catalog(catName)
 
-        with open(catName, 'r') as input_file:
-            input_header = {}
-            for line in input_file:
-                vv = line.split()
-                if vv[0] != 'object':
-                    input_header[vv[0]] = vv[1]
-                else:
-                    break
+            with open(catName, 'r') as input_file:
+                input_header = {}
+                for line in input_file:
+                    vv = line.split()
+                    if vv[0] != 'object':
+                        input_header[vv[0]] = vv[1]
+                    else:
+                        break
 
         # verify that only the default header parameters are included in the
         # PhoSimInstanceCatalog, even though obs_metadata has a non-None
@@ -329,20 +327,15 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertEqual(len(input_header), 7)
         self.assertGreater(len(self.obs_metadata.OpsimMetaData), 0)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testNoHeaderMap(self):
         """
         Test that the correct error is raised if no header map is specified
         """
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'no_header_map_phosim_catalog.txt')
-
         with self.assertRaises(RuntimeError) as context:
-            testBulge.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                testBulge.write_catalog(catName)
 
         self.assertIn("without specifying a phoSimHeaderMap",
                       context.exception.args[0])
@@ -355,15 +348,13 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=obs)
         with self.assertRaises(RuntimeError) as context:
-            testBulge.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                testBulge.write_catalog(catName)
 
         self.assertIn("without specifying a phoSimHeaderMap",
                       context.exception.args[0])
         self.assertIn("you may wish to consider adding default PhoSim parameters",
                       context.exception.args[0])
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def test_default_values_in_header_map(self):
         """
@@ -375,18 +366,17 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
         testBulge.phoSimHeaderMap = test_header_map
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'default_value_header_map_phosim_catalog.txt')
-        testBulge.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testBulge.write_catalog(catName)
 
-        with open(catName, 'r') as input_file:
-            input_header = {}
-            for line in input_file:
-                vv = line.split()
-                if vv[0] != 'object':
-                    input_header[vv[0]] = vv[1]
-                else:
-                    break
+            with open(catName, 'r') as input_file:
+                input_header = {}
+                for line in input_file:
+                    vv = line.split()
+                    if vv[0] != 'object':
+                        input_header[vv[0]] = vv[1]
+                    else:
+                        break
 
         self.assertIn('rightascension', input_header)
         self.assertIn('declination', input_header)
@@ -402,9 +392,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertEqual(int(input_header['nsnap']), 3)
         self.assertEqual(len(input_header), 9)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def test_non_existent_values_in_header_map(self):
         """
         Test that header params that are defined in the header map but not
@@ -417,18 +404,17 @@ class PhoSimCatalogTest(unittest.TestCase):
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
         testBulge.phoSimHeaderMap = test_header_map
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'nonexistent_value_header_map_phosim_catalog.txt')
-        testBulge.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testBulge.write_catalog(catName)
 
-        with open(catName, 'r') as input_file:
-            input_header = {}
-            for line in input_file:
-                vv = line.split()
-                if vv[0] != 'object':
-                    input_header[vv[0]] = vv[1]
-                else:
-                    break
+            with open(catName, 'r') as input_file:
+                input_header = {}
+                for line in input_file:
+                    vv = line.split()
+                    if vv[0] != 'object':
+                        input_header[vv[0]] = vv[1]
+                    else:
+                        break
 
         self.assertIn('rightascension', input_header)
         self.assertIn('declination', input_header)
@@ -451,16 +437,17 @@ class PhoSimCatalogTest(unittest.TestCase):
                                   boundType='circle', boundLength=1.0)
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=obs)
         testBulge.phoSimHeaderMap = test_header_map
-        testBulge.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testBulge.write_catalog(catName)
 
-        with open(catName, 'r') as input_file:
-            input_header = {}
-            for line in input_file:
-                vv = line.split()
-                if vv[0] != 'object':
-                    input_header[vv[0]] = vv[1]
-                else:
-                    break
+            with open(catName, 'r') as input_file:
+                input_header = {}
+                for line in input_file:
+                    vv = line.split()
+                    if vv[0] != 'object':
+                        input_header[vv[0]] = vv[1]
+                    else:
+                        break
 
         self.assertIn('rightascension', input_header)
         self.assertIn('declination', input_header)
@@ -473,9 +460,6 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertEqual(int(input_header['nsnap']), 3)
         self.assertEqual(len(input_header), 8)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testCompoundCatalog(self):
         """
         This test writes a PhoSim input catalog and compares it, one line at a time
@@ -485,8 +469,8 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
 
         # first, generate the catalog without a CompoundInstanceCatalog
-        single_catName = os.path.join(getPackageDir('sims_catUtils'),
-                                      'tests', 'scratchSpace', 'phoSimTestCatalog_single.txt')
+        single_catName = tempfile.mktemp(dir=ROOT, prefix='phoSimTestCatalog_single',
+                                         suffix='.txt')
 
         testBulge = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata = self.obs_metadata)
         testDisk = PhoSimCatalogSersic2D(self.diskDB, obs_metadata = self.obs_metadata)
@@ -510,6 +494,8 @@ class PhoSimCatalogTest(unittest.TestCase):
             driver = 'sqlite'
             database = 'PhoSimTestDatabase.db'
 
+        dummyDBbase.database = self.tempDB
+
         class dummyBulgeDB(dummyDBbase, testGalaxyBulgeDBObj):
             objid = 'dummy_bulge'
 
@@ -529,8 +515,8 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         self.assertEqual(len(compoundCatalog._dbObjectGroupList[0]), 3)
 
-        compound_catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                        'phoSimTestCatalog_compound.txt')
+        compound_catName = tempfile.mktemp(dir=ROOT, prefix='phoSimTestCatalog_compound',
+                                           suffix='.txt')
 
         compoundCatalog.phoSimHeaderMap = test_header_map
         compoundCatalog.write_catalog(compound_catName)
@@ -566,15 +552,12 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
         cat = PhoSimCatalogPoint(self.starDB, obs_metadata=self.obs_metadata)
         cat.phoSimHeaderMap = test_header_map
-        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'phosim_point_source_schema_cat.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
-        cat.write_catalog(cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
 
-        with open(cat_name, 'r') as input_file:
-            cat_lines = input_file.readlines()
+            with open(cat_name, 'r') as input_file:
+                cat_lines = input_file.readlines()
 
         n_obj = 0
         for line in cat_lines:
@@ -604,9 +587,6 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         self.assertGreater(n_obj, 0)
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
     def testSersicSchema(self):
         """
         Create a PhoSim InstanceCatalog of Sersic profiles (galaxy bulges).  Verify
@@ -617,15 +597,12 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
         cat = PhoSimCatalogSersic2D(self.bulgeDB, obs_metadata=self.obs_metadata)
         cat.phoSimHeaderMap = test_header_map
-        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'phosim_sersic_schema_cat.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
-        cat.write_catalog(cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
 
-        with open(cat_name, 'r') as input_file:
-            cat_lines = input_file.readlines()
+            with open(cat_name, 'r') as input_file:
+                cat_lines = input_file.readlines()
 
         n_obj = 0
         for line in cat_lines:
@@ -661,9 +638,6 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         self.assertGreater(n_obj, 0)
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
     def testZPointSourceSchema(self):
         """
         Create a PhoSim InstanceCatalog of extra-galactic point sources (agns).  Verify
@@ -674,15 +648,12 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
         cat = PhoSimCatalogZPoint(self.agnDB, obs_metadata=self.obs_metadata)
         cat.phoSimHeaderMap = test_header_map
-        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'phosim_agn_schema_cat.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
-        cat.write_catalog(cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
 
-        with open(cat_name, 'r') as input_file:
-            cat_lines = input_file.readlines()
+            with open(cat_name, 'r') as input_file:
+                cat_lines = input_file.readlines()
 
         n_obj = 0
         for line in cat_lines:
@@ -712,9 +683,6 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         self.assertGreater(n_obj, 0)
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
     @unittest.skipIf(_skip_sn_tests, "cannot properly load astropy config dir")
     def testSNSchema(self):
         """
@@ -728,15 +696,12 @@ class PhoSimCatalogTest(unittest.TestCase):
         cat = PhoSimCatalogSN(db, obs_metadata=obs)
         cat.writeSEDFile = False
         cat.phoSimHeaderMap = test_header_map
-        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'phosim_sne_schema_cat.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
-        cat.write_catalog(cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
 
-        with open(cat_name, 'r') as input_file:
-            cat_lines = input_file.readlines()
+            with open(cat_name, 'r') as input_file:
+                cat_lines = input_file.readlines()
 
         n_obj = 0
         for line in cat_lines:
@@ -766,9 +731,6 @@ class PhoSimCatalogTest(unittest.TestCase):
 
         self.assertGreater(n_obj, 0)
 
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
-
     def testSSMSchema(self):
         """
         Create a PhoSim InstanceCatalog of point sources (stars) formatted by the
@@ -779,15 +741,12 @@ class PhoSimCatalogTest(unittest.TestCase):
         """
         cat = PhoSimCatalogSSM(self.starDB, obs_metadata=self.obs_metadata)
         cat.phoSimHeaderMap = test_header_map
-        cat_name = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                'phosim_ssm_schema_cat.txt')
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
-        cat.write_catalog(cat_name)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
 
-        with open(cat_name, 'r') as input_file:
-            cat_lines = input_file.readlines()
+            with open(cat_name, 'r') as input_file:
+                cat_lines = input_file.readlines()
 
         n_obj = 0
         for line in cat_lines:
@@ -812,9 +771,6 @@ class PhoSimCatalogTest(unittest.TestCase):
                 self.assertEqual(params[14], 'none')  # Milky Way dust
 
         self.assertGreater(n_obj, 0)
-
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

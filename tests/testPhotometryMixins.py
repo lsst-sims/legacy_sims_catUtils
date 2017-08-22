@@ -3,6 +3,7 @@ from __future__ import print_function
 from builtins import zip
 from builtins import range
 import numpy as np
+import tempfile
 
 import os
 import unittest
@@ -23,6 +24,8 @@ from lsst.sims.catUtils.utils import (cartoonStars, cartoonGalaxies, testStars, 
                                       cartoonGalaxiesIG, galaxiesWithHoles)
 from lsst.sims.catUtils.mixins import PhotometryGalaxies
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -33,18 +36,16 @@ class variabilityUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create test databases
-        if os.path.exists('PhotometryTestDatabase.db'):
-            print("deleting database")
-            os.unlink('PhotometryTestDatabase.db')
+        cls.testDB = tempfile.mktemp(dir=ROOT, prefix='PhotometryTestDatabase-', suffix='.db')
 
-        makeStarTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
-        makeGalTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
+        makeStarTestDB(filename=cls.testDB, size=100000, seedVal=1)
+        makeGalTestDB(filename=cls.testDB, size=100000, seedVal=1)
 
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
-        if os.path.exists('PhotometryTestDatabase.db'):
-            os.unlink('PhotometryTestDatabase.db')
+        if os.path.exists(cls.testDB):
+            os.unlink(cls.testDB)
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7,
@@ -54,8 +55,8 @@ class variabilityUnitTest(unittest.TestCase):
                                                 m5=[23.9, 25.0, 24.7, 24.0, 23.3, 22.1],
                                                 bandpassName=['u', 'g', 'r', 'i', 'z', 'y'])
 
-        self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
-        self.star = myTestStars(database='PhotometryTestDatabase.db')
+        self.galaxy = myTestGals(database=self.testDB)
+        self.star = myTestStars(database=self.testDB)
 
     def tearDown(self):
         del self.galaxy
@@ -93,18 +94,16 @@ class photometryUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create test databases
-        if os.path.exists('PhotometryTestDatabase.db'):
-            print("deleting database")
-            os.unlink('PhotometryTestDatabase.db')
+        cls.testDB = tempfile.mktemp(dir=ROOT, prefix='PhotometryTestDatabase-', suffix='.db')
 
-        makeStarTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
-        makeGalTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
+        makeStarTestDB(filename=cls.testDB, size=100000, seedVal=1)
+        makeGalTestDB(filename=cls.testDB, size=100000, seedVal=1)
 
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
-        if os.path.exists('PhotometryTestDatabase.db'):
-            os.unlink('PhotometryTestDatabase.db')
+        if os.path.exists(cls.testDB):
+            os.unlink(cls.testDB)
 
     def setUp(self):
         defaults = LSSTdefaults()
@@ -116,8 +115,8 @@ class photometryUnitTest(unittest.TestCase):
                                                 pointingRA=200.0, pointingDec=-30.0,
                                                 boundLength=1.0)
 
-        self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
-        self.star = myTestStars(database='PhotometryTestDatabase.db')
+        self.galaxy = myTestGals(database=self.testDB)
+        self.star = myTestStars(database=self.testDB)
 
     def tearDown(self):
         del self.galaxy
@@ -125,52 +124,32 @@ class photometryUnitTest(unittest.TestCase):
         del self.obs_metadata
 
     def testStarCatalog(self):
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                               'scratchSpace', 'testPhotMixTestStarCat.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
         test_cat = testStars(self.star, obs_metadata=self.obs_metadata)
-        test_cat.write_catalog(catName)
-        cat = open(catName)
-        lines = cat.readlines()
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            test_cat.write_catalog(catName)
+            with open(catName) as cat:
+                lines = cat.readlines()
         self.assertGreater(len(lines), 1)  # to make sure we did not write an empty catalog
-        cat.close()
         results = self.star.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
         self.assertGreater(len(result), 0)  # to make sure some results are returned
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def testGalaxyCatalog(self):
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                               'scratchSpace', 'testPhotMixTestGalCat.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
         test_cat = testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
-        test_cat.write_catalog(catName)
-        cat = open(catName)
-        lines = cat.readlines()
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            test_cat.write_catalog(catName)
+            with open(catName) as cat:
+                lines = cat.readlines()
         self.assertGreater(len(lines), 1)  # to make sure we did not write an empty catalog
-        cat.close()
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
         self.assertGreater(len(result), 0)  # to make sure some results are returned
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def test_m5_exceptions(self):
         """
         Test that the correct exception is raised when you ask for a photometric
         uncertainty but do not define the required m5 value
         """
-
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'm5_exception_cat.txt')
-
         obs = ObservationMetaData(pointingRA=25.0, pointingDec=-14.0,
                                   boundType='circle', boundLength=0.1,
                                   bandpassName=['u', 'g', 'r', 'z', 'y'],
@@ -179,20 +158,19 @@ class photometryUnitTest(unittest.TestCase):
 
         with self.assertRaises(KeyError) as context:
             cat = testStars(self.star, obs_metadata=obs)
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         self.assertIn('Is it possible your ObservationMetaData does not have the proper\nm5 values defined?',
                       context.exception.args[0])
 
         with self.assertRaises(KeyError) as context:
             cat = testGalaxies(self.galaxy, obs_metadata=obs)
-            cat.write_catalog(catName)
+            with lsst.utils.tests.getTempFilePath('.txt') as catName:
+                cat.write_catalog(catName)
 
         self.assertIn('Is it possible your ObservationMetaData does not have the proper\nm5 values defined?',
                       context.exception.args[0])
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def testSumMagnitudes(self):
         """
@@ -260,20 +238,12 @@ class photometryUnitTest(unittest.TestCase):
         and then calculating the summed magnitude by hand and comparing
         """
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'testPhotMixGalaxiesWithHoles.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
         obs_metadata = ObservationMetaData(mjd=50000.0,
                                            boundType='circle',
                                            pointingRA=0.0, pointingDec=0.0,
                                            boundLength=10.0)
 
         test_cat = galaxiesWithHoles(self.galaxy, obs_metadata=obs_metadata)
-        test_cat.write_catalog(catName)
-
         dtype = np.dtype([('raJ2000', np.float),
                           ('decJ2000', np.float),
                           ('u', np.float), ('g', np.float), ('r', np.float),
@@ -285,7 +255,9 @@ class photometryUnitTest(unittest.TestCase):
                           ('ua', np.float), ('ga', np.float), ('ra', np.float),
                           ('ia', np.float), ('za', np.float), ('ya', np.float)])
 
-        data = np.genfromtxt(catName, dtype=dtype, delimiter=', ')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            test_cat.write_catalog(catName)
+            data = np.genfromtxt(catName, dtype=dtype, delimiter=', ')
         self.assertGreater(len(data), 16)
         phot = PhotometryGalaxies()
 
@@ -318,9 +290,6 @@ class photometryUnitTest(unittest.TestCase):
             self.assertGreater(ctNans, 0)
             self.assertLess(ctNans, len(line))
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testAlternateBandpassesStars(self):
         """
         This will test our ability to do photometry using non-LSST bandpasses.
@@ -333,12 +302,6 @@ class photometryUnitTest(unittest.TestCase):
         LSST bandpasses.
         """
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'testPhotMixTestStarsCartoon.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
         obs_metadata_pointed = ObservationMetaData(mjd=2013.23,
                                                    boundType='circle',
                                                    pointingRA=200.0, pointingDec=-30.0,
@@ -346,7 +309,11 @@ class photometryUnitTest(unittest.TestCase):
 
         test_cat = cartoonStars(self.star, obs_metadata=obs_metadata_pointed)
 
-        test_cat.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            test_cat.write_catalog(catName)
+            with open(catName, 'r') as input_file:
+                lines = input_file.readlines()
+                self.assertGreater(len(lines), 1)
 
         cartoonDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
         testBandPasses = {}
@@ -376,31 +343,15 @@ class photometryUnitTest(unittest.TestCase):
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j], test_cat.magnitudeMasterList[i][j], 4)
 
-        with open(catName, 'r') as input_file:
-            lines = input_file.readlines()
-            self.assertGreater(len(lines), 1)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def testAlternateBandpassesGalaxies(self):
         """
         the same as testAlternateBandpassesStars, but for galaxies
         """
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'testPhotMix_testAlternateBandpassesGalaxies.txt')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
         obs_metadata_pointed = ObservationMetaData(mjd=50000.0,
                                                    boundType='circle',
                                                    pointingRA=0.0, pointingDec=0.0,
                                                    boundLength=10.0)
-
-        test_cat = cartoonGalaxies(self.galaxy, obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog(catName)
 
         dtype = np.dtype([('galid', np.int),
                           ('ra', np.float),
@@ -435,7 +386,10 @@ class photometryUnitTest(unittest.TestCase):
                           ('agnNorm', np.float),
                           ('redshift', np.float)])
 
-        catData = np.genfromtxt(catName, dtype=dtype, delimiter=', ')
+        test_cat = cartoonGalaxies(self.galaxy, obs_metadata=obs_metadata_pointed)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            test_cat.write_catalog(catName)
+            catData = np.genfromtxt(catName, dtype=dtype, delimiter=', ')
 
         self.assertGreater(len(catData), 0)
 
@@ -526,8 +480,6 @@ class photometryUnitTest(unittest.TestCase):
                     self.assertAlmostEqual(testMag, line['%sTotal' % bpName], 10)
 
         self.assertGreater(ct, 0)
-        if os.path.exists(catName):
-            os.unlink(catName)
 
     def testStellarPhotometryIndices(self):
         """
@@ -542,21 +494,9 @@ class photometryUnitTest(unittest.TestCase):
                                   ('cartoon_r', float), ('cartoon_i', float),
                                   ('cartoon_z', float)])
 
-        baselineCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                       'testPhotMix_testStellarIndices_stellarBaselineCatalog.txt')
-
-        if os.path.exists(baselineCatName):
-            os.unlink(baselineCatName)
-
         testDtype = np.dtype([('id', int),
                               ('raObserved', float), ('decObserved', float),
                               ('cartoon_i', float)])
-
-        testCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                   'testPhotMix_testStellarIndices_stellarTestCatalog.txt')
-
-        if os.path.exists(testCatName):
-            os.unlink(testCatName)
 
         obs_metadata_pointed = ObservationMetaData(mjd=2013.23,
                                                    boundType='circle',
@@ -564,13 +504,15 @@ class photometryUnitTest(unittest.TestCase):
                                                    boundLength=1.0)
 
         baseline_cat = cartoonStars(self.star, obs_metadata=obs_metadata_pointed)
-        baseline_cat.write_catalog(baselineCatName)
-        baselineData = np.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as baselineCatName:
+            baseline_cat.write_catalog(baselineCatName)
+            baselineData = np.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
         self.assertGreater(len(baselineData), 0)
 
         test_cat = cartoonStarsOnlyI(self.star, obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog(testCatName)
-        testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as testCatName:
+            test_cat.write_catalog(testCatName)
+            testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         for b, t in zip(baselineData, testData):
@@ -581,26 +523,16 @@ class photometryUnitTest(unittest.TestCase):
                               ('cartoon_i', float), ('cartoon_z', float)])
 
         test_cat = cartoonStarsIZ(self.star, obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog(testCatName)
-        testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            test_cat.write_catalog(testCatName)
+            testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
             self.assertAlmostEqual(b['cartoon_z'], t['cartoon_z'], 10)
 
-        if os.path.exists(testCatName):
-            os.unlink(testCatName)
-        if os.path.exists(baselineCatName):
-            os.unlink(baselineCatName)
-
     def testGalaxyPhotometricIndices(self):
-        baselineCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                       'testPhotMix_testGalIndices_galaxyBaselineCatalog.txt')
-
-        if os.path.exists(baselineCatName):
-            os.unlink(baselineCatName)
-
         baselineDtype = np.dtype([('galid', int),
                                   ('raObserved', float),
                                   ('decObserved', float),
@@ -616,15 +548,10 @@ class photometryUnitTest(unittest.TestCase):
                                                    boundLength=10.0)
 
         baseline_cat = cartoonGalaxies(self.galaxy, obs_metadata=obs_metadata_pointed)
-        baseline_cat.write_catalog(baselineCatName)
-        baselineData = np.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as baselineCatName:
+            baseline_cat.write_catalog(baselineCatName)
+            baselineData = np.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
         self.assertGreater(len(baselineData), 0)
-
-        testCatName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                                   'testPhotMix_testGalIndices_galaxyTestCatalog.txt')
-
-        if os.path.exists(testCatName):
-            os.unlink(testCatName)
 
         testDtype = np.dtype([('galid', int),
                               ('raObserved', float),
@@ -633,19 +560,14 @@ class photometryUnitTest(unittest.TestCase):
                               ('ctotal_g', float)])
 
         test_cat = cartoonGalaxiesIG(self.galaxy, obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog(testCatName)
-        testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as testCatName:
+            test_cat.write_catalog(testCatName)
+            testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
 
         for b, t in zip(baselineData, testData):
             self.assertAlmostEqual(b['ctotal_i'], t['ctotal_i'], 10)
             self.assertAlmostEqual(b['ctotal_g'], t['ctotal_g'], 10)
-
-        if os.path.exists(baselineCatName):
-            os.unlink(baselineCatName)
-
-        if os.path.exists(testCatName):
-            os.unlink(testCatName)
 
     def testPhotometricIndicesRaw(self):
         """

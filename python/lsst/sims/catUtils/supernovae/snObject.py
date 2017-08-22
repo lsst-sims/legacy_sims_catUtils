@@ -264,7 +264,7 @@ class SNObject(sncosmo.Model):
 
         """
         sncosmoParams = dict()
-        for param in SNstate.keys():
+        for param in SNstate:
             if param in SNCosmoModel.param_names:
                 sncosmoParams[param] = SNstate[param]
         sncosmoParams['mwebv'] = SNstate['MWE(B-V)']
@@ -289,7 +289,7 @@ class SNObject(sncosmo.Model):
 
         """
         sncosmoParams = dict()
-        for param in SNstate.keys():
+        for param in SNstate:
             if param in SNCosmoModel.param_names:
                 sncosmoParams[param] = SNstate[param]
         return sncosmoParams

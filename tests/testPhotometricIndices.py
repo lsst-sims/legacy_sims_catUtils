@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import unittest
+import tempfile
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
@@ -9,6 +10,8 @@ from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import (PhotometryStars, PhotometrySSM,
                                        PhotometryGalaxies)
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -76,27 +79,21 @@ class IndexTestCaseStars(unittest.TestCase):
                               idColKey='id', dtype=dbdtype)
 
         cat = baselineStarCatalog(cls.db, obs_metadata=cls.obs)
-        cls.catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                   'scratchSpace', 'indicesStarsControlCat.txt')
-
+        cls.catName = tempfile.mktemp(dir=ROOT, prefix='indicesStarControlCat-', suffix='.txt')
         cat.write_catalog(cls.catName)
         cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(cls.catName):
-            os.unlink(cls.catName)
+        os.unlink(cls.catName)
 
     def test_u_star_catalog(self):
         """
         Test that a catalog which only cares about u does not calculate any other magnitudes.
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUCat.txt')
         dtype = np.dtype([(name, np.float) for name in uStarCatalog.column_outputs])
 
         cat = uStarCatalog(self.db, obs_metadata=self.obs)
-        cat.write_catalog(catName)
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         np.testing.assert_array_almost_equal(self.controlData['raJ2000'], testData['raJ2000'], 10)
         np.testing.assert_array_almost_equal(self.controlData['decJ2000'], testData['decJ2000'], 10)
         np.testing.assert_array_almost_equal(self.controlData['lsst_u'], testData['lsst_u'], 10)
@@ -113,19 +110,16 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertNotIn('lsst_y', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def test_gz_star_catalog(self):
         """
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzStarCatalog.column_outputs])
 
         cat = gzStarCatalog(self.db, obs_metadata=self.obs)
-        cat.write_catalog(catName)
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         np.testing.assert_array_almost_equal(self.controlData['raJ2000'], testData['raJ2000'], 10)
         np.testing.assert_array_almost_equal(self.controlData['decJ2000'], testData['decJ2000'], 10)
         np.testing.assert_array_almost_equal(self.controlData['lsst_g'], testData['lsst_g'], 10)
@@ -142,21 +136,17 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertNotIn('lsst_y', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def test_gz_uncertainty_star_catalog(self):
         """
         Test that a catalog which only cares about g and z uncertainties
         does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'),
-                               'tests', 'scratchSpace', 'indicesGZUncertaintyCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzUncertaintyStarCatalog.column_outputs])
 
         cat = gzUncertaintyStarCatalog(self.db, obs_metadata=self.obs)
-        cat.write_catalog(catName)
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         np.testing.assert_array_almost_equal(self.controlData['raJ2000'], testData['raJ2000'], 10)
         np.testing.assert_array_almost_equal(self.controlData['decJ2000'], testData['decJ2000'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
@@ -172,9 +162,6 @@ class IndexTestCaseStars(unittest.TestCase):
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
         self.assertIn('lsst_g', cat._actually_calculated_columns)
         self.assertIn('lsst_z', cat._actually_calculated_columns)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
 
 
 class baselineSSMCatalog(InstanceCatalog, PhotometrySSM):
@@ -234,27 +221,20 @@ class IndexTestCaseSSM(unittest.TestCase):
                               idColKey='id', dtype=dbdtype)
 
         cat = baselineSSMCatalog(cls.db, obs_metadata=cls.obs)
-        cls.catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                                   'scratchSpace', 'indicesSSMControlCat.txt')
-
-        cat.write_catalog(cls.catName)
-        cls.controlData = np.genfromtxt(cls.catName, dtype=baselineDtype, delimiter=',')
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(cls.catName):
-            os.unlink(cls.catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            cls.controlData = np.genfromtxt(catName, dtype=baselineDtype, delimiter=',')
 
     def test_u_ssm_catalog(self):
         """
         Test that a catalog which only cares about u does not calculate any other magnitudes.
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesUssmCat.txt')
         dtype = np.dtype([(name, np.float) for name in uSSMCatalog.column_outputs])
 
         cat = uSSMCatalog(self.db, obs_metadata=self.obs)
-        cat.write_catalog(catName)
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         np.testing.assert_array_almost_equal(self.controlData['lsst_u'], testData['lsst_u'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_u'], testData['sigma_lsst_u'], 10)
 
@@ -269,19 +249,16 @@ class IndexTestCaseSSM(unittest.TestCase):
         self.assertNotIn('lsst_y', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def test_gz_ssm_catalog(self):
         """
         Test that a catalog which only cares about g and z does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace', 'indicesGZssmCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzSSMCatalog.column_outputs])
 
         cat = gzSSMCatalog(self.db, obs_metadata=self.obs)
-        cat.write_catalog(catName)
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         np.testing.assert_array_almost_equal(self.controlData['lsst_g'], testData['lsst_g'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
         np.testing.assert_array_almost_equal(self.controlData['lsst_z'], testData['lsst_z'], 10)
@@ -296,21 +273,17 @@ class IndexTestCaseSSM(unittest.TestCase):
         self.assertNotIn('lsst_y', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def test_gz_uncertainty_ssm_catalog(self):
         """
         Test that a catalog which only cares about g and z uncertainties
         does not calculate any other magnitudes
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'),
-                               'tests', 'scratchSpace', 'indicesGZssmUncertaintyCat.txt')
         dtype = np.dtype([(name, np.float) for name in gzUncertaintySSMCatalog.column_outputs])
 
         cat = gzUncertaintySSMCatalog(self.db, obs_metadata=self.obs)
-        cat.write_catalog(catName)
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_g'], testData['sigma_lsst_g'], 10)
         np.testing.assert_array_almost_equal(self.controlData['sigma_lsst_z'], testData['sigma_lsst_z'], 10)
 
@@ -324,10 +297,6 @@ class IndexTestCaseSSM(unittest.TestCase):
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
         self.assertIn('lsst_g', cat._actually_calculated_columns)
         self.assertIn('lsst_z', cat._actually_calculated_columns)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
 
 class baselineGalaxyCatalog(InstanceCatalog, PhotometryGalaxies):
     column_outputs = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -399,31 +368,24 @@ class IndexTestCaseGalaxies(unittest.TestCase):
 
         cls.db.objectTypeId = 44
 
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                               'scratchSpace', 'galaxyPhotIndicesBaseline.txt')
-
         cat = baselineGalaxyCatalog(cls.db, obs_metadata=cls.obs)
-        cat.write_catalog(catName)
-
         dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
-
+        catName = tempfile.mktemp(dir=ROOT, prefix='', suffix='.txt')
+        cat.write_catalog(catName)
         cls.controlData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
-
-        if os.path.exists(catName):
-            os.unlink(catName)
+        os.remove(catName)
 
     def test_u_catalog(self):
         """
         Test that a catalog which only requests u band magnitudes does not
         calculate anything it shouldn't
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                               'scratchSpace', 'galPhotIndicesUTestCat.txt')
         cat = uGalaxyCatalog(self.db, obs_metadata=self.obs)
         dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
-        cat.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
 
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
 
         for name in ('uBulge', 'uDisk', 'uAgn', 'lsst_u',
                      'sigma_uBulge', 'sigma_uDisk', 'sigma_uAgn', 'sigma_lsst_u'):
@@ -472,21 +434,17 @@ class IndexTestCaseGalaxies(unittest.TestCase):
         self.assertNotIn('sigma_lsst_z', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
 
-        if os.path.exists(catName):
-            os.unlink(catName)
-
     def test_gz_catalog(self):
         """
         Test that a catalog which only requests g and z band magnitudes does not
         calculate anything it shouldn't
         """
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests',
-                               'scratchSpace', 'galPhotIndicesGZTestCat.txt')
         cat = gzGalaxyCatalog(self.db, obs_metadata=self.obs)
         dtype = np.dtype([(name, np.float) for name in cat.column_outputs])
-        cat.write_catalog(catName)
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            cat.write_catalog(catName)
 
-        testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
+            testData = np.genfromtxt(catName, dtype=dtype, delimiter=',')
 
         for name in ('gBulge', 'gDisk', 'gAgn', 'lsst_g',
                      'zBulge', 'zDisk', 'zAgn', 'lsst_z',
@@ -530,10 +488,6 @@ class IndexTestCaseGalaxies(unittest.TestCase):
         self.assertNotIn('sigma_lsst_r', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_i', cat._actually_calculated_columns)
         self.assertNotIn('sigma_lsst_y', cat._actually_calculated_columns)
-
-        if os.path.exists(catName):
-            os.unlink(catName)
-
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
