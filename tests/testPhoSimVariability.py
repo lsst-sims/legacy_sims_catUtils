@@ -1,6 +1,7 @@
 from builtins import zip
 import os
 import unittest
+import tempfile
 import lsst.utils.tests
 import numpy as np
 from lsst.sims.utils.CodeUtilities import sims_clean_up
@@ -15,6 +16,8 @@ from lsst.sims.catUtils.mixins import VariabilityAGN
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -61,10 +64,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dbName = 'PhoSimVariabilityDatabase.db'
-        if os.path.exists(cls.dbName):
-            os.unlink(cls.dbName)
-
+        cls.dbName = tempfile.mktemp(dir=ROOT, prefix='PhoSimVariabilityDatabase-', suffix='.db')
         cls.obs_metadata = makePhoSimTestDB(size=10, filename=cls.dbName)
 
         cls.bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=cls.dbName)
