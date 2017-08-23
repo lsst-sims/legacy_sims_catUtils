@@ -50,8 +50,6 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.scratch_dir = os.path.join(getPackageDir('sims_catUtils'),
-                                       'tests', 'scratchSpace')
         cls.db_name = tempfile.mktemp(dir=ROOT, prefix='PhoSimAstDB', suffix='.db')
         cls.obs = makePhoSimTestDB(filename=cls.db_name,
                                    size=1000)
