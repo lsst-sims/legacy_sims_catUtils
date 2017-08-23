@@ -589,41 +589,6 @@ class photometryUnitTest(unittest.TestCase):
         self.assertEqual(len(mags), 6)
 
 
-class UncertaintyMixinTest(unittest.TestCase):
-    def setUp(self):
-        starName = os.path.join(getPackageDir('sims_sed_library'),
-                                defaultSpecMap['km20_5750.fits_g40_5790'])
-        self.starSED = Sed()
-        self.starSED.readSED_flambda(starName)
-        imsimband = Bandpass()
-        imsimband.imsimBandpass()
-        fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
-        self.starSED.multiplyFluxNorm(fNorm)
-
-        self.totalBandpasses = []
-        self.hardwareBandpasses = []
-
-        componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
-                         'lens1.dat', 'lens2.dat', 'lens3.dat']
-        hardwareComponents = []
-        for c in componentList:
-            hardwareComponents.append(os.path.join(getPackageDir('throughputs'), 'baseline', c))
-
-        self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
-        for b in self.bandpasses:
-            filterName = os.path.join(getPackageDir('throughputs'),
-                                      'baseline', 'filter_%s.dat' % b)
-            components = hardwareComponents + [filterName]
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughputList(components)
-            self.hardwareBandpasses.append(bandpassDummy)
-            components = components + [os.path.join(getPackageDir('throughputs'),
-                                       'baseline', 'atmos.dat')]
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughputList(components)
-            self.totalBandpasses.append(bandpassDummy)
-
-
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
