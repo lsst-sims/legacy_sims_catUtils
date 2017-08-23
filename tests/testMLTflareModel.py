@@ -882,8 +882,9 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
             flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
 
-            self.assertGreater(len(quiescent_data), 0)
+            self.assertGreater(len(quiescent_data), 2)
             self.assertEqual(len(quiescent_data), len(flaring_data))
+            self.assertIn(3, flaring_data['id'])
 
             for ix in range(len(flaring_data)):
                 obj_id = flaring_data['id'][ix]
