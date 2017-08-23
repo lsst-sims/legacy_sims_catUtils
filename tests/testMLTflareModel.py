@@ -9,6 +9,7 @@ import shutil
 from astropy.analytic_functions import blackbody_lambda
 import lsst.utils.tests
 from lsst.utils import getPackageDir
+from lsst.utils.tests import getTempFilePath
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catUtils.mixins import VariabilityStars
 from lsst.sims.catUtils.mixins import MLTflaringMixin
@@ -134,20 +135,15 @@ class MLT_flare_test_case(unittest.TestCase):
         to interpolate from an MLT light curve cache that does not
         exist
         """
-        cat_name = os.path.join(getPackageDir('sims_catUtils'),
-                                'tests', 'scratchSpace',
-                                'flaring_cat_failure.txt')
-        db = MLT_test_DB(database=self.db_name, driver='sqlite')
-        obs = ObservationMetaData(mjd=67432.1)
-        flare_cat = FlaringCatalog(db, obs_metadata=obs)
-        flare_cat._mlt_lc_file = 'a_nonexistent_cache'
-        with self.assertRaises(RuntimeError) as context:
-            flare_cat.write_catalog(cat_name)
-        self.assertIn('get_mdwarf_flares.sh',
-                      context.exception.args[0])
-
-        if os.path.exists(cat_name):
-            os.unlink(cat_name)
+        with getTempFilePath('.txt') as cat_name:
+            db = MLT_test_DB(database=self.db_name, driver='sqlite')
+            obs = ObservationMetaData(mjd=67432.1)
+            flare_cat = FlaringCatalog(db, obs_metadata=obs)
+            flare_cat._mlt_lc_file = 'a_nonexistent_cache'
+            with self.assertRaises(RuntimeError) as context:
+                flare_cat.write_catalog(cat_name)
+            self.assertIn('get_mdwarf_flares.sh',
+                          context.exception.args[0])
 
     def test_flare_magnitudes(self):
         """
@@ -707,6 +703,9 @@ from lsst.sims.catalogs.decorators import register_method
 
 
 class DummyVariabilityMixin(Variability):
+
+    scratch_dir = None
+
     @register_method('dummy')
     def applyDummy(self, valid_dexes, params, expmjd):
         if len(params) == 0:
@@ -716,8 +715,7 @@ class DummyVariabilityMixin(Variability):
                           ('dy', float)])
         dmag = np.zeros((6, self.num_variable_obj(params)))
         for ix in valid_dexes[0]:
-            lc_name = os.path.join(getPackageDir('sims_catUtils'),
-                                   'tests', 'scratchSpace', params['lc'][ix])
+            lc_name = os.path.join(self.scratch_dir, params['lc'][ix])
             lc_data = np.genfromtxt(lc_name, dtype=dtype)
             dmag[0][ix] = np.interp(expmjd, lc_data['t'], lc_data['du'])
             dmag[1][ix] = np.interp(expmjd, lc_data['t'], lc_data['dg'])
@@ -803,9 +801,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
         conn.commit()
         conn.close()
 
-        cls.dummy_lc_name = os.path.join(getPackageDir('sims_catUtils'),
-                                         'tests', 'scratchSpace',
-                                         'dummy_lc.txt')
+        cls.dummy_lc_name = os.path.join(cls.scratch_dir, 'dummy_lc.txt')
 
         with open(cls.dummy_lc_name, 'w') as output_file:
             for tt in np.arange(59580.0, 82000.0, 1000.0):
@@ -879,11 +875,15 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
             quiet_cat.write_catalog(quiet_cat_name)
 
             flare_cat = FlaringCatalogDummy(db, obs_metadata=obs)
+            flare_cat.scratch_dir = self.scratch_dir
             flare_cat._mlt_lc_file = self.mlt_lc_name
             flare_cat.write_catalog(flare_cat_name)
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
             flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
+
+            self.assertGreater(len(quiescent_data), 0)
+            self.assertEqual(len(quiescent_data), len(flaring_data))
 
             for ix in range(len(flaring_data)):
                 obj_id = flaring_data['id'][ix]
