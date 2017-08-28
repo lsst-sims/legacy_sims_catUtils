@@ -65,17 +65,22 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        if len(xPupil) == 0:
+            return np.array([])
+        if self.camera is None:
+            raise RuntimeError("No camera defined; cannot find chipName")
         return chipNameFromPupilCoords(xPupil, yPupil, camera=self.camera,
                                        allow_multiple_chips=self.allow_multiple_chips)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
         """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
-        chipNameList = self.column_by_name('chipName')
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-
+        chipNameList = self.column_by_name('chipName')
+        if len(xPupil) == 0:
+            return np.array([[],[]])
+        if self.camera is None:
+            raise RuntimeError("No camera is defined; cannot calculate pixel coordinates")
         return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList,
                                           camera=self.camera)
 
@@ -83,7 +88,10 @@ class CameraCoords(AstrometryBase):
     def get_focalPlaneCoordinates(self):
         """Get the focal plane coordinates for all objects in the catalog."""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-
+        if len(xPupil) == 0:
+            return np.array([[],[]])
+        if self.camera is None:
+            raise RuntimeError("No camera defined. Cannot calculate focal plane coordinates")
         return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=self.camera)
 
 
