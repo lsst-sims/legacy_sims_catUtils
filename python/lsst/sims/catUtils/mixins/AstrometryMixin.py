@@ -101,6 +101,9 @@ class CameraCoordsLSST(CameraCoords):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        if len(xPupil) == 0:
+            return np.array([])
+
         return chipNameFromPupilCoordsLSST(xPupil, yPupil,
                                            allow_multiple_chips=self.allow_multiple_chips)
 
