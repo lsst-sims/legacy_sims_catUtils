@@ -221,9 +221,10 @@ class IndexTestCaseSSM(unittest.TestCase):
                               idColKey='id', dtype=dbdtype)
 
         cat = baselineSSMCatalog(cls.db, obs_metadata=cls.obs)
-        with lsst.utils.tests.getTempFilePath('.txt') as catName:
-            cat.write_catalog(catName)
-            cls.controlData = np.genfromtxt(catName, dtype=baselineDtype, delimiter=',')
+        catName = tempfile.mktemp(prefix='IndexTestCase_setUpClass')
+        cat.write_catalog(catName)
+        cls.controlData = np.genfromtxt(catName, dtype=baselineDtype, delimiter=',')
+        os.unlink(catName)
 
     def test_u_ssm_catalog(self):
         """
