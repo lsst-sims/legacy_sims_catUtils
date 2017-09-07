@@ -720,7 +720,7 @@ class MLTflaringMixin(Variability):
 
         # get the area of the sphere through which the star's energy
         # is radiating to get to us (in cm^2)
-        _cm_per_parsec = 3.08576e16
+        _cm_per_parsec = 3.08576e18
         sphere_area = 4.0*numpy.pi*numpy.power(dd*_cm_per_parsec, 2)
 
         flux_factor = self.photParams.effarea/sphere_area

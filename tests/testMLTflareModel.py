@@ -66,12 +66,12 @@ class MLT_flare_test_case(unittest.TestCase):
                                        'test_mlt_lc_file.npz')
 
         lc_files = {}
-        amp = 1.0e32
+        amp = 1.0e36
         lc_files['lc_1_time'] = np.arange(0.0, 3652.51, 0.1)
         lc_files['lc_1_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_1_time']/100.0), 2))
         lc_files['lc_1_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_1_time']/100.0), 2))
 
-        amp = 2.0e31
+        amp = 2.0e35
         lc_files['lc_2_time'] = np.arange(0.0, 365.251, 0.01)
         lc_files['lc_2_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_2_time']/50.0), 2))
         lc_files['lc_2_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_2_time']/50.0), 2))
@@ -169,7 +169,7 @@ class MLT_flare_test_case(unittest.TestCase):
         av_list = [2.432, 1.876, 2.654, 2.364]
         parallax_list = np.array([0.25, 0.15, 0.3, 0.22])
         distance_list = 1.0/(206265.0*radiansFromArcsec(0.001*parallax_list))
-        distance_list *= 3.0857e16  # convert to cm
+        distance_list *= 3.0857e18  # convert to cm
 
         dtype = np.dtype([('id', int), ('u', float), ('g', float)])
 
@@ -205,7 +205,7 @@ class MLT_flare_test_case(unittest.TestCase):
                 # the models below are as specified in the
                 # setUpClass() method
                 if obj_id == 0 or obj_id == 1:
-                    amp = 1.0e32
+                    amp = 1.0e36
                     dt = 3652.5
                     t_min = flare_cat._survey_start - t0_list[obj_id]
 
@@ -216,7 +216,7 @@ class MLT_flare_test_case(unittest.TestCase):
                     u_flux = amp*(1.0+np.power(np.sin(tt/100.0), 2))
                     g_flux = amp*(1.0+np.power(np.cos(tt/100.0), 2))
                 else:
-                    amp = 2.0e31
+                    amp = 2.0e35
                     dt = 365.25
                     t_min = flare_cat._survey_start - t0_list[obj_id]
 
@@ -508,12 +508,12 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
                                        'test_mlt_mixed_with_none_lc_file.npz')
 
         lc_files = {}
-        amp = 1.0e32
+        amp = 1.0e36
         lc_files['lc_1_time'] = np.arange(0.0, 3652.51, 0.1)
         lc_files['lc_1_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_1_time']/100.0), 2))
         lc_files['lc_1_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_1_time']/100.0), 2))
 
-        amp = 2.0e31
+        amp = 2.0e35
         lc_files['lc_2_time'] = np.arange(0.0, 365.251, 0.01)
         lc_files['lc_2_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_2_time']/50.0), 2))
         lc_files['lc_2_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_2_time']/50.0), 2))
@@ -593,7 +593,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
         av_list = [2.432, 1.876, 2.654, 2.364]
         parallax_list = np.array([0.25, 0.15, 0.3, 0.22])
         distance_list = 1.0/(206265.0*radiansFromArcsec(0.001*parallax_list))
-        distance_list *= 3.0857e16  # convert to cm
+        distance_list *= 3.0857e18  # convert to cm
 
         dtype = np.dtype([('id', int), ('u', float), ('g', float)])
 
@@ -629,7 +629,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
                 # the models below are as specified in the
                 # setUpClass() method
                 if obj_id == 0 or obj_id == 1:
-                    amp = 1.0e32
+                    amp = 1.0e36
                     dt = 3652.5
                     t_min = flare_cat._survey_start - t0_list[obj_id]
 
@@ -640,7 +640,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
                     u_flux = amp*(1.0+np.power(np.sin(tt/100.0), 2))
                     g_flux = amp*(1.0+np.power(np.cos(tt/100.0), 2))
                 elif obj_id==2:
-                    amp = 2.0e31
+                    amp = 2.0e35
                     dt = 365.25
                     t_min = flare_cat._survey_start - t0_list[obj_id]
 
@@ -751,12 +751,12 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
                                        'test_mlt_mixed_with_dummy_lc_file.npz')
 
         lc_files = {}
-        amp = 1.0e32
+        amp = 1.0e36
         lc_files['lc_1_time'] = np.arange(0.0, 3652.51, 0.1)
         lc_files['lc_1_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_1_time']/100.0), 2))
         lc_files['lc_1_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_1_time']/100.0), 2))
 
-        amp = 2.0e31
+        amp = 2.0e35
         lc_files['lc_2_time'] = np.arange(0.0, 365.251, 0.01)
         lc_files['lc_2_u'] = amp*(1.0+np.power(np.sin(lc_files['lc_2_time']/50.0), 2))
         lc_files['lc_2_g'] = amp*(1.0+np.power(np.cos(lc_files['lc_2_time']/50.0), 2))
@@ -852,7 +852,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
         av_list = [2.432, 1.876, 2.654, 2.364]
         parallax_list = np.array([0.25, 0.15, 0.3, 0.22])
         distance_list = 1.0/(206265.0*radiansFromArcsec(0.001*parallax_list))
-        distance_list *= 3.0857e16  # convert to cm
+        distance_list *= 3.0857e18  # convert to cm
 
         dtype = np.dtype([('id', int), ('u', float), ('g', float)])
 
@@ -905,7 +905,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
                     # the models below are as specified in the
                     # setUpClass() method
                     if obj_id == 0 or obj_id == 1:
-                        amp = 1.0e32
+                        amp = 1.0e36
                         dt = 3652.5
                         t_min = flare_cat._survey_start - t0_list[obj_id]
 
@@ -916,7 +916,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
                         u_flux = amp*(1.0+np.power(np.sin(tt/100.0), 2))
                         g_flux = amp*(1.0+np.power(np.cos(tt/100.0), 2))
                     elif obj_id==2:
-                        amp = 2.0e31
+                        amp = 2.0e35
                         dt = 365.25
                         t_min = flare_cat._survey_start - t0_list[obj_id]
 
