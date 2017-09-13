@@ -921,15 +921,10 @@ class KeplerLightCurveMixin(Variability):
         try:
             model = _KEPLER_LC_MODELS[kep_id]
         except KeyError:
-            # try loading the default Kepler light curve models
-            try:
-                self.load_kepler_light_curves()
-                model = _KEPLER_LC_MODELS[kep_id]
-            except KeyError:
-                raise KeyError('A KeyError was raised on the light curve id %d\n' % kep_id
-                               + 'You may not have loaded your Kepler light curve models, yet\n'
-                               + 'See the load_kepler_light_curves() method in the '
-                               + 'KeplerLightCurveMixin class')
+            raise KeyError('A KeyError was raised on the light curve id %d\n' % kep_id
+                           + 'You may not have loaded your Kepler light curve models, yet\n'
+                           + 'See the load_kepler_light_curves() method in the '
+                           + 'KeplerLightCurveMixin class')
 
         tau = model['tau']
         omega = model['omega']
