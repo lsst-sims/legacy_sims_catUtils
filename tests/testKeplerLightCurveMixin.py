@@ -164,7 +164,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
 
         expmjd = 59580.0
         d_mag_out = kp.applyKeplerLightCurve([], params, expmjd)
-        self.assertEqual(d_mag_out.shape, (6,4))
+        self.assertEqual(d_mag_out.shape, (6, 4))
 
         for i_obj in range(4):
             if i_obj == 2:
@@ -253,7 +253,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
 
         expmjd = rng.random_sample(10)*10000.0 + 59580.0
         d_mag_out = kp.applyKeplerLightCurve([], params, expmjd)
-        self.assertEqual(d_mag_out.shape, (6,4, 10))
+        self.assertEqual(d_mag_out.shape, (6, 4, 10))
 
         for i_obj in range(4):
             if i_obj == 2:
