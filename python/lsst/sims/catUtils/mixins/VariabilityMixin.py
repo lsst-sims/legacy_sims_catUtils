@@ -95,6 +95,8 @@ _MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
 
 _MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
 
+_KEPLER_LC_MODELS = {} # a dict for storing the Kepler light curve models
+_KEPLER_MODELS_LOADED = False
 
 def reset_agn_lc_cache():
     """
@@ -832,10 +834,11 @@ class KeplerLightCurveMixin(Variability):
     """
 
     def _load_kepler_light_curves(self):
+        global _KEPLER_LC_MODELS
+        global _KEPLER_MODELS_LOADED
         sims_data_dir = getPackageDir('sims_data')
         lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
         lc_file = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
-        self._kepler_lc_models = {}
         with gzip.open(lc_file, 'r') as input_file:
             for line in input_file:
                 if line[0] == '#':
@@ -843,6 +846,8 @@ class KeplerLightCurveMixin(Variability):
                 params = line.strip().split()
                 name = params[0]
                 tag = int(name.split('_')[0][4:])
+                if tag in _KEPLER_LC_MODELS:
+                    continue
                 n_c = int(params[3])
                 median = float(params[4+n_c])
                 local_aa = []
@@ -863,13 +868,15 @@ class KeplerLightCurveMixin(Variability):
                 local_cc = np.array(local_cc)
                 local_omega = np.array(local_omega)
                 local_tau = np.array(local_tau)
-                self._kepler_lc_models[tag] = {}
-                self._kepler_lc_models[tag]['median'] = median
-                self._kepler_lc_models[tag]['a'] = local_aa
-                self._kepler_lc_models[tag]['b'] = local_bb
-                self._kepler_lc_models[tag]['c'] = local_cc
-                self._kepler_lc_models[tag]['omega'] = local_omega
-                self._kepler_lc_models[tag]['tau'] = local_tau
+                _KEPLER_LC_MODELS[tag] = {}
+                _KEPLER_LC_MODELS[tag]['median'] = median
+                _KEPLER_LC_MODELS[tag]['a'] = local_aa
+                _KEPLER_LC_MODELS[tag]['b'] = local_bb
+                _KEPLER_LC_MODELS[tag]['c'] = local_cc
+                _KEPLER_LC_MODELS[tag]['omega'] = local_omega
+                _KEPLER_LC_MODELS[tag]['tau'] = local_tau
+
+        _KEPLER_MODELS_LOADED = True
 
 
 class ExtraGalacticVariabilityModels(Variability):
