@@ -897,6 +897,68 @@ class KeplerLightCurveMixin(Variability):
 
         _KEPLER_MODELS_LOADED.append(file_name)
 
+    def _calc_dflux(self, kep_id, expmjd):
+        """
+        Parameters
+        ----------
+        kep_id is an integer referring to the ID of the light curve in
+        the Kepler catalog
+
+        expmjd is either a number or an array referring to the MJD of the
+        observations
+
+        Returns
+        -------
+        baseline_flux is a number indicating the quiescent flux
+        of the light curve
+
+        delta_flux is a number or an array of the flux above or below
+        the quiescent flux at each of expmjd
+        """
+
+        global _KEPLER_LC_MODELS
+
+        try:
+            model = _KEPLER_LC_MODELS[kep_id]
+        except KeyError:
+            # try loading the default Kepler light curve models
+            try:
+                self.load_kepler_light_curves()
+                model = _KEPLER_LC_MODELS[kep_id]
+            except KeyError:
+                raise KeyError('A KeyError was raised on the light curve id %d\n' % kep_id
+                               + 'You may not have loaded your Kepler light curve models, yet\n'
+                               + 'See the load_kepler_light_curves() method in the '
+                               + 'KeplerLightCurveMixin class')
+
+        tau = model['tau']
+        omega = model['omega']
+        aa = model['a']
+        bb = model['b']
+        cc = model['c']
+
+        quiescent_flux = model['median'] + cc.sum()
+
+        omega_t = np.outer(expmjd, omega)
+        omega_tau = omega*tau
+
+        # use trig identities to calculate
+        # \sum_i a_i*cos(omega_i*(expmjd-tau_i)) + b_i*sin(omega_i*(expmjd-tau_i))
+        a_cos_omega_tau = aa*np.cos(-1.0*omega_tau)
+        a_sin_omega_tau = aa*np.sin(-1.0*omega_tau)
+        b_cos_omega_tau = bb*np.cos(-1.0*omega_tau)
+        b_sin_omega_atu = bb*np.sin(-1.0*omega_tau)
+
+        cos_omega_t = np.cos(omega_t)
+        sin_omega_t = np.sin(omega_t)
+
+        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau).sum()
+        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau).sum()
+        delta_flux += np.dot(sin_omega_t, b_cos_omega_tau).sum()
+        delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau).sum()
+
+        return quiescent_flux, delta_flux
+
 
 class ExtraGalacticVariabilityModels(Variability):
     """
