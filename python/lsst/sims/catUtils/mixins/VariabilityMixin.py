@@ -958,6 +958,61 @@ class KeplerLightCurveMixin(Variability):
 
         return quiescent_flux, delta_flux
 
+    @register_method('kplr')
+    def applyKeplerLightCurve(self, valid_dexes, params, expmjd):
+
+        if len(params) == 0:
+            return np.array([[], [], [], [], [], []])
+
+        n_obj = self.num_variable_obj(params)
+
+        unq_lc_int = np.unique(params['lc'])
+
+        if isinstance(expmjd, numbers.Number):
+            n_t = 1
+            d_mag_out = np.zeros((6, n_obj))
+            lc_time = expmjd - params['t0'].astype(float)
+            lc_int_arr = params['lc']
+        else:
+            n_t = len(expmjd)
+            d_mag_out = np.zeros((6, n_obj, n_t))
+            t0_float = params['t0'].astype(float)
+            lc_time = np.zeros(n_t*n_obj)
+            i_start = 0
+            lc_int_arr = []
+            lc_time_dex_map = {}
+            for i_obj in range(n_obj):
+                lc_time[i_start:i_start+n_t] = expmjd - t0_float[i_obj]
+                lc_int_arr += [params['lc'][i_obj]]*n_t
+                lc_time_dex_map[i_start] = i_obj
+                i_start += n_t
+
+        lc_int_arr = np.array(lc_int_arr)
+        for lc_int in unq_lc_int:
+            if lc_int is None:
+                continue
+            use_this_lc = np.where(lc_int_arr == lc_int)
+            try:
+                assert len(use_this_lc[0]) % n_t == 0
+            except AssertionError:
+                raise RuntimeError("Something went wrong in applyKeplerLightCurve\n"
+                                   "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc[0]), n_t))
+
+            q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc])
+            d_mag = 2.5*np.log10(1.0+d_flux/q_flux)
+
+            if n_t == 1:
+                for i_filter in range(6):
+                    d_mag_out[i_filter][use_this_lc] = d_mag
+            else:
+                for i_chunk in range(len(use_this_lc[0])//n_t):
+                    i_start = i_chunk*n_t
+                    i_to_map = use_this_lc[0][i_start]
+                    obj_dex = lc_time_dex_map[i_to_map]
+                    for i_filter in range(6):
+                        d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
+        return d_mag_out
+
 
 class ExtraGalacticVariabilityModels(Variability):
     """
