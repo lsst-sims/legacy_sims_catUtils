@@ -62,7 +62,7 @@ expected by the variability model.
 
 from builtins import range
 from builtins import object
-import numpy
+import numpy as np
 import linecache
 import math
 import os
@@ -189,10 +189,10 @@ class Variability(object):
             # A numpy array of magnitude offsets.  Each row is
             # an LSST band in ugrizy order.  Each column is an
             # astrophysical object from the CatSim database.
-            deltaMag = numpy.zeros((6, len(varParams_arr)))
+            deltaMag = np.zeros((6, len(varParams_arr)))
         else:
             # the last dimension varies over time
-            deltaMag = numpy.zeros((6, len(varParams_arr), len(expmjd)))
+            deltaMag = np.zeros((6, len(varParams_arr), len(expmjd)))
 
         # When the InstanceCatalog calls all of its getters
         # with an empty chunk to check column dependencies,
@@ -257,15 +257,15 @@ class Variability(object):
             for p_name in varCmd[par_key]:
                 params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
 
-        method_name_arr = numpy.array(method_name_arr)
+        method_name_arr = np.array(method_name_arr)
         for method_name in params:
             for p_name in params[method_name]:
-                params[method_name][p_name] = numpy.array(params[method_name][p_name])
+                params[method_name][p_name] = np.array(params[method_name][p_name])
 
         # Loop over all of the variability models that need to be called.
         # Call each variability model on the astrophysical objects that
         # require the model.  Add the result to deltaMag.
-        for method_name in numpy.unique(method_name_arr):
+        for method_name in np.unique(method_name_arr):
             if method_name != 'None':
 
                 if expmjd is None:
@@ -276,7 +276,7 @@ class Variability(object):
                                        + "a variability method corresponding to '%s'"
                                        % method_name)
 
-                deltaMag += self._methodRegistry[method_name](numpy.where(numpy.char.equal(method_name, method_name_arr)),
+                deltaMag += self._methodRegistry[method_name](np.where(np.char.equal(method_name, method_name_arr)),
                                                               params[method_name],
                                                               expmjd)
 
@@ -324,10 +324,10 @@ class Variability(object):
         astrophysical object from the CatSim database.
         """
         if isinstance(expmjd, numbers.Number):
-            magoff = numpy.zeros((6, self.num_variable_obj(params)))
+            magoff = np.zeros((6, self.num_variable_obj(params)))
         else:
-            magoff = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
-        expmjd = numpy.asarray(expmjd)
+            magoff = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+        expmjd = np.asarray(expmjd)
         for ix in valid_dexes[0]:
             filename = params[keymap['filename']][ix]
             toff = params[keymap['t0']][ix]
@@ -341,7 +341,7 @@ class Variability(object):
                 splines = self.variabilityLcCache[filename]['splines']
                 period = self.variabilityLcCache[filename]['period']
             else:
-                lc = numpy.loadtxt(os.path.join(self.variabilityDataDir,filename), unpack=True, comments='#')
+                lc = np.loadtxt(os.path.join(self.variabilityDataDir,filename), unpack=True, comments='#')
                 if inPeriod is None:
                     dt = lc[0][1] - lc[0][0]
                     period = lc[0][-1] + dt
@@ -392,7 +392,7 @@ class StellarVariabilityModels(Variability):
     def applyRRly(self, valid_dexes, params, expmjd):
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         keymap = {'filename':'filename', 't0':'tStartMjd'}
         return self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
@@ -402,7 +402,7 @@ class StellarVariabilityModels(Variability):
     def applyCepheid(self, valid_dexes, params, expmjd):
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(valid_dexes, params, keymap, expmjd, inDays=False,
@@ -412,7 +412,7 @@ class StellarVariabilityModels(Variability):
     def applyEb(self, valid_dexes, params, expmjd):
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         keymap = {'filename':'lcfile', 't0':'t0'}
         d_fluxes = self.applyStdPeriodic(valid_dexes, params, keymap, expmjd,
@@ -422,12 +422,12 @@ class StellarVariabilityModels(Variability):
             if d_fluxes.min()<0.0:
                 raise RuntimeError("Negative delta flux in applyEb")
         if isinstance(expmjd, numbers.Number):
-            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            dMags = np.zeros((6, self.num_variable_obj(params)))
         else:
-            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
-        dmag_vals = -2.5*numpy.log10(d_fluxes)
-        dMags += numpy.where(numpy.logical_not(numpy.logical_or(numpy.isnan(dmag_vals), numpy.isinf(dmag_vals))),
-                             dmag_vals, 0.0)
+            dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+        dmag_vals = -2.5*np.log10(d_fluxes)
+        dMags += np.where(np.logical_not(np.logical_or(np.isnan(dmag_vals), np.isinf(dmag_vals))),
+                          dmag_vals, 0.0)
         return dMags
 
     @register_method('applyMicrolensing')
@@ -448,25 +448,25 @@ class StellarVariabilityModels(Variability):
         #database will need to be changed.
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
-        expmjd = numpy.asarray(expmjd_in,dtype=float)
+        expmjd = np.asarray(expmjd_in,dtype=float)
         if isinstance(expmjd_in, numbers.Number):
-            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            dMags = np.zeros((6, self.num_variable_obj(params)))
             epochs = expmjd - params['t0'][valid_dexes].astype(float)
             umin = params['umin'].astype(float)[valid_dexes]
             that = params['that'].astype(float)[valid_dexes]
         else:
-            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             # cast epochs, umin, that into 2-D numpy arrays; the first index will iterate
             # over objects; the second index will iterate over times in expmjd
-            epochs = numpy.array([expmjd - t0 for t0 in params['t0'][valid_dexes].astype(float)])
-            umin = numpy.array([[uu]*len(expmjd) for uu in params['umin'].astype(float)[valid_dexes]])
-            that = numpy.array([[tt]*len(expmjd) for tt in params['that'].astype(float)[valid_dexes]])
+            epochs = np.array([expmjd - t0 for t0 in params['t0'][valid_dexes].astype(float)])
+            umin = np.array([[uu]*len(expmjd) for uu in params['umin'].astype(float)[valid_dexes]])
+            that = np.array([[tt]*len(expmjd) for tt in params['that'].astype(float)[valid_dexes]])
 
-        u = numpy.sqrt(umin**2 + ((2.0*epochs/that)**2))
-        magnification = (u**2+2.0)/(u*numpy.sqrt(u**2+4.0))
-        dmag = -2.5*numpy.log10(magnification)
+        u = np.sqrt(umin**2 + ((2.0*epochs/that)**2))
+        magnification = (u**2+2.0)/(u*np.sqrt(u**2+4.0))
+        dmag = -2.5*np.log10(magnification)
         for ix in range(6):
             dMags[ix][valid_dexes] += dmag
         return dMags
@@ -483,22 +483,22 @@ class StellarVariabilityModels(Variability):
         #database will need to be changed.
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         maxyears = 10.
         if isinstance(expmjd_in, numbers.Number):
-            dMag = numpy.zeros((6, self.num_variable_obj(params)))
+            dMag = np.zeros((6, self.num_variable_obj(params)))
             amplitude = params['amplitude'].astype(float)[valid_dexes]
             t0_arr = params['t0'].astype(float)[valid_dexes]
             period = params['period'].astype(float)[valid_dexes]
             epoch_arr = expmjd_in
         else:
-            dMag = numpy.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
+            dMag = np.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
             n_time = len(expmjd_in)
-            t0_arr = numpy.array([[tt]*n_time for tt in params['t0'].astype(float)[valid_dexes]])
-            amplitude = numpy.array([[aa]*n_time for aa in params['amplitude'].astype(float)[valid_dexes]])
-            period = numpy.array([[pp]*n_time for pp in params['period'].astype(float)[valid_dexes]])
-            epoch_arr = numpy.array([expmjd_in]*len(valid_dexes[0]))
+            t0_arr = np.array([[tt]*n_time for tt in params['t0'].astype(float)[valid_dexes]])
+            amplitude = np.array([[aa]*n_time for aa in params['amplitude'].astype(float)[valid_dexes]])
+            period = np.array([[pp]*n_time for pp in params['period'].astype(float)[valid_dexes]])
+            epoch_arr = np.array([expmjd_in]*len(valid_dexes[0]))
 
         epoch = expmjd_in
 
@@ -510,7 +510,7 @@ class StellarVariabilityModels(Variability):
         does_burst = params['does_burst'][valid_dexes]
 
         # get the light curve of the typical variability
-        uLc   = amplitude*numpy.cos((epoch_arr - t0_arr)/period)
+        uLc   = amplitude*np.cos((epoch_arr - t0_arr)/period)
         gLc   = copy.deepcopy(uLc)
         rLc   = copy.deepcopy(uLc)
         iLc   = copy.deepcopy(uLc)
@@ -518,13 +518,13 @@ class StellarVariabilityModels(Variability):
         yLc   = copy.deepcopy(uLc)
 
         # add in the flux from any bursting
-        local_bursting_dexes = numpy.where(does_burst==1)
+        local_bursting_dexes = np.where(does_burst==1)
         for i_burst in local_bursting_dexes[0]:
             adds = 0.0
-            for o in numpy.linspace(t0[i_burst] + burst_freq[i_burst],\
+            for o in np.linspace(t0[i_burst] + burst_freq[i_burst],\
                                  t0[i_burst] + maxyears*365.25, \
-                                 numpy.ceil(maxyears*365.25/burst_freq[i_burst])):
-                tmp = numpy.exp( -1*(epoch - o)/burst_scale[i_burst])/numpy.exp(-1.)
+                                 np.ceil(maxyears*365.25/burst_freq[i_burst])):
+                tmp = np.exp( -1*(epoch - o)/burst_scale[i_burst])/np.exp(-1.)
                 adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
             ## add some blue excess during the outburst
             uLc[i_burst] += adds +  2.0*color_excess[i_burst]
@@ -553,20 +553,20 @@ class StellarVariabilityModels(Variability):
         #database will need to be changed.
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         if isinstance(expmjd_in, numbers.Number):
-            magoff = numpy.zeros((6, self.num_variable_obj(params)))
+            magoff = np.zeros((6, self.num_variable_obj(params)))
         else:
-            magoff = numpy.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
-        expmjd = numpy.asarray(expmjd_in,dtype=float)
+            magoff = np.zeros((6, self.num_variable_obj(params), len(expmjd_in)))
+        expmjd = np.asarray(expmjd_in,dtype=float)
         filename_arr = params['filename']
         toff_arr = params['t0'].astype(float)
         for ix in valid_dexes[0]:
             toff = toff_arr[ix]
             filename = filename_arr[ix]
             epoch = expmjd - toff
-            lc = numpy.loadtxt(os.path.join(self.variabilityDataDir, filename), unpack=True, comments='#')
+            lc = np.loadtxt(os.path.join(self.variabilityDataDir, filename), unpack=True, comments='#')
             dt = lc[0][1] - lc[0][0]
             period = lc[0][-1]
             #BH lightcurves are in years
@@ -580,8 +580,8 @@ class StellarVariabilityModels(Variability):
             mag_val = magnification(epoch)
             # If we are interpolating out of the light curve's domain, set
             # the magnification equal to 1
-            mag_val = numpy.where(numpy.isnan(mag_val), 1.0, mag_val)
-            moff = -2.5*numpy.log(mag_val)
+            mag_val = np.where(np.isnan(mag_val), 1.0, mag_val)
+            moff = -2.5*np.log(mag_val)
             for ii in range(6):
                 magoff[ii][ix] = moff
 
@@ -627,7 +627,7 @@ class MLTflaringMixin(Variability):
         # just in case the user wants to override the light curve cache
         # file by hand before generating the catalog
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         if quiescent_mags is None:
             quiescent_mags = {}
@@ -658,7 +658,7 @@ class MLTflaringMixin(Variability):
                                     + "and run get_mdwarf_flares.sh "
                                     + "to get the data")
 
-            _MLT_LC_NPZ = numpy.load(self._mlt_lc_file)
+            _MLT_LC_NPZ = np.load(self._mlt_lc_file)
             sims_clean_up.targets.append(_MLT_LC_NPZ)
             _MLT_LC_NPZ_NAME = self._mlt_lc_file
             _MLT_LC_TIME_CACHE = {}
@@ -679,20 +679,20 @@ class MLTflaringMixin(Variability):
                                    'flares without the member variable '
                                    'lsstBandpassDict being defined.')
 
-            ebv_grid = numpy.arange(0.0, 7.01, 0.01)
-            bb_wavelen = numpy.arange(200.0, 1500.0, 0.1)
+            ebv_grid = np.arange(0.0, 7.01, 0.01)
+            bb_wavelen = np.arange(200.0, 1500.0, 0.1)
             hc_over_k = 1.4387e7  # nm*K
             temp = 9000.0  # black body temperature in Kelvin
             exp_arg = hc_over_k/(temp*bb_wavelen)
-            exp_term = 1.0/(numpy.exp(exp_arg) - 1.0)
-            ln_exp_term = numpy.log(exp_term)
+            exp_term = 1.0/(np.exp(exp_arg) - 1.0)
+            ln_exp_term = np.log(exp_term)
 
             # Blackbody f_lambda function;
             # discard normalizing factors; we only care about finding the
             # ratio of fluxes between the case with dust extinction and
             # the case without dust extinction
-            log_bb_flambda = -5.0*numpy.log(bb_wavelen) + ln_exp_term
-            bb_flambda = numpy.exp(log_bb_flambda)
+            log_bb_flambda = -5.0*np.log(bb_wavelen) + ln_exp_term
+            bb_flambda = np.exp(log_bb_flambda)
             bb_sed = Sed(wavelen=bb_wavelen, flambda=bb_flambda)
 
             base_fluxes = self.lsstBandpassDict.fluxListForSed(bb_sed)
@@ -702,7 +702,7 @@ class MLTflaringMixin(Variability):
             self._mlt_dust_lookup['ebv'] = ebv_grid
             list_of_bp = self.lsstBandpassDict.keys()
             for bp in list_of_bp:
-                self._mlt_dust_lookup[bp] = numpy.zeros(len(ebv_grid))
+                self._mlt_dust_lookup[bp] = np.zeros(len(ebv_grid))
             for iebv, ebv_val in enumerate(ebv_grid):
                 wv, fl = bb_sed.addCCMDust(a_x, b_x,
                                            ebv=ebv_val,
@@ -721,14 +721,14 @@ class MLTflaringMixin(Variability):
         # get the area of the sphere through which the star's energy
         # is radiating to get to us (in cm^2)
         _cm_per_parsec = 3.08576e18
-        sphere_area = 4.0*numpy.pi*numpy.power(dd*_cm_per_parsec, 2)
+        sphere_area = 4.0*np.pi*np.power(dd*_cm_per_parsec, 2)
 
         flux_factor = self.photParams.effarea/sphere_area
 
         if isinstance(expmjd, numbers.Number):
-            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            dMags = np.zeros((6, self.num_variable_obj(params)))
         else:
-            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
 
         mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
@@ -743,12 +743,12 @@ class MLTflaringMixin(Variability):
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
         lc_name_arr = params['lc'].astype(str)
-        lc_names_unique = numpy.unique(lc_name_arr)
+        lc_names_unique = np.unique(lc_name_arr)
         for lc_name in lc_names_unique:
             if 'None' in lc_name:
                 continue
 
-            use_this_lc = numpy.where(numpy.char.find(lc_name_arr, lc_name)==0)
+            use_this_lc = np.where(np.char.find(lc_name_arr, lc_name)==0)
 
             lc_name = lc_name.replace('.txt', '')
 
@@ -776,11 +776,11 @@ class MLTflaringMixin(Variability):
             else:
                 n_obj = len(use_this_lc[0])
                 n_time = len(expmjd)
-                t_interp = numpy.ones(shape=(n_obj, n_time))*expmjd
-                t_interp += numpy.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+                t_interp = np.ones(shape=(n_obj, n_time))*expmjd
+                t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
 
             while t_interp.max() > time_arr.max():
-                bad_dexes = numpy.where(t_interp>time_arr.max())
+                bad_dexes = np.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
 
             for i_mag, mag_name in enumerate(mag_name_tuple):
@@ -794,19 +794,19 @@ class MLTflaringMixin(Variability):
                         flux_arr = _MLT_LC_NPZ[flux_name]
                         _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
 
-                    dflux = numpy.interp(t_interp, time_arr, flux_arr)
+                    dflux = np.interp(t_interp, time_arr, flux_arr)
 
                     if isinstance(expmjd, numbers.Number):
                         dflux *= flux_factor[use_this_lc]
                     else:
-                        dflux *= numpy.array([flux_factor[use_this_lc]]*n_time).transpose()
+                        dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
 
-                    dust_factor = numpy.interp(ebv[use_this_lc],
-                                               self._mlt_dust_lookup['ebv'],
-                                               self._mlt_dust_lookup[mag_name])
+                    dust_factor = np.interp(ebv[use_this_lc],
+                                            self._mlt_dust_lookup['ebv'],
+                                            self._mlt_dust_lookup[mag_name])
 
                     if not isinstance(expmjd, numbers.Number):
-                        dust_factor = numpy.array([dust_factor]*n_time).transpose()
+                        dust_factor = np.array([dust_factor]*n_time).transpose()
 
                     dflux *= dust_factor
 
@@ -814,8 +814,8 @@ class MLTflaringMixin(Variability):
                         local_base_fluxes = base_fluxes[mag_name][use_this_lc]
                         local_base_mags = base_mags[mag_name][use_this_lc]
                     else:
-                        local_base_fluxes = numpy.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
-                        local_base_mags = numpy.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
 
                     dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
                                                  - local_base_mags)
@@ -834,13 +834,13 @@ class ExtraGalacticVariabilityModels(Variability):
         global _AGN_LC_CACHE
 
         if len(params) == 0:
-            return numpy.array([[],[],[],[],[],[]])
+            return np.array([[],[],[],[],[],[]])
 
         if isinstance(expmjd, numbers.Number):
-            dMags = numpy.zeros((6, self.num_variable_obj(params)))
+            dMags = np.zeros((6, self.num_variable_obj(params)))
             expmjd_arr = [expmjd]
         else:
-            dMags = numpy.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             expmjd_arr = expmjd
 
         toff_arr = params['t0_mjd'].astype(float)
@@ -891,7 +891,7 @@ class ExtraGalacticVariabilityModels(Variability):
                     dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
                 else:
                     start_date = toff
-                    rng = numpy.random.RandomState(seed)
+                    rng = np.random.RandomState(seed)
                     dx_0 = {}
                     for k in sfint:
                         dx_0[k]=0.0
