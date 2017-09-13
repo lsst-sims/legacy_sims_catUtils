@@ -96,7 +96,7 @@ _MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
 _MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
 
 _KEPLER_LC_MODELS = {} # a dict for storing the Kepler light curve models
-_KEPLER_MODELS_LOADED = False
+_KEPLER_MODELS_LOADED = []
 
 def reset_agn_lc_cache():
     """
@@ -833,13 +833,28 @@ class KeplerLightCurveMixin(Variability):
     light curves.
     """
 
-    def _load_kepler_light_curves(self):
+    def load_kepler_light_curves(self, file_name=None):
+        """
+        file_name is the absolute path to the file being loaded.
+        If None, it will load the default Kepler light curve model.
+        """
         global _KEPLER_LC_MODELS
         global _KEPLER_MODELS_LOADED
-        sims_data_dir = getPackageDir('sims_data')
-        lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
-        lc_file = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
-        with gzip.open(lc_file, 'r') as input_file:
+
+        if file_name in _KEPLER_MODELS_LOADED:
+            return
+
+        if file_name is None:
+            sims_data_dir = getPackageDir('sims_data')
+            lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
+            file_name = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
+
+        if file_name.endswith('.gz'):
+            open_fn = gzip.open
+        else:
+            open_fn = open
+
+        with open_fn(file_name, 'r') as input_file:
             for line in input_file:
                 if line[0] == '#':
                     continue
@@ -847,7 +862,11 @@ class KeplerLightCurveMixin(Variability):
                 name = params[0]
                 tag = int(name.split('_')[0][4:])
                 if tag in _KEPLER_LC_MODELS:
-                    continue
+                    # In case multiple sets of models have been loaded that
+                    # duplicate identifying integers.
+                    raise RuntimeError("You are trying to load light curve with the "
+                                       "identifying tag %d.  That has already been " % tag
+                                       + "loaded.  I am unsure how to proceed")
                 n_c = int(params[3])
                 median = float(params[4+n_c])
                 local_aa = []
@@ -876,7 +895,7 @@ class KeplerLightCurveMixin(Variability):
                 _KEPLER_LC_MODELS[tag]['omega'] = local_omega
                 _KEPLER_LC_MODELS[tag]['tau'] = local_tau
 
-        _KEPLER_MODELS_LOADED = True
+        _KEPLER_MODELS_LOADED.append(file_name)
 
 
 class ExtraGalacticVariabilityModels(Variability):
