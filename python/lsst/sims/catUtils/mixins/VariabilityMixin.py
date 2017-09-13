@@ -943,18 +943,18 @@ class KeplerLightCurveMixin(Variability):
 
         # use trig identities to calculate
         # \sum_i a_i*cos(omega_i*(expmjd-tau_i)) + b_i*sin(omega_i*(expmjd-tau_i))
-        a_cos_omega_tau = aa*np.cos(-1.0*omega_tau)
-        a_sin_omega_tau = aa*np.sin(-1.0*omega_tau)
-        b_cos_omega_tau = bb*np.cos(-1.0*omega_tau)
-        b_sin_omega_atu = bb*np.sin(-1.0*omega_tau)
+        a_cos_omega_tau = aa*np.cos(omega_tau)
+        a_sin_omega_tau = aa*np.sin(omega_tau)
+        b_cos_omega_tau = bb*np.cos(omega_tau)
+        b_sin_omega_tau = bb*np.sin(omega_tau)
 
         cos_omega_t = np.cos(omega_t)
         sin_omega_t = np.sin(omega_t)
 
-        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau).sum()
-        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau).sum()
-        delta_flux += np.dot(sin_omega_t, b_cos_omega_tau).sum()
-        delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau).sum()
+        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau)
+        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau)
+        delta_flux += np.dot(sin_omega_t, b_cos_omega_tau)
+        delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau)
 
         return quiescent_flux, delta_flux
 
