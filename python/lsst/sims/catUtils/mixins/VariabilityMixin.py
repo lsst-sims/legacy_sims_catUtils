@@ -844,6 +844,10 @@ class KeplerLightCurveMixin(Variability):
         if file_name in _KEPLER_MODELS_LOADED:
             return
 
+        if len(_KEPLER_LC_MODELS) == 0:
+            sims_clean_up.targets.append(_KEPLER_LC_MODELS)
+            sims_clean_up.targets.append(_KEPLER_MODELS_LOADED)
+
         if file_name is None:
             sims_data_dir = getPackageDir('sims_data')
             lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
