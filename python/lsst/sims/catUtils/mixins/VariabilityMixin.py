@@ -95,8 +95,8 @@ _MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
 
 _MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
 
-_KEPLER_LC_MODELS = {} # a dict for storing the Kepler light curve models
-_KEPLER_MODELS_LOADED = []
+_KEPLER_LC_MODELS = {}  # a dict for storing the Kepler light curve models
+_KEPLER_MODELS_LOADED = []  # a list of all of the files from which models were loaded
 
 def reset_agn_lc_cache():
     """
