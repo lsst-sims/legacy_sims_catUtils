@@ -106,7 +106,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         since that method was tested in test_calc_dflux()
         """
 
-        lc_temp_file_name = tempfile.mktemp(prefix='test_calc_dflux_lc',
+        lc_temp_file_name = tempfile.mktemp(prefix='test_applyKeplerLightCurve_singleexpmjd',
                                             suffix='.gz')
 
         rng = np.random.RandomState(5245)
@@ -195,7 +195,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         since that method was tested in test_calc_dflux()
         """
 
-        lc_temp_file_name = tempfile.mktemp(prefix='test_calc_dflux_lc',
+        lc_temp_file_name = tempfile.mktemp(prefix='test_applyKeplerLightCurve_manyexpmjd',
                                             suffix='.gz')
 
         rng = np.random.RandomState(13291)
