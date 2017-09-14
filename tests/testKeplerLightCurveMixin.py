@@ -381,6 +381,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
             else:
                 q_flux, d_flux = kp._calc_dflux(lc_list[obj_id], obs.mjd.TAI-t0_list[obj_id])
                 d_mag_true = 2.5*np.log10(1.0+d_flux/q_flux)
+                self.assertGreater(np.abs(d_mag_true), 0.0001)
                 self.assertAlmostEqual(cat_data['du'][i_obj], d_mag_true, 15)
                 self.assertAlmostEqual(cat_data['dg'][i_obj], d_mag_true, 15)
                 self.assertAlmostEqual(cat_data['dr'][i_obj], d_mag_true, 15)
