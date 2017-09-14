@@ -1157,7 +1157,7 @@ class _VariabilityPointSources(object):
 
 
 class VariabilityStars(_VariabilityPointSources, StellarVariabilityModels,
-                       MLTflaringMixin):
+                       MLTflaringMixin, KeplerLightCurveMixin):
     """
     This is a mixin which wraps the methods from the class
     StellarVariabilityModels into getters for InstanceCatalogs
