@@ -72,10 +72,10 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         expmjd = rng.random_sample(100)*200.0
         kp = KeplerLightCurveMixin()
         kp.load_kepler_light_curves(lc_temp_file_name)
-        
+
         q_flux, d_flux = kp._calc_dflux(990000000, expmjd)
         self.assertAlmostEqual(q_flux, median1+c1_list.sum(), 10)
-        
+
         true_flux = np.zeros(len(expmjd))
         for i_c in range(n_c_1):
             arg = omega1_list[i_c]*(expmjd-tau1_list[i_c])
@@ -86,7 +86,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
 
         q_flux, d_flux = kp._calc_dflux(990000001, expmjd)
         self.assertAlmostEqual(q_flux, median2+c2_list.sum(), 10)
-        
+
         true_flux = np.zeros(len(expmjd))
         for i_c in range(n_c_2):
             arg = omega2_list[i_c]*(expmjd-tau2_list[i_c])
