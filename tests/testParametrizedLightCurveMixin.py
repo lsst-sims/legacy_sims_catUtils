@@ -6,7 +6,7 @@ import numpy as np
 
 import lsst.utils.tests
 
-from lsst.sims.catUtils.mixins import KeplerLightCurveMixin
+from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import VariabilityStars
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.db import fileDBObject
@@ -18,12 +18,12 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
-class KeplerLightCurve_testCase(unittest.TestCase):
+class ParametrizedLightCurve_testCase(unittest.TestCase):
 
     def test_calc_dflux(self):
         """
         Test the method that calculates the flux of
-        Kepler light curves by generating a fake light
+        parametrized light curves by generating a fake light
         curve library with known parameters, calculating
         the fluxes, and comparing to the expected results.
         """
@@ -70,8 +70,8 @@ class KeplerLightCurve_testCase(unittest.TestCase):
             out_file.write('\n')
 
         expmjd = rng.random_sample(100)*200.0
-        kp = KeplerLightCurveMixin()
-        kp.load_kepler_light_curves(lc_temp_file_name)
+        kp = ParametrizedLightCurveMixin()
+        kp.load_parametrized_light_curves(lc_temp_file_name)
 
         q_flux, d_flux = kp._calc_dflux(990000000, expmjd)
         self.assertAlmostEqual(q_flux, median1+c1_list.sum(), 10)
@@ -99,9 +99,9 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         if os.path.exists(lc_temp_file_name):
             os.unlink(lc_temp_file_name)
 
-    def test_applyKeplerLightCurve_singleExpmjd(self):
+    def test_applyParametrizedLightCurve_singleExpmjd(self):
         """
-        test applyKeplerLightCurve on a single expmjd value
+        test applyParametrizedLightCurve on a single expmjd value
         by creating a dummy light curve file with known
         parameters, generating magnitudes, and comparing to
         the expected outputs.
@@ -110,7 +110,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         since that method was tested in test_calc_dflux()
         """
 
-        lc_temp_file_name = tempfile.mktemp(prefix='test_applyKeplerLightCurve_singleexpmjd',
+        lc_temp_file_name = tempfile.mktemp(prefix='test_applyParametrizedLightCurve_singleexpmjd',
                                             suffix='.gz')
 
         rng = np.random.RandomState(5245)
@@ -156,18 +156,18 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         params['lc'] = np.array([999000001, 999000000, None, 999000001])
         params['t0'] = np.array([223.1, 1781.45, None, 32.0])
 
-        kp = KeplerLightCurveMixin()
-        kp.load_kepler_light_curves(lc_temp_file_name)
+        kp = ParametrizedLightCurveMixin()
+        kp.load_parametrized_light_curves(lc_temp_file_name)
 
         # first test that passing in an empty set of params
         # results in an empty numpy array (so that the 'dry
         # run' of catalog generation does not fail)
-        d_mag_out = kp.applyKeplerLightCurve([],{},1.0)
+        d_mag_out = kp.applyParametrizedLightCurve([],{},1.0)
         np.testing.assert_array_equal(d_mag_out,
                                       np.array([[],[],[],[],[],[]]))
 
         expmjd = 59580.0
-        d_mag_out = kp.applyKeplerLightCurve([], params, expmjd)
+        d_mag_out = kp.applyParametrizedLightCurve([], params, expmjd)
         self.assertEqual(d_mag_out.shape, (6, 4))
 
         for i_obj in range(4):
@@ -188,9 +188,9 @@ class KeplerLightCurve_testCase(unittest.TestCase):
             os.unlink(lc_temp_file_name)
 
 
-    def test_applyKeplerLightCurve_manyExpmjd(self):
+    def test_applyParametrizedLightCurve_manyExpmjd(self):
         """
-        test applyKeplerLightCurve on an array of expmjd values
+        test applyParametrizedLightCurve on an array of expmjd values
         by creating a dummy light curve file with known
         parameters, generating magnitudes, and comparing to
         the expected outputs.
@@ -199,7 +199,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         since that method was tested in test_calc_dflux()
         """
 
-        lc_temp_file_name = tempfile.mktemp(prefix='test_applyKeplerLightCurve_manyexpmjd',
+        lc_temp_file_name = tempfile.mktemp(prefix='test_applyParametrizedLightCurve_manyexpmjd',
                                             suffix='.gz')
 
         rng = np.random.RandomState(13291)
@@ -245,18 +245,18 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         params['lc'] = np.array([999900001, 999900000, None, 999900001])
         params['t0'] = np.array([223.1, 1781.45, None, 32.0])
 
-        kp = KeplerLightCurveMixin()
-        kp.load_kepler_light_curves(lc_temp_file_name)
+        kp = ParametrizedLightCurveMixin()
+        kp.load_parametrized_light_curves(lc_temp_file_name)
 
         # first test that passing in an empty set of params
         # results in an empty numpy array (so that the 'dry
         # run' of catalog generation does not fail)
-        d_mag_out = kp.applyKeplerLightCurve([],{},1.0)
+        d_mag_out = kp.applyParametrizedLightCurve([],{},1.0)
         np.testing.assert_array_equal(d_mag_out,
                                       np.array([[],[],[],[],[],[]]))
 
         expmjd = rng.random_sample(10)*10000.0 + 59580.0
-        d_mag_out = kp.applyKeplerLightCurve([], params, expmjd)
+        d_mag_out = kp.applyParametrizedLightCurve([], params, expmjd)
         self.assertEqual(d_mag_out.shape, (6, 4, 10))
 
         for i_obj in range(4):
@@ -278,14 +278,14 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         if os.path.exists(lc_temp_file_name):
             os.unlink(lc_temp_file_name)
 
-    def test_KeplerLightCurve_in_catalog(self):
+    def test_ParametrizedLightCurve_in_catalog(self):
         """
-        Test the performance of applyKeplerLightCurve()
+        Test the performance of applyParametrizedLightCurve()
         in the context of an InstanceCatalog
         """
 
         # Create dummy light curve parameters
-        lc_temp_file_name = tempfile.mktemp(prefix='test_KeplerLightCurve_in_catalog',
+        lc_temp_file_name = tempfile.mktemp(prefix='test_ParametrizedLightCurve_in_catalog',
                                             suffix='.gz')
 
         rng = np.random.RandomState(1621145)
@@ -328,7 +328,7 @@ class KeplerLightCurve_testCase(unittest.TestCase):
             out_file.write('\n')
 
         # Create dummy database of astrophysical sources
-        db_temp_file_name = tempfile.mktemp(prefix='test_KeplerLightCurve_in_catalog_db',
+        db_temp_file_name = tempfile.mktemp(prefix='test_ParametrizedLightCurve_in_catalog_db',
                                             suffix='.txt')
 
         lc_list = [999990001, None, 999990001, 999990000]
@@ -348,21 +348,21 @@ class KeplerLightCurve_testCase(unittest.TestCase):
         db = fileDBObject(db_temp_file_name, runtable='test', dtype=dtype, delimiter=';',
                           idColKey='simobjid')
 
-        class KeplerVarParamStrCat(InstanceCatalog, VariabilityStars):
+        class ParametrizedVarParamStrCat(InstanceCatalog, VariabilityStars):
             column_outputs = ['simobjid', 'delta_lsst_u', 'delta_lsst_g', 'delta_lsst_r',
                               'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y']
             default_formats = {'f':'%.15g'}
 
 
         obs = ObservationMetaData(mjd=59580.0)
-        cat = KeplerVarParamStrCat(db, obs_metadata=obs)
-        cat.load_kepler_light_curves(lc_temp_file_name)
-        cat_out_name = tempfile.mktemp(prefix='test_KeplerLightCurve_in_cat_out',
+        cat = ParametrizedVarParamStrCat(db, obs_metadata=obs)
+        cat.load_parametrized_light_curves(lc_temp_file_name)
+        cat_out_name = tempfile.mktemp(prefix='test_ParametrizedLightCurve_in_cat_out',
                                        suffix='.txt')
 
         cat.write_catalog(cat_out_name)
 
-        kp = KeplerLightCurveMixin()
+        kp = ParametrizedLightCurveMixin()
         cat_dtype = np.dtype([('simobjid', int), ('du', float), ('dg', float),
                               ('dr', float), ('di', float), ('dz', float),
                               ('dy', float)])

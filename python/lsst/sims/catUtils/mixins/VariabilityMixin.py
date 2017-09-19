@@ -82,7 +82,7 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN",
            "reset_agn_lc_cache", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
-           "KeplerLightCurveMixin"]
+           "ParametrizedLightCurveMixin"]
 
 _AGN_LC_CACHE = {}  # a global cache of agn light curve calculations
 
@@ -95,8 +95,8 @@ _MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
 
 _MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
 
-_KEPLER_LC_MODELS = {}  # a dict for storing the Kepler light curve models
-_KEPLER_MODELS_LOADED = []  # a list of all of the files from which models were loaded
+_PARAMETRIZED_LC_MODELS = {}  # a dict for storing the parametrized light curve models
+_PARAMETRIZED_MODELS_LOADED = []  # a list of all of the files from which models were loaded
 
 def reset_agn_lc_cache():
     """
@@ -827,26 +827,26 @@ class MLTflaringMixin(Variability):
         return dMags
 
 
-class KeplerLightCurveMixin(Variability):
+class ParametrizedLightCurveMixin(Variability):
     """
-    This mixin models variability using parametrized functions fit to Kepler
+    This mixin models variability using parametrized functions fit
     light curves.
     """
 
-    def load_kepler_light_curves(self, file_name=None):
+    def load_parametrized_light_curves(self, file_name=None):
         """
         file_name is the absolute path to the file being loaded.
-        If None, it will load the default Kepler light curve model.
+        If None, it will load the default Kepler-based light curve model.
         """
-        global _KEPLER_LC_MODELS
-        global _KEPLER_MODELS_LOADED
+        global _PARAMETRIZED_LC_MODELS
+        global _PARAMETRIZED_MODELS_LOADED
 
-        if file_name in _KEPLER_MODELS_LOADED:
+        if file_name in _PARAMETRIZED_MODELS_LOADED:
             return
 
-        if len(_KEPLER_LC_MODELS) == 0:
-            sims_clean_up.targets.append(_KEPLER_LC_MODELS)
-            sims_clean_up.targets.append(_KEPLER_MODELS_LOADED)
+        if len(_PARAMETRIZED_LC_MODELS) == 0:
+            sims_clean_up.targets.append(_PARAMETRIZED_LC_MODELS)
+            sims_clean_up.targets.append(_PARAMETRIZED_MODELS_LOADED)
 
         if file_name is None:
             sims_data_dir = getPackageDir('sims_data')
@@ -865,7 +865,7 @@ class KeplerLightCurveMixin(Variability):
                 params = line.strip().split()
                 name = params[0]
                 tag = int(name.split('_')[0][4:])
-                if tag in _KEPLER_LC_MODELS:
+                if tag in _PARAMETRIZED_LC_MODELS:
                     # In case multiple sets of models have been loaded that
                     # duplicate identifying integers.
                     raise RuntimeError("You are trying to load light curve with the "
@@ -891,22 +891,23 @@ class KeplerLightCurveMixin(Variability):
                 local_cc = np.array(local_cc)
                 local_omega = np.array(local_omega)
                 local_tau = np.array(local_tau)
-                _KEPLER_LC_MODELS[tag] = {}
-                _KEPLER_LC_MODELS[tag]['median'] = median
-                _KEPLER_LC_MODELS[tag]['a'] = local_aa
-                _KEPLER_LC_MODELS[tag]['b'] = local_bb
-                _KEPLER_LC_MODELS[tag]['c'] = local_cc
-                _KEPLER_LC_MODELS[tag]['omega'] = local_omega
-                _KEPLER_LC_MODELS[tag]['tau'] = local_tau
+                _PARAMETRIZED_LC_MODELS[tag] = {}
+                _PARAMETRIZED_LC_MODELS[tag]['median'] = median
+                _PARAMETRIZED_LC_MODELS[tag]['a'] = local_aa
+                _PARAMETRIZED_LC_MODELS[tag]['b'] = local_bb
+                _PARAMETRIZED_LC_MODELS[tag]['c'] = local_cc
+                _PARAMETRIZED_LC_MODELS[tag]['omega'] = local_omega
+                _PARAMETRIZED_LC_MODELS[tag]['tau'] = local_tau
 
-        _KEPLER_MODELS_LOADED.append(file_name)
+        _PARAMETRIZED_MODELS_LOADED.append(file_name)
 
-    def _calc_dflux(self, kep_id, expmjd):
+    def _calc_dflux(self, lc_id, expmjd):
         """
         Parameters
         ----------
-        kep_id is an integer referring to the ID of the light curve in
-        the Kepler catalog
+        lc_id is an integer referring to the ID of the light curve in
+        the parametrized light curve model (these need to be unique
+        across all parametrized light curve catalogs loaded)
 
         expmjd is either a number or an array referring to the MJD of the
         observations
@@ -920,15 +921,15 @@ class KeplerLightCurveMixin(Variability):
         the quiescent flux at each of expmjd
         """
 
-        global _KEPLER_LC_MODELS
+        global _PARAMETRIZED_LC_MODELS
 
         try:
-            model = _KEPLER_LC_MODELS[kep_id]
+            model = _PARAMETRIZED_LC_MODELS[lc_id]
         except KeyError:
             raise KeyError('A KeyError was raised on the light curve id %d\n' % kep_id
-                           + 'You may not have loaded your Kepler light curve models, yet\n'
-                           + 'See the load_kepler_light_curves() method in the '
-                           + 'KeplerLightCurveMixin class')
+                           + 'You may not have loaded your parametrized light curve models, yet\n'
+                           + 'See the load_parametrized_light_curves() method in the '
+                           + 'ParametrizedLightCurveMixin class')
 
         tau = model['tau']
         omega = model['omega']
@@ -958,8 +959,8 @@ class KeplerLightCurveMixin(Variability):
 
         return quiescent_flux, delta_flux
 
-    @register_method('kplr')
-    def applyKeplerLightCurve(self, valid_dexes, params, expmjd):
+    @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
+    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd):
 
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
@@ -995,7 +996,7 @@ class KeplerLightCurveMixin(Variability):
             try:
                 assert len(use_this_lc[0]) % n_t == 0
             except AssertionError:
-                raise RuntimeError("Something went wrong in applyKeplerLightCurve\n"
+                raise RuntimeError("Something went wrong in applyParametrizedLightCurve\n"
                                    "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc[0]), n_t))
 
             q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc])
@@ -1157,7 +1158,7 @@ class _VariabilityPointSources(object):
 
 
 class VariabilityStars(_VariabilityPointSources, StellarVariabilityModels,
-                       MLTflaringMixin, KeplerLightCurveMixin):
+                       MLTflaringMixin, ParametrizedLightCurveMixin):
     """
     This is a mixin which wraps the methods from the class
     StellarVariabilityModels into getters for InstanceCatalogs
