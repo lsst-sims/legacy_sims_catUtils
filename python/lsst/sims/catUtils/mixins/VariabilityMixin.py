@@ -858,6 +858,15 @@ class ParametrizedLightCurveMixin(Variability):
         else:
             open_fn = open
 
+        if not os.path.exists(file_name):
+            if file_name.endswith('kplr_lc_params.txt.gz'):
+                download_script = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
+                                               'get_kepler_light_curves.sh')
+                raise RuntimeError('You have not yet downloaded\n%s\n\n' % file_name
+                                   + 'Try running the script\n%s' % download_script)
+            else:
+                raise RuntimeError('The file %s does not exist' % file_name)
+
         with open_fn(file_name, 'r') as input_file:
             for line in input_file:
                 if line[0] == '#':
