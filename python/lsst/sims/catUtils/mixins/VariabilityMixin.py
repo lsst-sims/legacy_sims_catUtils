@@ -830,7 +830,48 @@ class MLTflaringMixin(Variability):
 class ParametrizedLightCurveMixin(Variability):
     """
     This mixin models variability using parametrized functions fit
-    light curves.
+    to light curves.
+
+    The parametrized light curves should be stored in an ASCII file
+    (or a gzipped ASCII file) whose columns are:
+
+    lc_name -- a string; the original name of the light curve
+
+    n_t_steps -- an int; the number of time steps in the original light curve
+
+    t_span -- a float; t_max - t_min from the original light curve
+
+    n_components -- an int; how many Fourier components were used
+    in the parametrization
+
+    chisquared -- this is a series of n_components columns; the nth
+    chisquared column is the chisquared of the parametrization after
+    n components (i.e. the 5th chisquared value is the chisquared of
+    the parametrized light curve with respect to the original light
+    curve if you only use the first 5 Fourier components).  This is
+    not actually used by this class, but it is expected when parsing
+    the parameter file.  It mainly exists if one wishes to perform
+    a cut in the parametrization (e.g. only keep as many components
+    as are needed to reach some threshold in chisquared/n_t_steps).
+
+    median -- a float; the median flux of the original light cuve
+
+    aa -- a float (see below)
+    bb -- a float (see below)
+    cc -- a float (see below)
+    omega -- a float (see below)
+    tau -- a float (see below)
+
+    There will actually be n_components aa, bb, cc, omega, tau
+    columns ordered as
+
+    aa_0, bb_0, cc_0, omega_0, tau_0, aa_1, bb_1, cc_1, omega_1, tau_1, ...
+
+    The light curve is parametrized as
+
+    flux = median + \sum_i { aa_i*cos(omega_i*(t-tau_i)) +
+                             bb_i*sin(omega_i*(t-tau_i)) +
+                             cc_i }
     """
 
     def load_parametrized_light_curves(self, file_name=None):
