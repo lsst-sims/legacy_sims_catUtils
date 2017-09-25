@@ -1009,6 +1009,8 @@ class ParametrizedLightCurveMixin(Variability):
         delta_flux += np.dot(sin_omega_t, b_cos_omega_tau)
         delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau)
 
+        if len(delta_flux)==1:
+            delta_flux = np.float(delta_flux)
         return quiescent_flux, delta_flux
 
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
