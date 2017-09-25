@@ -48,26 +48,26 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
         median2 = 200.0
 
         with gzip.open(lc_temp_file_name, 'w') as out_file:
-            out_file.write('# a header\n')
-            out_file.write('kplr990000000_lc.txt 100 1.0e+02 %d ' % n_c_1)
+            out_file.write(b'# a header\n')
+            out_file.write(b'kplr990000000_lc.txt 100 1.0e+02 %d ' % n_c_1)
             for i_c in range(n_c_1):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median1)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median1)
             for i_c in range(n_c_1):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a1_list[i_c], b1_list[i_c], c1_list[i_c],
                                 omega1_list[i_c], tau1_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
-            out_file.write('kplr990000001_lc.txt 100 1.0e+02 %d ' % n_c_2)
+            out_file.write(b'kplr990000001_lc.txt 100 1.0e+02 %d ' % n_c_2)
             for i_c in range(n_c_2):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median2)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median2)
             for i_c in range(n_c_2):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a2_list[i_c], b2_list[i_c], c2_list[i_c],
                                 omega2_list[i_c], tau2_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
         expmjd = rng.random_sample(100)*200.0
         kp = ParametrizedLightCurveMixin()
@@ -131,26 +131,26 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
         median2 = 200.0
 
         with gzip.open(lc_temp_file_name, 'w') as out_file:
-            out_file.write('# a header\n')
-            out_file.write('kplr999000000_lc.txt 100 1.0e+02 %d ' % n_c_1)
+            out_file.write(b'# a header\n')
+            out_file.write(b'kplr999000000_lc.txt 100 1.0e+02 %d ' % n_c_1)
             for i_c in range(n_c_1):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median1)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median1)
             for i_c in range(n_c_1):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a1_list[i_c], b1_list[i_c], c1_list[i_c],
                                 omega1_list[i_c], tau1_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
-            out_file.write('kplr999000001_lc.txt 100 1.0e+02 %d ' % n_c_2)
+            out_file.write(b'kplr999000001_lc.txt 100 1.0e+02 %d ' % n_c_2)
             for i_c in range(n_c_2):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median2)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median2)
             for i_c in range(n_c_2):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a2_list[i_c], b2_list[i_c], c2_list[i_c],
                                 omega2_list[i_c], tau2_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
         params = {}
         params['lc'] = np.array([999000001, 999000000, None, 999000001])
@@ -220,26 +220,26 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
         median2 = 200.0
 
         with gzip.open(lc_temp_file_name, 'w') as out_file:
-            out_file.write('# a header\n')
-            out_file.write('kplr999900000_lc.txt 100 1.0e+02 %d ' % n_c_1)
+            out_file.write(b'# a header\n')
+            out_file.write(b'kplr999900000_lc.txt 100 1.0e+02 %d ' % n_c_1)
             for i_c in range(n_c_1):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median1)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median1)
             for i_c in range(n_c_1):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a1_list[i_c], b1_list[i_c], c1_list[i_c],
                                 omega1_list[i_c], tau1_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
-            out_file.write('kplr999900001_lc.txt 100 1.0e+02 %d ' % n_c_2)
+            out_file.write(b'kplr999900001_lc.txt 100 1.0e+02 %d ' % n_c_2)
             for i_c in range(n_c_2):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median2)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median2)
             for i_c in range(n_c_2):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a2_list[i_c], b2_list[i_c], c2_list[i_c],
                                 omega2_list[i_c], tau2_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
         params = {}
         params['lc'] = np.array([999900001, 999900000, None, 999900001])
@@ -306,26 +306,26 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
         median2 = 200.0
 
         with gzip.open(lc_temp_file_name, 'w') as out_file:
-            out_file.write('# a header\n')
-            out_file.write('kplr999990000_lc.txt 100 1.0e+02 %d ' % n_c_1)
+            out_file.write(b'# a header\n')
+            out_file.write(b'kplr999990000_lc.txt 100 1.0e+02 %d ' % n_c_1)
             for i_c in range(n_c_1):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median1)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median1)
             for i_c in range(n_c_1):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a1_list[i_c], b1_list[i_c], c1_list[i_c],
                                 omega1_list[i_c], tau1_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
-            out_file.write('kplr999990001_lc.txt 100 1.0e+02 %d ' % n_c_2)
+            out_file.write(b'kplr999990001_lc.txt 100 1.0e+02 %d ' % n_c_2)
             for i_c in range(n_c_2):
-                out_file.write('%e ' % (1.0/(i_c+1)))
-            out_file.write('%e ' % median2)
+                out_file.write(b'%e ' % (1.0/(i_c+1)))
+            out_file.write(b'%e ' % median2)
             for i_c in range(n_c_2):
-                out_file.write('%.15e %.15e %.15e %.15e %.15e ' %
+                out_file.write(b'%.15e %.15e %.15e %.15e %.15e ' %
                                (a2_list[i_c], b2_list[i_c], c2_list[i_c],
                                 omega2_list[i_c], tau2_list[i_c]))
-            out_file.write('\n')
+            out_file.write(b'\n')
 
         # Create dummy database of astrophysical sources
         db_temp_file_name = tempfile.mktemp(prefix='test_ParametrizedLightCurve_in_catalog_db',
@@ -382,12 +382,12 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                 q_flux, d_flux = kp._calc_dflux(lc_list[obj_id], obs.mjd.TAI-t0_list[obj_id])
                 d_mag_true = 2.5*np.log10(1.0+d_flux/q_flux)
                 self.assertGreater(np.abs(d_mag_true), 0.0001)
-                self.assertAlmostEqual(cat_data['du'][i_obj], d_mag_true, 15)
-                self.assertAlmostEqual(cat_data['dg'][i_obj], d_mag_true, 15)
-                self.assertAlmostEqual(cat_data['dr'][i_obj], d_mag_true, 15)
-                self.assertAlmostEqual(cat_data['di'][i_obj], d_mag_true, 15)
-                self.assertAlmostEqual(cat_data['dz'][i_obj], d_mag_true, 15)
-                self.assertAlmostEqual(cat_data['dy'][i_obj], d_mag_true, 15)
+                self.assertAlmostEqual(cat_data['du'][i_obj], np.max(d_mag_true), 15)
+                self.assertAlmostEqual(cat_data['dg'][i_obj], np.max(d_mag_true), 15)
+                self.assertAlmostEqual(cat_data['dr'][i_obj], np.max(d_mag_true), 15)
+                self.assertAlmostEqual(cat_data['di'][i_obj], np.max(d_mag_true), 15)
+                self.assertAlmostEqual(cat_data['dz'][i_obj], np.max(d_mag_true), 15)
+                self.assertAlmostEqual(cat_data['dy'][i_obj], np.max(d_mag_true), 15)
 
         if os.path.exists(cat_out_name):
             os.unlink(cat_out_name)

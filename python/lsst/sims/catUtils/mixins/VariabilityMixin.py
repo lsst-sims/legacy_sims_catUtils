@@ -910,6 +910,8 @@ class ParametrizedLightCurveMixin(Variability):
 
         with open_fn(file_name, 'r') as input_file:
             for line in input_file:
+                if type(line) == bytes:
+                    line = line.decode("utf-8")
                 if line[0] == '#':
                     continue
                 params = line.strip().split()
@@ -1016,8 +1018,8 @@ class ParametrizedLightCurveMixin(Variability):
             return np.array([[], [], [], [], [], []])
 
         n_obj = self.num_variable_obj(params)
-
-        unq_lc_int = np.unique(params['lc'])
+        good = np.where(params['lc'] != None)
+        unq_lc_int = np.unique(params['lc'][good])
 
         if isinstance(expmjd, numbers.Number):
             n_t = 1
