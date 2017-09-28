@@ -876,6 +876,13 @@ class ParametrizedLightCurveMixin(Variability):
 
     def load_parametrized_light_curves(self, file_name=None):
         """
+        This method will load the parametrized light curve models
+        used by the ParametrizedLightCurveMixin and store them in
+        a global cache.  It is enough to just run this method from
+        any instantiation of ParametrizedLightCurveMixin.
+
+        Parameters
+        ----------
         file_name is the absolute path to the file being loaded.
         If None, it will load the default Kepler-based light curve model.
         """
