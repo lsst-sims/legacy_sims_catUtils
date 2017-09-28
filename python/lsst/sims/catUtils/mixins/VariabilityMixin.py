@@ -978,8 +978,9 @@ class ParametrizedLightCurveMixin(Variability):
         try:
             model = _PARAMETRIZED_LC_MODELS[lc_id]
         except KeyError:
-            raise KeyError('A KeyError was raised on the light curve id %d\n' % lc_id
-                           + 'You may not have loaded your parametrized light curve models, yet\n'
+            raise KeyError('A KeyError was raised on the light curve id %d.  ' % lc_id
+                           + 'You may not have loaded your parametrized light '
+                           + 'curve models, yet.  '
                            + 'See the load_parametrized_light_curves() method in the '
                            + 'ParametrizedLightCurveMixin class')
 
