@@ -727,7 +727,7 @@ class MLTflaringMixin(Variability):
         _cm_per_parsec = 3.08576e18
         sphere_area = 4.0*np.pi*np.power(dd*_cm_per_parsec, 2)
 
-        flux_factor = self.photParams.effarea/sphere_area
+        flux_factor = 1.0/sphere_area
 
         if isinstance(expmjd, numbers.Number):
             dMags = np.zeros((6, self.num_variable_obj(params)))
