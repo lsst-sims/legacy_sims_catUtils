@@ -390,7 +390,7 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                     self.assertAlmostEqual(cat_data['dz'][i_obj], d_mag_true, 15)
                     self.assertAlmostEqual(cat_data['dy'][i_obj], d_mag_true, 15)
                 except AssertionError:
-                    with open(lc_temp_file_name,'r') as input_file:
+                    with gzip.open(lc_temp_file_name,'r') as input_file:
                         for line in input_file:
                             print(line)
                     raise
