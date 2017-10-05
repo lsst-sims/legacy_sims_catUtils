@@ -350,7 +350,7 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
 
         class ParametrizedVarParamStrCat(InstanceCatalog, VariabilityStars):
             column_outputs = ['simobjid', 'delta_lsst_u', 'delta_lsst_g', 'delta_lsst_r',
-                              'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y']
+                              'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y', 'varParamStr']
             default_formats = {'f':'%.15g'}
 
 
@@ -365,7 +365,7 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
         kp = ParametrizedLightCurveMixin()
         cat_dtype = np.dtype([('simobjid', int), ('du', float), ('dg', float),
                               ('dr', float), ('di', float), ('dz', float),
-                              ('dy', float)])
+                              ('dy', float), ('varParamStr', str, 200)])
 
         cat_data = np.genfromtxt(cat_out_name, dtype=cat_dtype, delimiter=', ')
 
