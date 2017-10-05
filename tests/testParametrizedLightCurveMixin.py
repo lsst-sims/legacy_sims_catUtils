@@ -352,6 +352,7 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
             column_outputs = ['simobjid', 'delta_lsst_u', 'delta_lsst_g', 'delta_lsst_r',
                               'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y', 'varParamStr']
             default_formats = {'f':'%.15g'}
+            delimiter = ';'
 
 
         obs = ObservationMetaData(mjd=59580.0)
@@ -367,7 +368,7 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                               ('dr', float), ('di', float), ('dz', float),
                               ('dy', float), ('varParamStr', str, 200)])
 
-        cat_data = np.genfromtxt(cat_out_name, dtype=cat_dtype, delimiter=', ')
+        cat_data = np.genfromtxt(cat_out_name, dtype=cat_dtype, delimiter=';')
 
         for i_obj in range(len(cat_data)):
             obj_id = cat_data['simobjid'][i_obj]
