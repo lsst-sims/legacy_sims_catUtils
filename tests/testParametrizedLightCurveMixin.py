@@ -393,6 +393,9 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                     with gzip.open(lc_temp_file_name,'r') as input_file:
                         for line in input_file:
                             print(line)
+                    with open(cat_out_name, 'r') as input_file:
+                        for line in input_file:
+                            print(line)
                     raise
 
         if os.path.exists(cat_out_name):
