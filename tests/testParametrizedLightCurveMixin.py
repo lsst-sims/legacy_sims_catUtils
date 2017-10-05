@@ -396,6 +396,9 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                     with open(cat_out_name, 'r') as input_file:
                         for line in input_file:
                             print(line)
+                    with open(db_temp_file_name, 'r') as input_file:
+                        for line in input_file:
+                            print(line)
                     raise
 
         if os.path.exists(cat_out_name):
