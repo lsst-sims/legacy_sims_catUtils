@@ -1054,7 +1054,9 @@ class ParametrizedLightCurveMixin(Variability):
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
+            print('applying %d' % lc_int)
             use_this_lc = np.where(lc_int_arr == lc_int)
+            print('applying to %s' % str(use_this_lc))
             try:
                 assert len(use_this_lc[0]) % n_t == 0
             except AssertionError:
@@ -1065,6 +1067,9 @@ class ParametrizedLightCurveMixin(Variability):
             d_mag = 2.5*np.log10(1.0+d_flux/q_flux)
 
             if n_t == 1:
+                print('acting because n_t==1')
+                print(dmag)
+                print(type(dmag))
                 for i_filter in range(6):
                     d_mag_out[i_filter][use_this_lc] = d_mag
             else:
