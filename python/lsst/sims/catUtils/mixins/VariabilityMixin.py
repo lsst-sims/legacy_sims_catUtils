@@ -1028,7 +1028,7 @@ class ParametrizedLightCurveMixin(Variability):
             return np.array([[], [], [], [], [], []])
 
         n_obj = self.num_variable_obj(params)
-        good = np.where(params['lc'] != None)
+        good = np.where(np.logical_not(np.isnan(params['lc'].astype(float))))
         unq_lc_int = np.unique(params['lc'][good])
 
         if isinstance(expmjd, numbers.Number):
