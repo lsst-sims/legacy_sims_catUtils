@@ -1068,8 +1068,8 @@ class ParametrizedLightCurveMixin(Variability):
 
             if n_t == 1:
                 print('acting because n_t==1')
-                print(dmag)
-                print(type(dmag))
+                print(d_mag)
+                print(type(d_mag))
                 for i_filter in range(6):
                     d_mag_out[i_filter][use_this_lc] = d_mag
             else:
