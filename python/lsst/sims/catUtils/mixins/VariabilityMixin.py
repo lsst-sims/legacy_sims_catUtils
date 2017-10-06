@@ -1027,9 +1027,14 @@ class ParametrizedLightCurveMixin(Variability):
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
 
+        print('params[lc]: %s' % str(params['lc']))
+
         n_obj = self.num_variable_obj(params)
         good = np.where(params['lc'] != None)
         unq_lc_int = np.unique(params['lc'][good])
+
+        print('unq: %s' % str(unq_lc_int))
+        print('good: %s' % str(good))
 
         if isinstance(expmjd, numbers.Number):
             n_t = 1
@@ -1051,6 +1056,7 @@ class ParametrizedLightCurveMixin(Variability):
                 i_start += n_t
 
         lc_int_arr = np.array(lc_int_arr)
+        print('lc_int_arr: %s ' % str(lc_int_arr))
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
