@@ -275,7 +275,11 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                 self.assertEqual(len(nan_vals[0]), 0)
                 for i_filter in range(6):
                     msg = 'i_obj %d; i_filter %d' % (i_obj, i_filter)
-                    np.testing.assert_array_equal(d_mag_out[i_filter][i_obj], d_mag_truth, msg=msg)
+                    try:
+                        np.testing.assert_array_equal(d_mag_out[i_filter][i_obj], d_mag_truth)
+                    except:
+                        print(msg)
+                        raise
 
         sims_clean_up()
         if os.path.exists(lc_temp_file_name):
