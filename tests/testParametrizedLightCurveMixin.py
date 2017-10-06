@@ -20,6 +20,8 @@ def setup_module(module):
 
 class ParametrizedLightCurve_testCase(unittest.TestCase):
 
+    longMessage = True
+
     def test_calc_dflux(self):
         """
         Test the method that calculates the flux of
@@ -272,7 +274,8 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                 nan_vals = np.where(np.isnan(d_mag_truth))
                 self.assertEqual(len(nan_vals[0]), 0)
                 for i_filter in range(6):
-                    np.testing.assert_array_equal(d_mag_out[i_filter][i_obj], d_mag_truth)
+                    msg = 'i_obj %d; i_filter %d' % (i_obj, i_filter)
+                    np.testing.assert_array_equal(d_mag_out[i_filter][i_obj], d_mag_truth, msg=msg)
 
         sims_clean_up()
         if os.path.exists(lc_temp_file_name):
