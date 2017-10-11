@@ -7,6 +7,8 @@ import numpy as np
 import sys
 import traceback
 import unittest
+import tempfile
+import shutil
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
@@ -32,8 +34,11 @@ class basicAccessTest(unittest.TestCase):
     longMessage = True
 
     def testObjects(self):
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'testObjectsCat.txt')
+        catDir = tempfile.mkdtemp('basicAccessTest_testObjects')
+        if not os.path.exists(catDir):
+            os.mkdir(catDir)
+        catName = tempfile.mktemp(prefix='basicAccessTest_testObjects',
+                                  dir=catDir, suffix='.txt')
         ct_connected = 0
         ct_failed_connection = 0
         list_of_failures = []
@@ -104,6 +109,9 @@ class basicAccessTest(unittest.TestCase):
                 if os.path.exists(catName):
                     os.unlink(catName)
 
+        if os.path.exists(catDir):
+            shutil.rmtree(catDir)
+
         self.assertEqual(len(list_of_failures), ct_failed_connection)
 
         print('\n================')
@@ -118,8 +126,11 @@ class basicAccessTest(unittest.TestCase):
 
     def testObsCat(self):
         objname = 'wdstars'
-        catName = os.path.join(getPackageDir('sims_catUtils'), 'tests', 'scratchSpace',
-                               'testObsCat.txt')
+        catDir = tempfile.mkdtemp('basicAccessTest_testObsCat')
+        if not os.path.exists(catDir):
+            os.mkdir(catDir)
+        catName = tempfile.mktemp(prefix='basicAccessTest_testObsCat',
+                                  dir=catDir, suffix='.txt')
 
         try:
             dbobj = CatalogDBObject.from_objid(objname)
@@ -139,6 +150,8 @@ class basicAccessTest(unittest.TestCase):
             finally:
                 if os.path.exists(catName):
                     os.unlink(catName)
+                if os.path.exists(catDir):
+                    shutil.rmtree(catDir)
 
             print('\ntestObsCat successfully connected to fatboy')
 
@@ -152,6 +165,9 @@ class basicAccessTest(unittest.TestCase):
 
                 print('\ntestObsCat failed to connect to fatboy')
                 print('Sometimes that happens.  Do not worry.')
+
+                if os.path.exists(catDir):
+                    shutil.rmtree(catDir)
 
                 pass
             else:
