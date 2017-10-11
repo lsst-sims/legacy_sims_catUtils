@@ -183,6 +183,13 @@ class MBAObj(SolarSystemObj):
     """
     ssmtable = 'fSSMMBABase'
 
+    # since the MBA tables have been updated, we need to include a testObservationMetaData
+    # that had an mjd>=59580.0, since that is the new time range for the simulated
+    # LSST survey
+    testObservationMetaData = ObservationMetaData(boundType = 'circle',
+                                                  pointingRA = 0.0, pointingDec = 0.0,
+                                                  boundLength = 0.5, mjd=59590., bandpassName='r', m5=22.0)
+
 
 class MiscSolarSystemObj(SolarSystemObj):
     """
