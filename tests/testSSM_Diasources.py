@@ -106,7 +106,10 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 # But moving objects databases are not currently complete for all years.
                 # Push forward to night=747.
                 # (note that we need the phosim dictionary as well)
-                newMJD = obsMeta.mjd.TAI + (747 - 20)
+
+                newMJD = 59590.2  # this MJD is artificially chosen to be in the
+                                  # time span of the new baseline simulated survey
+
                 phoSimMetaDict = {'exptime': [30]}
                 obs = ObservationMetaData(mjd=newMJD,
                                           pointingRA=obsMeta.pointingRA,
