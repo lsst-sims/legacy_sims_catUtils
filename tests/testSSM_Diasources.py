@@ -71,6 +71,8 @@ class ssmCatCamera(ssmCat):
 
 class createSSMSourceCatalogsTest(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
@@ -130,7 +132,8 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                         # verify that we did not write an empty catalog
                         with open(output_cat, 'r') as input_file:
                             lines = input_file.readlines()
-                        self.assertGreater(len(lines), 1)
+                        msg = 'MJD is %.3f' % obs.mjd.TAI
+                        self.assertGreater(len(lines), 1, msg=msg)
                 except:
                     # This is because the solar system object 'tables'
                     # don't actually connect to tables on fatboy; they just
