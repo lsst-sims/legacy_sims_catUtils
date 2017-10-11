@@ -48,7 +48,7 @@ class basicAccessTest(unittest.TestCase):
             except:
                 trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
                 msg = sys.exc_info()[1].args[0]
-                if 'Failed to connect' in msg or failedOnFatboy(trace):
+                if 'Failed to connect' in str(msg) or failedOnFatboy(trace):
 
                     # if the exception was due to a failed connection
                     # to fatboy, ignore it
@@ -145,7 +145,7 @@ class basicAccessTest(unittest.TestCase):
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
             msg = sys.exc_info()[1].args[0]
-            if 'Failed to connect' in msg or failedOnFatboy(trace):
+            if 'Failed to connect' in str(msg) or failedOnFatboy(trace):
 
                 # if the exception was because of a failed connection
                 # to fatboy, ignore it.
@@ -171,7 +171,7 @@ class basicAccessTest(unittest.TestCase):
             except:
                 trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
                 msg = sys.exc_info()[1].args[0]
-                if 'Failed to connect' in msg or failedOnFatboy(trace):
+                if 'Failed to connect' in str(msg) or failedOnFatboy(trace):
 
                     # if the exception was due to a failed connection
                     # to fatboy, ignore it
@@ -220,7 +220,7 @@ class basicAccessTest(unittest.TestCase):
             except:
                 trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
                 msg = sys.exc_info()[1].args[0]
-                if 'Failed to connect' in msg or failedOnFatboy(trace):
+                if 'Failed to connect' in str(msg) or failedOnFatboy(trace):
 
                     # if the exception was due to a failed connection
                     # to fatboy, ignore it
@@ -283,7 +283,7 @@ class basicAccessTest(unittest.TestCase):
         except:
             trace = traceback.extract_tb(sys.exc_info()[2], limit=20)
             msg = sys.exc_info()[1].args[0]
-            if 'Failed to connect' in msg or failedOnFatboy(trace):
+            if 'Failed to connect' in str(msg) or failedOnFatboy(trace):
 
                 # if the exception was due to a failed connection
                 # to fatboy, ignore it
