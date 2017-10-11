@@ -55,6 +55,8 @@ class StarCatalog(InstanceCatalog):
                       'variabilityParameters', 'sedFilename']
 
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 class CompoundCatalogTest(unittest.TestCase):
 
     def setUp(self):
