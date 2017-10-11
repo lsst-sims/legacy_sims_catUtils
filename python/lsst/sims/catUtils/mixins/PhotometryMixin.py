@@ -181,7 +181,7 @@ class PhotometryBase(object):
             self.ssm_random_seeded = True
         # Pre-generate random numbers, if desired and not previously done.
         if pre_generate_randoms and not hasattr(self, 'ssm_randoms'):
-            self.ssm_randoms = numpy.random.rand(12000000)
+            self.ssm_randoms = numpy.random.rand(14000000)
         # Calculate probability values to compare to completeness.
         if hasattr(self, 'ssm_randoms'):
             # Grab the random numbers from self.randoms.
