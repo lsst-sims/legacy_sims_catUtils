@@ -71,6 +71,8 @@ class ssmCatCamera(ssmCat):
 
 class createSSMSourceCatalogsTest(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
@@ -104,7 +106,10 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 # But moving objects databases are not currently complete for all years.
                 # Push forward to night=747.
                 # (note that we need the phosim dictionary as well)
-                newMJD = obsMeta.mjd.TAI + (747 - 20)
+
+                newMJD = 59590.2  # this MJD is artificially chosen to be in the
+                                  # time span of the new baseline simulated survey
+
                 phoSimMetaDict = {'exptime': [30]}
                 obs = ObservationMetaData(mjd=newMJD,
                                           pointingRA=obsMeta.pointingRA,
@@ -130,7 +135,8 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                         # verify that we did not write an empty catalog
                         with open(output_cat, 'r') as input_file:
                             lines = input_file.readlines()
-                        self.assertGreater(len(lines), 1)
+                        msg = 'MJD is %.3f' % obs.mjd.TAI
+                        self.assertGreater(len(lines), 1, msg=msg)
                 except:
                     # This is because the solar system object 'tables'
                     # don't actually connect to tables on fatboy; they just
