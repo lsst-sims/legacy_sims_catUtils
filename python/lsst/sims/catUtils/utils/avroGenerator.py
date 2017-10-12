@@ -159,8 +159,9 @@ class AvroGenerator(object):
                                         chunk_size=self.chunk_size)
 
         print('chunking')
-
+        i_chunk = 0
         for chunk in data_iter:
+            i_chunk += 1
             if 'properMotionRa'in column_query:
                 pmra = chunk['properMotionRa']
                 pmdec = chunk['properMotionDec']
@@ -190,4 +191,5 @@ class AvroGenerator(object):
                 for star_obj in cat.iter_catalog(query_cache=[valid_sources]):
                     pass
                     #print star_obj
-
+                if i_chunk > 4:
+                    exit()
