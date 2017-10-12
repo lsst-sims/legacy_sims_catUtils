@@ -13,6 +13,7 @@ from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 
 __all__ = ["AvroGenerator"]
 
+
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseLightCurveCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
