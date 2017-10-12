@@ -5,3 +5,4 @@ from .DBobjectTestUtils import *
 from .CatalogTestUtils import *
 from .LightCurveGenerator import *
 from .SNIaLightCurveGenerator import *
+from .avroGenerator import *
