@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from lsst.sims.utils import findHtmid, trixelFromHtmid
 from lsst.sims.utils import angularSeparation, ObservationMetaData
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
@@ -7,53 +8,69 @@ from lsst.sims.coordUtils import _chipNameFromRaDecLSST
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
-from lsst.sims.catUtils.mixins import PhotometryStars, CameraCoordsLSST
+from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
+from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 
 __all__ = ["AvroGenerator"]
 
-class StellarVariabilityCatalog(VariabilityStars, PhotometryStars, AstrometryStars,
+class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseLightCurveCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
-                      'mag','mag_uncertainty', 'chipName']
+                      'mag','mag_uncertainty', 'dmag', 'chipName']
 
-    @compound('sigma_native_u', 'sigma_native_g', 'sigma_native_r',
-              'sigma_native_i', 'sigma_native_z', 'sigma_native_y')
-    def get_avroPhotometricUncertainty(self):
-        if not hasattr(self, '_avro_bp_dict'):
-            self._avro_bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
-        return self._magnitudeUncertaintyGetter(['native_u', 'native_g', 'native_r',
-                                                 'native_i', 'native_z', 'native_y'],
+    default_formats = {'f':'%.4g'}
+
+    _d_ct = 0
+
+    @compound('sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
+              'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y')
+    def get_lsst_photometric_uncertainties(self):
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        return self._magnitudeUncertaintyGetter(['lsst_u', 'lsst_g', 'lsst_r',
+                                                 'lsst_i', 'lsst_z', 'lsst_y'],
                                                 ['u', 'g', 'r', 'i', 'z', 'y'],
-                                                '_avro_bp_dict')
+                                                'lsstBandpassDict')
 
-    @compound('native_u','native_g','native_r','native_i','native_z','native_y')
-    def get_native_magnitudes(self):
+    @compound('quiescent_lsst_u', 'quiescent_lsst_g', 'quiescent_lsst_r',
+              'quiescent_lsst_i', 'quiescent_lsst_z', 'quiescent_lsst_y')
+    def get_quiescent_lsst_magnitudes(self):
+        return np.array([self.column_by_name('umag'), self.column_by_name('gmag'),
+                         self.column_by_name('rmag'), self.column_by_name('imag'),
+                         self.column_by_name('zmag'), self.column_by_name('ymag')])
+
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_lsst_magnitudes(self):
         """
         getter for LSST stellar magnitudes
         """
 
-        magnitudes = np.array([self.column_by_name('umag'),
-                               self.column_by_name('gmag'),
-                               self.column_by_name('rmag'),
-                               self.column_by_name('imag'),
-                               self.column_by_name('zmag'),
-                               self.column_by_name('ymag')])
+        magnitudes = np.array([self.column_by_name('quiescent_lsst_u'),
+                               self.column_by_name('quiescent_lsst_g'),
+                               self.column_by_name('quiescent_lsst_r'),
+                               self.column_by_name('quiescent_lsst_i'),
+                               self.column_by_name('quiescent_lsst_z'),
+                               self.column_by_name('quiescent_lsst_y')])
 
         delta = self._variabilityGetter(self.get_lsst_magnitudes._colnames)
         magnitudes += delta
 
         return magnitudes
 
-    @compound('mag', 'mag_uncertainty')
+    @compound('mag', 'mag_uncertainty', 'dmag')
     def get_avroPhotometry(self):
-        mag = self.column_by_name('native_%s' % self.obs_metadata.bandpass)
-        mag_unc = self.column_by_name('sigma_native_%s' % self.obs_metadata.bandpass)
-        return np.array([mag, mag_unc])
+        mag = self.column_by_name('lsst_%s' % self.obs_metadata.bandpass)
+        mag_unc = self.column_by_name('sigma_lsst_%s' % self.obs_metadata.bandpass)
+        dmag = self.column_by_name('%smag' % self.obs_metadata.bandpass) - mag
+
+        return np.array([mag, mag_unc, dmag])
 
 
 class AvroGenerator(object):
 
     def __init__(self, obs_list):
+        plm = ParametrizedLightCurveMixin()
+        plm.load_parametrized_light_curves()
         self.obs_list = np.array(obs_list)
         htmid_level = 7
         self.htmid_list = []
@@ -67,6 +84,7 @@ class AvroGenerator(object):
         self._desired_columns = []
         self._desired_columns.append('simobjid')
         self._desired_columns.append('variabilityParameters')
+        self._desired_columns.append('varParamStr')
         self._desired_columns.append('raJ2000')
         self._desired_columns.append('decJ2000')
         self._desired_columns.append('properMotionRa')
@@ -85,9 +103,12 @@ class AvroGenerator(object):
               (len(self.obs_list), len(self.unq_htmid_list)))
 
     def alerts_from_db(self, dbobj):
-        for htmid in self.unq_htmid_list:
-            print('processing %d' % htmid)
+        for i_h, htmid in enumerate(self.unq_htmid_list):
+            print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
+            t_start = time.time()
             self._process_htmid(htmid, dbobj)
+            print("that took %e hours" % ((time.time()-t_start)/3600.0))
+
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
         valid_dexes = np.where(self.htmid_list == htmid)
@@ -104,7 +125,7 @@ class AvroGenerator(object):
             ra_list.append(obs.pointingRA)
             dec_list.append(obs.pointingDec)
             cat = StellarVariabilityCatalog(dbobj, obs_metadata=obs)
-            cat._avro_bp_dict =  self.bp_dict
+            cat.lsstBandpassDict =  self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
 
@@ -167,5 +188,6 @@ class AvroGenerator(object):
                 cat = cat_list[i_obs]
                 i_star = 0
                 for star_obj in cat.iter_catalog(query_cache=[valid_sources]):
-                    print star_obj
+                    pass
+                    #print star_obj
 
