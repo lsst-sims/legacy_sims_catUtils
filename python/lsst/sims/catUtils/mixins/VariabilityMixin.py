@@ -792,11 +792,15 @@ class MLTflaringMixin(Variability):
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
                     flux_name = '%s_%s' % (lc_name, mag_name)
+
                     if flux_name in _MLT_LC_FLUX_CACHE:
                         flux_arr = _MLT_LC_FLUX_CACHE[flux_name]
                     else:
                         flux_arr = _MLT_LC_NPZ[flux_name]
                         _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
+                    n_zero = len(np.where(flux_arr==0.0)[0])
+                    #print('calculating %s; %d -- %e %e %e --- %d of %d' % (flux_name,len(t_interp),flux_arr.min(),
+                    #                                          np.median(flux_arr),flux_arr.max(),n_zero,len(flux_arr)))
 
                     dflux = np.interp(t_interp, time_arr, flux_arr)
 
@@ -823,6 +827,10 @@ class MLTflaringMixin(Variability):
 
                     dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
                                                  - local_base_mags)
+
+                    #print("local dmags %e %e %e" % (dMags[i_mag][use_this_lc].min(),
+                    #                                np.median(dMags[i_mag][use_this_lc]),
+                    #                                dMags[i_mag][use_this_lc].max()))
 
         return dMags
 

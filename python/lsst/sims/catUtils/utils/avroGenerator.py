@@ -1,4 +1,5 @@
 import numpy as np
+from collections import OrderedDict
 import time
 from lsst.sims.utils import findHtmid, trixelFromHtmid
 from lsst.sims.utils import angularSeparation, ObservationMetaData
@@ -17,7 +18,7 @@ __all__ = ["AvroGenerator"]
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseLightCurveCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
-                      'mag','mag_uncertainty', 'dmag', 'chipName']
+                      'mag','mag_uncertainty', 'dmag', 'chipName', 'varParamStr']
 
     default_formats = {'f':'%.4g'}
 
@@ -32,6 +33,16 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
                                                  'lsst_i', 'lsst_z', 'lsst_y'],
                                                 ['u', 'g', 'r', 'i', 'z', 'y'],
                                                 'lsstBandpassDict')
+
+    @compound('delta_umag', 'delta_gmag', 'delta_rmag',
+              'delta_imag', 'delta_zmag', 'delta_ymag')
+    def get_deltaMagAvro(self):
+        ra = self.column_by_name('raJ2000')
+        if len(ra)==0:
+            return np.array([[],[],[],[],[],[]])
+
+        raise RuntimeError("Should not have gotten this far in delta mag getter")
+
 
     @compound('quiescent_lsst_u', 'quiescent_lsst_g', 'quiescent_lsst_r',
               'quiescent_lsst_i', 'quiescent_lsst_z', 'quiescent_lsst_y')
@@ -53,7 +64,12 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
                                self.column_by_name('quiescent_lsst_z'),
                                self.column_by_name('quiescent_lsst_y')])
 
-        delta = self._variabilityGetter(self.get_lsst_magnitudes._colnames)
+        delta = np.array([self.column_by_name('delta_umag'),
+                          self.column_by_name('delta_gmag'),
+                          self.column_by_name('delta_rmag'),
+                          self.column_by_name('delta_imag'),
+                          self.column_by_name('delta_zmag'),
+                          self.column_by_name('delta_ymag')])
         magnitudes += delta
 
         return magnitudes
@@ -112,6 +128,7 @@ class AvroGenerator(object):
 
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
+        mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
         valid_dexes = np.where(self.htmid_list == htmid)
         print('valid_dexes %s ' % str(valid_dexes))
         obs_valid = self.obs_list[valid_dexes]
@@ -159,6 +176,15 @@ class AvroGenerator(object):
                                         obs_metadata=center_obs,
                                         chunk_size=self.chunk_size)
 
+
+        photometry_catalog = StellarVariabilityCatalog(dbobj, obs_valid[0],
+                                                       column_outputs=['lsst_u',
+                                                                       'lsst_g',
+                                                                       'lsst_r',
+                                                                       'lsst_i',
+                                                                       'lsst_z',
+                                                                       'lsst_y'])
+
         print('chunking')
         i_chunk = 0
         for chunk in data_iter:
@@ -174,6 +200,14 @@ class AvroGenerator(object):
                 px = None
                 vrad = None
 
+            photometry_catalog._set_current_chunk(chunk)
+            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                           expmjd=expmjd_list).transpose((2,0,1))
+
+            #for ii in range(6):
+            #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
+            #exit()
+
             for i_obs, obs in enumerate(obs_valid):
                 chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
                                                         chunk['decJ2000'],
@@ -188,9 +222,12 @@ class AvroGenerator(object):
                     assert name is not None
                 valid_sources = chunk[valid]
                 cat = cat_list[i_obs]
+                local_column_cache = {}
+                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
+                                                                  for i_mag in range(len(mag_names))])
                 i_star = 0
-                for star_obj in cat.iter_catalog(query_cache=[valid_sources]):
+                for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
                     pass
                     #print star_obj
-                if i_chunk > 4:
-                    exit()
+                #if i_chunk > 4:
+                #    exit()
