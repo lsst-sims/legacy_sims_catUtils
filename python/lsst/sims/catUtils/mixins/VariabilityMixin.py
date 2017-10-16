@@ -98,6 +98,8 @@ _MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
 _MLT_LC_DURATION_CACHE = {}  # a dict for storing the simulated length
                              # of the time grids
 
+_MLT_LC_MAX_TIME_CACHE = {}  # a dict for storing the t_max of a light curve
+
 _MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
 
 _PARAMETRIZED_LC_MODELS = {}  # a dict for storing the parametrized light curve models
@@ -634,6 +636,7 @@ class MLTflaringMixin(Variability):
         global _MLT_LC_NPZ_NAME
         global _MLT_LC_TIME_CACHE
         global _MLT_LC_DURATION_CACHE
+        global _MLT_LC_MAX_TIME_CACHE
         global _MLT_LC_FLUX_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
@@ -676,6 +679,7 @@ class MLTflaringMixin(Variability):
             _MLT_LC_NPZ_NAME = self._mlt_lc_file
             _MLT_LC_TIME_CACHE = {}
             _MLT_LC_DURATION_CACHE = {}
+            _MLT_LC_MAX_TIME_CACHE = {}
             _MLT_LC_FLUX_CACHE = {}
 
         if not hasattr(self, '_mlt_dust_lookup'):
@@ -801,11 +805,14 @@ class MLTflaringMixin(Variability):
             if lc_name in _MLT_LC_TIME_CACHE:
                 time_arr = _MLT_LC_TIME_CACHE[lc_name]
                 dt = _MLT_LC_DURATION_CACHE[lc_name]
+                max_time = _MLT_LC_MAX_TIME_CACHE[lc_name]
             else:
                 time_arr = _MLT_LC_NPZ['%s_time' % lc_name] + self._survey_start
                 _MLT_LC_TIME_CACHE[lc_name] = time_arr
                 dt = time_arr.max() - time_arr.min()
                 _MLT_LC_DURATION_CACHE[lc_name] = dt
+                max_time = time_arr.max()
+                _MLT_LC_MAX_TIME_CACHE[lc_name] = max_time
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
@@ -820,9 +827,10 @@ class MLTflaringMixin(Variability):
                 t_interp = np.ones(shape=(n_obj, n_time))*expmjd
                 t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
 
-            while t_interp.max() > time_arr.max():
-                bad_dexes = np.where(t_interp>time_arr.max())
+            bad_dexes = np.where(t_interp>max_time)
+            while len(bad_dexes[0])>0:
                 t_interp[bad_dexes] -= dt
+                bad_dexes = np.where(t_interp>max_time)
 
             t_format_time += time.time()-t_before_time
             t_use_this += time.time()-t_before
