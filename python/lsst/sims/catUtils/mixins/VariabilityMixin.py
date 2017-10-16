@@ -777,6 +777,7 @@ class MLTflaringMixin(Variability):
         t_format_time = 0.0
         t_where = 0.0
         t_load = 0.0
+        t_spent_interp = 0.0
 
         for lc_name in lc_names_unique:
             t_before = time.time()
@@ -851,7 +852,9 @@ class MLTflaringMixin(Variability):
                     #print('calculating %s; %d -- %e %e %e --- %d of %d' % (flux_name,len(t_interp),flux_arr.min(),
                     #                                          np.median(flux_arr),flux_arr.max(),n_zero,len(flux_arr)))
 
+                    t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
+                    t_spent_interp += time.time()-t_before_interp
 
                     if isinstance(expmjd, numbers.Number):
                         dflux *= flux_factor[use_this_lc]
@@ -885,7 +888,7 @@ class MLTflaringMixin(Variability):
 
         print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d' %
         (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
-        print('t_where %.2e\nt_load %.2e\n' % (t_where, t_load))
+        print('t_where %.2e\nt_load %.2e\nt_interp %.2e\n' % (t_where, t_load, t_spent_interp))
 
         return dMags
 
