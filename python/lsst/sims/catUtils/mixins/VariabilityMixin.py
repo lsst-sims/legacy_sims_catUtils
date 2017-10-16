@@ -78,7 +78,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-import time
+# import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN",
@@ -1034,7 +1034,7 @@ class ParametrizedLightCurveMixin(Variability):
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
     def applyParametrizedLightCurve(self, valid_dexes, params, expmjd):
 
-        t_start = time.time()
+        # t_start = time.time()
 
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
@@ -1043,7 +1043,7 @@ class ParametrizedLightCurveMixin(Variability):
         good = np.where(np.logical_not(np.isnan(params['lc'].astype(float))))
         unq_lc_int = np.unique(params['lc'][good])
 
-        print('applyParamLC %d obj; %d unique' % (n_obj, len(unq_lc_int)))
+        # print('applyParamLC %d obj; %d unique' % (n_obj, len(unq_lc_int)))
 
         if isinstance(expmjd, numbers.Number):
             n_t = 1
@@ -1059,16 +1059,16 @@ class ParametrizedLightCurveMixin(Variability):
                 lc_time[i_start:i_start+n_t] = expmjd - t0_float[i_obj]
                 i_start += n_t
 
-        print('initialized arrays in %e' % (time.time()-t_start))
-        t_assign = 0.0
-        t_flux = 0.0
-        t_use_this = 0.0
+        # print('initialized arrays in %e' % (time.time()-t_start))
+        # t_assign = 0.0
+        # t_flux = 0.0
+        # t_use_this = 0.0
 
         lc_int_arr = np.array(params['lc'])
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
-            t_before = time.time()
+            # t_before = time.time()
             if n_t == 1:
                 use_this_lc = np.where(lc_int_arr == lc_int)[0]
             else:
@@ -1078,19 +1078,19 @@ class ParametrizedLightCurveMixin(Variability):
                 for ii, i_lc in enumerate(use_this_lc_unq):
                     use_this_lc[ii*n_t:(ii+1)*n_t] = template_arange + i_lc*n_t
 
-            t_use_this += time.time()-t_before
+            # t_use_this += time.time()-t_before
             try:
                 assert len(use_this_lc) % n_t == 0
             except AssertionError:
                 raise RuntimeError("Something went wrong in applyParametrizedLightCurve\n"
                                    "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc), n_t))
 
-            t_before = time.time()
+            # t_before = time.time()
             q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc])
             d_mag = 2.5*np.log10(1.0+d_flux/q_flux)
-            t_flux += time.time()-t_before
+            # t_flux += time.time()-t_before
 
-            t_before = time.time()
+            # t_before = time.time()
             if n_t == 1:
                 for i_filter in range(6):
                     d_mag_out[i_filter][use_this_lc] = d_mag
@@ -1101,10 +1101,11 @@ class ParametrizedLightCurveMixin(Variability):
                     for i_filter in range(6):
                         d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
 
-            t_assign += time.time()-t_before
+            # t_assign += time.time()-t_before
 
-        print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e\n' %
-        (time.time()-t_start,t_assign,t_flux,t_use_this))
+        # print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e\n' %
+        # (time.time()-t_start,t_assign,t_flux,t_use_this))
+
         return d_mag_out
 
 
