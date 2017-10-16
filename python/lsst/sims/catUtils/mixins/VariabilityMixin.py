@@ -78,7 +78,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-# import time
+import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN",
@@ -619,6 +619,9 @@ class MLTflaringMixin(Variability):
         with the quiescent magnitudes of the objects
         """
 
+        t_start = time.time()
+        t_before = t_start
+
         if parallax is None:
             parallax = self.column_by_name('parallax')
         if ebv is None:
@@ -720,6 +723,9 @@ class MLTflaringMixin(Variability):
                 for ibp, bp in enumerate(list_of_bp):
                     self._mlt_dust_lookup[bp][iebv] = dusty_fluxes[ibp]/base_fluxes[ibp]
 
+        t_init = time.time()-t_before
+        t_before = time.time()
+
         # get the distance to each star in parsecs
         _au_to_parsec = 1.0/206265.0
         dd = _au_to_parsec/parallax
@@ -750,11 +756,24 @@ class MLTflaringMixin(Variability):
 
         lc_name_arr = params['lc'].astype(str)
         lc_names_unique = np.unique(lc_name_arr)
+
+        t_mag_init = time.time()-t_before
+        t_before = time.time()
+
+        print('applying MLT to %d -- %d unique' % (len(lc_name_arr), len(lc_names_unique)))
+        not_none = 0
+
+        t_use_this = 0.0
+        t_flux = 0.0
+
         for lc_name in lc_names_unique:
+            t_before = time.time()
             if 'None' in lc_name:
+                t_use_this += time.time()-t_before
                 continue
 
             use_this_lc = np.where(np.char.find(lc_name_arr, lc_name)==0)
+            not_none += len(use_this_lc[0])
 
             lc_name = lc_name.replace('.txt', '')
 
@@ -788,6 +807,9 @@ class MLTflaringMixin(Variability):
             while t_interp.max() > time_arr.max():
                 bad_dexes = np.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
+
+            t_use_this += time.time()-t_before
+            t_before = time.time()
 
             for i_mag, mag_name in enumerate(mag_name_tuple):
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
@@ -833,6 +855,11 @@ class MLTflaringMixin(Variability):
                     #print("local dmags %e %e %e" % (dMags[i_mag][use_this_lc].min(),
                     #                                np.median(dMags[i_mag][use_this_lc]),
                     #                                dMags[i_mag][use_this_lc].max()))
+
+            t_flux += time.time()-t_before
+
+        print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nnot_none %d\n' %
+        (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,not_none))
 
         return dMags
 
@@ -1034,7 +1061,7 @@ class ParametrizedLightCurveMixin(Variability):
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
     def applyParametrizedLightCurve(self, valid_dexes, params, expmjd):
 
-        # t_start = time.time()
+        t_start = time.time()
 
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
@@ -1064,6 +1091,8 @@ class ParametrizedLightCurveMixin(Variability):
         # t_flux = 0.0
         # t_use_this = 0.0
 
+        not_none = 0
+
         lc_int_arr = np.array(params['lc'])
         for lc_int in unq_lc_int:
             if lc_int is None:
@@ -1071,8 +1100,10 @@ class ParametrizedLightCurveMixin(Variability):
             # t_before = time.time()
             if n_t == 1:
                 use_this_lc = np.where(lc_int_arr == lc_int)[0]
+                not_none += len(use_this_lc)
             else:
                 use_this_lc_unq = np.where(lc_int_arr == lc_int)[0]
+                not_none += len(use_this_lc_unq)
                 use_this_lc = np.zeros(len(use_this_lc_unq)*n_t, dtype=int)
                 template_arange = np.arange(0, n_t, dtype=int)
                 for ii, i_lc in enumerate(use_this_lc_unq):
@@ -1105,6 +1136,9 @@ class ParametrizedLightCurveMixin(Variability):
 
         # print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e\n' %
         # (time.time()-t_start,t_assign,t_flux,t_use_this))
+
+        print('applying Parametrized LC to %d' % not_none)
+        print('took %.2e\n' % (time.time()-t_start))
 
         return d_mag_out
 
