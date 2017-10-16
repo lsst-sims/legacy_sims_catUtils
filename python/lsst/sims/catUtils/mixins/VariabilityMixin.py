@@ -778,6 +778,7 @@ class MLTflaringMixin(Variability):
         t_where = 0.0
         t_load = 0.0
         t_spent_interp = 0.0
+        t_arr_wrangling = 0.0
 
         for lc_name in lc_names_unique:
             t_before = time.time()
@@ -856,15 +857,18 @@ class MLTflaringMixin(Variability):
                     dflux = np.interp(t_interp, time_arr, flux_arr)
                     t_spent_interp += time.time()-t_before_interp
 
+                    t_before_wrangle = time.time()
                     if isinstance(expmjd, numbers.Number):
                         dflux *= flux_factor[use_this_lc]
                     else:
                         dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+                    t_arr_wrangling += time.time()-t_before_wrangle
 
                     dust_factor = np.interp(ebv[use_this_lc],
                                             self._mlt_dust_lookup['ebv'],
                                             self._mlt_dust_lookup[mag_name])
 
+                    t_before_wrangle = time.time()
                     if not isinstance(expmjd, numbers.Number):
                         dust_factor = np.array([dust_factor]*n_time).transpose()
 
@@ -876,6 +880,7 @@ class MLTflaringMixin(Variability):
                     else:
                         local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
                         local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+                    t_arr_wrangling += time.time()-t_before_wrangle
 
                     dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
                                                  - local_base_mags)
@@ -888,7 +893,9 @@ class MLTflaringMixin(Variability):
 
         print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d' %
         (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
-        print('t_where %.2e\nt_load %.2e\nt_interp %.2e\n' % (t_where, t_load, t_spent_interp))
+        print('t_where %.2e\nt_load %.2e\nt_interp %.2e\nwrangling %.2e' %
+        (t_where, t_load, t_spent_interp, t_arr_wrangling))
+        print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
         return dMags
 
