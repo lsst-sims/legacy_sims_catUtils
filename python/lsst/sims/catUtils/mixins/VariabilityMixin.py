@@ -625,7 +625,7 @@ class MLTflaringMixin(Variability):
         """
 
         t_start = time.time()
-        t_before = t_start
+        # t_before = t_start
 
         if parallax is None:
             parallax = self.column_by_name('parallax')
@@ -732,8 +732,8 @@ class MLTflaringMixin(Variability):
                 for ibp, bp in enumerate(list_of_bp):
                     self._mlt_dust_lookup[bp][iebv] = dusty_fluxes[ibp]/base_fluxes[ibp]
 
-        t_init = time.time()-t_before
-        t_before = time.time()
+        # t_init = time.time()-t_before
+        # t_before = time.time()
 
         # get the distance to each star in parsecs
         _au_to_parsec = 1.0/206265.0
@@ -766,29 +766,29 @@ class MLTflaringMixin(Variability):
         lc_name_arr = params['lc'].astype(str)
         lc_names_unique = np.unique(lc_name_arr)
 
-        t_mag_init = time.time()-t_before
-        t_before = time.time()
+        # t_mag_init = time.time()-t_before
+        # t_before = time.time()
 
         print('applying MLT to %d -- %d unique' % (len(lc_name_arr), len(lc_names_unique)))
         not_none = 0
 
-        t_use_this = 0.0
-        t_flux = 0.0
-        t_format_time = 0.0
-        t_where = 0.0
-        t_load = 0.0
-        t_spent_interp = 0.0
-        t_arr_wrangling = 0.0
+        # t_use_this = 0.0
+        # t_flux = 0.0
+        # t_format_time = 0.0
+        # t_where = 0.0
+        # t_load = 0.0
+        # t_spent_interp = 0.0
+        # t_arr_wrangling = 0.0
 
         for lc_name in lc_names_unique:
-            t_before = time.time()
+            # t_before = time.time()
             if 'None' in lc_name:
-                t_use_this += time.time()-t_before
+                # t_use_this += time.time()-t_before
                 continue
 
-            t_before_where = time.time()
+            # t_before_where = time.time()
             use_this_lc = np.where(np.char.find(lc_name_arr, lc_name)==0)
-            t_where += time.time()-t_before_where
+            # t_where += time.time()-t_before_where
             not_none += len(use_this_lc[0])
 
             lc_name = lc_name.replace('.txt', '')
@@ -803,7 +803,7 @@ class MLTflaringMixin(Variability):
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
 
-            t_before_load = time.time()
+            # t_before_load = time.time()
             if lc_name in _MLT_LC_TIME_CACHE:
                 time_arr = _MLT_LC_TIME_CACHE[lc_name]
                 dt = _MLT_LC_DURATION_CACHE[lc_name]
@@ -818,9 +818,9 @@ class MLTflaringMixin(Variability):
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
-            t_load += time.time()-t_before_load
+            # t_load += time.time()-t_before_load
 
-            t_before_time = time.time()
+            # t_before_time = time.time()
             if isinstance(expmjd, numbers.Number):
                 t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
             else:
@@ -834,9 +834,9 @@ class MLTflaringMixin(Variability):
                 t_interp[bad_dexes] -= dt
                 bad_dexes = np.where(t_interp>max_time)
 
-            t_format_time += time.time()-t_before_time
-            t_use_this += time.time()-t_before
-            t_before = time.time()
+            # t_format_time += time.time()-t_before_time
+            # t_use_this += time.time()-t_before
+            # t_before = time.time()
 
             for i_mag, mag_name in enumerate(mag_name_tuple):
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
@@ -850,22 +850,22 @@ class MLTflaringMixin(Variability):
                         flux_arr = _MLT_LC_NPZ[flux_name]
                         _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
 
-                    t_before_interp = time.time()
+                    # t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
-                    t_spent_interp += time.time()-t_before_interp
+                    # t_spent_interp += time.time()-t_before_interp
 
-                    t_before_wrangle = time.time()
+                    # t_before_wrangle = time.time()
                     if isinstance(expmjd, numbers.Number):
                         dflux *= flux_factor[use_this_lc]
                     else:
                         dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
-                    t_arr_wrangling += time.time()-t_before_wrangle
+                    # t_arr_wrangling += time.time()-t_before_wrangle
 
                     dust_factor = np.interp(ebv[use_this_lc],
                                             self._mlt_dust_lookup['ebv'],
                                             self._mlt_dust_lookup[mag_name])
 
-                    t_before_wrangle = time.time()
+                    # t_before_wrangle = time.time()
                     if not isinstance(expmjd, numbers.Number):
                         dust_factor = np.array([dust_factor]*n_time).transpose()
 
@@ -877,7 +877,7 @@ class MLTflaringMixin(Variability):
                     else:
                         local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
                         local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
-                    t_arr_wrangling += time.time()-t_before_wrangle
+                    # t_arr_wrangling += time.time()-t_before_wrangle
 
                     dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
                                                  - local_base_mags)
@@ -886,12 +886,12 @@ class MLTflaringMixin(Variability):
                     #                                np.median(dMags[i_mag][use_this_lc]),
                     #                                dMags[i_mag][use_this_lc].max()))
 
-            t_flux += time.time()-t_before
+            # t_flux += time.time()-t_before
 
-        print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d' %
-        (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
-        print('t_where %.2e\nt_load %.2e\nt_interp %.2e\nwrangling %.2e' %
-        (t_where, t_load, t_spent_interp, t_arr_wrangling))
+        # print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d' %
+        # (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
+        # print('t_where %.2e\nt_load %.2e\nt_interp %.2e\nwrangling %.2e' %
+        # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
         return dMags
@@ -1171,7 +1171,7 @@ class ParametrizedLightCurveMixin(Variability):
         # (time.time()-t_start,t_assign,t_flux,t_use_this))
 
         print('applying Parametrized LC to %d' % not_none)
-        print('took %.2e\n' % (time.time()-t_start))
+        print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
 
         return d_mag_out
 
