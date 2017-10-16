@@ -765,6 +765,7 @@ class MLTflaringMixin(Variability):
 
         t_use_this = 0.0
         t_flux = 0.0
+        t_format_time = 0.0
 
         for lc_name in lc_names_unique:
             t_before = time.time()
@@ -796,6 +797,7 @@ class MLTflaringMixin(Variability):
             time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
 
+            t_before_time = time.time()
             if isinstance(expmjd, numbers.Number):
                 t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
             else:
@@ -808,6 +810,7 @@ class MLTflaringMixin(Variability):
                 bad_dexes = np.where(t_interp>time_arr.max())
                 t_interp[bad_dexes] -= dt
 
+            t_format_time += time.time()-t_before_time
             t_use_this += time.time()-t_before
             t_before = time.time()
 
@@ -858,8 +861,8 @@ class MLTflaringMixin(Variability):
 
             t_flux += time.time()-t_before
 
-        print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nnot_none %d\n' %
-        (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,not_none))
+        print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d\n' %
+        (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
 
         return dMags
 
