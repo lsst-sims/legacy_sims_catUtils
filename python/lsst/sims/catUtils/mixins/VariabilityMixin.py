@@ -766,6 +766,8 @@ class MLTflaringMixin(Variability):
         t_use_this = 0.0
         t_flux = 0.0
         t_format_time = 0.0
+        t_where = 0.0
+        t_load = 0.0
 
         for lc_name in lc_names_unique:
             t_before = time.time()
@@ -773,7 +775,9 @@ class MLTflaringMixin(Variability):
                 t_use_this += time.time()-t_before
                 continue
 
+            t_before_where = time.time()
             use_this_lc = np.where(np.char.find(lc_name_arr, lc_name)==0)
+            t_where += time.time()-t_before_where
             not_none += len(use_this_lc[0])
 
             lc_name = lc_name.replace('.txt', '')
@@ -788,6 +792,7 @@ class MLTflaringMixin(Variability):
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
 
+            t_before_load = time.time()
             if lc_name in _MLT_LC_TIME_CACHE:
                 raw_time_arr = _MLT_LC_TIME_CACHE[lc_name]
             else:
@@ -796,6 +801,7 @@ class MLTflaringMixin(Variability):
 
             time_arr = self._survey_start + raw_time_arr
             dt = time_arr.max() - time_arr.min()
+            t_load += time.time()-t_before_load
 
             t_before_time = time.time()
             if isinstance(expmjd, numbers.Number):
@@ -861,8 +867,9 @@ class MLTflaringMixin(Variability):
 
             t_flux += time.time()-t_before
 
-        print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d\n' %
+        print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d' %
         (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
+        print('t_where %.2e\nt_load %.2e\n' % (t_where, t_load))
 
         return dMags
 
