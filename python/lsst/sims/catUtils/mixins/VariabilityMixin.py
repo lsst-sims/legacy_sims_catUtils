@@ -1049,19 +1049,14 @@ class ParametrizedLightCurveMixin(Variability):
             n_t = 1
             d_mag_out = np.zeros((6, n_obj))
             lc_time = expmjd - params['t0'].astype(float)
-            lc_int_arr = params['lc']
         else:
             n_t = len(expmjd)
             d_mag_out = np.zeros((6, n_obj, n_t))
             t0_float = params['t0'].astype(float)
             lc_time = np.zeros(n_t*n_obj)
             i_start = 0
-            lc_int_arr = []
-            lc_time_dex_map = {}
             for i_obj in range(n_obj):
                 lc_time[i_start:i_start+n_t] = expmjd - t0_float[i_obj]
-                lc_int_arr += [params['lc'][i_obj]]*n_t
-                lc_time_dex_map[i_start] = i_obj
                 i_start += n_t
 
         print('initialized arrays in %e' % (time.time()-t_start))
@@ -1069,18 +1064,25 @@ class ParametrizedLightCurveMixin(Variability):
         t_flux = 0.0
         t_use_this = 0.0
 
-        lc_int_arr = np.array(lc_int_arr)
+        lc_int_arr = np.array(params['lc'])
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
             t_before = time.time()
-            use_this_lc = np.where(lc_int_arr == lc_int)
+            if n_t == 1:
+                use_this_lc = np.where(lc_int_arr == lc_int)[0]
+            else:
+                use_this_lc_unq = np.where(lc_int_arr == lc_int)[0]
+                use_this_lc = np.zeros(len(use_this_lc_unq)*n_t, dtype=int)
+                for ii, i_lc in enumerate(use_this_lc_unq):
+                    use_this_lc[ii*n_t:(ii+1)*n_t] = np.arange(i_lc*n_t, (i_lc+1)*n_t, dtype=int)
+
             t_use_this += time.time()-t_before
             try:
-                assert len(use_this_lc[0]) % n_t == 0
+                assert len(use_this_lc) % n_t == 0
             except AssertionError:
                 raise RuntimeError("Something went wrong in applyParametrizedLightCurve\n"
-                                   "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc[0]), n_t))
+                                   "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc), n_t))
 
             t_before = time.time()
             q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc])
@@ -1092,10 +1094,9 @@ class ParametrizedLightCurveMixin(Variability):
                 for i_filter in range(6):
                     d_mag_out[i_filter][use_this_lc] = d_mag
             else:
-                for i_chunk in range(len(use_this_lc[0])//n_t):
-                    i_start = i_chunk*n_t
-                    i_to_map = use_this_lc[0][i_start]
-                    obj_dex = lc_time_dex_map[i_to_map]
+                for i_obj in range(len(use_this_lc)//n_t):
+                    i_start = i_obj*n_t
+                    obj_dex = use_this_lc_unq[i_obj]
                     for i_filter in range(6):
                         d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
 
