@@ -849,9 +849,6 @@ class MLTflaringMixin(Variability):
                     else:
                         flux_arr = _MLT_LC_NPZ[flux_name]
                         _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
-                    n_zero = len(np.where(flux_arr==0.0)[0])
-                    #print('calculating %s; %d -- %e %e %e --- %d of %d' % (flux_name,len(t_interp),flux_arr.min(),
-                    #                                          np.median(flux_arr),flux_arr.max(),n_zero,len(flux_arr)))
 
                     t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
