@@ -220,13 +220,17 @@ class AvroGenerator(object):
                                                         obs_metadata=obs)
 
                 valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
-                for name in chip_name_list[valid]:
+                valid_chip_name_list = chip_name_list[valid]
+                for name in valid_chip_name_list:
                     assert name is not None
                 valid_sources = chunk[valid]
                 cat = cat_list[i_obs]
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
                                                                   for i_mag in range(len(mag_names))])
+
+                local_column_cache['chipName'] = valid_chip_name_list
+
                 i_star = 0
                 for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
                     pass
