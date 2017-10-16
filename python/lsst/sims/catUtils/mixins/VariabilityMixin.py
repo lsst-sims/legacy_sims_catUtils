@@ -1102,7 +1102,7 @@ class ParametrizedLightCurveMixin(Variability):
 
             t_assign += time.time()-t_before
 
-        print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e' %
+        print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e\n' %
         (time.time()-t_start,t_assign,t_flux,t_use_this))
         return d_mag_out
 
