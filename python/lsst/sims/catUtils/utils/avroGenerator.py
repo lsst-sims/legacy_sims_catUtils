@@ -125,6 +125,8 @@ class AvroGenerator(object):
             t_start = time.time()
             self._process_htmid(htmid, dbobj)
             print("that took %e hours" % ((time.time()-t_start)/3600.0))
+            if i_h>2:
+                exit()
 
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
