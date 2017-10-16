@@ -95,6 +95,9 @@ _MLT_LC_NPZ_NAME = None  # the name of the .npz file to beloaded
 
 _MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
 
+_MLT_LC_DURATION_CACHE = {}  # a dict for storing the simulated length
+                             # of the time grids
+
 _MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
 
 _PARAMETRIZED_LC_MODELS = {}  # a dict for storing the parametrized light curve models
@@ -630,6 +633,7 @@ class MLTflaringMixin(Variability):
         global _MLT_LC_NPZ
         global _MLT_LC_NPZ_NAME
         global _MLT_LC_TIME_CACHE
+        global _MLT_LC_DURATION_CACHE
         global _MLT_LC_FLUX_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
@@ -671,6 +675,7 @@ class MLTflaringMixin(Variability):
             sims_clean_up.targets.append(_MLT_LC_NPZ)
             _MLT_LC_NPZ_NAME = self._mlt_lc_file
             _MLT_LC_TIME_CACHE = {}
+            _MLT_LC_DURATION_CACHE = {}
             _MLT_LC_FLUX_CACHE = {}
 
         if not hasattr(self, '_mlt_dust_lookup'):
@@ -794,13 +799,16 @@ class MLTflaringMixin(Variability):
 
             t_before_load = time.time()
             if lc_name in _MLT_LC_TIME_CACHE:
-                raw_time_arr = _MLT_LC_TIME_CACHE[lc_name]
+                time_arr = _MLT_LC_TIME_CACHE[lc_name]
+                dt = _MLT_LC_DURATION_CACHE[lc_name]
             else:
-                raw_time_arr = _MLT_LC_NPZ['%s_time' % lc_name]
-                _MLT_LC_TIME_CACHE[lc_name] = raw_time_arr
+                time_arr = _MLT_LC_NPZ['%s_time' % lc_name] + self._survey_start
+                _MLT_LC_TIME_CACHE[lc_name] = time_arr
+                dt = time_arr.max() - time_arr.min()
+                _MLT_LC_DURATION_CACHE[lc_name] = dt
 
-            time_arr = self._survey_start + raw_time_arr
-            dt = time_arr.max() - time_arr.min()
+            #time_arr = self._survey_start + raw_time_arr
+            #dt = 3652.5
             t_load += time.time()-t_before_load
 
             t_before_time = time.time()
