@@ -197,6 +197,7 @@ class MLT_flare_test_case(unittest.TestCase):
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
             flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
+            self.assertGreater(len(flaring_data), 3)
 
             for ix in range(len(flaring_data)):
                 obj_id = flaring_data['id'][ix]
@@ -621,6 +622,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
             flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
+            self.assertGreater(len(flaring_data), 3)
 
             for ix in range(len(flaring_data)):
                 obj_id = flaring_data['id'][ix]
