@@ -753,12 +753,14 @@ class MLTflaringMixin(Variability):
 
         mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
+        base_mags = {}
         ss = Sed()
         for mag_name in mag_name_tuple:
             if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                 'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
                 mm = quiescent_mags[mag_name]
+                base_mags[mag_name] = mm
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
         lc_name_arr = params['lc'].astype(str)
@@ -871,11 +873,14 @@ class MLTflaringMixin(Variability):
 
                     if isinstance(expmjd, numbers.Number):
                         local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                        local_base_mags = base_mags[mag_name][use_this_lc]
                     else:
                         local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
                     # t_arr_wrangling += time.time()-t_before_wrangle
 
-                    dMags[i_mag][use_this_lc] = -2.5*np.log10(1.0+dflux/local_base_fluxes)
+                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
+                                                 - local_base_mags)
 
                     #print("local dmags %e %e %e" % (dMags[i_mag][use_this_lc].min(),
                     #                                np.median(dMags[i_mag][use_this_lc]),
