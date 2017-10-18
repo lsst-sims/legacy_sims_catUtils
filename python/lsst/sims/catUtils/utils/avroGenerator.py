@@ -120,13 +120,18 @@ class AvroGenerator(object):
               (len(self.obs_list), len(self.unq_htmid_list)))
 
     def alerts_from_db(self, dbobj):
+        t_0 = time.time()
+        tot_obs = 0
         for i_h, htmid in enumerate(self.unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
             t_start = time.time()
-            self._process_htmid(htmid, dbobj)
+            n_obs = self._process_htmid(htmid, dbobj)
+            tot_obs += n_obs
             print("that took %e hours" % ((time.time()-t_start)/3600.0))
-            if i_h>2:
-                exit()
+            print("did %d in %e hours; total %e" %
+            (tot_obs,(time.time()-t_0)/3600.0,len(self.obs_list)*(time.time()-t_0)/(3600.0*(tot_obs))))
+            #if i_h>2:
+            #    exit()
 
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
@@ -206,6 +211,8 @@ class AvroGenerator(object):
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                            expmjd=expmjd_list).transpose((2,0,1))
 
+            continue
+
             #for ii in range(6):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
             #exit()
@@ -237,3 +244,4 @@ class AvroGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
+        return len(expmjd_list)
