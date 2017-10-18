@@ -86,32 +86,34 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
            "ParametrizedLightCurveMixin"]
 
-_AGN_LC_CACHE = {}  # a global cache of agn light curve calculations
+_GLOBAL_VARIABILITY_CACHE = {'_AGN_LC_CACHE' : {},  # a global cache of agn light curve calculations
 
-_MLT_LC_NPZ = None  # this will be loaded from a .npz file
-                    # (.npz files are the result of numpy.savez())
+                             '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
+                                                    # (.npz files are the result of numpy.savez())
 
-_MLT_LC_NPZ_NAME = None  # the name of the .npz file to beloaded
+                             '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
 
-_MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
+                             '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
 
-_MLT_LC_DURATION_CACHE = {}  # a dict for storing the simulated length
-                             # of the time grids
+                             '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
+                                                             # of the time grids
 
-_MLT_LC_MAX_TIME_CACHE = {}  # a dict for storing the t_max of a light curve
+                             '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
 
-_MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
+                             '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
 
-_PARAMETRIZED_LC_MODELS = {}  # a dict for storing the parametrized light curve models
-_PARAMETRIZED_MODELS_LOADED = []  # a list of all of the files from which models were loaded
+                             '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+
+                             '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
+                            }
 
 def reset_agn_lc_cache():
     """
     Resets the _AGN_LC_CACHE (a global dict for cacheing time steps in AGN
     light curves) to an empty dict.
     """
-    global _AGN_LC_CACHE
-    _AGN_LC_CACHE = {}
+    global _GLOBAL_VARIABILITY_CACHE
+    _GLOBAL_VARIABILITY_CACHE['_AGN_LC_CACHE'] = {}
     return None
 
 
@@ -632,12 +634,8 @@ class MLTflaringMixin(Variability):
         if ebv is None:
             ebv = self.column_by_name('ebv')
 
-        global _MLT_LC_NPZ
-        global _MLT_LC_NPZ_NAME
-        global _MLT_LC_TIME_CACHE
-        global _MLT_LC_DURATION_CACHE
-        global _MLT_LC_MAX_TIME_CACHE
-        global _MLT_LC_FLUX_CACHE
+        global _GLOBAL_VARIABILITY_CACHE
+        variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
         # just in case the user wants to override the light curve cache
@@ -663,7 +661,10 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file or _MLT_LC_NPZ.fid is None:
+        if (variability_cache['_MLT_LC_NPZ'] is None
+            or variability_cache['_MLT_LC_NPZ_NAME'] != self._mlt_lc_file
+            or variability_cache['_MLT_LC_NPZ'].fid is None):
+
             if not os.path.exists(self._mlt_lc_file):
                 catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
                 raise RuntimeError("The MLT flaring light curve file:\n"
@@ -674,13 +675,13 @@ class MLTflaringMixin(Variability):
                                     + "and run get_mdwarf_flares.sh "
                                     + "to get the data")
 
-            _MLT_LC_NPZ = np.load(self._mlt_lc_file)
-            sims_clean_up.targets.append(_MLT_LC_NPZ)
-            _MLT_LC_NPZ_NAME = self._mlt_lc_file
-            _MLT_LC_TIME_CACHE = {}
-            _MLT_LC_DURATION_CACHE = {}
-            _MLT_LC_MAX_TIME_CACHE = {}
-            _MLT_LC_FLUX_CACHE = {}
+            variability_cache['_MLT_LC_NPZ'] = np.load(self._mlt_lc_file)
+            sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
+            variability_cache['_MLT_LC_NPZ_NAME'] = self._mlt_lc_file
+            variability_cache['_MLT_LC_TIME_CACHE'] = {}
+            variability_cache['_MLT_LC_DURATION_CACHE'] = {}
+            variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
+            variability_cache['_MLT_LC_FLUX_CACHE'] = {}
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
@@ -804,17 +805,17 @@ class MLTflaringMixin(Variability):
                 lc_name = lc_name.replace('in', '')
 
             # t_before_load = time.time()
-            if lc_name in _MLT_LC_TIME_CACHE:
-                time_arr = _MLT_LC_TIME_CACHE[lc_name]
-                dt = _MLT_LC_DURATION_CACHE[lc_name]
-                max_time = _MLT_LC_MAX_TIME_CACHE[lc_name]
+            if lc_name in variability_cache['_MLT_LC_TIME_CACHE']:
+                time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
+                dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
+                max_time = variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name]
             else:
-                time_arr = _MLT_LC_NPZ['%s_time' % lc_name] + self._survey_start
-                _MLT_LC_TIME_CACHE[lc_name] = time_arr
+                time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
+                variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
                 dt = time_arr.max() - time_arr.min()
-                _MLT_LC_DURATION_CACHE[lc_name] = dt
+                variability_cache['_MLT_LC_DURATION_CACHE'][lc_name] = dt
                 max_time = time_arr.max()
-                _MLT_LC_MAX_TIME_CACHE[lc_name] = max_time
+                variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
@@ -844,11 +845,11 @@ class MLTflaringMixin(Variability):
 
                     flux_name = '%s_%s' % (lc_name, mag_name)
 
-                    if flux_name in _MLT_LC_FLUX_CACHE:
-                        flux_arr = _MLT_LC_FLUX_CACHE[flux_name]
+                    if flux_name in variability_cache['_MLT_LC_FLUX_CACHE']:
+                        flux_arr = variability_cache['_MLT_LC_FLUX_CACHE'][flux_name]
                     else:
-                        flux_arr = _MLT_LC_NPZ[flux_name]
-                        _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
+                        flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
+                        variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
 
                     # t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
@@ -956,15 +957,15 @@ class ParametrizedLightCurveMixin(Variability):
         file_name is the absolute path to the file being loaded.
         If None, it will load the default Kepler-based light curve model.
         """
-        global _PARAMETRIZED_LC_MODELS
-        global _PARAMETRIZED_MODELS_LOADED
+        global _GLOBAL_VARIABILITY_CACHE
+        variability_cache = _GLOBAL_VARIABILITY_CACHE
 
-        if file_name in _PARAMETRIZED_MODELS_LOADED:
+        if file_name in variability_cache['_PARAMETRIZED_MODELS_LOADED']:
             return
 
-        if len(_PARAMETRIZED_LC_MODELS) == 0:
-            sims_clean_up.targets.append(_PARAMETRIZED_LC_MODELS)
-            sims_clean_up.targets.append(_PARAMETRIZED_MODELS_LOADED)
+        if len(variability_cache['_PARAMETRIZED_LC_MODELS']) == 0:
+            sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_LC_MODELS'])
+            sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_MODELS_LOADED'])
 
         if file_name is None:
             sims_data_dir = getPackageDir('sims_data')
@@ -994,7 +995,7 @@ class ParametrizedLightCurveMixin(Variability):
                 params = line.strip().split()
                 name = params[0]
                 tag = int(name.split('_')[0][4:])
-                if tag in _PARAMETRIZED_LC_MODELS:
+                if tag in variability_cache['_PARAMETRIZED_LC_MODELS']:
                     # In case multiple sets of models have been loaded that
                     # duplicate identifying integers.
                     raise RuntimeError("You are trying to load light curve with the "
@@ -1020,15 +1021,15 @@ class ParametrizedLightCurveMixin(Variability):
                 local_cc = np.array(local_cc)
                 local_omega = np.array(local_omega)
                 local_tau = np.array(local_tau)
-                _PARAMETRIZED_LC_MODELS[tag] = {}
-                _PARAMETRIZED_LC_MODELS[tag]['median'] = median
-                _PARAMETRIZED_LC_MODELS[tag]['a'] = local_aa
-                _PARAMETRIZED_LC_MODELS[tag]['b'] = local_bb
-                _PARAMETRIZED_LC_MODELS[tag]['c'] = local_cc
-                _PARAMETRIZED_LC_MODELS[tag]['omega'] = local_omega
-                _PARAMETRIZED_LC_MODELS[tag]['tau'] = local_tau
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag] = {}
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['median'] = median
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['a'] = local_aa
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['b'] = local_bb
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['c'] = local_cc
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['omega'] = local_omega
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['tau'] = local_tau
 
-        _PARAMETRIZED_MODELS_LOADED.append(file_name)
+        variability_cache['_PARAMETRIZED_MODELS_LOADED'].append(file_name)
 
     def _calc_dflux(self, lc_id, expmjd):
         """
@@ -1050,10 +1051,11 @@ class ParametrizedLightCurveMixin(Variability):
         the quiescent flux at each of expmjd
         """
 
-        global _PARAMETRIZED_LC_MODELS
+        global _GLOBAL_VARIABILITY_CACHE
+        variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         try:
-            model = _PARAMETRIZED_LC_MODELS[lc_id]
+            model = variability_cache['_PARAMETRIZED_LC_MODELS'][lc_id]
         except KeyError:
             raise KeyError('A KeyError was raised on the light curve id %d.  ' % lc_id
                            + 'You may not have loaded your parametrized light '
@@ -1184,7 +1186,8 @@ class ExtraGalacticVariabilityModels(Variability):
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd):
 
-        global _AGN_LC_CACHE
+        global _GLOBAL_VARIABILITY_CACHE
+        variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -1234,14 +1237,14 @@ class ExtraGalacticVariabilityModels(Variability):
                 # earlier than the first requested MJD.  If so,
                 # use that previous simulation as the starting point.
                 #
-                if agn_ID in _AGN_LC_CACHE:
-                    if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd_val:
+                if agn_ID in variability_cache['_AGN_LC_CACHE']:
+                    if variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd'] <expmjd_val:
                         resumption = True
 
                 if resumption:
-                    rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
-                    start_date = _AGN_LC_CACHE[agn_ID]['mjd']
-                    dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
+                    rng = copy.deepcopy(variability_cache['_AGN_LC_CACHE'][agn_ID]['rng'])
+                    start_date = variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd']
+                    dx_0 = variability_cache['_AGN_LC_CACHE'][agn_ID]['dx']
                 else:
                     start_date = toff
                     rng = np.random.RandomState(seed)
@@ -1285,15 +1288,15 @@ class ExtraGalacticVariabilityModels(Variability):
                 # Reset that AGN light curve cache once it contains
                 # one million objects (to prevent it from taking up
                 # too much memory).
-                if len(_AGN_LC_CACHE)>1000000:
+                if len(variability_cache['_AGN_LC_CACHE'])>1000000:
                     reset_agn_lc_cache()
 
-                if agn_ID not in _AGN_LC_CACHE:
-                    _AGN_LC_CACHE[agn_ID] = {}
+                if agn_ID not in variability_cache['_AGN_LC_CACHE']:
+                    variability_cache['_AGN_LC_CACHE'][agn_ID] = {}
 
-                _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
-                _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
-                _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
+                variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd'] = start_date+x2
+                variability_cache['_AGN_LC_CACHE'][agn_ID]['rng'] = copy.deepcopy(rng)
+                variability_cache['_AGN_LC_CACHE'][agn_ID]['dx'] = dx_cached
 
         return dMags
 
