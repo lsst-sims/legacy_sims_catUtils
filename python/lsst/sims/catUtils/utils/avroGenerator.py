@@ -83,56 +83,6 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
         return np.array([mag, mag_unc, dmag])
 
 
-def _process_chunk(chunk=None, photometry_catalog=None, expmjd_list=None,
-                   mag_names=None, obs_valid=None, column_query=None,
-                   cat_list=None):
-    if 'properMotionRa'in column_query:
-        pmra = chunk['properMotionRa']
-        pmdec = chunk['properMotionDec']
-        px = chunk['parallax']
-        vrad = chunk['radialVelocity']
-    else:
-        pmra = None
-        pmdec = None
-        px = None
-        vrad = None
-
-    photometry_catalog._set_current_chunk(chunk)
-    dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-                                                   expmjd=expmjd_list).transpose((2,0,1))
-
-    #for ii in range(6):
-    #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
-    #exit()
-
-    for i_obs, obs in enumerate(obs_valid):
-        chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
-                                                chunk['decJ2000'],
-                                                pm_ra=pmra,
-                                                pm_dec=pmdec,
-                                                parallax=px,
-                                                v_rad=vrad,
-                                                obs_metadata=obs)
-
-        valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
-        valid_chip_name_list = chip_name_list[valid]
-        for name in valid_chip_name_list:
-            assert name is not None
-        valid_sources = chunk[valid]
-        cat = cat_list[i_obs]
-        local_column_cache = {}
-        local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
-                                                          for i_mag in range(len(mag_names))])
-
-        local_column_cache['chipName'] = valid_chip_name_list
-
-        i_star = 0
-        for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
-            pass
-            #print star_obj
-        #if i_chunk > 10:
-        #    exit()
-
 class AvroGenerator(object):
 
     def __init__(self, obs_list):
@@ -241,8 +191,49 @@ class AvroGenerator(object):
         i_chunk = 0
         for chunk in data_iter:
             i_chunk += 1
-            _process_chunk(chunk=chunk, photometry_catalog=photometry_catalog,
-                           expmjd_list=expmjd_list, mag_names=mag_names,
-                           obs_valid=obs_valid, column_query=column_query,
-                           cat_list=cat_list)
-            print('did a chunk')
+            if 'properMotionRa'in column_query:
+                pmra = chunk['properMotionRa']
+                pmdec = chunk['properMotionDec']
+                px = chunk['parallax']
+                vrad = chunk['radialVelocity']
+            else:
+                pmra = None
+                pmdec = None
+                px = None
+                vrad = None
+
+            photometry_catalog._set_current_chunk(chunk)
+            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                           expmjd=expmjd_list).transpose((2,0,1))
+
+            #for ii in range(6):
+            #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
+            #exit()
+
+            for i_obs, obs in enumerate(obs_valid):
+                chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
+                                                        chunk['decJ2000'],
+                                                        pm_ra=pmra,
+                                                        pm_dec=pmdec,
+                                                        parallax=px,
+                                                        v_rad=vrad,
+                                                        obs_metadata=obs)
+
+                valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
+                valid_chip_name_list = chip_name_list[valid]
+                for name in valid_chip_name_list:
+                    assert name is not None
+                valid_sources = chunk[valid]
+                cat = cat_list[i_obs]
+                local_column_cache = {}
+                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
+                                                                  for i_mag in range(len(mag_names))])
+
+                local_column_cache['chipName'] = valid_chip_name_list
+
+                i_star = 0
+                for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
+                    pass
+                    #print star_obj
+                #if i_chunk > 10:
+                #    exit()
