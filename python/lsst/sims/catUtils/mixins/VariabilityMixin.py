@@ -78,7 +78,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-import time
+# import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN",
@@ -624,7 +624,7 @@ class MLTflaringMixin(Variability):
         with the quiescent magnitudes of the objects
         """
 
-        t_start = time.time()
+        # t_start = time.time()
         # t_before = t_start
 
         if parallax is None:
@@ -769,7 +769,7 @@ class MLTflaringMixin(Variability):
         # t_mag_init = time.time()-t_before
         # t_before = time.time()
 
-        print('applying MLT to %d -- %d unique' % (len(lc_name_arr), len(lc_names_unique)))
+        # print('applying MLT to %d -- %d unique' % (len(lc_name_arr), len(lc_names_unique)))
         not_none = 0
 
         # t_use_this = 0.0
@@ -892,7 +892,7 @@ class MLTflaringMixin(Variability):
         # (time.time()-t_start,t_init,t_mag_init,t_use_this,t_flux,t_format_time,not_none))
         # print('t_where %.2e\nt_load %.2e\nt_interp %.2e\nwrangling %.2e' %
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
-        print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
+        # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
         return dMags
 
@@ -1094,7 +1094,7 @@ class ParametrizedLightCurveMixin(Variability):
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
     def applyParametrizedLightCurve(self, valid_dexes, params, expmjd):
 
-        t_start = time.time()
+        # t_start = time.time()
 
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
@@ -1170,8 +1170,8 @@ class ParametrizedLightCurveMixin(Variability):
         # print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e\n' %
         # (time.time()-t_start,t_assign,t_flux,t_use_this))
 
-        print('applying Parametrized LC to %d' % not_none)
-        print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
+        # print('applying Parametrized LC to %d' % not_none)
+        # print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
 
         return d_mag_out
 
