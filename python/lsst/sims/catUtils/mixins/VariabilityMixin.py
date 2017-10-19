@@ -116,7 +116,7 @@ def create_variability_cache(parallelizable=False):
                 }
 
     else:
-        mgr = proc.Manager()
+        mgr = mproc.Manager()
         cache = {'parallelizable': True,
 
                  '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
