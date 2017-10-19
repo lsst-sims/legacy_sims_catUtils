@@ -78,6 +78,8 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
+import multiprocessing as mproc
+
 # import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
@@ -87,30 +89,59 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ParametrizedLightCurveMixin"]
 
 
-def create_variability_cache():
+def create_variability_cache(parallelizable=False):
     """
     Create a blank variability cache
     """
-    cache = {'_AGN_LC_CACHE' : {},  # a global cache of agn light curve calculations
+    if not parallelizable:
+        cache = {'parallelizable': False,
 
-             '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
-                                    # (.npz files are the result of numpy.savez())
+                 '_AGN_LC_CACHE' : {},  # a global cache of agn light curve calculations
 
-             '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
+                 '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
+                                        # (.npz files are the result of numpy.savez())
 
-             '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
+                 '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
 
-             '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
-                                             # of the time grids
+                 '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
 
-             '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
+                 '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
+                                                 # of the time grids
 
-             '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
+                 '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
 
-             '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+                 '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
 
-             '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
-            }
+                 '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+
+                 '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
+                }
+
+    else:
+        mgr = proc.Manager()
+        cache = {'parallelizable': True,
+
+                 '_AGN_LC_CACHE' : mgr.dict(),  # a global cache of agn light curve calculations
+
+                 '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
+                                        # (.npz files are the result of numpy.savez())
+
+                 '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
+
+                 '_MLT_LC_TIME_CACHE' : mgr.dict(),  # a dict for storing loaded time grids
+
+                 '_MLT_LC_DURATION_CACHE' : mgr.dict(),  # a dict for storing the simulated length
+                                                         # of the time grids
+
+                 '_MLT_LC_MAX_TIME_CACHE'  : mgr.dict(),  # a dict for storing the t_max of a light curve
+
+                 '_MLT_LC_FLUX_CACHE' : mgr.dict(),  # a dict for storing loaded flux grids
+
+                 '_PARAMETRIZED_LC_MODELS' : mgr.dict(),  # a dict for storing the parametrized light curve models
+
+                 '_PARAMETRIZED_MODELS_LOADED' : mgr.list()  # a list of all of the files from which models were loaded
+                }
+
 
     return cache
 
@@ -625,6 +656,9 @@ class MLTflaringMixin(Variability):
         the variability_cache
         """
 
+        if variability_cache['parallelizable']:
+            mgr = mproc.Manager()
+
         if not os.path.exists(mlt_lc_file):
             catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
             raise RuntimeError("The MLT flaring light curve file:\n"
@@ -638,10 +672,17 @@ class MLTflaringMixin(Variability):
         variability_cache['_MLT_LC_NPZ'] = np.load(mlt_lc_file)
         sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
         variability_cache['_MLT_LC_NPZ_NAME'] = mlt_lc_file
-        variability_cache['_MLT_LC_TIME_CACHE'] = {}
-        variability_cache['_MLT_LC_DURATION_CACHE'] = {}
-        variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
-        variability_cache['_MLT_LC_FLUX_CACHE'] = {}
+
+        if variability_cache['parallelizable']:
+            variability_cache['_MLT_LC_TIME_CACHE'] = mgr.dict()
+            variability_cache['_MLT_LC_DURATION_CACHE'] = mgr.dict()
+            variability_cache['_MLT_LC_MAX_TIME_CACHE'] = mgr.dict()
+            variability_cache['_MLT_LC_FLUX_CACHE'] = mgr.dict()
+        else:
+            variability_cache['_MLT_LC_TIME_CACHE'] = {}
+            variability_cache['_MLT_LC_DURATION_CACHE'] = {}
+            variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
+            variability_cache['_MLT_LC_FLUX_CACHE'] = {}
 
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
