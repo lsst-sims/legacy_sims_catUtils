@@ -619,6 +619,30 @@ class MLTflaringMixin(Variability):
     _mlt_lc_file = os.path.join(getPackageDir('sims_data'),
                                 'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
 
+    def load_MLT_light_curves(self, mlt_lc_file, variability_cache):
+        """
+        Load MLT light curves specified by the file mlt_lc_file into
+        the variability_cache
+        """
+
+        if not os.path.exists(mlt_lc_file):
+            catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
+            raise RuntimeError("The MLT flaring light curve file:\n"
+                               + "\n%s\n" % mlt_lc_file
+                               + "\ndoes not exist."
+                               +"\n\n"
+                               + "Go into %s " % catutils_scripts
+                               + "and run get_mdwarf_flares.sh "
+                               + "to get the data")
+
+        variability_cache['_MLT_LC_NPZ'] = np.load(mlt_lc_file)
+        sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
+        variability_cache['_MLT_LC_NPZ_NAME'] = mlt_lc_file
+        variability_cache['_MLT_LC_TIME_CACHE'] = {}
+        variability_cache['_MLT_LC_DURATION_CACHE'] = {}
+        variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
+        variability_cache['_MLT_LC_FLUX_CACHE'] = {}
+
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
                         parallax=None, ebv=None, quiescent_mags=None):
@@ -674,23 +698,7 @@ class MLTflaringMixin(Variability):
             or variability_cache['_MLT_LC_NPZ_NAME'] != self._mlt_lc_file
             or variability_cache['_MLT_LC_NPZ'].fid is None):
 
-            if not os.path.exists(self._mlt_lc_file):
-                catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
-                raise RuntimeError("The MLT flaring light curve file:\n"
-                                    + "\n%s\n" % self._mlt_lc_file
-                                    + "\ndoes not exist."
-                                    +"\n\n"
-                                    + "Go into %s " % catutils_scripts
-                                    + "and run get_mdwarf_flares.sh "
-                                    + "to get the data")
-
-            variability_cache['_MLT_LC_NPZ'] = np.load(self._mlt_lc_file)
-            sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
-            variability_cache['_MLT_LC_NPZ_NAME'] = self._mlt_lc_file
-            variability_cache['_MLT_LC_TIME_CACHE'] = {}
-            variability_cache['_MLT_LC_DURATION_CACHE'] = {}
-            variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
-            variability_cache['_MLT_LC_FLUX_CACHE'] = {}
+            self.load_MLT_light_curves(self._mlt_lc_file, variability_cache)
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
