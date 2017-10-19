@@ -1,5 +1,4 @@
 import numpy as np
-import multiprocessing as mproc
 from collections import OrderedDict
 import time
 from lsst.sims.utils import findHtmid, trixelFromHtmid
@@ -12,8 +11,6 @@ from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
-from lsst.sims.catUtils.mixins import MLTflaringMixin
-from lsst.sims.catUtils.mixins import create_variability_cache
 
 __all__ = ["AvroGenerator"]
 
@@ -86,61 +83,11 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
         return np.array([mag, mag_unc, dmag])
 
 
-def _avro_process_chunk(chunk=None, column_query=None, photometry_catalog=None,
-                        obs_valid=None, expmjd_list=None, cat_list=None,
-                        mag_names=None,
-                        variability_cache=None, lock=None):
-    if 'properMotionRa'in column_query:
-        pmra = chunk['properMotionRa']
-        pmdec = chunk['properMotionDec']
-        px = chunk['parallax']
-        vrad = chunk['radialVelocity']
-    else:
-        pmra = None
-        pmdec = None
-        px = None
-        vrad = None
-
-    photometry_catalog._set_current_chunk(chunk)
-    dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-                                                   expmjd=expmjd_list,
-                                                   variability_cache=variability_cache,
-                                                   lock=lock).transpose((2,0,1))
-
-    #for ii in range(6):
-    #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
-    #exit()
-
-    for i_obs, obs in enumerate(obs_valid):
-        chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
-                                                chunk['decJ2000'],
-                                                pm_ra=pmra,
-                                                pm_dec=pmdec,
-                                                parallax=px,
-                                                v_rad=vrad,
-                                                obs_metadata=obs)
-
-        valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
-        valid_chip_name_list = chip_name_list[valid]
-        for name in valid_chip_name_list:
-            assert name is not None
-        valid_sources = chunk[valid]
-        cat = cat_list[i_obs]
-        local_column_cache = {}
-        local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
-                                                          for i_mag in range(len(mag_names))])
-
-        local_column_cache['chipName'] = valid_chip_name_list
-
-        for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
-            pass
-            #print star_obj
-
-
-
 class AvroGenerator(object):
 
     def __init__(self, obs_list):
+        plm = ParametrizedLightCurveMixin()
+        plm.load_parametrized_light_curves()
         self.obs_list = np.array(obs_list)
         htmid_level = 7
         self.htmid_list = []
@@ -169,19 +116,11 @@ class AvroGenerator(object):
         self._desired_columns.append('ymag')
         self._desired_columns.append('ebv')
         self._desired_columns.append('redshift')
-
-        self._variability_cache = create_variability_cache(parallelizable=True)
-
-        plm = ParametrizedLightCurveMixin()
-        plm.load_parametrized_light_curves(variability_cache=self._variability_cache)
-        mlt = MLTflaringMixin()
-        mlt.load_MLT_light_curves(mlt._mlt_lc_file, self._variability_cache)
         print('initialized with %d %d' %
               (len(self.obs_list), len(self.unq_htmid_list)))
 
     def alerts_from_db(self, dbobj):
         n_obs_total = 0
-        t_0 = time.time()
         for i_h, htmid in enumerate(self.unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
             t_start = time.time()
@@ -189,7 +128,7 @@ class AvroGenerator(object):
             n_obs_total += n_obs
             print("that took %e hours" % ((time.time()-t_start)/3600.0))
             print("total should take %e hours" %
-            (len(self.obs_list)*(time.time()-t_0)/(3600.0*n_obs_total)))
+            (len(self.obs_list)*(time.time()-t_start)/(3600.0*n_obs_total)))
             if i_h>2:
                 exit()
 
@@ -253,31 +192,53 @@ class AvroGenerator(object):
                                                                        'lsst_y'])
 
         print('chunking')
-        n_proc = 4
-        process_list = []
-        lock = mproc.Lock()
+        i_chunk = 0
         for chunk in data_iter:
-            print('submitting chunk')
-            p = mproc.Process(target=_avro_process_chunk,
-                              kwargs={'chunk': chunk,
-                                      'column_query': column_query,
-                                      'photometry_catalog': photometry_catalog,
-                                      'obs_valid': obs_valid,
-                                      'expmjd_list': expmjd_list,
-                                      'cat_list': cat_list,
-                                      'mag_names': mag_names,
-                                      'variability_cache': self._variability_cache,
-                                      'lock': lock})
-            p.start()
-            process_list.append(p)
-            if len(process_list) >= n_proc:
-                print('joining')
-                for p in process_list:
-                    p.join()
-                process_list = []
+            i_chunk += 1
+            if 'properMotionRa'in column_query:
+                pmra = chunk['properMotionRa']
+                pmdec = chunk['properMotionDec']
+                px = chunk['parallax']
+                vrad = chunk['radialVelocity']
+            else:
+                pmra = None
+                pmdec = None
+                px = None
+                vrad = None
 
-        print('joining')
-        for p in process_list:
-            p.join()
+            photometry_catalog._set_current_chunk(chunk)
+            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                           expmjd=expmjd_list).transpose((2,0,1))
 
+            #for ii in range(6):
+            #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
+            #exit()
+
+            for i_obs, obs in enumerate(obs_valid):
+                chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
+                                                        chunk['decJ2000'],
+                                                        pm_ra=pmra,
+                                                        pm_dec=pmdec,
+                                                        parallax=px,
+                                                        v_rad=vrad,
+                                                        obs_metadata=obs)
+
+                valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
+                valid_chip_name_list = chip_name_list[valid]
+                for name in valid_chip_name_list:
+                    assert name is not None
+                valid_sources = chunk[valid]
+                cat = cat_list[i_obs]
+                local_column_cache = {}
+                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
+                                                                  for i_mag in range(len(mag_names))])
+
+                local_column_cache['chipName'] = valid_chip_name_list
+
+                i_star = 0
+                for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
+                    pass
+                    #print star_obj
+                #if i_chunk > 10:
+                #    exit()
         return len(obs_valid)
