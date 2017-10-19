@@ -86,26 +86,35 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
            "ParametrizedLightCurveMixin"]
 
-_GLOBAL_VARIABILITY_CACHE = {'_AGN_LC_CACHE' : {},  # a global cache of agn light curve calculations
 
-                             '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
-                                                    # (.npz files are the result of numpy.savez())
+def create_variability_cache():
+    """
+    Create a blank variability cache
+    """
+    cache = {'_AGN_LC_CACHE' : {},  # a global cache of agn light curve calculations
 
-                             '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
+             '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
+                                    # (.npz files are the result of numpy.savez())
 
-                             '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
+             '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
 
-                             '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
-                                                             # of the time grids
+             '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
 
-                             '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
+             '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
+                                             # of the time grids
 
-                             '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
+             '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
 
-                             '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+             '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
 
-                             '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
-                            }
+             '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+
+             '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
+            }
+
+    return cache
+
+_GLOBAL_VARIABILITY_CACHE = create_variability_cache()
 
 def reset_agn_lc_cache():
     """
