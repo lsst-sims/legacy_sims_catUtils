@@ -83,8 +83,7 @@ import multiprocessing as mproc
 # import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
-           "VariabilityAGN",
-           "reset_agn_lc_cache", "StellarVariabilityModels",
+           "VariabilityAGN", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
            "ParametrizedLightCurveMixin"]
 
@@ -95,8 +94,6 @@ def create_variability_cache(parallelizable=False):
     """
     if not parallelizable:
         cache = {'parallelizable': False,
-
-                 '_AGN_LC_CACHE' : {},  # a global cache of agn light curve calculations
 
                  '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
                                         # (.npz files are the result of numpy.savez())
@@ -121,8 +118,6 @@ def create_variability_cache(parallelizable=False):
         mgr = proc.Manager()
         cache = {'parallelizable': True,
 
-                 '_AGN_LC_CACHE' : mgr.dict(),  # a global cache of agn light curve calculations
-
                  '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
                                         # (.npz files are the result of numpy.savez())
 
@@ -146,22 +141,6 @@ def create_variability_cache(parallelizable=False):
     return cache
 
 _GLOBAL_VARIABILITY_CACHE = create_variability_cache()
-
-def reset_agn_lc_cache(variability_cache=None):
-    """
-    Resets the _AGN_LC_CACHE (a global dict for cacheing time steps in AGN
-    light curves) to an empty dict.
-    """
-    if variability_cache is None:
-        global _GLOBAL_VARIABILITY_CACHE
-        variability_cache = _GLOBAL_VARIABILITY_CACHE
-
-    key_list = list(variability_cache['_AGN_LC_CACHE'])
-
-    for kk in key_list:
-        variability_cache['_AGN_LC_CACHE'].pop(kk)
-
-    return None
 
 
 class Variability(object):
@@ -1296,10 +1275,6 @@ class ExtraGalacticVariabilityModels(Variability):
     def applyAgn(self, valid_dexes, params, expmjd,
                  variability_cache=None, lock=None):
 
-        if variability_cache is None:
-            global _GLOBAL_VARIABILITY_CACHE
-            variability_cache = _GLOBAL_VARIABILITY_CACHE
-
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
 
@@ -1341,34 +1316,11 @@ class ExtraGalacticVariabilityModels(Variability):
                 %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
                   sfint['y'], tau, toff)
 
-                resumption = False
-
-                # Check to see if this AGN has already been simulated.
-                # If it has, see if the previously simulated MJD is
-                # earlier than the first requested MJD.  If so,
-                # use that previous simulation as the starting point.
-                #
-
-                if lock is not None:
-                    lock.acquire()
-
-                if agn_ID in variability_cache['_AGN_LC_CACHE']:
-                    if variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd'] <expmjd_val:
-                        resumption = True
-
-                if resumption:
-                    rng = copy.deepcopy(variability_cache['_AGN_LC_CACHE'][agn_ID]['rng'])
-                    start_date = variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd']
-                    dx_0 = variability_cache['_AGN_LC_CACHE'][agn_ID]['dx']
-                else:
-                    start_date = toff
-                    rng = np.random.RandomState(seed)
-                    dx_0 = {}
-                    for k in sfint:
-                        dx_0[k]=0.0
-
-                if lock is not None:
-                    lock.release()
+                start_date = toff
+                rng = np.random.RandomState(seed)
+                dx_0 = {}
+                for k in sfint:
+                    dx_0[k]=0.0
 
                 endepoch = expmjd_val - start_date
 
@@ -1402,25 +1354,6 @@ class ExtraGalacticVariabilityModels(Variability):
                         dMags[ik][ix] = dm_val
                     else:
                         dMags[ik][ix][i_time] = dm_val
-
-                # Reset that AGN light curve cache once it contains
-                # one million objects (to prevent it from taking up
-                # too much memory).
-                if lock is not None:
-                    lock.acquire()
-
-                if len(variability_cache['_AGN_LC_CACHE'])>1000000:
-                    reset_agn_lc_cache(variability_cache=variability_cache)
-
-                if agn_ID not in variability_cache['_AGN_LC_CACHE']:
-                    variability_cache['_AGN_LC_CACHE'][agn_ID] = {}
-
-                variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd'] = start_date+x2
-                variability_cache['_AGN_LC_CACHE'][agn_ID]['rng'] = copy.deepcopy(rng)
-                variability_cache['_AGN_LC_CACHE'][agn_ID]['dx'] = dx_cached
-
-                if lock is not None:
-                    lock.release()
 
         return dMags
 
