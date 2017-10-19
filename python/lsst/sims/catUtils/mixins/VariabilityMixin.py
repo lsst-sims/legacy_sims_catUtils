@@ -85,7 +85,8 @@ import multiprocessing as mproc
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
-           "ParametrizedLightCurveMixin"]
+           "ParametrizedLightCurveMixin",
+           "create_variability_cache"]
 
 
 def create_variability_cache(parallelizable=False):
