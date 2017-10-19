@@ -147,13 +147,20 @@ def create_variability_cache(parallelizable=False):
 
 _GLOBAL_VARIABILITY_CACHE = create_variability_cache()
 
-def reset_agn_lc_cache():
+def reset_agn_lc_cache(variability_cache=None):
     """
     Resets the _AGN_LC_CACHE (a global dict for cacheing time steps in AGN
     light curves) to an empty dict.
     """
-    global _GLOBAL_VARIABILITY_CACHE
-    _GLOBAL_VARIABILITY_CACHE['_AGN_LC_CACHE'] = {}
+    if variability_cache is None:
+        global _GLOBAL_VARIABILITY_CACHE
+        variability_cache = _GLOBAL_VARIABILITY_CACHE
+
+    key_list = list(variability_cache['_AGN_LC_CACHE'])
+
+    for kk in key_list:
+        variability_cache['_AGN_LC_CACHE'].pop(kk)
+
     return None
 
 
@@ -213,7 +220,8 @@ class Variability(object):
 
 
 
-    def applyVariability(self, varParams_arr, expmjd=None):
+    def applyVariability(self, varParams_arr, expmjd=None,
+                         variability_cache=None, lock=None):
         """
         Read in an array/list of varParamStr objects taken from the CatSim
         database.  For each varParamStr, call the appropriate variability
@@ -222,6 +230,14 @@ class Variability(object):
         array of magnitude offsets in which each row is an LSST band
         in ugrizy order and each column is an astrophysical object from
         the CatSim database.
+
+        variability_cache is a cache of data as initialized by the
+        create_variability_cache() method (optional; if None, the
+        method will just use a globl cache)
+
+        lock is an optional Multiprocessing.Lock object, for use
+        when running applyVariability in a parallelized framework
+        (optional)
         """
 
         # construct a registry of all of the variability models
@@ -331,7 +347,9 @@ class Variability(object):
 
                 deltaMag += self._methodRegistry[method_name](np.where(np.char.equal(method_name, method_name_arr)),
                                                               params[method_name],
-                                                              expmjd)
+                                                              expmjd,
+                                                              variability_cache=variability_cache,
+                                                              lock=lock)
 
         return deltaMag
 
@@ -442,7 +460,9 @@ class StellarVariabilityModels(Variability):
     """
 
     @register_method('applyRRly')
-    def applyRRly(self, valid_dexes, params, expmjd):
+    def applyRRly(self, valid_dexes, params, expmjd,
+                  variability_cache=None,
+                  lock=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -452,7 +472,9 @@ class StellarVariabilityModels(Variability):
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyCepheid')
-    def applyCepheid(self, valid_dexes, params, expmjd):
+    def applyCepheid(self, valid_dexes, params, expmjd,
+                     variability_cache=None,
+                     lock=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -462,7 +484,9 @@ class StellarVariabilityModels(Variability):
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyEb')
-    def applyEb(self, valid_dexes, params, expmjd):
+    def applyEb(self, valid_dexes, params, expmjd,
+                variability_cache=None,
+                lock=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -484,11 +508,15 @@ class StellarVariabilityModels(Variability):
         return dMags
 
     @register_method('applyMicrolensing')
-    def applyMicrolensing(self, valid_dexes, params, expmjd_in):
+    def applyMicrolensing(self, valid_dexes, params, expmjd_in,
+                          variability_cache=None,
+                          lock=None):
         return self.applyMicrolens(valid_dexes, params,expmjd_in)
 
     @register_method('applyMicrolens')
-    def applyMicrolens(self, valid_dexes, params, expmjd_in):
+    def applyMicrolens(self, valid_dexes, params, expmjd_in,
+                       variability_cache=None,
+                       lock=None):
         #I believe this is the correct method based on
         #http://www.physics.fsu.edu/Courses/spring98/AST3033/Micro/lensing.htm
         #
@@ -526,7 +554,9 @@ class StellarVariabilityModels(Variability):
 
 
     @register_method('applyAmcvn')
-    def applyAmcvn(self, valid_dexes, params, expmjd_in):
+    def applyAmcvn(self, valid_dexes, params, expmjd_in,
+                   variability_cache=None,
+                   lock=None):
         #21 October 2014
         #This method assumes that the parameters for Amcvn variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -596,7 +626,9 @@ class StellarVariabilityModels(Variability):
         return dMag
 
     @register_method('applyBHMicrolens')
-    def applyBHMicrolens(self, valid_dexes, params, expmjd_in):
+    def applyBHMicrolens(self, valid_dexes, params, expmjd_in,
+                         variability_cache=None,
+                         lock=None):
         #21 October 2014
         #This method assumes that the parameters for BHMicrolensing variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -686,7 +718,9 @@ class MLTflaringMixin(Variability):
 
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
-                        parallax=None, ebv=None, quiescent_mags=None):
+                        parallax=None, ebv=None, quiescent_mags=None,
+                        variability_cache=None,
+                        lock=None):
         """
         parallax, ebv, and quiescent_mags are optional kwargs for use if you are
         calling this method outside the context of an InstanceCatalog (presumably
@@ -708,8 +742,9 @@ class MLTflaringMixin(Variability):
         if ebv is None:
             ebv = self.column_by_name('ebv')
 
-        global _GLOBAL_VARIABILITY_CACHE
-        variability_cache = _GLOBAL_VARIABILITY_CACHE
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
         # just in case the user wants to override the light curve cache
@@ -863,6 +898,9 @@ class MLTflaringMixin(Variability):
                 lc_name = lc_name.replace('in', '')
 
             # t_before_load = time.time()
+            if lock is not None:
+                lock.acquire()
+
             if lc_name in variability_cache['_MLT_LC_TIME_CACHE']:
                 time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
                 dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
@@ -874,6 +912,9 @@ class MLTflaringMixin(Variability):
                 variability_cache['_MLT_LC_DURATION_CACHE'][lc_name] = dt
                 max_time = time_arr.max()
                 variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
+
+            if lock is not None:
+                lock.release()
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
@@ -903,11 +944,17 @@ class MLTflaringMixin(Variability):
 
                     flux_name = '%s_%s' % (lc_name, mag_name)
 
+                    if lock is not None:
+                        lock.acquire()
+
                     if flux_name in variability_cache['_MLT_LC_FLUX_CACHE']:
                         flux_arr = variability_cache['_MLT_LC_FLUX_CACHE'][flux_name]
                     else:
                         flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
                         variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
+
+                    if lock is not None:
+                        lock.release()
 
                     # t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
@@ -1089,7 +1136,7 @@ class ParametrizedLightCurveMixin(Variability):
 
         variability_cache['_PARAMETRIZED_MODELS_LOADED'].append(file_name)
 
-    def _calc_dflux(self, lc_id, expmjd):
+    def _calc_dflux(self, lc_id, expmjd, variability_cache=None):
         """
         Parameters
         ----------
@@ -1109,8 +1156,9 @@ class ParametrizedLightCurveMixin(Variability):
         the quiescent flux at each of expmjd
         """
 
-        global _GLOBAL_VARIABILITY_CACHE
-        variability_cache = _GLOBAL_VARIABILITY_CACHE
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         try:
             model = variability_cache['_PARAMETRIZED_LC_MODELS'][lc_id]
@@ -1152,7 +1200,8 @@ class ParametrizedLightCurveMixin(Variability):
         return quiescent_flux, delta_flux
 
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
-    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd):
+    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
+                                    variability_cache=None, lock=None):
 
         # t_start = time.time()
 
@@ -1210,7 +1259,9 @@ class ParametrizedLightCurveMixin(Variability):
                                    "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc), n_t))
 
             # t_before = time.time()
-            q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc])
+            q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc],
+                                              variability_cache=variability_cache)
+
             d_mag = 2.5*np.log10(1.0+d_flux/q_flux)
             # t_flux += time.time()-t_before
 
@@ -1242,10 +1293,12 @@ class ExtraGalacticVariabilityModels(Variability):
     """
 
     @register_method('applyAgn')
-    def applyAgn(self, valid_dexes, params, expmjd):
+    def applyAgn(self, valid_dexes, params, expmjd,
+                 variability_cache=None, lock=None):
 
-        global _GLOBAL_VARIABILITY_CACHE
-        variability_cache = _GLOBAL_VARIABILITY_CACHE
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -1295,6 +1348,10 @@ class ExtraGalacticVariabilityModels(Variability):
                 # earlier than the first requested MJD.  If so,
                 # use that previous simulation as the starting point.
                 #
+
+                if lock is not None:
+                    lock.acquire()
+
                 if agn_ID in variability_cache['_AGN_LC_CACHE']:
                     if variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd'] <expmjd_val:
                         resumption = True
@@ -1309,6 +1366,9 @@ class ExtraGalacticVariabilityModels(Variability):
                     dx_0 = {}
                     for k in sfint:
                         dx_0[k]=0.0
+
+                if lock is not None:
+                    lock.release()
 
                 endepoch = expmjd_val - start_date
 
@@ -1346,8 +1406,11 @@ class ExtraGalacticVariabilityModels(Variability):
                 # Reset that AGN light curve cache once it contains
                 # one million objects (to prevent it from taking up
                 # too much memory).
+                if lock is not None:
+                    lock.acquire()
+
                 if len(variability_cache['_AGN_LC_CACHE'])>1000000:
-                    reset_agn_lc_cache()
+                    reset_agn_lc_cache(variability_cache=variability_cache)
 
                 if agn_ID not in variability_cache['_AGN_LC_CACHE']:
                     variability_cache['_AGN_LC_CACHE'][agn_ID] = {}
@@ -1355,6 +1418,9 @@ class ExtraGalacticVariabilityModels(Variability):
                 variability_cache['_AGN_LC_CACHE'][agn_ID]['mjd'] = start_date+x2
                 variability_cache['_AGN_LC_CACHE'][agn_ID]['rng'] = copy.deepcopy(rng)
                 variability_cache['_AGN_LC_CACHE'][agn_ID]['dx'] = dx_cached
+
+                if lock is not None:
+                    lock.release()
 
         return dMags
 
