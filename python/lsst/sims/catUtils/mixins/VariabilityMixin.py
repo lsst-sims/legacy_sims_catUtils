@@ -814,16 +814,26 @@ class MLTflaringMixin(Variability):
         # t_spent_interp = 0.0
         # t_arr_wrangling = 0.0
 
+        use_this_lc_arr = []
+        n_use_this_lc = []
         for lc_name in lc_names_unique:
+            local_use = np.where(np.char.find(lc_name_arr, lc_name)==0)[0]
+            use_this_lc_arr.append(local_use)
+            n_use_this_lc.append(-1*len(local_use))
+        use_this_lc_arr = np.array(use_this_lc_arr)
+        n_use_this_lc = np.array(n_use_this_lc)
+        sorted_dex = np.argsort(n_use_this_lc)
+
+        use_this_lc_arr = use_this_lc_arr[sorted_dex]
+        lc_names_unique = lc_names_unique[sorted_dex]
+
+        for lc_name, use_this_lc in zip(lc_names_unique, use_this_lc_arr):
             # t_before = time.time()
             if 'None' in lc_name:
                 # t_use_this += time.time()-t_before
                 continue
 
-            # t_before_where = time.time()
-            use_this_lc = np.where(np.char.find(lc_name_arr, lc_name)==0)
-            # t_where += time.time()-t_before_where
-            not_none += len(use_this_lc[0])
+            not_none += len(use_this_lc)
 
             lc_name = lc_name.replace('.txt', '')
 
@@ -859,7 +869,7 @@ class MLTflaringMixin(Variability):
             if isinstance(expmjd, numbers.Number):
                 t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
             else:
-                n_obj = len(use_this_lc[0])
+                n_obj = len(use_this_lc)
                 n_time = len(expmjd)
                 t_interp = np.ones(shape=(n_obj, n_time))*expmjd
                 t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
