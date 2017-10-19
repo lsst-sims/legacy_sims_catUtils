@@ -1030,7 +1030,7 @@ class ParametrizedLightCurveMixin(Variability):
                              cc_i }
     """
 
-    def load_parametrized_light_curves(self, file_name=None):
+    def load_parametrized_light_curves(self, file_name=None, variability_cache=None):
         """
         This method will load the parametrized light curve models
         used by the ParametrizedLightCurveMixin and store them in
@@ -1042,8 +1042,9 @@ class ParametrizedLightCurveMixin(Variability):
         file_name is the absolute path to the file being loaded.
         If None, it will load the default Kepler-based light curve model.
         """
-        global _GLOBAL_VARIABILITY_CACHE
-        variability_cache = _GLOBAL_VARIABILITY_CACHE
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         if file_name in variability_cache['_PARAMETRIZED_MODELS_LOADED']:
             return
@@ -1106,13 +1107,15 @@ class ParametrizedLightCurveMixin(Variability):
                 local_cc = np.array(local_cc)
                 local_omega = np.array(local_omega)
                 local_tau = np.array(local_tau)
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag] = {}
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['median'] = median
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['a'] = local_aa
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['b'] = local_bb
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['c'] = local_cc
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['omega'] = local_omega
-                variability_cache['_PARAMETRIZED_LC_MODELS'][tag]['tau'] = local_tau
+
+                local_params = {}
+                local_params['median'] = median
+                local_params['a'] = local_aa
+                local_params['b'] = local_bb
+                local_params['c'] = local_cc
+                local_params['omega'] = local_omega
+                local_params['tau'] = local_tau
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag] = local_params
 
         variability_cache['_PARAMETRIZED_MODELS_LOADED'].append(file_name)
 
