@@ -120,11 +120,15 @@ class AvroGenerator(object):
               (len(self.obs_list), len(self.unq_htmid_list)))
 
     def alerts_from_db(self, dbobj):
+        n_obs_total = 0
         for i_h, htmid in enumerate(self.unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
             t_start = time.time()
-            self._process_htmid(htmid, dbobj)
+            n_obs = self._process_htmid(htmid, dbobj)
+            n_obs_total += n_obs
             print("that took %e hours" % ((time.time()-t_start)/3600.0))
+            print("total should take %e hours" %
+            (len(self.obs_list)*(time.time()-t_start)/(3600.0*n_obs_total)))
             if i_h>2:
                 exit()
 
@@ -237,3 +241,4 @@ class AvroGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
+        return len(obs_valid)
