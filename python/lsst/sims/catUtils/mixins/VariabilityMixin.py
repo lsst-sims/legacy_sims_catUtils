@@ -886,6 +886,7 @@ class MLTflaringMixin(Variability):
                 dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
                 max_time = variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name]
             else:
+                print('reading in %s' % lc_name)
                 time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
                 variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
                 dt = time_arr.max() - time_arr.min()
