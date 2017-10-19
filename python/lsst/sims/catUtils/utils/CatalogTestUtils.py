@@ -194,7 +194,8 @@ class TestVariabilityMixin(Variability):
     This is a mixin which provides a dummy variability method for use in unit tests
     """
     @register_method('testVar')
-    def applySineVar(self, valid_dexes, varParams, expmjd):
+    def applySineVar(self, valid_dexes, varParams, expmjd,
+                     variability_cache=None, lock=None):
 
         if len(varParams) == 0:
             return numpy.array([[],[],[],[],[],[]])
