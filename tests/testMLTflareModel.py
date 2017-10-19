@@ -710,8 +710,7 @@ class DummyVariabilityMixin(Variability):
 
     @register_method('dummy')
     def applyDummy(self, valid_dexes, params, expmjd,
-                   variability_cache=None,
-                   lock=None):
+                   variability_cache=None):
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
         dtype = np.dtype([('t', float), ('du', float), ('dg', float),

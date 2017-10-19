@@ -195,7 +195,7 @@ class TestVariabilityMixin(Variability):
     """
     @register_method('testVar')
     def applySineVar(self, valid_dexes, varParams, expmjd,
-                     variability_cache=None, lock=None):
+                     variability_cache=None):
 
         if len(varParams) == 0:
             return numpy.array([[],[],[],[],[],[]])

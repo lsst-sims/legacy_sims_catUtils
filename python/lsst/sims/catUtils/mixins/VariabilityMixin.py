@@ -78,8 +78,6 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-import multiprocessing as mproc
-
 # import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
@@ -89,55 +87,30 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "create_variability_cache"]
 
 
-def create_variability_cache(parallelizable=False):
+def create_variability_cache():
     """
     Create a blank variability cache
     """
-    if not parallelizable:
-        cache = {'parallelizable': False,
+    cache = {'parallelizable': False,
 
-                 '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
+             '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
                                         # (.npz files are the result of numpy.savez())
 
-                 '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
+             '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
 
-                 '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
+             '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
 
-                 '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
+             '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
                                                  # of the time grids
 
-                 '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
+             '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
 
-                 '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
+             '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
 
-                 '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+             '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
 
-                 '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
-                }
-
-    else:
-        mgr = mproc.Manager()
-        cache = {'parallelizable': True,
-
-                 '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
-                                        # (.npz files are the result of numpy.savez())
-
-                 '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
-
-                 '_MLT_LC_TIME_CACHE' : mgr.dict(),  # a dict for storing loaded time grids
-
-                 '_MLT_LC_DURATION_CACHE' : mgr.dict(),  # a dict for storing the simulated length
-                                                         # of the time grids
-
-                 '_MLT_LC_MAX_TIME_CACHE'  : mgr.dict(),  # a dict for storing the t_max of a light curve
-
-                 '_MLT_LC_FLUX_CACHE' : mgr.dict(),  # a dict for storing loaded flux grids
-
-                 '_PARAMETRIZED_LC_MODELS' : mgr.dict(),  # a dict for storing the parametrized light curve models
-
-                 '_PARAMETRIZED_MODELS_LOADED' : mgr.list()  # a list of all of the files from which models were loaded
-                }
-
+             '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
+            }
 
     return cache
 
@@ -201,7 +174,7 @@ class Variability(object):
 
 
     def applyVariability(self, varParams_arr, expmjd=None,
-                         variability_cache=None, lock=None):
+                         variability_cache=None):
         """
         Read in an array/list of varParamStr objects taken from the CatSim
         database.  For each varParamStr, call the appropriate variability
@@ -214,10 +187,6 @@ class Variability(object):
         variability_cache is a cache of data as initialized by the
         create_variability_cache() method (optional; if None, the
         method will just use a globl cache)
-
-        lock is an optional Multiprocessing.Lock object, for use
-        when running applyVariability in a parallelized framework
-        (optional)
         """
 
         # construct a registry of all of the variability models
@@ -328,8 +297,7 @@ class Variability(object):
                 deltaMag += self._methodRegistry[method_name](np.where(np.char.equal(method_name, method_name_arr)),
                                                               params[method_name],
                                                               expmjd,
-                                                              variability_cache=variability_cache,
-                                                              lock=lock)
+                                                              variability_cache=variability_cache)
 
         return deltaMag
 
@@ -441,8 +409,7 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyRRly')
     def applyRRly(self, valid_dexes, params, expmjd,
-                  variability_cache=None,
-                  lock=None):
+                  variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -453,8 +420,7 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyCepheid')
     def applyCepheid(self, valid_dexes, params, expmjd,
-                     variability_cache=None,
-                     lock=None):
+                     variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -465,8 +431,7 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyEb')
     def applyEb(self, valid_dexes, params, expmjd,
-                variability_cache=None,
-                lock=None):
+                variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -489,14 +454,12 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyMicrolensing')
     def applyMicrolensing(self, valid_dexes, params, expmjd_in,
-                          variability_cache=None,
-                          lock=None):
+                          variability_cache=None):
         return self.applyMicrolens(valid_dexes, params,expmjd_in)
 
     @register_method('applyMicrolens')
     def applyMicrolens(self, valid_dexes, params, expmjd_in,
-                       variability_cache=None,
-                       lock=None):
+                       variability_cache=None):
         #I believe this is the correct method based on
         #http://www.physics.fsu.edu/Courses/spring98/AST3033/Micro/lensing.htm
         #
@@ -535,8 +498,7 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyAmcvn')
     def applyAmcvn(self, valid_dexes, params, expmjd_in,
-                   variability_cache=None,
-                   lock=None):
+                   variability_cache=None):
         #21 October 2014
         #This method assumes that the parameters for Amcvn variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -607,8 +569,7 @@ class StellarVariabilityModels(Variability):
 
     @register_method('applyBHMicrolens')
     def applyBHMicrolens(self, valid_dexes, params, expmjd_in,
-                         variability_cache=None,
-                         lock=None):
+                         variability_cache=None):
         #21 October 2014
         #This method assumes that the parameters for BHMicrolensing variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -699,8 +660,7 @@ class MLTflaringMixin(Variability):
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
                         parallax=None, ebv=None, quiescent_mags=None,
-                        variability_cache=None,
-                        lock=None):
+                        variability_cache=None):
         """
         parallax, ebv, and quiescent_mags are optional kwargs for use if you are
         calling this method outside the context of an InstanceCatalog (presumably
@@ -878,8 +838,6 @@ class MLTflaringMixin(Variability):
                 lc_name = lc_name.replace('in', '')
 
             # t_before_load = time.time()
-            if lock is not None:
-                lock.acquire()
 
             if lc_name in variability_cache['_MLT_LC_TIME_CACHE']:
                 time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
@@ -892,9 +850,6 @@ class MLTflaringMixin(Variability):
                 variability_cache['_MLT_LC_DURATION_CACHE'][lc_name] = dt
                 max_time = time_arr.max()
                 variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
-
-            if lock is not None:
-                lock.release()
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
@@ -924,17 +879,11 @@ class MLTflaringMixin(Variability):
 
                     flux_name = '%s_%s' % (lc_name, mag_name)
 
-                    if lock is not None:
-                        lock.acquire()
-
                     if flux_name in variability_cache['_MLT_LC_FLUX_CACHE']:
                         flux_arr = variability_cache['_MLT_LC_FLUX_CACHE'][flux_name]
                     else:
                         flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
                         variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
-
-                    if lock is not None:
-                        lock.release()
 
                     # t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
@@ -1184,7 +1133,7 @@ class ParametrizedLightCurveMixin(Variability):
 
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
     def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
-                                    variability_cache=None, lock=None):
+                                    variability_cache=None):
 
         # t_start = time.time()
 
@@ -1277,7 +1226,7 @@ class ExtraGalacticVariabilityModels(Variability):
 
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd,
-                 variability_cache=None, lock=None):
+                 variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
