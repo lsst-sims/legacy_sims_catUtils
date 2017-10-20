@@ -909,11 +909,7 @@ class MLTflaringMixin(Variability):
                         variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
             # t_flux_dict += time.time()-t_before_flux
 
-
-
-        lc_dex_arr = np.ones(len(lc_name_arr), dtype=int)
-        for i_lc in range(len(lc_name_arr)):
-            lc_dex_arr[i_lc] = self._mlt_to_int[lc_name_arr[i_lc]]
+        lc_dex_arr = np.array([self._mlt_to_int[name] for name in lc_name_arr])
 
         t_set_up = time.time()-t_start
 
