@@ -86,32 +86,6 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ParametrizedLightCurveMixin",
            "create_variability_cache"]
 
-_mlt_to_int = {'early_active_0': 0,
-               'early_active_1': 1,
-               'early_active_2': 2,
-               'early_active_3': 3,
-               'early_inactive_0': 4,
-               'early_inactive_1': 5,
-               'early_inactive_2': 6,
-               'early_inactive_3': 7,
-               'mid_active_0': 8,
-               'mid_active_1': 9,
-               'mid_active_2': 10,
-               'mid_active_3': 11,
-               'mid_inactive_0': 12,
-               'mid_inactive_1': 13,
-               'mid_inactive_2': 14,
-               'mid_inactive_3': 15,
-               'late_active_0': 16,
-               'late_active_1': 17,
-               'late_active_2': 18,
-               'late_active_3': 19,
-               'late_inactive_0': 20,
-               'late_inactive_1': 21,
-               'late_inactive_2': 22,
-               'late_inactive_3': 23,
-               'None': -1}
-
 
 def create_variability_cache():
     """
@@ -215,8 +189,6 @@ class Variability(object):
         method will just use a globl cache)
         """
 
-        global _mlt_to_int
-
         # construct a registry of all of the variability models
         # available to the InstanceCatalog
         if not hasattr(self, '_methodRegistry'):
@@ -305,7 +277,7 @@ class Variability(object):
             for p_name in varCmd[par_key]:
                 params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
                 if str(varCmd[meth_key]) == 'MLT' and str(p_name) == 'lc':
-                    params[varCmd[meth_key]]['lc_dex'][ix] = _mlt_to_int[str(varCmd[par_key][p_name])]
+                    params[varCmd[meth_key]]['lc_dex'][ix] = self._mlt_to_int[str(varCmd[par_key][p_name])]
 
         method_name_arr = np.array(method_name_arr)
         for method_name in params:
@@ -646,67 +618,6 @@ class StellarVariabilityModels(Variability):
         return magoff
 
 
-def _process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
-                       flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
-                       base_mags, mag_name_tuple, output_dict):
-
-    ss = Sed()
-
-    lc_name = lc_name_raw.replace('.txt', '')
-
-    global _mlt_to_int
-    lc_dex_target = _mlt_to_int[lc_name]
-
-    use_this_lc = np.where(lc_dex_arr==lc_dex_target)[0]
-
-    if isinstance(expmjd, numbers.Number):
-        t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
-    else:
-        n_obj = len(use_this_lc)
-        n_time = len(expmjd)
-        t_interp = np.ones(shape=(n_obj, n_time))*expmjd
-        t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
-
-    bad_dexes = np.where(t_interp>max_time)
-    while len(bad_dexes[0])>0:
-        t_interp[bad_dexes] -= dt
-        bad_dexes = np.where(t_interp>max_time)
-
-    local_output_dict = {}
-    for i_mag, mag_name in enumerate(mag_name_tuple):
-        if mag_name in flux_arr_dict:
-
-            flux_arr = flux_arr_dict[mag_name]
-
-            dflux = np.interp(t_interp, time_arr, flux_arr)
-
-            if isinstance(expmjd, numbers.Number):
-                dflux *= flux_factor[use_this_lc]
-            else:
-                dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
-
-            dust_factor = np.interp(ebv[use_this_lc],
-                                    mlt_dust_lookup['ebv'],
-                                    mlt_dust_lookup[mag_name])
-
-            if not isinstance(expmjd, numbers.Number):
-                dust_factor = np.array([dust_factor]*n_time).transpose()
-
-            dflux *= dust_factor
-
-            if isinstance(expmjd, numbers.Number):
-                local_base_fluxes = base_fluxes[mag_name][use_this_lc]
-                local_base_mags = base_mags[mag_name][use_this_lc]
-            else:
-                local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
-                local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
-
-            dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
-
-            local_output_dict[i_mag]=dmag
-
-        output_dict[lc_name_raw] = {'dex':use_this_lc, 'dmag':local_output_dict}
-
 
 class MLTflaringMixin(Variability):
     """
@@ -716,6 +627,34 @@ class MLTflaringMixin(Variability):
     # the file wherein light curves for MLT dwarf flares are stored
     _mlt_lc_file = os.path.join(getPackageDir('sims_data'),
                                 'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
+
+   # a dict mapping light curve names to integers (this makes searching
+   # for objects that only use a specific light curve easier)
+    _mlt_to_int = {'early_active_0': 0,
+                   'early_active_1': 1,
+                   'early_active_2': 2,
+                   'early_active_3': 3,
+                   'early_inactive_0': 4,
+                   'early_inactive_1': 5,
+                   'early_inactive_2': 6,
+                   'early_inactive_3': 7,
+                   'mid_active_0': 8,
+                   'mid_active_1': 9,
+                   'mid_active_2': 10,
+                   'mid_active_3': 11,
+                   'mid_inactive_0': 12,
+                   'mid_inactive_1': 13,
+                   'mid_inactive_2': 14,
+                   'mid_inactive_3': 15,
+                   'late_active_0': 16,
+                   'late_active_1': 17,
+                   'late_active_2': 18,
+                   'late_active_3': 19,
+                   'late_inactive_0': 20,
+                   'late_inactive_1': 21,
+                   'late_inactive_2': 22,
+                   'late_inactive_3': 23,
+                   'None': -1}
 
     def load_MLT_light_curves(self, mlt_lc_file, variability_cache):
         """
@@ -750,6 +689,68 @@ class MLTflaringMixin(Variability):
             variability_cache['_MLT_LC_DURATION_CACHE'] = {}
             variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
             variability_cache['_MLT_LC_FLUX_CACHE'] = {}
+
+
+
+    def _process_mlt_class(self, lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
+                           flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
+                           base_mags, mag_name_tuple, output_dict):
+
+        ss = Sed()
+
+        lc_name = lc_name_raw.replace('.txt', '')
+
+        lc_dex_target = self._mlt_to_int[lc_name]
+
+        use_this_lc = np.where(lc_dex_arr==lc_dex_target)[0]
+
+        if isinstance(expmjd, numbers.Number):
+            t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
+        else:
+            n_obj = len(use_this_lc)
+            n_time = len(expmjd)
+            t_interp = np.ones(shape=(n_obj, n_time))*expmjd
+            t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+
+        bad_dexes = np.where(t_interp>max_time)
+        while len(bad_dexes[0])>0:
+            t_interp[bad_dexes] -= dt
+            bad_dexes = np.where(t_interp>max_time)
+
+        local_output_dict = {}
+        for i_mag, mag_name in enumerate(mag_name_tuple):
+            if mag_name in flux_arr_dict:
+
+                flux_arr = flux_arr_dict[mag_name]
+
+                dflux = np.interp(t_interp, time_arr, flux_arr)
+
+                if isinstance(expmjd, numbers.Number):
+                    dflux *= flux_factor[use_this_lc]
+                else:
+                    dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+
+                dust_factor = np.interp(ebv[use_this_lc],
+                                        mlt_dust_lookup['ebv'],
+                                        mlt_dust_lookup[mag_name])
+
+                if not isinstance(expmjd, numbers.Number):
+                    dust_factor = np.array([dust_factor]*n_time).transpose()
+
+                dflux *= dust_factor
+
+                if isinstance(expmjd, numbers.Number):
+                    local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                    local_base_mags = base_mags[mag_name][use_this_lc]
+                else:
+                    local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                    local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+
+                dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
+
+                local_output_dict[i_mag]=dmag
+
+            output_dict[lc_name_raw] = {'dex':use_this_lc, 'dmag':local_output_dict}
 
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
@@ -958,9 +959,9 @@ class MLTflaringMixin(Variability):
             # t_before_work = time.time()
 
 
-            _process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
-                               flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
-                               base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
+            self._process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
+                                    flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
+                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
 
             # t_work += time.time() - t_before_work
 

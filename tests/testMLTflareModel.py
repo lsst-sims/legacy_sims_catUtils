@@ -93,25 +93,25 @@ class MLT_flare_test_case(unittest.TestCase):
         cursor.execute('''INSERT INTO mlt_test VALUES( 0, 25.0, 31.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_1.txt", "t0": 456.2}}',
+                         "p": {"lc": "lc_1", "t0": 456.2}}',
                        0.25, 2.432, 17.1)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.2, 32.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_1.txt", "t0": 41006.2}}',
+                         "p": {"lc": "lc_1", "t0": 41006.2}}',
                        0.15, 1.876, 17.2)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.3, 10.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_2.txt", "t0": 117.2}}',
+                         "p": {"lc": "lc_2", "t0": 117.2}}',
                        0.3, 2.654, 17.3)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.4, 11.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_2.txt", "t0": 10456.2}}',
+                         "p": {"lc": "lc_2", "t0": 10456.2}}',
                        0.22, 2.364, 17.4)''')
         conn.commit()
         conn.close()
@@ -140,6 +140,7 @@ class MLT_flare_test_case(unittest.TestCase):
             obs = ObservationMetaData(mjd=67432.1)
             flare_cat = FlaringCatalog(db, obs_metadata=obs)
             flare_cat._mlt_lc_file = 'a_nonexistent_cache'
+            flare_cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
             with self.assertRaises(RuntimeError) as context:
                 flare_cat.write_catalog(cat_name)
             self.assertIn('get_mdwarf_flares.sh',
@@ -193,6 +194,7 @@ class MLT_flare_test_case(unittest.TestCase):
 
             flare_cat = FlaringCatalog(db, obs_metadata=obs)
             flare_cat._mlt_lc_file = self.mlt_lc_name
+            flare_cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
             flare_cat.write_catalog(flare_cat_name)
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
@@ -294,6 +296,7 @@ class MLT_flare_test_case(unittest.TestCase):
                                                  'delta_lsst_g'])
 
             cat._mlt_lc_file = self.mlt_lc_name
+            cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
             n_obj = 0
             for line in cat.iter_catalog():
                 n_obj += 1
@@ -329,12 +332,16 @@ class MLT_flare_test_case(unittest.TestCase):
             params['lc'].append(local_dict['p']['lc'])
             params['t0'].append(local_dict['p']['t0'])
         params['lc'] = np.array(params['lc'])
+        params['lc_dex'] = -1*np.ones(len(params['lc']), dtype=int)
         params['t0'] = np.array(params['t0'])
+        for i_lc in range(len(params['lc'])):
+            params['lc_dex'][i_lc] = cat._mlt_to_int[params['lc'][i_lc]]
 
         mlt_obj = MLTflaringMixin()
         mlt_obj.photParams = PhotometricParameters()
         mlt_obj.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         mlt_obj._mlt_lc_file = cat._mlt_lc_file
+        mlt_obj._mlt_to_int = cat._mlt_to_int
         mlt_obj._actually_calculated_columns = ['delta_lsst_u', 'delta_lsst_g']
         valid_dex = [np.arange(4, dtype=int)]
         delta_mag_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
@@ -385,6 +392,7 @@ class MLT_flare_test_case(unittest.TestCase):
                                                  'delta_lsst_g'])
 
             cat._mlt_lc_file = self.mlt_lc_name
+            cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
             n_obj = 0
             for line in cat.iter_catalog():
                 n_obj += 1
@@ -420,17 +428,22 @@ class MLT_flare_test_case(unittest.TestCase):
             params['lc'].append(local_dict['p']['lc'])
             params['t0'].append(local_dict['p']['t0'])
         params['lc'] = np.array(params['lc'])
+        params['lc_dex'] = -1*np.ones(len(params['lc']), dtype=int)
         params['t0'] = np.array(params['t0'])
+        for i_lc in range(len(params['lc'])):
+            params['lc_dex'][i_lc] = cat._mlt_to_int[params['lc'][i_lc]]
 
         mlt_obj = MLTflaringMixin()
         mlt_obj.photParams = PhotometricParameters()
         mlt_obj.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         mlt_obj._mlt_lc_file = cat._mlt_lc_file
+        mlt_obj._mlt_to_int = cat._mlt_to_int
         mlt_obj._actually_calculated_columns = ['delta_lsst_u', 'delta_lsst_g']
         valid_dex = [] # applyMLT does not actually use valid_dex; it looks for non-None params['lc']
         for ix in range(n_obj):
             if ix not in (1,2):
                 params['lc'][ix] = None
+                params['lc_dex'][ix] = -1
         delta_mag_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
                                                    parallax=parallax,
                                                    ebv=ebv,
@@ -463,6 +476,7 @@ class MLT_flare_test_case(unittest.TestCase):
         db = MLT_test_DB(database=self.db_name, driver='sqlite')
         obs = ObservationMetaData(mjd=60000.0)
         cat = FlaringCatalog(db, obs_metadata=obs)
+        cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
         cat._mlt_lc_file = self.mlt_lc_name
         cat_name_1 = os.path.join(self.scratch_dir,'mlt_clean_test_cat_1.txt')
         cat.write_catalog(cat_name_1)
@@ -474,6 +488,7 @@ class MLT_flare_test_case(unittest.TestCase):
         obs = ObservationMetaData(mjd=60000.0)
         cat = FlaringCatalog(db, obs_metadata=obs)
         cat._mlt_lc_file = self.mlt_lc_name
+        cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
         cat_name_2 = os.path.join(self.scratch_dir,'mlt_clean_test_cat_2.txt')
         cat.write_catalog(cat_name_2)
         with open(cat_name_1, 'r') as in_file_1:
@@ -536,19 +551,19 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
         cursor.execute('''INSERT INTO mlt_test VALUES( 0, 25.0, 31.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_1.txt", "t0": 456.2}}',
+                         "p": {"lc": "lc_1", "t0": 456.2}}',
                        0.25, 2.432, 17.1)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.2, 32.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_1.txt", "t0": 41006.2}}',
+                         "p": {"lc": "lc_1", "t0": 41006.2}}',
                        0.15, 1.876, 17.2)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.3, 10.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_2.txt", "t0": 117.2}}',
+                         "p": {"lc": "lc_2", "t0": 117.2}}',
                        0.3, 2.654, 17.3)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.4, 11.0,
@@ -618,6 +633,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
             flare_cat = FlaringCatalog(db, obs_metadata=obs)
             flare_cat._mlt_lc_file = self.mlt_lc_name
+            flare_cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
             flare_cat.write_catalog(flare_cat_name)
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
@@ -781,19 +797,19 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
         cursor.execute('''INSERT INTO mlt_test VALUES( 0, 25.0, 31.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_1.txt", "t0": 456.2}}',
+                         "p": {"lc": "lc_1", "t0": 456.2}}',
                        0.25, 2.432, 17.1)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 1, 25.2, 32.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_1.txt", "t0": 41006.2}}',
+                         "p": {"lc": "lc_1", "t0": 41006.2}}',
                        0.15, 1.876, 17.2)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 2, 25.3, 10.0,
                        'lte028-5.0+0.5a+0.0.BT-Settl.spec.gz',
                        '{"m": "MLT",
-                         "p": {"lc": "lc_2.txt", "t0": 117.2}}',
+                         "p": {"lc": "lc_2", "t0": 117.2}}',
                        0.3, 2.654, 17.3)''')
 
         cursor.execute('''INSERT INTO mlt_test VALUES( 3, 25.4, 11.0,
@@ -878,6 +894,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
             quiet_cat.write_catalog(quiet_cat_name)
 
             flare_cat = FlaringCatalogDummy(db, obs_metadata=obs)
+            flare_cat._mlt_to_int = {'lc_1': 1, 'lc_2': 2, 'None': -1}
             flare_cat.scratch_dir = self.scratch_dir
             flare_cat._mlt_lc_file = self.mlt_lc_name
             flare_cat.write_catalog(flare_cat_name)
