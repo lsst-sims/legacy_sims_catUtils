@@ -86,6 +86,35 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "ParametrizedLightCurveMixin",
            "create_variability_cache"]
 
+_mlt_to_int = {'early_active_0': 0,
+               'early_active_1': 1,
+               'early_active_2': 2,
+               'early_active_3': 3,
+               'early_inactive_0': 4,
+               'early_inactive_1': 5,
+               'early_inactive_2': 6,
+               'early_inactive_3': 7,
+               'mid_active_0': 8,
+               'mid_active_1': 9,
+               'mid_active_2': 10,
+               'mid_active_3': 11,
+               'mid_inactive_0': 12,
+               'mid_inactive_1': 13,
+               'mid_inactive_2': 14,
+               'mid_inactive_3': 15,
+               'late_active_0': 16,
+               'late_active_1': 17,
+               'late_active_2': 18,
+               'late_active_3': 19,
+               'late_inactive_0': 20,
+               'late_inactive_1': 21,
+               'late_inactive_2': 22,
+               'late_inactive_3': 23,
+               'None': -1}
+
+_int_to_mlt = {}
+for name in _mlt_to_int.keys():
+    _int_to_mlt[_mlt_to_int[name]] = name
 
 def create_variability_cache():
     """
@@ -189,6 +218,8 @@ class Variability(object):
         method will just use a globl cache)
         """
 
+        global _mlt_to_int
+
         # construct a registry of all of the variability models
         # available to the InstanceCatalog
         if not hasattr(self, '_methodRegistry'):
@@ -270,10 +301,16 @@ class Variability(object):
                 params[varCmd[meth_key]] = {}
                 for p_name in varCmd[par_key]:
                     params[varCmd[meth_key]][p_name] = [None]*len(varParams_arr)
+                    print(varCmd[meth_key], p_name)
+                    if str(varCmd[meth_key]) == 'MLT' and str(p_name) == 'lc':
+                        print('assigning ints for MLT lc')
+                        params[varCmd[meth_key]]['lc_dex'] = -1*np.ones(len(varParams_arr))
 
             method_name_arr.append(varCmd[meth_key])
             for p_name in varCmd[par_key]:
                 params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
+                if str(varCmd[meth_key]) == 'MLT' and str(p_name) == 'lc':
+                    params[varCmd[meth_key]]['lc_dex'][ix] = _mlt_to_int[str(varCmd[par_key][p_name])]
 
         method_name_arr = np.array(method_name_arr)
         for method_name in params:
@@ -614,13 +651,18 @@ class StellarVariabilityModels(Variability):
         return magoff
 
 
-def _process_mlt_class(lc_name_raw, lc_name_arr, expmjd, params, time_arr, max_time, dt,
+def _process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                        flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
                        base_mags, mag_name_tuple, output_dict):
 
     ss = Sed()
 
-    use_this_lc = np.where(np.char.find(lc_name_arr, lc_name_raw)==0)[0]
+    lc_name = lc_name_raw.replace('.txt', '')
+
+    global _mlt_to_int
+    lc_dex_target = _mlt_to_int[lc_name]
+
+    use_this_lc = np.where(lc_dex_arr==lc_dex_target)[0]
 
     if isinstance(expmjd, numbers.Number):
         t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
@@ -851,6 +893,7 @@ class MLTflaringMixin(Variability):
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
         lc_name_arr = params['lc'].astype(str)
+        lc_dex_arr = params['lc_dex']
         lc_names_unique = np.sort(np.unique(lc_name_arr))
 
         t_work = 0.0
@@ -920,7 +963,7 @@ class MLTflaringMixin(Variability):
             t_before_work = time.time()
 
 
-            _process_mlt_class(lc_name_raw, lc_name_arr, expmjd, params, time_arr, max_time, dt,
+            _process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                                flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
                                base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
 
