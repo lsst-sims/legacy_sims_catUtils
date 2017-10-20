@@ -112,9 +112,6 @@ _mlt_to_int = {'early_active_0': 0,
                'late_inactive_3': 23,
                'None': -1}
 
-_int_to_mlt = {}
-for name in _mlt_to_int.keys():
-    _int_to_mlt[_mlt_to_int[name]] = name
 
 def create_variability_cache():
     """
