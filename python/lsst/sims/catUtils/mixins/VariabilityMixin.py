@@ -798,7 +798,7 @@ class MLTflaringMixin(Variability):
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
         lc_name_arr = params['lc'].astype(str)
-        lc_names_unique = np.unique(lc_name_arr)
+        lc_names_unique = np.sort(np.unique(lc_name_arr))
 
         # t_mag_init = time.time()-t_before
         # t_before = time.time()
@@ -814,21 +814,6 @@ class MLTflaringMixin(Variability):
         # t_load = 0.0
         # t_spent_interp = 0.0
         # t_arr_wrangling = 0.0
-
-        t_before_sort = time.time()
-        use_this_lc_arr = []
-        n_use_this_lc = []
-        for lc_name in lc_names_unique:
-            local_use = np.where(np.char.find(lc_name_arr, lc_name)==0)[0]
-            use_this_lc_arr.append(local_use)
-            n_use_this_lc.append(-1*len(local_use))
-        use_this_lc_arr = np.array(use_this_lc_arr)
-        n_use_this_lc = np.array(n_use_this_lc)
-        sorted_dex = np.argsort(n_use_this_lc)
-
-        use_this_lc_arr = use_this_lc_arr[sorted_dex]
-        lc_names_unique = lc_names_unique[sorted_dex]
-        t_sort = time.time()-t_before_sort
 
         # load all of the necessary light curves
         t_flux_dict = 0.0
@@ -864,15 +849,13 @@ class MLTflaringMixin(Variability):
 
         t_set_up = time.time()-t_start
 
-        for lc_name, use_this_lc in zip(lc_names_unique, use_this_lc_arr):
+        for lc_name_raw in lc_names_unique:
             # t_before = time.time()
-            if 'None' in lc_name:
+            if 'None' in lc_name_raw:
                 # t_use_this += time.time()-t_before
                 continue
 
-            not_none += len(use_this_lc)
-
-            lc_name = lc_name.replace('.txt', '')
+            lc_name = lc_name_raw.replace('.txt', '')
 
             # 2017 May 1
             # There isn't supposed to be a 'late_inactive' light curve.
@@ -897,6 +880,11 @@ class MLTflaringMixin(Variability):
                     flux_arr_dict[mag_name] = variability_cache['_MLT_LC_FLUX_CACHE']['%s_%s' % (lc_name, mag_name)]
 
             t_before_work = time.time()
+
+            use_this_lc = np.where(np.char.find(lc_name_arr, lc_name_raw)==0)[0]
+
+            not_none += len(use_this_lc)
+
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
             # t_load += time.time()-t_before_load
@@ -968,8 +956,8 @@ class MLTflaringMixin(Variability):
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
-        print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e sort %.2e' %
-              (time.time()-t_start, t_work, t_set_up, t_flux_dict, t_sort))
+        print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
+              (time.time()-t_start, t_work, t_set_up, t_flux_dict))
         return dMags
 
 
