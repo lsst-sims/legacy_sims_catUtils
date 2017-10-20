@@ -805,6 +805,7 @@ class MLTflaringMixin(Variability):
 
         # print('applying MLT to %d -- %d unique' % (len(lc_name_arr), len(lc_names_unique)))
         not_none = 0
+        t_work = 0.0
 
         # t_use_this = 0.0
         # t_flux = 0.0
@@ -887,6 +888,7 @@ class MLTflaringMixin(Variability):
 
                     flux_arr_dict[mag_name] = variability_cache['_MLT_LC_FLUX_CACHE']['%s_%s' % (lc_name, mag_name)]
 
+            t_before_work = time.time()
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
             # t_load += time.time()-t_before_load
@@ -949,7 +951,7 @@ class MLTflaringMixin(Variability):
                     #print("local dmags %e %e %e" % (dMags[i_mag][use_this_lc].min(),
                     #                                np.median(dMags[i_mag][use_this_lc]),
                     #                                dMags[i_mag][use_this_lc].max()))
-
+            t_work += time.time() - t_before_work
             # t_flux += time.time()-t_before
 
         # print('took %.2e\nt_init %.2e\nt_mag_init %.2e\nt_use %.2e\nt_flux %.2e\nformat_time %.2e\nnot_none %d' %
@@ -958,7 +960,7 @@ class MLTflaringMixin(Variability):
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
-        print('t MLT %.2e' % (time.time()-t_start))
+        print('t MLT %.2e work %.2e' % (time.time()-t_start, t_work))
         return dMags
 
 
