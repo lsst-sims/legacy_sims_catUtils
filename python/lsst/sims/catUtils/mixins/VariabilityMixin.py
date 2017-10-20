@@ -815,6 +815,7 @@ class MLTflaringMixin(Variability):
         # t_spent_interp = 0.0
         # t_arr_wrangling = 0.0
 
+        t_before_sort = time.time()
         use_this_lc_arr = []
         n_use_this_lc = []
         for lc_name in lc_names_unique:
@@ -827,6 +828,7 @@ class MLTflaringMixin(Variability):
 
         use_this_lc_arr = use_this_lc_arr[sorted_dex]
         lc_names_unique = lc_names_unique[sorted_dex]
+        t_sort = time.time()-t_before_sort
 
         # load all of the necessary light curves
         t_flux_dict = 0.0
@@ -966,8 +968,8 @@ class MLTflaringMixin(Variability):
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
-        print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
-              (time.time()-t_start, t_work, t_set_up, t_flux_dict))
+        print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e sort %.2e' %
+              (time.time()-t_start, t_work, t_set_up, t_flux_dict, t_sort))
         return dMags
 
 
