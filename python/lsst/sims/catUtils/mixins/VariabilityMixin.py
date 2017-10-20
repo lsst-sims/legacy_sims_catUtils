@@ -301,9 +301,7 @@ class Variability(object):
                 params[varCmd[meth_key]] = {}
                 for p_name in varCmd[par_key]:
                     params[varCmd[meth_key]][p_name] = [None]*len(varParams_arr)
-                    print(varCmd[meth_key], p_name)
                     if str(varCmd[meth_key]) == 'MLT' and str(p_name) == 'lc':
-                        print('assigning ints for MLT lc')
                         params[varCmd[meth_key]]['lc_dex'] = -1*np.ones(len(varParams_arr))
 
             method_name_arr.append(varCmd[meth_key])
