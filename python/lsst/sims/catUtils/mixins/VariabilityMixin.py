@@ -880,6 +880,12 @@ class MLTflaringMixin(Variability):
             time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
             dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
             max_time = variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name]
+            flux_arr_dict = {}
+            for mag_name in mag_name_tuple:
+                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                    flux_arr_dict[mag_name] = variability_cache['_MLT_LC_FLUX_CACHE']['%s_%s' % (lc_name, mag_name)]
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
@@ -904,12 +910,9 @@ class MLTflaringMixin(Variability):
             # t_before = time.time()
 
             for i_mag, mag_name in enumerate(mag_name_tuple):
-                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
-                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+                if mag_name in flux_arr_dict:
 
-                    flux_name = '%s_%s' % (lc_name, mag_name)
-
-                    flux_arr = variability_cache['_MLT_LC_FLUX_CACHE'][flux_name]
+                    flux_arr = flux_arr_dict[mag_name]
 
                     # t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
