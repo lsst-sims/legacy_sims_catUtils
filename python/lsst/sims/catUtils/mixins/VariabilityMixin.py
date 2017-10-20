@@ -78,7 +78,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-import time
+# import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN", "StellarVariabilityModels",
@@ -771,7 +771,7 @@ class MLTflaringMixin(Variability):
         with the quiescent magnitudes of the objects
         """
 
-        t_start = time.time()
+        # t_start = time.time()
 
         if parallax is None:
             parallax = self.column_by_name('parallax')
@@ -894,10 +894,10 @@ class MLTflaringMixin(Variability):
         lc_dex_arr = params['lc_dex']
         lc_names_unique = np.sort(np.unique(lc_name_arr))
 
-        t_work = 0.0
+        # t_work = 0.0
 
         # load all of the necessary light curves
-        t_flux_dict = 0.0
+        # t_flux_dict = 0.0
         for lc_name in lc_names_unique:
             if 'None' in lc_name:
                 continue
@@ -915,7 +915,7 @@ class MLTflaringMixin(Variability):
                 max_time = time_arr.max()
                 variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
 
-            t_before_flux = time.time()
+            # t_before_flux = time.time()
             for mag_name in mag_name_tuple:
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
@@ -925,10 +925,10 @@ class MLTflaringMixin(Variability):
 
                         flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
                         variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
-            t_flux_dict += time.time()-t_before_flux
+            # t_flux_dict += time.time()-t_before_flux
 
 
-        t_set_up = time.time()-t_start
+        # t_set_up = time.time()-t_start
 
         dmag_master_dict = {}
 
@@ -958,21 +958,21 @@ class MLTflaringMixin(Variability):
 
                     flux_arr_dict[mag_name] = variability_cache['_MLT_LC_FLUX_CACHE']['%s_%s' % (lc_name, mag_name)]
 
-            t_before_work = time.time()
+            # t_before_work = time.time()
 
 
             _process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                                flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
                                base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
 
-            t_work += time.time() - t_before_work
+            # t_work += time.time() - t_before_work
 
         for lc_name in dmag_master_dict:
             for i_mag in dmag_master_dict[lc_name]['dmag']:
                 dMags[i_mag][dmag_master_dict[lc_name]['dex']] += dmag_master_dict[lc_name]['dmag'][i_mag]
 
-        print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
-              (time.time()-t_start, t_work, t_set_up, t_flux_dict))
+        # print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
+        #       (time.time()-t_start, t_work, t_set_up, t_flux_dict))
         return dMags
 
 
