@@ -861,9 +861,7 @@ class MLTflaringMixin(Variability):
 
             t_before_work = time.time()
 
-            t_before_where = time.time()
             use_this_lc = np.where(np.char.find(lc_name_arr, lc_name_raw)==0)[0]
-            print('    t_where %.2e %d' % (time.time()-t_before_where, len(use_this_lc)))
 
             not_none += len(use_this_lc)
 
