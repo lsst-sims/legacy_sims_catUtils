@@ -78,7 +78,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
-# import time
+import time
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN", "StellarVariabilityModels",
@@ -674,7 +674,7 @@ class MLTflaringMixin(Variability):
         with the quiescent magnitudes of the objects
         """
 
-        # t_start = time.time()
+        t_start = time.time()
         # t_before = t_start
 
         if parallax is None:
@@ -939,6 +939,7 @@ class MLTflaringMixin(Variability):
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
+        print('t MLT %.2e' % (time.time()-t_start))
         return dMags
 
 
