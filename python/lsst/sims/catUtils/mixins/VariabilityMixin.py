@@ -856,6 +856,8 @@ class MLTflaringMixin(Variability):
                         variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
 
 
+        t_set_up = time.time()-t_start
+
         for lc_name, use_this_lc in zip(lc_names_unique, use_this_lc_arr):
             # t_before = time.time()
             if 'None' in lc_name:
@@ -960,7 +962,7 @@ class MLTflaringMixin(Variability):
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
-        print('t MLT %.2e work %.2e' % (time.time()-t_start, t_work))
+        print('t MLT %.2e work %.2e setup %.2e' % (time.time()-t_start, t_work, t_set_up))
         return dMags
 
 
