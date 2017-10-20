@@ -63,6 +63,7 @@ expected by the variability model.
 from builtins import range
 from builtins import object
 import numpy as np
+import multiprocessing as mproc
 import linecache
 import math
 import os
@@ -889,7 +890,14 @@ class MLTflaringMixin(Variability):
 
         t_set_up = time.time()-t_start
 
-        dmag_master_dict = {}
+        mgr = mproc.Manager()
+        dmag_master_dict = mgr.dict()
+
+        n_proc = 4
+        process_list = []
+
+
+        t_before_work = time.time()
 
         for lc_name_raw in lc_names_unique:
             if 'None' in lc_name_raw:
@@ -917,17 +925,26 @@ class MLTflaringMixin(Variability):
 
                     flux_arr_dict[mag_name] = variability_cache['_MLT_LC_FLUX_CACHE']['%s_%s' % (lc_name, mag_name)]
 
-            t_before_work = time.time()
+            p = mproc.Process(target=_process_mlt_class,
+                              args=(lc_name_raw, lc_name_arr, expmjd, params, time_arr, max_time, dt,
+                                    flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
+                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict))
 
+            p.start()
+            process_list.append(p)
+            if len(process_list) >= n_proc:
+                for p in process_list:
+                    p.join()
+                process_list = []
 
-            _process_mlt_class(lc_name_raw, lc_name_arr, expmjd, params, time_arr, max_time, dt,
-                               flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
-                               base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
+        for p in process_list:
+            p.join()
 
-            t_work += time.time() - t_before_work
+        t_work += time.time() - t_before_work
+        print('len of out dict %d' % len(dmag_master_dict))
 
-        for lc_name in dmag_master_dict:
-            for i_mag in dmag_master_dict[lc_name]['dmag']:
+        for lc_name in dmag_master_dict.keys():
+            for i_mag in dmag_master_dict[lc_name]['dmag'].keys():
                 dMags[i_mag][dmag_master_dict[lc_name]['dex']] += dmag_master_dict[lc_name]['dmag'][i_mag]
 
         print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
