@@ -829,6 +829,7 @@ class MLTflaringMixin(Variability):
         lc_names_unique = lc_names_unique[sorted_dex]
 
         # load all of the necessary light curves
+        t_flux_dict = 0.0
         for lc_name in lc_names_unique:
             if 'None' in lc_name:
                 continue
@@ -838,6 +839,7 @@ class MLTflaringMixin(Variability):
                 lc_name = lc_name.replace('in', '')
 
             if lc_name not in variability_cache['_MLT_LC_DURATION_CACHE']:
+                print('reading in %s' % lc_name)
                 time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
                 variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
                 dt = time_arr.max() - time_arr.min()
@@ -845,6 +847,7 @@ class MLTflaringMixin(Variability):
                 max_time = time_arr.max()
                 variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
 
+            t_before_flux = time.time()
             for mag_name in mag_name_tuple:
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
@@ -854,6 +857,7 @@ class MLTflaringMixin(Variability):
 
                         flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
                         variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
+            t_flux_dict += time.time()-t_before_flux
 
 
         t_set_up = time.time()-t_start
@@ -962,7 +966,8 @@ class MLTflaringMixin(Variability):
         # (t_where, t_load, t_spent_interp, t_arr_wrangling))
         # print('per capita %e\n' % ((time.time()-t_start)/float(not_none)))
 
-        print('t MLT %.2e work %.2e setup %.2e' % (time.time()-t_start, t_work, t_set_up))
+        print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
+              (time.time()-t_start, t_work, t_set_up, t_flux_dict))
         return dMags
 
 
