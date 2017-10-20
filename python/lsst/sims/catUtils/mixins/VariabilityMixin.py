@@ -827,6 +827,34 @@ class MLTflaringMixin(Variability):
         use_this_lc_arr = use_this_lc_arr[sorted_dex]
         lc_names_unique = lc_names_unique[sorted_dex]
 
+        # load all of the necessary light curves
+        for lc_name in lc_names_unique:
+            if 'None' in lc_name:
+                continue
+
+            lc_name = lc_name.replace('.txt', '')
+            if 'late' in lc_name:
+                lc_name = lc_name.replace('in', '')
+
+            if lc_name not in variability_cache['_MLT_LC_DURATION_CACHE']:
+                time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
+                variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
+                dt = time_arr.max() - time_arr.min()
+                variability_cache['_MLT_LC_DURATION_CACHE'][lc_name] = dt
+                max_time = time_arr.max()
+                variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
+
+            for mag_name in mag_name_tuple:
+                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                    flux_name = '%s_%s' % (lc_name, mag_name)
+                    if flux_name not in variability_cache['_MLT_LC_FLUX_CACHE']:
+
+                        flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
+                        variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
+
+
         for lc_name, use_this_lc in zip(lc_names_unique, use_this_lc_arr):
             # t_before = time.time()
             if 'None' in lc_name:
@@ -849,17 +877,9 @@ class MLTflaringMixin(Variability):
 
             # t_before_load = time.time()
 
-            if lc_name in variability_cache['_MLT_LC_TIME_CACHE']:
-                time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
-                dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
-                max_time = variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name]
-            else:
-                time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
-                variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
-                dt = time_arr.max() - time_arr.min()
-                variability_cache['_MLT_LC_DURATION_CACHE'][lc_name] = dt
-                max_time = time_arr.max()
-                variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
+            time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
+            dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
+            max_time = variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name]
 
             #time_arr = self._survey_start + raw_time_arr
             #dt = 3652.5
@@ -889,11 +909,7 @@ class MLTflaringMixin(Variability):
 
                     flux_name = '%s_%s' % (lc_name, mag_name)
 
-                    if flux_name in variability_cache['_MLT_LC_FLUX_CACHE']:
-                        flux_arr = variability_cache['_MLT_LC_FLUX_CACHE'][flux_name]
-                    else:
-                        flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
-                        variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
+                    flux_arr = variability_cache['_MLT_LC_FLUX_CACHE'][flux_name]
 
                     # t_before_interp = time.time()
                     dflux = np.interp(t_interp, time_arr, flux_arr)
