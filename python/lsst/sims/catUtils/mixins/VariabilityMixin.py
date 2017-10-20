@@ -614,6 +614,63 @@ class StellarVariabilityModels(Variability):
         return magoff
 
 
+def _process_mlt_class(lc_name_raw, lc_name_arr, expmjd, params, time_arr, max_time, dt,
+                       flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
+                       base_mags, mag_name_tuple, output_dict):
+
+    ss = Sed()
+
+    use_this_lc = np.where(np.char.find(lc_name_arr, lc_name_raw)==0)[0]
+
+    if isinstance(expmjd, numbers.Number):
+        t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
+    else:
+        n_obj = len(use_this_lc)
+        n_time = len(expmjd)
+        t_interp = np.ones(shape=(n_obj, n_time))*expmjd
+        t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+
+    bad_dexes = np.where(t_interp>max_time)
+    while len(bad_dexes[0])>0:
+        t_interp[bad_dexes] -= dt
+        bad_dexes = np.where(t_interp>max_time)
+
+    local_output_dict = {}
+    for i_mag, mag_name in enumerate(mag_name_tuple):
+        if mag_name in flux_arr_dict:
+
+            flux_arr = flux_arr_dict[mag_name]
+
+            dflux = np.interp(t_interp, time_arr, flux_arr)
+
+            if isinstance(expmjd, numbers.Number):
+                dflux *= flux_factor[use_this_lc]
+            else:
+                dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+
+            dust_factor = np.interp(ebv[use_this_lc],
+                                    mlt_dust_lookup['ebv'],
+                                    mlt_dust_lookup[mag_name])
+
+            if not isinstance(expmjd, numbers.Number):
+                dust_factor = np.array([dust_factor]*n_time).transpose()
+
+            dflux *= dust_factor
+
+            if isinstance(expmjd, numbers.Number):
+                local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                local_base_mags = base_mags[mag_name][use_this_lc]
+            else:
+                local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+
+            dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
+
+            local_output_dict[i_mag]=dmag
+
+        output_dict[lc_name_raw] = {'dex':use_this_lc, 'dmag':local_output_dict}
+
+
 class MLTflaringMixin(Variability):
     """
     A mixin providing the model for cool dwarf stellar flares.
@@ -796,7 +853,6 @@ class MLTflaringMixin(Variability):
         lc_name_arr = params['lc'].astype(str)
         lc_names_unique = np.sort(np.unique(lc_name_arr))
 
-        not_none = 0
         t_work = 0.0
 
         # load all of the necessary light curves
@@ -833,6 +889,8 @@ class MLTflaringMixin(Variability):
 
         t_set_up = time.time()-t_start
 
+        dmag_master_dict = {}
+
         for lc_name_raw in lc_names_unique:
             if 'None' in lc_name_raw:
                 continue
@@ -861,55 +919,16 @@ class MLTflaringMixin(Variability):
 
             t_before_work = time.time()
 
-            use_this_lc = np.where(np.char.find(lc_name_arr, lc_name_raw)==0)[0]
 
-            not_none += len(use_this_lc)
-
-            if isinstance(expmjd, numbers.Number):
-                t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
-            else:
-                n_obj = len(use_this_lc)
-                n_time = len(expmjd)
-                t_interp = np.ones(shape=(n_obj, n_time))*expmjd
-                t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
-
-            bad_dexes = np.where(t_interp>max_time)
-            while len(bad_dexes[0])>0:
-                t_interp[bad_dexes] -= dt
-                bad_dexes = np.where(t_interp>max_time)
-
-            for i_mag, mag_name in enumerate(mag_name_tuple):
-                if mag_name in flux_arr_dict:
-
-                    flux_arr = flux_arr_dict[mag_name]
-
-                    dflux = np.interp(t_interp, time_arr, flux_arr)
-
-                    if isinstance(expmjd, numbers.Number):
-                        dflux *= flux_factor[use_this_lc]
-                    else:
-                        dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
-
-                    dust_factor = np.interp(ebv[use_this_lc],
-                                            self._mlt_dust_lookup['ebv'],
-                                            self._mlt_dust_lookup[mag_name])
-
-                    if not isinstance(expmjd, numbers.Number):
-                        dust_factor = np.array([dust_factor]*n_time).transpose()
-
-                    dflux *= dust_factor
-
-                    if isinstance(expmjd, numbers.Number):
-                        local_base_fluxes = base_fluxes[mag_name][use_this_lc]
-                        local_base_mags = base_mags[mag_name][use_this_lc]
-                    else:
-                        local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
-                        local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
-
-                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
-                                                 - local_base_mags)
+            _process_mlt_class(lc_name_raw, lc_name_arr, expmjd, params, time_arr, max_time, dt,
+                               flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
+                               base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
 
             t_work += time.time() - t_before_work
+
+        for lc_name in dmag_master_dict:
+            for i_mag in dmag_master_dict[lc_name]['dmag']:
+                dMags[i_mag][dmag_master_dict[lc_name]['dex']] += dmag_master_dict[lc_name]['dmag'][i_mag]
 
         print('t MLT %.2e work %.2e setup %.2e flux_dict %.2e' %
               (time.time()-t_start, t_work, t_set_up, t_flux_dict))
