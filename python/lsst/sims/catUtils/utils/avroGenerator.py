@@ -151,6 +151,7 @@ class AvroGenerator(object):
         self._t_setup = 0.0
         self._t_phot = 0.0
         self._t_out = 0.0
+        self._t_filter_phot = 0.0
         for i_h, htmid in enumerate(self.unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
             t_start = time.time()
@@ -163,6 +164,7 @@ class AvroGenerator(object):
             (time.time()-t_0, self._t_chip_name,self._t_mlt,self._t_param_lc))
             print('applyVar %.2e setup %.2e' % (self._t_apply_var, self._t_setup))
             print('phot %.2e output %.2e' % (self._t_phot, self._t_out))
+            print('filter_phot %.2e' % self._t_fitler_phot)
             if i_h>2:
                 exit()
 
@@ -333,11 +335,13 @@ class AvroGenerator(object):
 
             valid_photometry = -1*np.ones(len(chunk))
 
+            t_before_filter = time.time()
             for i_obs in range(len(obs_valid)):
                 name_list, valid_obj = chip_name_dict[i_obs]
                 valid_photometry[valid_obj] += 2
             invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
+            self._t_filter_phot += time.time()-t_before_filter
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
