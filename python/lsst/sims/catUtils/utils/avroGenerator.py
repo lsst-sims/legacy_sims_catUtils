@@ -94,7 +94,12 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                                                 parallax=parallax, v_rad=v_rad,
                                                 obs_metadata=obs)
 
-        out_dict[i_obs] = chip_name_list
+        chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
+        for i_chip, name in enumerate(chip_name_list):
+            if name is not None:
+                chip_int_arr[i_chip] = 1
+
+        out_dict[i_obs] = (chip_name_list, chip_int-arr)
 
 
 class AvroGenerator(object):
@@ -275,13 +280,20 @@ class AvroGenerator(object):
 
             for i_obs, obs in enumerate(obs_valid):
                 if n_proc == 1:
-                    chip_name_dict[i_obs] = _chipNameFromRaDecLSST(chunk['raJ2000'],
-                                                                   chunk['decJ2000'],
-                                                                   pm_ra=pmra,
-                                                                   pm_dec=pmdec,
-                                                                   parallax=px,
-                                                                   v_rad=vrad,
-                                                                   obs_metadata=obs)
+                    chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
+                                                            chunk['decJ2000'],
+                                                            pm_ra=pmra,
+                                                            pm_dec=pmdec,
+                                                            parallax=px,
+                                                            v_rad=vrad,
+                                                            obs_metadata=obs)
+
+                    chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
+                    for i_chip, name in enumerate(chip_name_list):
+                        if name is not None:
+                            chip_int_arr[i_chip] = 1
+                    chip_name_dict[i_obs] = (chip_name_list,chip_int_arr)
+
                 else:
                     iobs_sub_list[sub_list_ct].append(i_obs)
                     obs_sub_list[sub_list_ct].append(obs)
@@ -313,9 +325,9 @@ class AvroGenerator(object):
 
             t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
-                chip_name_list = chip_name_dict[i_obs]
+                chip_name_list, chip_int_arr = chip_name_dict[i_obs]
 
-                valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
+                valid = np.where(chip_int_arr>0)
                 valid_chip_name_list = chip_name_list[valid]
                 for name in valid_chip_name_list:
                     assert name is not None
