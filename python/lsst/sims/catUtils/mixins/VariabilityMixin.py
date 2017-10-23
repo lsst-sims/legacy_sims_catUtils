@@ -1214,10 +1214,9 @@ class ParametrizedLightCurveMixin(Variability):
             else:
                 use_this_lc_unq = np.where(lc_int_arr == lc_int)[0]
                 not_none += len(use_this_lc_unq)
-                use_this_lc = np.zeros(len(use_this_lc_unq)*n_t, dtype=int)
                 template_arange = np.arange(0, n_t, dtype=int)
-                for ii, i_lc in enumerate(use_this_lc_unq):
-                    use_this_lc[ii*n_t:(ii+1)*n_t] = template_arange + i_lc*n_t
+                use_this_lc = np.array([template_arange + i_lc*n_t
+                                        for i_lc in use_this_lc_unq]).flatten()
 
             t_use_this += time.time()-t_before
             try:
