@@ -181,7 +181,7 @@ class ParametrizedLightCurve_testCase(unittest.TestCase):
                 d_mag_truth = 2.5*np.log10(1.0+d_flux/q_flux)
                 self.assertFalse(np.isnan(d_mag_truth))
                 for i_filter in range(6):
-                    self.assertEqual(d_mag_out[i_filter][i_obj], d_mag_truth)
+                    self.assertAlmostEqual(d_mag_out[i_filter][i_obj]/d_mag_truth, 1.0, 12)
 
         sims_clean_up()
         if os.path.exists(lc_temp_file_name):
