@@ -13,6 +13,7 @@ from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
+from lsst.sims.catUtils.mixins import create_variability_cache
 
 __all__ = ["AvroGenerator"]
 
@@ -99,8 +100,9 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 class AvroGenerator(object):
 
     def __init__(self, obs_list):
+        self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
-        plm.load_parametrized_light_curves()
+        plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.obs_list = np.array(obs_list)
         htmid_level = 7
         self.htmid_list = []
@@ -229,7 +231,8 @@ class AvroGenerator(object):
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-                                                           expmjd=expmjd_list).transpose((2,0,1))
+                                                           variability_cache=self._variability_cache,
+                                                           expmjd=expmjd_list,).transpose((2,0,1))
 
             #for ii in range(6):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
