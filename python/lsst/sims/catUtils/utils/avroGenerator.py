@@ -329,8 +329,6 @@ class AvroGenerator(object):
 
                 valid = np.where(chip_int_arr>0)
                 valid_chip_name_list = chip_name_list[valid]
-                for name in valid_chip_name_list:
-                    assert name is not None
                 valid_sources = chunk[valid]
                 cat = cat_list[i_obs]
                 local_column_cache = {}
