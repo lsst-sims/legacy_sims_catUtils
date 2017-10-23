@@ -1155,10 +1155,12 @@ class ParametrizedLightCurveMixin(Variability):
 
         # use trig identities to calculate
         # \sum_i a_i*cos(omega_i*(expmjd-tau_i)) + b_i*sin(omega_i*(expmjd-tau_i))
-        a_cos_omega_tau = aa*np.cos(omega_tau)
-        a_sin_omega_tau = aa*np.sin(omega_tau)
-        b_cos_omega_tau = bb*np.cos(omega_tau)
-        b_sin_omega_tau = bb*np.sin(omega_tau)
+        cos_omega_tau = np.cos(omega_tau)
+        sin_omega_tau = np.sin(omega_tau)
+        a_cos_omega_tau = aa*cos_omega_tau
+        a_sin_omega_tau = aa*sin_omega_tau
+        b_cos_omega_tau = bb*cos_omega_tau
+        b_sin_omega_tau = bb*sin_omega_tau
 
         cos_omega_t = np.cos(omega_t)
         sin_omega_t = np.sin(omega_t)
