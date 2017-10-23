@@ -189,8 +189,6 @@ class Variability(object):
         method will just use a globl cache)
         """
 
-        global _mlt_to_int
-
         # construct a registry of all of the variability models
         # available to the InstanceCatalog
         if not hasattr(self, '_methodRegistry'):
