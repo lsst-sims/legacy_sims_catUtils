@@ -1153,10 +1153,13 @@ class ParametrizedLightCurveMixin(Variability):
         cos_omega_t = np.cos(omega_t)
         sin_omega_t = np.sin(omega_t)
 
-        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau)
-        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau)
-        delta_flux += np.dot(sin_omega_t, b_cos_omega_tau)
-        delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau)
+        #delta_flux = np.dot(cos_omega_t, a_cos_omega_tau)
+        #delta_flux += np.dot(sin_omega_t, a_sin_omega_tau)
+        #delta_flux += np.dot(sin_omega_t, b_cos_omega_tau)
+        #delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau)
+
+        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau-b_sin_omega_tau)
+        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau+b_cos_omega_tau)
 
         if len(delta_flux)==1:
             delta_flux = np.float(delta_flux)
