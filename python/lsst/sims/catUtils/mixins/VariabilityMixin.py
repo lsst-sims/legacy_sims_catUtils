@@ -1164,7 +1164,9 @@ class ParametrizedLightCurveMixin(Variability):
     def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
                                     variability_cache=None):
 
-        # t_start = time.time()
+        t_start = time.time()
+        if not hasattr(self, '_total_t_param_lc'):
+            self._total_t_param_lc = 0.0
 
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
@@ -1244,6 +1246,8 @@ class ParametrizedLightCurveMixin(Variability):
 
         # print('applying Parametrized LC to %d' % not_none)
         # print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
+
+        self._total_t_param_lc += time.time()-t_start
 
         return d_mag_out
 
