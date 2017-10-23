@@ -143,6 +143,8 @@ class AvroGenerator(object):
         self._t_param_lc = 0.0
         self._t_apply_var = 0.0
         self._t_setup = 0.0
+        self._t_phot = 0.0
+        self._t_out = 0.0
         for i_h, htmid in enumerate(self.unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
             t_start = time.time()
@@ -154,6 +156,7 @@ class AvroGenerator(object):
             print('total took %.2e chip name %.2e MLT %.2e paramLC %.2e' %
             (time.time()-t_0, self._t_chip_name,self._t_mlt,self._t_param_lc))
             print('applyVar %.2e setup %.2e' % (self._t_apply_var, self._t_setup))
+            print('phot %.2e output %.2e' % (self._t_phot, self._t_out))
             if i_h>2:
                 exit()
 
@@ -242,10 +245,12 @@ class AvroGenerator(object):
                 px = None
                 vrad = None
 
+            t_before_phot = time.time()
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                            variability_cache=self._variability_cache,
                                                            expmjd=expmjd_list,).transpose((2,0,1))
+            self._t_phot += time.time()-t_before_phot
 
             #for ii in range(6):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
@@ -305,6 +310,7 @@ class AvroGenerator(object):
 
             self._t_chip_name += time.time()-t_before_chip_name
 
+            t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
                 chip_name_list = chip_name_dict[i_obs]
 
@@ -326,6 +332,7 @@ class AvroGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
+            self._t_out = time.time()-t_before_out
 
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
