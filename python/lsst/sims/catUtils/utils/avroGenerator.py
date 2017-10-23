@@ -338,7 +338,6 @@ class AvroGenerator(object):
                 valid_photometry[valid_obj] += 2
             invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
-            print('invalid %d of %d' % (len(invalid_dex[0]),len(chunk)))
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
