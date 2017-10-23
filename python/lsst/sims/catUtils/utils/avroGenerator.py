@@ -107,7 +107,7 @@ class AvroGenerator(object):
 
     def __init__(self, obs_list):
         self._t_chip_name=0.0
-        self._n_proc_max = 12
+        self._n_proc_max = 2
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
         plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
@@ -255,16 +255,6 @@ class AvroGenerator(object):
                 px = None
                 vrad = None
 
-            ######################################################
-            # Calculate the delta_magnitude for all of the sources
-            #
-            t_before_phot = time.time()
-            photometry_catalog._set_current_chunk(chunk)
-            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-                                                           variability_cache=self._variability_cache,
-                                                           expmjd=expmjd_list,).transpose((2,0,1))
-            self._t_phot += time.time()-t_before_phot
-
             #for ii in range(6):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
             #exit()
@@ -332,6 +322,27 @@ class AvroGenerator(object):
                 assert len(chip_name_dict) == len(obs_valid)
 
             self._t_chip_name += time.time()-t_before_chip_name
+
+            ######################################################
+            # Calculate the delta_magnitude for all of the sources
+            #
+            t_before_phot = time.time()
+            valid_photometry = -1*np.ones(len(chunk))
+
+            # only calculate photometry for objects that actually land
+            # on LSST detectors
+            for i_obs in range(len(obs_valid)):
+                name_list, valid_obj = chip_name_dict[i_obs]
+                valid_photometry[valid_obj] += 2
+            chunk['varParamStr'][np.where(valid_photometry)<0] = 'None'
+            print('invalid %d of %d' % (len(np.where(valid_photometry<0)[0]),len(chunk)))
+
+            photometry_catalog._set_current_chunk(chunk)
+            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                           variability_cache=self._variability_cache,
+                                                           expmjd=expmjd_list,).transpose((2,0,1))
+            self._t_phot += time.time()-t_before_phot
+
 
             t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
