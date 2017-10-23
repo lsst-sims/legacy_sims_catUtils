@@ -98,8 +98,9 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
         for i_chip, name in enumerate(chip_name_list):
             if name is not None:
                 chip_int_arr[i_chip] = 1
+        valid_obj = np.where(chip_int_arr>0)
 
-        out_dict[i_obs] = (chip_name_list, chip_int_arr)
+        out_dict[i_obs] = (chip_name_list[valid_obj], valid_obj)
 
 
 class AvroGenerator(object):
@@ -292,7 +293,9 @@ class AvroGenerator(object):
                     for i_chip, name in enumerate(chip_name_list):
                         if name is not None:
                             chip_int_arr[i_chip] = 1
-                    chip_name_dict[i_obs] = (chip_name_list,chip_int_arr)
+
+                    valid_obj = np.where(chip_int_arr>0)
+                    chip_name_dict[i_obs] = (chip_name_list[valid_obj], valid_obj)
 
                 else:
                     iobs_sub_list[sub_list_ct].append(i_obs)
@@ -325,14 +328,12 @@ class AvroGenerator(object):
 
             t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
-                chip_name_list, chip_int_arr = chip_name_dict[i_obs]
+                valid_chip_name_list, valid_obj = chip_name_dict[i_obs]
 
-                valid = np.where(chip_int_arr>0)
-                valid_chip_name_list = chip_name_list[valid]
-                valid_sources = chunk[valid]
+                valid_sources = chunk[valid_obj]
                 cat = cat_list[i_obs]
                 local_column_cache = {}
-                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid])
+                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid_obj])
                                                                   for i_mag in range(len(mag_names))])
 
                 local_column_cache['chipName'] = valid_chip_name_list
