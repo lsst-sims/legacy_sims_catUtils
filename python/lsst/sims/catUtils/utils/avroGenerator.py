@@ -294,7 +294,6 @@ class AvroGenerator(object):
 
                 assert len(chip_name_dict) == len(obs_valid)
 
-            print('total time spent on chip name %.2e' % (time.time()-t_before_chip_name))
             self._t_chip_name += time.time()-t_before_chip_name
 
             for i_obs, obs in enumerate(obs_valid):

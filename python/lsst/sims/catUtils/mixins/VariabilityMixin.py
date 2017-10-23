@@ -957,9 +957,6 @@ class MLTflaringMixin(Variability):
 
         t_mlt = time.time()-t_start
         self._total_t_MLT += t_mlt
-        print('t MLT %.2e work rat %.2e setup rat %.2e' %
-              (t_mlt, t_work/t_mlt, t_set_up/t_mlt))
-        print('total tMLT %.2e' % self._total_t_MLT)
 
         return dMags
 
