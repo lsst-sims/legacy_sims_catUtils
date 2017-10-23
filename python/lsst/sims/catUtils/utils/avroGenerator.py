@@ -223,18 +223,20 @@ class AvroGenerator(object):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
             #exit()
 
-            for i_obs, obs in enumerate(obs_valid):
-                t_before_chip_name = time.time()
-                chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
+            t_before_chip_name = time.time()
+            chip_name_dict = {}
+            for i_obs,ob in enumerate(obs_valid):
+                chip_name_dict[i_obs] = _chipNameFromRaDecLSST(chunk['raJ2000'],
                                                         chunk['decJ2000'],
                                                         pm_ra=pmra,
                                                         pm_dec=pmdec,
                                                         parallax=px,
                                                         v_rad=vrad,
                                                         obs_metadata=obs)
+            print('total time spent on chip name %.2e' % (time.time()-t_before_chip_name))
 
-                t_chipName += time.time()-t_before_chip_name
-                print('tchipname progress %.2e' % t_chipName)
+            for i_obs, obs in enumerate(obs_valid):
+                chip_name_list = chip_name_dict[i_obs]
 
                 valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
                 valid_chip_name_list = chip_name_list[valid]
@@ -254,5 +256,5 @@ class AvroGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
-        print('total time spent on chip name %.2e' % t_chip_name)
+
         return len(obs_valid)
