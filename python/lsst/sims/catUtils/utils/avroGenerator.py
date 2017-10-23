@@ -5,6 +5,7 @@ from lsst.sims.utils import findHtmid, trixelFromHtmid
 from lsst.sims.utils import angularSeparation, ObservationMetaData
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.coordUtils import _chipNameFromRaDecLSST
+from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import BandpassDict
@@ -135,6 +136,12 @@ class AvroGenerator(object):
 
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
+
+        # a dummy call to make sure that the initialization
+        # is done before we attempt to parallelize calls
+        # to chipNameFromRaDecLSST
+        dummy_name = chipNameFromPupilCoordsLSST(0.0, 0.0)
+
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
         valid_dexes = np.where(self.htmid_list == htmid)
         print('valid_dexes %s ' % str(valid_dexes))
