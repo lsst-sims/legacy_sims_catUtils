@@ -255,6 +255,9 @@ class AvroGenerator(object):
                 px = None
                 vrad = None
 
+            ######################################################
+            # Calculate the delta_magnitude for all of the sources
+            #
             t_before_phot = time.time()
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
