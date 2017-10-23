@@ -336,7 +336,7 @@ class AvroGenerator(object):
             for i_obs in range(len(obs_valid)):
                 name_list, valid_obj = chip_name_dict[i_obs]
                 valid_photometry[valid_obj] += 2
-            invalid_dex = np.where(valid_photometry)<0
+            invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
             print('invalid %d of %d' % (len(invalid_dex[0]),len(chunk)))
 
