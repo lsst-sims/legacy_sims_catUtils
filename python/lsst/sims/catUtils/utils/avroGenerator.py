@@ -86,13 +86,15 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
 
 def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-                             v_rad=None, obs_metadata=None, i_obs=None, out_dict=None):
+                             v_rad=None, obs_metadata_list=None, i_obs_list=None, out_dict=None):
 
-    chip_name_list = _chipNameFromRaDecLSST(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec,
-                                            parallax=parallax, v_rad=v_rad,
-                                            obs_metadata=obs_metadata)
+    for i_obs, obs in zip(i_obs_list, obs_metadata_list):
+        chip_name_list = _chipNameFromRaDecLSST(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec,
+                                                parallax=parallax, v_rad=v_rad,
+                                                obs_metadata=obs)
 
-    out_dict[i_obs] = chip_name_list
+        out_dict[i_obs] = chip_name_list
+
 
 class AvroGenerator(object):
 
@@ -240,9 +242,14 @@ class AvroGenerator(object):
             else:
                 mgr = mproc.Manager()
                 chip_name_dict = mgr.dict()
-                process_list = []
+                iobs_sub_list = []
+                obs_sub_list = []
+                for i_obs in range(n_proc):
+                    iobs_sub_list.append([])
+                    obs_sub_list.append([])
+                sub_list_ct = 0
 
-            for i_obs,ob in enumerate(obs_valid):
+            for i_obs, obs in enumerate(obs_valid):
                 if n_proc == 1:
                     chip_name_dict[i_obs] = _chipNameFromRaDecLSST(chunk['raJ2000'],
                                                                    chunk['decJ2000'],
@@ -252,26 +259,31 @@ class AvroGenerator(object):
                                                                    v_rad=vrad,
                                                                    obs_metadata=obs)
                 else:
+                    iobs_sub_list[sub_list_ct].append(i_obs)
+                    obs_sub_list[sub_list_ct].append(obs)
+                    sub_list_ct += 1
+                    if sub_list_ct >= n_proc:
+                        sub_list_ct = 0
+
+            if n_proc>1:
+                process_list = []
+                for sub_list_ct in range(len(iobs_sub_list)):
                     p = mproc.Process(target=_find_chipNames_parallel,
                                       args=(chunk['raJ2000'], chunk['decJ2000']),
                                       kwargs={'pm_ra': pmra,
                                               'pm_dec': pmdec,
                                               'parallax': px,
                                               'v_rad': vrad,
-                                              'obs_metadata': obs,
-                                              'i_obs': i_obs,
+                                              'obs_metadata_list': obs_sub_list[sub_list_ct],
+                                              'i_obs_list': iobs_sub_list[sub_list_ct],
                                               'out_dict': chip_name_dict})
-
                     p.start()
                     process_list.append(p)
-                    if len(process_list) >= n_proc:
-                        for p in process_list:
-                            p.join()
-                        process_list = []
 
-            if n_proc>1:
                 for p in process_list:
                     p.join()
+
+                assert len(chip_name_dict) == len(obs_valid)
 
             print('total time spent on chip name %.2e' % (time.time()-t_before_chip_name))
 
