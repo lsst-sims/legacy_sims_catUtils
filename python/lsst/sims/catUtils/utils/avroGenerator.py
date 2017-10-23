@@ -194,6 +194,7 @@ class AvroGenerator(object):
 
         print('chunking')
         i_chunk = 0
+        t_chipName = 0.0
         for chunk in data_iter:
             i_chunk += 1
             if 'properMotionRa'in column_query:
@@ -216,6 +217,7 @@ class AvroGenerator(object):
             #exit()
 
             for i_obs, obs in enumerate(obs_valid):
+                t_before_chip_name = time.time()
                 chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
                                                         chunk['decJ2000'],
                                                         pm_ra=pmra,
@@ -223,6 +225,9 @@ class AvroGenerator(object):
                                                         parallax=px,
                                                         v_rad=vrad,
                                                         obs_metadata=obs)
+
+                t_chipName += time.time()-t_before_chip_name
+                print('tchipname progress %.2e' % t_chipName)
 
                 valid = np.where(np.char.find(chip_name_list.astype(str), 'R')==0)
                 valid_chip_name_list = chip_name_list[valid]
@@ -242,4 +247,5 @@ class AvroGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
+        print('total time spent on chip name %.2e' % t_chip_name)
         return len(obs_valid)
