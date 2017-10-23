@@ -333,7 +333,7 @@ class AvroGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
-            self._t_out = time.time()-t_before_out
+            self._t_out += time.time()-t_before_out
 
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
