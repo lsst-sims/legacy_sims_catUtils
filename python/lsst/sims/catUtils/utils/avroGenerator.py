@@ -100,6 +100,7 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 class AvroGenerator(object):
 
     def __init__(self, obs_list):
+        self._n_proc_max = 12
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
         plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
@@ -241,7 +242,9 @@ class AvroGenerator(object):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
             #exit()
 
-            n_proc = 4
+            n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
+            n_proc = min(n_proc_possible, self._n_proc_max)
+
             t_before_chip_name = time.time()
             if n_proc == 1:
                 chip_name_dict = {}
