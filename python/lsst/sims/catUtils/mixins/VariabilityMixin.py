@@ -1203,7 +1203,13 @@ class ParametrizedLightCurveMixin(Variability):
 
         not_none = 0
 
-        lc_int_arr = np.array(params['lc'])
+        t_before_cast = time.time()
+        lc_int_arr = -1*np.ones(len(params['lc']), dtype=int)
+        for ii in range(len(params['lc'])):
+            if params['lc'][ii] is not None:
+                lc_int_arr[ii] = params['lc'][ii]
+        print('t_cast %.2e' % (time.time()-t_before_cast))
+
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
