@@ -164,7 +164,7 @@ class AvroGenerator(object):
             (time.time()-t_0, self._t_chip_name,self._t_mlt,self._t_param_lc))
             print('applyVar %.2e setup %.2e' % (self._t_apply_var, self._t_setup))
             print('phot %.2e output %.2e' % (self._t_phot, self._t_out))
-            print('filter_phot %.2e' % self._t_fitler_phot)
+            print('filter_phot %.2e' % self._t_filter_phot)
             if i_h>2:
                 exit()
 
