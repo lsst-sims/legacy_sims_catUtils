@@ -327,10 +327,12 @@ class AvroGenerator(object):
             # Calculate the delta_magnitude for all of the sources
             #
             t_before_phot = time.time()
-            valid_photometry = -1*np.ones(len(chunk))
 
             # only calculate photometry for objects that actually land
             # on LSST detectors
+
+            valid_photometry = -1*np.ones(len(chunk))
+
             for i_obs in range(len(obs_valid)):
                 name_list, valid_obj = chip_name_dict[i_obs]
                 valid_photometry[valid_obj] += 2
