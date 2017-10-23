@@ -196,11 +196,15 @@ class Variability(object):
         # available to the InstanceCatalog
         if not hasattr(self, '_methodRegistry'):
             self._methodRegistry = {}
+            self._method_name_to_int = {}
+            next_int = 0
             for methodname in dir(self):
                 method=getattr(self, methodname)
                 if hasattr(method, '_registryKey'):
                     if method._registryKey not in self._methodRegistry:
                         self._methodRegistry[method._registryKey] = method
+                        self._method_name_to_int[method._registryKey] = next_int
+                        next_int += 1
 
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
@@ -231,6 +235,12 @@ class Variability(object):
         # which objects need to be passed through which
         # variability methods.
         method_name_arr = []
+
+        # also keep an array listing the methods to use
+        # by the integers mapped with self._method_name_to_int;
+        # this is for faster application of np.where when
+        # figuring out which objects go with which method
+        method_int_arr = -1*np.ones(len(varParams_arr))
 
         # Keep a dict keyed on all of the method names in
         # method_name_arr.  params[method_name] will be another
@@ -275,10 +285,19 @@ class Variability(object):
                     params[varCmd[meth_key]][p_name] = [None]*len(varParams_arr)
 
             method_name_arr.append(varCmd[meth_key])
+            if varCmd[meth_key] != 'None':
+                try:
+                    method_int_arr[ix] = self._method_name_to_int[varCmd[meth_key]]
+                except KeyError:
+                    raise RuntimeError("Your InstanceCatalog does not contain " \
+                                       + "a variability method corresponding to '%s'"
+                                       % varCmd[meth_key])
+
             for p_name in varCmd[par_key]:
                 params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
 
         method_name_arr = np.array(method_name_arr)
+        method_int_arr = np.array(method_int_arr)
         for method_name in params:
             for p_name in params[method_name]:
                 params[method_name][p_name] = np.array(params[method_name][p_name])
@@ -292,12 +311,7 @@ class Variability(object):
                 if expmjd is None:
                     expmjd = self.obs_metadata.mjd.TAI
 
-                if method_name not in self._methodRegistry:
-                    raise RuntimeError("Your InstanceCatalog does not contain " \
-                                       + "a variability method corresponding to '%s'"
-                                       % method_name)
-
-                deltaMag += self._methodRegistry[method_name](np.where(np.char.equal(method_name, method_name_arr)),
+                deltaMag += self._methodRegistry[method_name](np.where(method_int_arr==self._method_name_to_int[method_name]),
                                                               params[method_name],
                                                               expmjd,
                                                               variability_cache=variability_cache)
