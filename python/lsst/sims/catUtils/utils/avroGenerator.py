@@ -230,9 +230,9 @@ class AvroGenerator(object):
                 vrad = None
 
             photometry_catalog._set_current_chunk(chunk)
-            #dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-            #                                               variability_cache=self._variability_cache,
-            #                                               expmjd=expmjd_list,).transpose((2,0,1))
+            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                           variability_cache=self._variability_cache,
+                                                           expmjd=expmjd_list,).transpose((2,0,1))
 
             #for ii in range(6):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
@@ -289,7 +289,6 @@ class AvroGenerator(object):
                 assert len(chip_name_dict) == len(obs_valid)
 
             print('total time spent on chip name %.2e' % (time.time()-t_before_chip_name))
-            continue
 
             for i_obs, obs in enumerate(obs_valid):
                 chip_name_list = chip_name_dict[i_obs]
