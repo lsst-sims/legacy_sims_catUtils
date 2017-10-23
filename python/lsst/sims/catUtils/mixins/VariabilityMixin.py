@@ -84,8 +84,7 @@ __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
            "VariabilityAGN", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
            "ParametrizedLightCurveMixin",
-           "create_variability_cache",
-           "_GLOBAL_VARIABILITY_CACHE"]
+           "create_variability_cache"]
 
 
 def create_variability_cache():
