@@ -742,6 +742,8 @@ class MLTflaringMixin(Variability):
         """
 
         t_start = time.time()
+        if not hasattr(self, '_total_t_MLT'):
+            self._total_t_MLT = 0.0
 
         if parallax is None:
             parallax = self.column_by_name('parallax')
@@ -954,8 +956,10 @@ class MLTflaringMixin(Variability):
                 dMags[i_mag][dmag_master_dict[lc_name]['dex']] += dmag_master_dict[lc_name]['dmag'][i_mag]
 
         t_mlt = time.time()-t_start
+        self._total_t_MLT += t_mlt
         print('t MLT %.2e work rat %.2e setup rat %.2e' %
               (t_mlt, t_work/t_mlt, t_set_up/t_mlt))
+        print('total tMLT %.2e' % self._total_t_MLT)
 
         return dMags
 
