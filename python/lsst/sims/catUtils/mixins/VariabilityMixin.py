@@ -1178,12 +1178,12 @@ class ParametrizedLightCurveMixin(Variability):
 
         n_obj = self.num_variable_obj(params)
 
-        t_before_cast = time.time()
+        # t_before_cast = time.time()
         lc_int_arr = -1*np.ones(len(params['lc']), dtype=int)
         for ii in range(len(params['lc'])):
             if params['lc'][ii] is not None:
                 lc_int_arr[ii] = params['lc'][ii]
-        print('t_cast %.2e' % (time.time()-t_before_cast))
+        # print('t_cast %.2e' % (time.time()-t_before_cast))
 
         good = np.where(lc_int_arr>=0)
         unq_lc_int = np.unique(params['lc'][good])
@@ -1214,7 +1214,7 @@ class ParametrizedLightCurveMixin(Variability):
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
-            t_before = time.time()
+            # t_before = time.time()
             if n_t == 1:
                 use_this_lc = np.where(lc_int_arr == lc_int)[0]
                 not_none += len(use_this_lc)
@@ -1225,7 +1225,7 @@ class ParametrizedLightCurveMixin(Variability):
                 use_this_lc = np.array([template_arange + i_lc*n_t
                                         for i_lc in use_this_lc_unq]).flatten()
 
-            t_use_this += time.time()-t_before
+            # t_use_this += time.time()-t_before
             try:
                 assert len(use_this_lc) % n_t == 0
             except AssertionError:
@@ -1258,7 +1258,7 @@ class ParametrizedLightCurveMixin(Variability):
         # print('applying Parametrized LC to %d' % not_none)
         # print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
 
-        print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
+        # print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
         self._total_t_param_lc += time.time()-t_start
 
         return d_mag_out
