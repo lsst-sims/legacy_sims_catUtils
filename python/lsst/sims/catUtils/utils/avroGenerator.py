@@ -344,7 +344,9 @@ class AvroGenerator(object):
                                                            expmjd=expmjd_list,).transpose((2,0,1))
             self._t_phot += time.time()-t_before_phot
 
-
+            ############################
+            # Process and output sources
+            #
             t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
                 valid_chip_name_list, valid_obj = chip_name_dict[i_obs]
