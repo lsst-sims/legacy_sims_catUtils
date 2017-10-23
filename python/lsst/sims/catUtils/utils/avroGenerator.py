@@ -141,6 +141,8 @@ class AvroGenerator(object):
         t_0 = time.time()
         self._t_mlt = 0.0
         self._t_param_lc = 0.0
+        self._t_apply_var = 0.0
+        self._t_setup = 0.0
         for i_h, htmid in enumerate(self.unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
             t_start = time.time()
@@ -151,11 +153,14 @@ class AvroGenerator(object):
             (len(self.obs_list)*(time.time()-t_0)/(3600.0*n_obs_total)))
             print('total took %.2e chip name %.2e MLT %.2e paramLC %.2e' %
             (time.time()-t_0, self._t_chip_name,self._t_mlt,self._t_param_lc))
+            print('applyVar %.2e setup %.2e' % (self._t_apply_var, self._t_setup))
             if i_h>2:
                 exit()
 
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
+
+        t_start = 0.0
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
@@ -218,6 +223,8 @@ class AvroGenerator(object):
                                                                        'lsst_i',
                                                                        'lsst_z',
                                                                        'lsst_y'])
+
+        self._t_setup += time.time()-t_start
 
         print('chunking')
         i_chunk = 0
@@ -322,4 +329,5 @@ class AvroGenerator(object):
 
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
+        self._t_apply_var += photometry_catalog._total_t_apply_var
         return len(obs_valid)

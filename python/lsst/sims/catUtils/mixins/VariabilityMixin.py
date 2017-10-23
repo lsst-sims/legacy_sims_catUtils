@@ -188,6 +188,9 @@ class Variability(object):
         create_variability_cache() method (optional; if None, the
         method will just use a globl cache)
         """
+        t_start = time.time()
+        if not hasattr(self, '_total_t_apply_var'):
+            self._total_t_apply_var = 0.0
 
         # construct a registry of all of the variability models
         # available to the InstanceCatalog
@@ -299,6 +302,7 @@ class Variability(object):
                                                               expmjd,
                                                               variability_cache=variability_cache)
 
+        self._total_t_apply_var += time.time()-t_start
         return deltaMag
 
 
