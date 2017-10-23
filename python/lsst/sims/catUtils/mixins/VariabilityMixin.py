@@ -1199,7 +1199,7 @@ class ParametrizedLightCurveMixin(Variability):
         # print('initialized arrays in %e' % (time.time()-t_start))
         # t_assign = 0.0
         # t_flux = 0.0
-        # t_use_this = 0.0
+        t_use_this = 0.0
 
         not_none = 0
 
@@ -1207,7 +1207,7 @@ class ParametrizedLightCurveMixin(Variability):
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
-            # t_before = time.time()
+            t_before = time.time()
             if n_t == 1:
                 use_this_lc = np.where(lc_int_arr == lc_int)[0]
                 not_none += len(use_this_lc)
@@ -1219,7 +1219,7 @@ class ParametrizedLightCurveMixin(Variability):
                 for ii, i_lc in enumerate(use_this_lc_unq):
                     use_this_lc[ii*n_t:(ii+1)*n_t] = template_arange + i_lc*n_t
 
-            # t_use_this += time.time()-t_before
+            t_use_this += time.time()-t_before
             try:
                 assert len(use_this_lc) % n_t == 0
             except AssertionError:
@@ -1252,6 +1252,7 @@ class ParametrizedLightCurveMixin(Variability):
         # print('applying Parametrized LC to %d' % not_none)
         # print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
 
+        print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
         self._total_t_param_lc += time.time()-t_start
 
         return d_mag_out
