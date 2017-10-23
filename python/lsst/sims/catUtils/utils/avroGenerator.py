@@ -14,6 +14,7 @@ from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
+from lsst.sims.catUtils.mixins import _GLOBAL_VARIABILITY_CACHE
 
 __all__ = ["AvroGenerator"]
 
@@ -88,6 +89,8 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
 def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                              v_rad=None, obs_metadata_list=None, i_obs_list=None, out_dict=None):
+
+    print('global cache %s' % (str(_GLOBAL_VARIABILITY_CACHE)))
 
     for i_obs, obs in zip(i_obs_list, obs_metadata_list):
         chip_name_list = _chipNameFromRaDecLSST(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec,
