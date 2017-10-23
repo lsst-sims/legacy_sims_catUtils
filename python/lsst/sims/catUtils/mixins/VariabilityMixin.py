@@ -1177,7 +1177,15 @@ class ParametrizedLightCurveMixin(Variability):
             return np.array([[], [], [], [], [], []])
 
         n_obj = self.num_variable_obj(params)
-        good = np.where(np.logical_not(np.isnan(params['lc'].astype(float))))
+
+        t_before_cast = time.time()
+        lc_int_arr = -1*np.ones(len(params['lc']), dtype=int)
+        for ii in range(len(params['lc'])):
+            if params['lc'][ii] is not None:
+                lc_int_arr[ii] = params['lc'][ii]
+        print('t_cast %.2e' % (time.time()-t_before_cast))
+
+        good = np.where(lc_int_arr>=0)
         unq_lc_int = np.unique(params['lc'][good])
 
         # print('applyParamLC %d obj; %d unique' % (n_obj, len(unq_lc_int)))
@@ -1202,13 +1210,6 @@ class ParametrizedLightCurveMixin(Variability):
         t_use_this = 0.0
 
         not_none = 0
-
-        t_before_cast = time.time()
-        lc_int_arr = -1*np.ones(len(params['lc']), dtype=int)
-        for ii in range(len(params['lc'])):
-            if params['lc'][ii] is not None:
-                lc_int_arr[ii] = params['lc'][ii]
-        print('t_cast %.2e' % (time.time()-t_before_cast))
 
         for lc_int in unq_lc_int:
             if lc_int is None:
