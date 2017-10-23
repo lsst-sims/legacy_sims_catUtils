@@ -266,6 +266,10 @@ class AvroGenerator(object):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
             #exit()
 
+            ###################################################################
+            # Figure out which sources actually land on an LSST detector during
+            # the observations in question
+            #
             t_before_chip_name = time.time()
             if n_proc == 1:
                 chip_name_dict = {}
