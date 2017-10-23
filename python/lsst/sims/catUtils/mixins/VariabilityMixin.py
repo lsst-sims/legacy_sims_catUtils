@@ -253,28 +253,25 @@ class Variability(object):
         params = {}
 
         for ix, varCmd in enumerate(varParams_arr):
-            if str(varCmd) != 'None':
-                varCmd = json.loads(varCmd)
+            if str(varCmd) == 'None':
+                continue
 
-                # find the key associated with the name of
-                # the specific variability model to be applied
-                if 'varMethodName' in varCmd:
-                    meth_key = 'varMethodName'
-                else:
-                    meth_key = 'm'
+            varCmd = json.loads(varCmd)
 
-                # find the key associated with the list of
-                # parameters to be supplied to the variability
-                # model
-                if 'pars' in varCmd:
-                    par_key = 'pars'
-                else:
-                    par_key = 'p'
-            else:
-                # if there is no varParamStr, setup a null model
-                varCmd = {'varMethodName': 'None', 'pars':{}}
+            # find the key associated with the name of
+            # the specific variability model to be applied
+            if 'varMethodName' in varCmd:
                 meth_key = 'varMethodName'
+            else:
+                meth_key = 'm'
+
+            # find the key associated with the list of
+            # parameters to be supplied to the variability
+            # model
+            if 'pars' in varCmd:
                 par_key = 'pars'
+            else:
+                par_key = 'p'
 
             # if we have discovered a new variability model
             # that needs to be called, initialize its entries
