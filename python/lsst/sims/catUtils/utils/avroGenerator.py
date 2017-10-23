@@ -100,6 +100,7 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 class AvroGenerator(object):
 
     def __init__(self, obs_list):
+        self._t_chip_name=0.0
         self._n_proc_max = 12
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
@@ -146,6 +147,7 @@ class AvroGenerator(object):
             print("that took %e hours" % ((time.time()-t_start)/3600.0))
             print("total should take %e hours" %
             (len(self.obs_list)*(time.time()-t_0)/(3600.0*n_obs_total)))
+            print('total took %.2e chip name %.2e' % (time.time()-t_0, self._t_chip_name))
             if i_h>2:
                 exit()
 
@@ -292,6 +294,7 @@ class AvroGenerator(object):
                 assert len(chip_name_dict) == len(obs_valid)
 
             print('total time spent on chip name %.2e' % (time.time()-t_before_chip_name))
+            self._t_chip_name += time.time()-t_before_chip_name
 
             for i_obs, obs in enumerate(obs_valid):
                 chip_name_list = chip_name_dict[i_obs]
