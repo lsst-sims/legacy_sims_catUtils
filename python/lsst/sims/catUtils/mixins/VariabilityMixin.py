@@ -240,7 +240,7 @@ class Variability(object):
         # by the integers mapped with self._method_name_to_int;
         # this is for faster application of np.where when
         # figuring out which objects go with which method
-        method_int_arr = -1*np.ones(len(varParams_arr))
+        method_int_arr = -1*np.ones(len(varParams_arr), dtype=int)
 
         # Keep a dict keyed on all of the method names in
         # method_name_arr.  params[method_name] will be another
@@ -297,7 +297,6 @@ class Variability(object):
                 params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
 
         method_name_arr = np.array(method_name_arr)
-        method_int_arr = np.array(method_int_arr)
         for method_name in params:
             for p_name in params[method_name]:
                 params[method_name][p_name] = np.array(params[method_name][p_name])
