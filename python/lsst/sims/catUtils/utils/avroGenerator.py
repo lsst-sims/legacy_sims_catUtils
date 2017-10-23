@@ -99,7 +99,7 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
             if name is not None:
                 chip_int_arr[i_chip] = 1
 
-        out_dict[i_obs] = (chip_name_list, chip_int-arr)
+        out_dict[i_obs] = (chip_name_list, chip_int_arr)
 
 
 class AvroGenerator(object):
