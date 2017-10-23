@@ -160,7 +160,7 @@ class AvroGenerator(object):
 
     def _process_htmid(self, htmid, dbobj, radius=1.75):
 
-        t_start = 0.0
+        t_start = time.time()
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
