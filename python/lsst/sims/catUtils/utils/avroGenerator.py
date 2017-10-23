@@ -160,6 +160,9 @@ class AvroGenerator(object):
         valid_dexes = np.where(self.htmid_list == htmid)
         print('valid_dexes %s ' % str(valid_dexes))
         obs_valid = self.obs_list[valid_dexes]
+        print('obs_valid %d' % len(obs_valid))
+        if len(obs_valid) < 15:
+            return 1
         center_trixel = trixelFromHtmid(htmid)
         center_ra, center_dec = center_trixel.get_center()
 
