@@ -232,6 +232,10 @@ class AvroGenerator(object):
         print('chunking')
         i_chunk = 0
         t_chipName = 0.0
+
+        n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
+        n_proc = min(n_proc_possible, self._n_proc_max)
+
         for chunk in data_iter:
             i_chunk += 1
             if 'properMotionRa'in column_query:
@@ -255,9 +259,6 @@ class AvroGenerator(object):
             #for ii in range(6):
             #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
             #exit()
-
-            n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
-            n_proc = min(n_proc_possible, self._n_proc_max)
 
             t_before_chip_name = time.time()
             if n_proc == 1:
