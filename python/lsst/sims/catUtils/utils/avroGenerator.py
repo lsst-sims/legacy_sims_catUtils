@@ -163,7 +163,7 @@ class AvroGenerator(object):
         for i_h, htmid in enumerate(self._unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self._unq_htmid_list)))
             t_start = time.time()
-            n_obs = self._process_htmid(htmid, dbobj)
+            n_obs = self.alert_data_from_htmid(htmid, dbobj)
             n_obs_total += n_obs
             print("that took %e hours" % ((time.time()-t_start)/3600.0))
             print("total should take %e hours" %
@@ -177,7 +177,7 @@ class AvroGenerator(object):
                 exit()
 
 
-    def _process_htmid(self, htmid, dbobj, radius=1.75):
+    def alert_data_from_htmid(self, htmid, dbobj, radius=1.75):
 
         t_start = time.time()
 
