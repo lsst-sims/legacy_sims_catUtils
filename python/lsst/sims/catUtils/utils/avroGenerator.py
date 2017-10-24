@@ -48,7 +48,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
             # InstanceCatalog class.  This version of iter_catalog includes
             # the call to self.db_obj.query_columns, which the user would have
             # used to generate query_cache.
-            for line in InstanceCatalog.iter_catalog(self, chunk_size=chunk_size):
+            for line in InstanceCatalog.iter_catalog_chunks(self, chunk_size=chunk_size):
                 yield line
         else:
             # Otherwise iterate over the query cache
@@ -59,7 +59,8 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
                               if col in transform_keys else
                               self.column_by_name(col)
                               for col in self.iter_column_names()]
-                yield chunk_cols
+                chunkColMap = dict([(col, i) for i, col in enumerate(self.iter_column_names())])
+                yield chunk_cols, chunkColMap
 
 
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
@@ -432,7 +433,7 @@ class AvroGenerator(object):
 
                 i_star = 0
                 cat = cat_list[i_obs]
-                for valid_chunk in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
+                for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
                     pass
                     #print star_obj
                 #if i_chunk > 10:
