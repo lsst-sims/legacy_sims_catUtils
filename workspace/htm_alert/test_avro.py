@@ -35,9 +35,6 @@ def query_htmid(avro_gen, htmid_list, output_list):
         ct = avro_gen.alert_data_from_htmid(htmid, db)
         output_list.append(ct)
 
-    del db
-    sims_clean_up()
-
 import time
 total_obs = len(obs_list)
 
