@@ -69,8 +69,6 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
     default_formats = {'f':'%.4g'}
 
-    _d_ct = 0
-
     @compound('sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
               'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y')
     def get_lsst_photometric_uncertainties(self):
