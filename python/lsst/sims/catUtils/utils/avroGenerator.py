@@ -242,7 +242,7 @@ class AvroGenerator(object):
         t_chipName = 0.0
 
         n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
-        n_proc = min(n_proc_possible, self._n_proc_max)
+        n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         for chunk in data_iter:
             i_chunk += 1
@@ -266,20 +266,20 @@ class AvroGenerator(object):
             # the observations in question
             #
             t_before_chip_name = time.time()
-            if n_proc == 1:
+            if n_proc_chipName == 1:
                 chip_name_dict = {}
             else:
                 mgr = mproc.Manager()
                 chip_name_dict = mgr.dict()
                 iobs_sub_list = []
                 obs_sub_list = []
-                for i_obs in range(n_proc):
+                for i_obs in range(n_proc_chipName):
                     iobs_sub_list.append([])
                     obs_sub_list.append([])
                 sub_list_ct = 0
 
             for i_obs, obs in enumerate(obs_valid):
-                if n_proc == 1:
+                if n_proc_chipName == 1:
                     chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
                                                             chunk['decJ2000'],
                                                             pm_ra=pmra,
@@ -300,10 +300,10 @@ class AvroGenerator(object):
                     iobs_sub_list[sub_list_ct].append(i_obs)
                     obs_sub_list[sub_list_ct].append(obs)
                     sub_list_ct += 1
-                    if sub_list_ct >= n_proc:
+                    if sub_list_ct >= n_proc_chipName:
                         sub_list_ct = 0
 
-            if n_proc>1:
+            if n_proc_chipName>1:
                 process_list = []
                 for sub_list_ct in range(len(iobs_sub_list)):
                     p = mproc.Process(target=_find_chipNames_parallel,
