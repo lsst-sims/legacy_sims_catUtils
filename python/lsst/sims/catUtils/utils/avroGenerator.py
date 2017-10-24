@@ -142,6 +142,14 @@ class AvroGenerator(object):
         print('initialized with %d %d' %
               (len(self.obs_list), len(self._unq_htmid_list)))
 
+    @property
+    def htmid_list(self):
+        """
+        A list of the unique htmid's corresponding to the fields
+        of view that need to be queried to generate the alert data
+        """
+        return self._unq_htmid_list
+
     def alerts_from_db(self, dbobj):
         n_obs_total = 0
         t_0 = time.time()
