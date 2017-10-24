@@ -113,12 +113,12 @@ class AvroGenerator(object):
         plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.obs_list = np.array(obs_list)
         htmid_level = 7
-        self.htmid_list = []
+        self._htmid_list = []
         for obs in self.obs_list:
             htmid = findHtmid(obs.pointingRA, obs.pointingDec, htmid_level)
-            self.htmid_list.append(htmid)
-        self.htmid_list = np.array(self.htmid_list)
-        self.unq_htmid_list = np.unique(self.htmid_list)
+            self._htmid_list.append(htmid)
+        self._htmid_list = np.array(self._htmid_list)
+        self._unq_htmid_list = np.unique(self._htmid_list)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
         self.chunk_size = 10000
         self._desired_columns = []
@@ -140,7 +140,7 @@ class AvroGenerator(object):
         self._desired_columns.append('ebv')
         self._desired_columns.append('redshift')
         print('initialized with %d %d' %
-              (len(self.obs_list), len(self.unq_htmid_list)))
+              (len(self.obs_list), len(self._unq_htmid_list)))
 
     def alerts_from_db(self, dbobj):
         n_obs_total = 0
@@ -152,8 +152,8 @@ class AvroGenerator(object):
         self._t_phot = 0.0
         self._t_out = 0.0
         self._t_filter_phot = 0.0
-        for i_h, htmid in enumerate(self.unq_htmid_list):
-            print('processing %d --- %d of %d' % (htmid, i_h, len(self.unq_htmid_list)))
+        for i_h, htmid in enumerate(self._unq_htmid_list):
+            print('processing %d --- %d of %d' % (htmid, i_h, len(self._unq_htmid_list)))
             t_start = time.time()
             n_obs = self._process_htmid(htmid, dbobj)
             n_obs_total += n_obs
@@ -179,7 +179,7 @@ class AvroGenerator(object):
         dummy_name = chipNameFromPupilCoordsLSST(0.0, 0.0)
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
-        valid_dexes = np.where(self.htmid_list == htmid)
+        valid_dexes = np.where(self._htmid_list == htmid)
         print('valid_dexes %s ' % str(valid_dexes))
         obs_valid = self.obs_list[valid_dexes]
         center_trixel = trixelFromHtmid(htmid)
