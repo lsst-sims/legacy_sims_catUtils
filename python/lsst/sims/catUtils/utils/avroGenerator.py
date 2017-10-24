@@ -107,6 +107,14 @@ class AvroGenerator(object):
 
     def __init__(self, obs_list, n_proc_max=4):
         self._t_chip_name=0.0
+        self._t_mlt = 0.0
+        self._t_param_lc = 0.0
+        self._t_apply_var = 0.0
+        self._t_setup = 0.0
+        self._t_phot = 0.0
+        self._t_out = 0.0
+        self._t_filter_phot = 0.0
+
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
@@ -153,13 +161,7 @@ class AvroGenerator(object):
     def alerts_from_db(self, dbobj):
         n_obs_total = 0
         t_0 = time.time()
-        self._t_mlt = 0.0
-        self._t_param_lc = 0.0
-        self._t_apply_var = 0.0
-        self._t_setup = 0.0
-        self._t_phot = 0.0
-        self._t_out = 0.0
-        self._t_filter_phot = 0.0
+
         for i_h, htmid in enumerate(self._unq_htmid_list):
             print('processing %d --- %d of %d' % (htmid, i_h, len(self._unq_htmid_list)))
             t_start = time.time()
