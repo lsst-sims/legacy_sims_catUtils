@@ -426,8 +426,8 @@ class AvroGenerator(object):
                 actually_valid_sources = np.where(np.abs(local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag]) >= self._dmag_cutoff)
                 valid_sources = valid_sources[actually_valid_sources]
                 for mag in mag_names:
-                    local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag] = \
-                    local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag][actually_valid_sources]
+                    local_column_cache['deltaMagAvro']['delta_%smag' % mag] = \
+                    local_column_cache['deltaMagAvro']['delta_%smag' % mag][actually_valid_sources]
 
                 local_column_cache['chipName'] = local_column_cache['chipName'][actually_valid_sources]
 
