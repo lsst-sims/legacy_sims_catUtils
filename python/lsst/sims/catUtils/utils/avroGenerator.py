@@ -434,7 +434,7 @@ class AvroGenerator(object):
 
                 i_star = 0
                 cat = cat_list[i_obs]
-                for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
+                for valid_chunk in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
                     pass
                     #print star_obj
                 #if i_chunk > 10:
