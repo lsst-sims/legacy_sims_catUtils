@@ -182,6 +182,7 @@ class AvroGenerator(object):
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75):
 
         t_start = time.time()
+        return 1
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
