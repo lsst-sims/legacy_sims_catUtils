@@ -364,6 +364,14 @@ class AvroGenerator(object):
             #
             t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
+
+                actual_i_mag = None
+                for i_mag in range(len(mag_names)):
+                    if mag_names[i_mag] == obs.bandpass:
+                        actual_i_mag = i_mag
+                        break
+                assert mag_names[actual_i_mag] == obs.bandpass
+
                 valid_chip_name_list, valid_obj = chip_name_dict[i_obs]
 
                 valid_sources = chunk[valid_obj]
