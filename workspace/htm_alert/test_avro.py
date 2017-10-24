@@ -21,6 +21,7 @@ print('%d obs' % len(obs_list))
 avro_gen = AvroGenerator(obs_list, n_proc_max=4)
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 def query_htmid(avro_gen, htmid_list, output_list):
 
@@ -32,6 +33,7 @@ def query_htmid(avro_gen, htmid_list, output_list):
         output_list.append(ct)
 
     del db
+    sims_clean_up()
 
 import time
 total_obs = len(obs_list)
