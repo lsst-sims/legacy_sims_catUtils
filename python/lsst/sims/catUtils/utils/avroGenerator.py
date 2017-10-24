@@ -402,6 +402,10 @@ class AvroGenerator(object):
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                            variability_cache=self._variability_cache,
                                                            expmjd=expmjd_list,).transpose((2,0,1))
+
+            if np.abs(dmag_arr).max() < self._dmag_cutoff:
+                continue
+
             self._t_phot += time.time()-t_before_phot
 
             ############################
