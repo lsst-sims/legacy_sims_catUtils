@@ -52,7 +52,7 @@ for htmid in avro_gen.htmid_list[:8]:
     if i_list>=n_proc:
         i_list = 0
 
-for i_proc in range(n_proc)
+for i_proc in range(n_proc):
     p = mproc.Process(target=query_htmid,
                       args=(avro_gen, htmid_list[i_proc, out_list))
     p.start()
