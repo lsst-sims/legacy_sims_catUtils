@@ -18,8 +18,52 @@ from lsst.sims.catUtils.mixins import create_variability_cache
 __all__ = ["AvroGenerator"]
 
 
+class _baseAvroCatalog(_baseLightCurveCatalog):
+
+    def iter_catalog_chunks(self, chunk_size=None, query_cache=None, column_cache=None):
+        """
+        Returns an iterator over chunks of the catalog.
+
+        Parameters
+        ----------
+        chunk_size : int, optional, defaults to None
+            the number of rows to return from the database at a time. If None,
+            returns the entire database query in one chunk.
+
+        query_cache : iterator over database rows, optional, defaults to None
+            the result of calling db_obj.query_columns().  If query_cache is not
+            None, this method will iterate over the rows in query_cache and produce
+            an appropriate InstanceCatalog. DO NOT set to non-None values
+            unless you know what you are doing.  It is an optional
+            input for those who want to repeatedly examine the same patch of sky
+            without actually querying the database over and over again.  If it is set
+            to None (default), this method will handle the database query.
+
+        column_cache : a dict that will be copied over into the catalogs self._column_cache.
+            Should be left as None, unless you know what you are doing.
+        """
+
+        if query_cache is None:
+            # Call the originalversion of iter_catalog defined in the
+            # InstanceCatalog class.  This version of iter_catalog includes
+            # the call to self.db_obj.query_columns, which the user would have
+            # used to generate query_cache.
+            for line in InstanceCatalog.iter_catalog(self, chunk_size=chunk_size):
+                yield line
+        else:
+            # Otherwise iterate over the query cache
+            transform_keys = list(self.transformations.keys())
+            for chunk in query_cache:
+                self._set_current_chunk(chunk, column_cache=column_cache)
+                chunk_cols = [self.transformations[col](self.column_by_name(col))
+                              if col in transform_keys else
+                              self.column_by_name(col)
+                              for col in self.iter_column_names()]
+                yield chunk_cols
+
+
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
-                                CameraCoordsLSST, _baseLightCurveCatalog):
+                                CameraCoordsLSST, _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
                       'mag','mag_uncertainty', 'dmag', 'chipName', 'varParamStr']
 
