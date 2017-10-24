@@ -59,8 +59,9 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
                               if col in transform_keys else
                               self.column_by_name(col)
                               for col in self.iter_column_names()]
-                chunkColMap = dict([(col, i) for i, col in enumerate(self.iter_column_names())])
-                yield chunk_cols, chunkColMap
+                if not hasattr(self, '_chunkColMap_output'):
+                    self._chunkColMap_output = dict([(col, i) for i, col in enumerate(self.iter_column_names())])
+                yield chunk_cols, self._chunkColMap_output
 
 
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
