@@ -40,7 +40,7 @@ total_obs = len(obs_list)
 
 import multiprocessing as mproc
 t_start = time.time()
-n_proc = 4
+n_proc = 8
 
 mgr = mproc.Manager()
 out_list = mgr.list()
@@ -50,7 +50,7 @@ htmid_list=[]
 for i_list in range(n_proc):
     htmid_list.append([])
 i_list = 0
-for htmid in avro_gen.htmid_list[:8]:
+for htmid in avro_gen.htmid_list[:16]:
     htmid_list[i_list].append(htmid)
     i_list += 1
     if i_list>=n_proc:
