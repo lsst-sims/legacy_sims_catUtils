@@ -408,12 +408,20 @@ class AvroGenerator(object):
             # Process and output sources
             #
             t_before_out = time.time()
+            mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
             for i_obs, obs in enumerate(obs_valid):
 
                 obs_mag = obs.bandpass
+                actual_i_mag = mag_name_to_int[obs_mag]
+                assert mag_names[actual_i_mag] == obs_mag
 
                 # only include those sources which fall on a detector for this pointing
                 valid_chip_name_list, valid_obj = chip_name_dict[i_obs]
+
+                actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][valid_obj]) >= self._dmag_cutoff)
+                if len(actually_valid_sources[0]) == 0:
+                    continue
+
                 valid_sources = chunk[valid_obj]
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid_obj])
@@ -424,7 +432,6 @@ class AvroGenerator(object):
                 # this is technically only selecting sources that differ from the quiescent
                 # magnitude by at least self._dmag_cutoff.  If a source changes from quiescent_mag+dmag
                 # to quiescent_mag, it will not make the cut
-                actually_valid_sources = np.where(np.abs(local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag]) >= self._dmag_cutoff)
                 valid_sources = valid_sources[actually_valid_sources]
                 for mag in mag_names:
                     local_column_cache['deltaMagAvro']['delta_%smag' % mag] = \
