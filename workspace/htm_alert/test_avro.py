@@ -3,6 +3,7 @@ from lsst.sims.catUtils.utils import AvroGenerator
 
 import os
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 opsim_db = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
                         'Development', 'garage', 'OpSimData',
@@ -16,12 +17,14 @@ obs_gen = ObservationMetaDataGenerator(opsim_db, driver='sqlite')
 
 obs_list = obs_gen.getObservationMetaData(night=(0,40))
 
+del obs_gen
+sims_clean_up()
+
 print('%d obs' % len(obs_list))
 
 avro_gen = AvroGenerator(obs_list, n_proc_max=4)
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj
-from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 def query_htmid(avro_gen, htmid_list, output_list):
 
