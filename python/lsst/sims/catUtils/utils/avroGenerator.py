@@ -105,9 +105,9 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
 class AvroGenerator(object):
 
-    def __init__(self, obs_list):
+    def __init__(self, obs_list, n_proc_max=4):
         self._t_chip_name=0.0
-        self._n_proc_max = 2
+        self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
         plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
