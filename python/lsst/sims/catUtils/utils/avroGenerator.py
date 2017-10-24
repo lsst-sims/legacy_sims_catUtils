@@ -115,6 +115,7 @@ class AvroGenerator(object):
         self._t_out = 0.0
         self._t_filter_phot = 0.0
 
+        self._dmag_cutoff = 0.005
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
@@ -365,24 +366,30 @@ class AvroGenerator(object):
             t_before_out = time.time()
             for i_obs, obs in enumerate(obs_valid):
 
-                actual_i_mag = None
-                for i_mag in range(len(mag_names)):
-                    if mag_names[i_mag] == obs.bandpass:
-                        actual_i_mag = i_mag
-                        break
-                assert mag_names[actual_i_mag] == obs.bandpass
+                obs_mag = obs.bandpass
 
+                # only include those sources which fall on a detector for this pointing
                 valid_chip_name_list, valid_obj = chip_name_dict[i_obs]
-
                 valid_sources = chunk[valid_obj]
-                cat = cat_list[i_obs]
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid_obj])
                                                                   for i_mag in range(len(mag_names))])
-
                 local_column_cache['chipName'] = valid_chip_name_list
 
+                # only include those sources for which np.abs(delta_mag) >= self._dmag_cutoff
+                # this is technically only selecting sources that differ from the quiescent
+                # magnitude by at least self._dmag_cutoff.  If a source changes from quiescent_mag+dmag
+                # to quiescent_mag, it will not make the cut
+                actually_valid_sources = np.where(np.abs(local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag]) >= self._dmag_cutoff)
+                valid_sources = valid_sources[actually_valid_sources]
+                for mag in mag_names:
+                    local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag] = \
+                    local_column_cache['deltaMagAvro']['delta_%smag' % obs_mag][actually_valid_sources]
+
+                local_column_cache['chipName'] = local_column_cache['chipName'][actually_valid_sources]
+
                 i_star = 0
+                cat = cat_list[i_obs]
                 for star_obj in cat.iter_catalog(query_cache=[valid_sources], column_cache=local_column_cache):
                     pass
                     #print star_obj
