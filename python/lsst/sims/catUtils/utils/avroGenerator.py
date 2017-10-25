@@ -6,8 +6,10 @@ import time
 from lsst.sims.utils import findHtmid, trixelFromHtmid
 from lsst.sims.utils import angularSeparation, ObservationMetaData
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
-from lsst.sims.coordUtils import _chipNameFromRaDecLSST
+from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.coordUtils import _pixelCoordsFromPupilCoords
+from lsst.sims.coordUtils import lsst_camera
 
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import BandpassDict
@@ -68,9 +70,28 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
-                      'mag','mag_uncertainty', 'dmag', 'chipName', 'varParamStr']
+                      'mag','mag_uncertainty', 'dmag',
+                      'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
+
+    @cached
+    def get_chipNum(self):
+        """
+        Concatenate the digits in 'R:i,j S:m,n' to make the chip number ijmn
+        """
+        chip_name = self.column_by_name('chipName')
+        return np.array([int(''.join(re.findall(r'\d+', name))) if name is not None else 0
+                        for name in chip_name])
+
+    @compound('xPix', 'yPix')
+    def get_LSST_pixel_positions(self):
+        xPup = self.column_by_name('xPupil')
+        yPup = self.column_by_name('yPupil')
+        chipName = self.column_by_name('chipName')
+        xpix, ypix = pixelCoordsFromPupilCoords(xPup, yPup, chipName=chipName,
+                                                camera=lsst_camera(),
+                                                includeDistortion=True)
 
     @compound('sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
               'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y')
@@ -135,9 +156,11 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                              v_rad=None, obs_metadata_list=None, i_obs_list=None, out_dict=None):
 
     for i_obs, obs in zip(i_obs_list, obs_metadata_list):
-        chip_name_list = _chipNameFromRaDecLSST(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec,
-                                                parallax=parallax, v_rad=v_rad,
-                                                obs_metadata=obs)
+        xPup_list, yPup_list = _pupilCoordsFromRaDec(ra, dec, pm_ra=pm_ra,
+                                                     pm_dec=pm_dec, parallax=parallax,
+                                                     v_rad=v_rad, obs_metadata=obs)
+
+        chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
 
         chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
         for i_chip, name in enumerate(chip_name_list):
@@ -145,7 +168,9 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                 chip_int_arr[i_chip] = 1
         valid_obj = np.where(chip_int_arr>0)
 
-        out_dict[i_obs] = (chip_name_list[valid_obj], valid_obj)
+        out_dict[i_obs] = (chip_name_list[valid_obj],
+                           xPup_list[valid_obj], yPup_list[valid_obj],
+                           valid_obj)
 
 
 class AvroGenerator(object):
@@ -366,13 +391,12 @@ class AvroGenerator(object):
 
             for i_obs, obs in enumerate(obs_valid):
                 if n_proc_chipName == 1:
-                    chip_name_list = _chipNameFromRaDecLSST(chunk['raJ2000'],
-                                                            chunk['decJ2000'],
-                                                            pm_ra=pmra,
-                                                            pm_dec=pmdec,
-                                                            parallax=px,
-                                                            v_rad=vrad,
-                                                            obs_metadata=obs)
+                    xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
+                                                                 pm_ra=pm_ra, pm_dec=pm_dec,
+                                                                 parallax=px, v_rad=vrad,
+                                                                 obs_metadata=obs)
+
+                    chip_name_list = _chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
 
                     chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
                     for i_chip, name in enumerate(chip_name_list):
@@ -380,7 +404,10 @@ class AvroGenerator(object):
                             chip_int_arr[i_chip] = 1
 
                     valid_obj = np.where(chip_int_arr>0)
-                    chip_name_dict[i_obs] = (chip_name_list[valid_obj], valid_obj)
+                    chip_name_dict[i_obs] = (chip_name_list[valid_obj],
+                                             xPup_list[valid_obj],
+                                             yPup_list[valid_obj],
+                                             valid_obj)
 
                 else:
                     iobs_sub_list[sub_list_ct].append(i_obs)
@@ -451,7 +478,7 @@ class AvroGenerator(object):
                 assert mag_names[actual_i_mag] == obs_mag
 
                 # only include those sources which fall on a detector for this pointing
-                valid_chip_name_list, valid_obj = chip_name_dict[i_obs]
+                valid_chip_name, valid_xpup, valid_ypup, valid_obj = chip_name_dict[i_obs]
 
                 actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][valid_obj]) >= self._dmag_cutoff)
                 if len(actually_valid_sources[0]) == 0:
@@ -461,7 +488,6 @@ class AvroGenerator(object):
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid_obj])
                                                                   for i_mag in range(len(mag_names))])
-                local_column_cache['chipName'] = valid_chip_name_list
 
                 # only include those sources for which np.abs(delta_mag) >= self._dmag_cutoff
                 # this is technically only selecting sources that differ from the quiescent
@@ -472,7 +498,9 @@ class AvroGenerator(object):
                     local_column_cache['deltaMagAvro']['delta_%smag' % mag] = \
                     local_column_cache['deltaMagAvro']['delta_%smag' % mag][actually_valid_sources]
 
-                local_column_cache['chipName'] = local_column_cache['chipName'][actually_valid_sources]
+                local_column_cache['chipName'] = valid_chip_name[actually_valid_sources]
+                local_column_cache['xPupil'] = valid_xpup[actually_valid_sources]
+                local_column_cache['yPupil'] = valid_ypup[actually_valid_sources]
 
                 i_star = 0
                 cat = cat_list[i_obs]
@@ -484,7 +512,8 @@ class AvroGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag'):
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag',
+                                     'chipNum', 'xPix', 'yPix'):
                         if col_name not in output_data_cache[obshistid]:
                             output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
                         else:
