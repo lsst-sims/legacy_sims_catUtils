@@ -86,8 +86,8 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
-        xPup = self.column_by_name('xPupil')
-        yPup = self.column_by_name('yPupil')
+        xPup = self.column_by_name('x_pupil')
+        yPup = self.column_by_name('y_pupil')
         chipName = self.column_by_name('chipName')
         xpix, ypix = pixelCoordsFromPupilCoords(xPup, yPup, chipName=chipName,
                                                 camera=lsst_camera(),
@@ -498,8 +498,8 @@ class AvroGenerator(object):
                                                                   for i_mag in range(len(mag_names))])
 
                 local_column_cache['chipName'] = valid_chip_name[actually_valid_sources]
-                local_column_cache['xPupil'] = valid_xpup[actually_valid_sources]
-                local_column_cache['yPupil'] = valid_ypup[actually_valid_sources]
+                local_column_cache['x_pupil'] = valid_xpup[actually_valid_sources]
+                local_column_cache['y_pupil'] = valid_ypup[actually_valid_sources]
 
                 i_star = 0
                 cat = cat_list[i_obs]
