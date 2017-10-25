@@ -84,7 +84,7 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
     @compound('x_pupil', 'y_pupil')
     def get_pupilFromSky(self):
-        if len(self.column_by_name('uniqueId')==0):
+        if len(self.column_by_name('uniqueId')) == 0:
             return np.array([[], []])
         raise RuntimeError("Should not get this far in get_pupilFromSky")
 
