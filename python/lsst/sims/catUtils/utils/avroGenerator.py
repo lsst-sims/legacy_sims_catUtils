@@ -480,17 +480,11 @@ class AvroGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag', 'chipName', 'varParamStr'):
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag'):
                         if col_name not in output_data_cache[obshistid]:
-                            if col_name == 'chipName' or col_name == 'varParamStr':
-                                output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]].astype(str))
-                            else:
-                                output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
+                            output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
                         else:
-                            if col_name == 'chipName' or col_name == 'varParamStr':
-                                output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]].astype(str))
-                            else:
-                                output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
+                            output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
 
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
                     print('ct_to_write %d' % ct_to_write)
