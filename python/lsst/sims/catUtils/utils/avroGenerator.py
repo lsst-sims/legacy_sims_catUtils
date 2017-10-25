@@ -225,11 +225,23 @@ class AvroGenerator(object):
             if i_h>2:
                 exit()
 
+    def output_to_hdf5(self, hdf5_file, data_cache):
+        """
+        Cache will be keyed first on the obsHistID, then all of the columns
+        """
+        self._output_ct += 1
+        for obsHistID in data_cache.keys():
+            for col_name in data_cache[obsHistID].keys():
+                data_tag = '%d_%d_%s' % (obsHistID, self._output_ct, col_name)
+                hdf5_file.create_dataset(data_tag, data=np.array(data_cache[obsHistID][col_name]))
+
+        hdf5_file.flush()
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75):
 
         t_start = time.time()
 
+        self._output_ct = -1
         out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
 
         # a dummy call to make sure that the initialization
@@ -248,6 +260,7 @@ class AvroGenerator(object):
         dec_list = []
         cat_list = []
         expmjd_list = []
+        obshistid_list = []
         for obs in obs_valid:
             ra_list.append(obs.pointingRA)
             dec_list.append(obs.pointingDec)
@@ -255,9 +268,15 @@ class AvroGenerator(object):
             cat.lsstBandpassDict =  self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
+            obshistid_list.append(obs.OpsimMetaData['obsHistID'])
 
         expmjd_list = np.array(expmjd_list)
+        obshistid_list = np.array(obshistid_list)
         sorted_dex = np.argsort(expmjd_list)
+
+        out_file.create_dataset('obshistID', data=obshistid_list)
+        out_file.create_dataset('TAI', data=expmjd_list)
+        out_file.flush()
 
         expmjd_list = expmjd_list[sorted_dex]
         ra_list = np.array(ra_list)[sorted_dex]
@@ -302,6 +321,9 @@ class AvroGenerator(object):
 
         n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
+
+        output_data_cache = {}
+        ct_to_write = 0
 
         for chunk in data_iter:
             i_chunk += 1
@@ -418,6 +440,7 @@ class AvroGenerator(object):
             t_before_out = time.time()
             mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
             for i_obs, obs in enumerate(obs_valid):
+                obshistid = obs.OpsimMetaData['obsHistID']
 
                 obs_mag = obs.bandpass
                 actual_i_mag = mag_name_to_int[obs_mag]
@@ -450,26 +473,41 @@ class AvroGenerator(object):
                 i_star = 0
                 cat = cat_list[i_obs]
                 for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
+
+                    if obshistid not in output_data_cache:
+                        output_data_cache[obshistid] = {}
+
+
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
                     for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag', 'chipName', 'varParamStr'):
-                        data_tag = '%d_%d_%s'% (obs.OpsimMetaData['obsHistID'], i_chunk, col_name)
-                        if col_name == 'chipName' or col_name=='varParamStr':
-                            out_file.create_dataset(data_tag,
-                                                    data=valid_chunk[chunk_map[col_name]].astype(str))
+                        if col_name not in output_data_cache[obshistid]:
+                            if col_name == 'chipName' or col_name == 'varParamStr':
+                                output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]].astype(str))
+                            else:
+                                output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
                         else:
-                            out_file.create_dataset(data_tag,
-                                                    data=valid_chunk[chunk_map[col_name]])
-                        if col_name == 'uniqueId':
-                            out_file[data_tag].attrs.create('TAI', data=obs.mjd.TAI, dtype=float)
-                            out_file[data_tag].attrs.create('band', data=obs.bandpass, dtype=(str, 1))
-                            out_file.flush()
-                    print('printed %d ' % len(valid_chunk[chunk_map['uniqueId']]))
+                            if col_name == 'chipName' or col_name == 'varParamStr':
+                                output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]].astype(str))
+                            else:
+                                output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
+
+                    ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
+                    print('ct_to_write %d' % ct_to_write)
+                    if ct_to_write >= 10000:
+                        self.output_to_hdf5(out_file, output_data_cache)
+                        ct_to_write = 0
+                        output_data_cache = {}
+
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
             self._t_out += time.time()-t_before_out
 
+        if len(output_data_cache)>0:
+            self.output_to_hdf5(out_file, output_data_cache)
+
+        out_file.close()
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
         self._t_apply_var += photometry_catalog._total_t_apply_var
