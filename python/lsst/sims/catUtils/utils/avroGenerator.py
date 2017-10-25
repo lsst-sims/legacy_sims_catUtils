@@ -11,7 +11,7 @@ from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.coordUtils import pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils import lsst_camera
 
-from lsst.sims.catalogs.decorators import compound
+from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
