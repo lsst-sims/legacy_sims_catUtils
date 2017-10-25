@@ -261,6 +261,8 @@ class AvroGenerator(object):
         cat_list = []
         expmjd_list = []
         obshistid_list = []
+        band_list = []
+        mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
         for obs in obs_valid:
             ra_list.append(obs.pointingRA)
             dec_list.append(obs.pointingDec)
@@ -269,13 +271,16 @@ class AvroGenerator(object):
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
             obshistid_list.append(obs.OpsimMetaData['obsHistID'])
+            band_list.append(mag_name_to_int[obs.bandpass])
 
         expmjd_list = np.array(expmjd_list)
         obshistid_list = np.array(obshistid_list)
+        band_list = np.array(band_list)
         sorted_dex = np.argsort(expmjd_list)
 
         out_file.create_dataset('obshistID', data=obshistid_list)
         out_file.create_dataset('TAI', data=expmjd_list)
+        out_file.create_dataset('bandpass', data=band_list)
         out_file.flush()
 
         expmjd_list = expmjd_list[sorted_dex]
@@ -438,7 +443,6 @@ class AvroGenerator(object):
             # Process and output sources
             #
             t_before_out = time.time()
-            mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
             for i_obs, obs in enumerate(obs_valid):
                 obshistid = obs.OpsimMetaData['obsHistID']
 
