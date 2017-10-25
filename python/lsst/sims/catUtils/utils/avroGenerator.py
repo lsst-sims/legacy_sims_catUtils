@@ -13,7 +13,8 @@ from lsst.sims.coordUtils import pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils import lsst_camera
 
 from lsst.sims.catalogs.decorators import compound, cached
-from lsst.sims.photUtils import BandpassDict, Sed
+from lsst.sims.photUtils import BandpassDict, Sed, calcSNR_m5
+from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
@@ -71,7 +72,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
-                      'flux', 'dflux',
+                      'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
@@ -156,16 +157,46 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
         return np.array([mag, dmag, quiescent_mag])
 
-    @compound('flux', 'dflux')
+    @compound('flux', 'dflux', 'SNR')
     def get_avroFlux(self):
         quiescent_mag = self.column_by_name('quiescent_mag')
         mag = self.column_by_name('mag')
         if not hasattr(self, '_dummy_sed'):
             self._dummy_sed = Sed()
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()spock
+        if not hasattr(self, 'photParams'):
+            self.photParams = PhotometricParameters()
+        if not hasattr(self, '_gamma'):
+            self._gamma = None
+        if not hasattr(self, '_gamma_template'):
+            self._gamma_template = None
+
+        # taken from Table 2 of overview paper
+        # (might not be appropriate; is just a placeholder)
+        template_m5 = {'u':23.9, 'g':25.0, 'r':24.7, 'i':24.0, 'z':23.3, 'y':22.1}
 
         quiescent_flux = self._dummy_sed.fluxFromMag(quiescent_mag)
         flux = self._dummy_sed.fluxFromMag(mag)
-        return np.array([flux, flux-quiescent_flux])
+        dflux = flux - quiescent_flux
+
+        snr_tot, gamma = calcSNR_m5(mag, self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                self.photParams, gamma=self._gamma)
+
+        if self._gamma is None:
+            self._gamma = gamma
+
+        snr_template, gamma_template = calcSNR_m5(quiescent_mag,
+                                                  self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                                  self.photParams, gamma=self._gamma_template)
+
+        if self._gamma_template is None:
+            self._gamma_template = gamma_template
+
+        sigma = np.sqrt((flux/snr_tot)**2 + (quiescent_flux/snr_template)**2)
+        snr = dflux/sigma
+
+        return np.array([flux, dflux, snr])
 
 
 def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
@@ -525,7 +556,7 @@ class AvroGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux',
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
                         if col_name not in output_data_cache[obshistid]:
                             output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
