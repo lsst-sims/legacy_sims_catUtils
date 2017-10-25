@@ -68,7 +68,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 
 
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
-                                _baseAvroCatalog):
+                                CameraCoordsLSST, _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
                       'mag','mag_uncertainty', 'dmag',
                       'chipNum', 'xPix', 'yPix']
@@ -85,7 +85,7 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
                         for name in chip_name])
 
     @compound('xPix', 'yPix')
-    def get_LSST_pixel_positions(self):
+    def get_pixelCoordinates(self):
         xPup = self.column_by_name('xPupil')
         yPup = self.column_by_name('yPupil')
         chipName = self.column_by_name('chipName')
