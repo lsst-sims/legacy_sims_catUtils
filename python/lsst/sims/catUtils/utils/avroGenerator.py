@@ -487,7 +487,7 @@ class AvroGenerator(object):
                             output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
 
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
-                    print('ct_to_write %d' % ct_to_write)
+                    # print('ct_to_write %d' % ct_to_write)
                     if ct_to_write >= 10000:
                         self.output_to_hdf5(out_file, output_data_cache)
                         ct_to_write = 0
