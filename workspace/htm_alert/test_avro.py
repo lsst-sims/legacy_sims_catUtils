@@ -40,7 +40,7 @@ total_obs = len(obs_list)
 
 import multiprocessing as mproc
 t_start = time.time()
-n_proc = 1
+n_proc = 8
 
 mgr = mproc.Manager()
 out_list = mgr.list()
