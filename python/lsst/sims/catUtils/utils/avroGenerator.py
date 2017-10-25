@@ -511,8 +511,8 @@ class AvroGenerator(object):
                                                                   for i_mag in range(len(mag_names))])
 
                 local_column_cache['chipName'] = valid_chip_name[actually_valid_sources]
-                local_column_cache['x_pupil'] = valid_xpup[actually_valid_sources]
-                local_column_cache['y_pupil'] = valid_ypup[actually_valid_sources]
+                local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_sources]),
+                                                                  ('y_pupil', valid_ypup[actually_valid_sources])])
 
                 i_star = 0
                 cat = cat_list[i_obs]
