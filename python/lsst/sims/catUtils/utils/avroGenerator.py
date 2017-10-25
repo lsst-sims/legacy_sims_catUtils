@@ -536,7 +536,7 @@ class AvroGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag',
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'mag_uncertainty', 'dflux',
                                      'chipNum', 'xPix', 'yPix'):
                         if col_name not in output_data_cache[obshistid]:
                             output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
