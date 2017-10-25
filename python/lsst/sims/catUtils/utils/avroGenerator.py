@@ -1,4 +1,5 @@
 import numpy as np
+import re
 import h5py
 import multiprocessing as mproc
 from collections import OrderedDict
