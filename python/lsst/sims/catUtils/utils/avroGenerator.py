@@ -68,7 +68,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 
 
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
-                                CameraCoordsLSST, _baseAvroCatalog):
+                                _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
                       'mag','mag_uncertainty', 'dmag',
                       'chipNum', 'xPix', 'yPix']
