@@ -452,7 +452,7 @@ class AvroGenerator(object):
 
             t_before_filter = time.time()
             for i_obs in range(len(obs_valid)):
-                name_list, valid_obj = chip_name_dict[i_obs]
+                name_list, xpup_list, ypup_list, valid_obj = chip_name_dict[i_obs]
                 valid_photometry[valid_obj] += 2
             invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
