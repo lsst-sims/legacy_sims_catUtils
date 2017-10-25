@@ -305,6 +305,10 @@ class AvroGenerator(object):
         """
         self._output_ct += 1
         for obsHistID in data_cache.keys():
+            if obsHistID not in self._obs_hist_to_ct_map:
+                self._obs_hist_to_ct_map[obsHistID] = []
+
+            self._obs_hist_to_ct_map[obsHistID].append(self._output_ct)
             for col_name in data_cache[obsHistID].keys():
                 data_tag = '%d_%d_%s' % (obsHistID, self._output_ct, col_name)
                 hdf5_file.create_dataset(data_tag, data=np.array(data_cache[obsHistID][col_name]))
@@ -316,6 +320,7 @@ class AvroGenerator(object):
         t_start = time.time()
 
         self._output_ct = -1
+        self._obs_hist_to_ct_map = {}
         out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
 
         # a dummy call to make sure that the initialization
@@ -579,6 +584,10 @@ class AvroGenerator(object):
 
         if len(output_data_cache)>0:
             self.output_to_hdf5(out_file, output_data_cache)
+
+        for obshistid in self._obs_hist_to_ct_map:
+            tag = '%d_map' % obshistid
+            out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid])
 
         out_file.close()
         self._t_mlt += photometry_catalog._total_t_MLT
