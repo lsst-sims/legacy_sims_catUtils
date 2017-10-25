@@ -71,7 +71,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
-                      'flux','mag_uncertainty', 'dflux',
+                      'flux', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
@@ -107,16 +107,6 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
                                                 includeDistortion=True)
         return np.array([xpix, ypix])
 
-
-    @compound('sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
-              'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y')
-    def get_lsst_photometric_uncertainties(self):
-        if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        return self._magnitudeUncertaintyGetter(['lsst_u', 'lsst_g', 'lsst_r',
-                                                 'lsst_i', 'lsst_z', 'lsst_y'],
-                                                ['u', 'g', 'r', 'i', 'z', 'y'],
-                                                'lsstBandpassDict')
 
     @compound('delta_umag', 'delta_gmag', 'delta_rmag',
               'delta_imag', 'delta_zmag', 'delta_ymag')
@@ -158,14 +148,13 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
         return magnitudes
 
-    @compound('mag', 'mag_uncertainty', 'dmag', 'quiescent_mag')
+    @compound('mag', 'dmag', 'quiescent_mag')
     def get_avroPhotometry(self):
         mag = self.column_by_name('lsst_%s' % self.obs_metadata.bandpass)
-        mag_unc = self.column_by_name('sigma_lsst_%s' % self.obs_metadata.bandpass)
         quiescent_mag = self.column_by_name('%smag' % self.obs_metadata.bandpass)
         dmag = mag - quiescent_mag
 
-        return np.array([mag, mag_unc, dmag, quiescent_mag])
+        return np.array([mag, dmag, quiescent_mag])
 
     @compound('flux', 'dflux')
     def get_avroFlux(self):
@@ -536,7 +525,7 @@ class AvroGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'mag_uncertainty', 'dflux',
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux',
                                      'chipNum', 'xPix', 'yPix'):
                         if col_name not in output_data_cache[obshistid]:
                             output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
