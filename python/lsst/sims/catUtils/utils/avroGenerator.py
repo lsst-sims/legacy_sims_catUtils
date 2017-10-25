@@ -242,7 +242,7 @@ class AvroGenerator(object):
         t_start = time.time()
 
         self._output_ct = -1
-        # out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
+        out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
@@ -274,9 +274,9 @@ class AvroGenerator(object):
         obshistid_list = np.array(obshistid_list)
         sorted_dex = np.argsort(expmjd_list)
 
-        # out_file.create_dataset('obshistID', data=obshistid_list)
-        # out_file.create_dataset('TAI', data=expmjd_list)
-        # out_file.flush()
+        out_file.create_dataset('obshistID', data=obshistid_list)
+        out_file.create_dataset('TAI', data=expmjd_list)
+        out_file.flush()
 
         expmjd_list = expmjd_list[sorted_dex]
         ra_list = np.array(ra_list)[sorted_dex]
@@ -481,22 +481,16 @@ class AvroGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag', 'chipName', 'varParamStr'):
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag'):
                         if col_name not in output_data_cache[obshistid]:
-                            if col_name == 'chipName' or col_name == 'varParamStr':
-                                output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]].astype(str))
-                            else:
-                                output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
+                            output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
                         else:
-                            if col_name == 'chipName' or col_name == 'varParamStr':
-                                output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]].astype(str))
-                            else:
-                                output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
+                            output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
 
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
                     # print('ct_to_write %d' % ct_to_write)
                     if ct_to_write >= 10000:
-                        # self.output_to_hdf5(out_file, output_data_cache)
+                        self.output_to_hdf5(out_file, output_data_cache)
                         ct_to_write = 0
                         output_data_cache = {}
 
@@ -505,10 +499,10 @@ class AvroGenerator(object):
                 #    exit()
             self._t_out += time.time()-t_before_out
 
-        # if len(output_data_cache)>0:
-        #    self.output_to_hdf5(out_file, output_data_cache)
+        if len(output_data_cache)>0:
+            self.output_to_hdf5(out_file, output_data_cache)
 
-        # out_file.close()
+        out_file.close()
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
         self._t_apply_var += photometry_catalog._total_t_apply_var
