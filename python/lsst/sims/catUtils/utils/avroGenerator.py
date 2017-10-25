@@ -484,19 +484,16 @@ class AvroGenerator(object):
                 if len(actually_valid_sources[0]) == 0:
                     continue
 
-                valid_sources = chunk[valid_obj]
-                local_column_cache = {}
-                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag], dmag_arr[i_obs][i_mag][valid_obj])
-                                                                  for i_mag in range(len(mag_names))])
-
                 # only include those sources for which np.abs(delta_mag) >= self._dmag_cutoff
                 # this is technically only selecting sources that differ from the quiescent
                 # magnitude by at least self._dmag_cutoff.  If a source changes from quiescent_mag+dmag
                 # to quiescent_mag, it will not make the cut
-                valid_sources = valid_sources[actually_valid_sources]
-                for mag in mag_names:
-                    local_column_cache['deltaMagAvro']['delta_%smag' % mag] = \
-                    local_column_cache['deltaMagAvro']['delta_%smag' % mag][actually_valid_sources]
+
+                valid_sources = chunk[valid_obj][actually_valid_sources]
+                local_column_cache = {}
+                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag],
+                                                                  dmag_arr[i_obs][i_mag][valid_obj][actually_valid_sources])
+                                                                  for i_mag in range(len(mag_names))])
 
                 local_column_cache['chipName'] = valid_chip_name[actually_valid_sources]
                 local_column_cache['xPupil'] = valid_xpup[actually_valid_sources]
