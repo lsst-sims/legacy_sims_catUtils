@@ -1,4 +1,5 @@
 import numpy as np
+import h5py
 import multiprocessing as mproc
 from collections import OrderedDict
 import time
@@ -159,6 +160,7 @@ class AvroGenerator(object):
         self._t_out = 0.0
         self._t_filter_phot = 0.0
 
+        self._output_prefix = 'test_hdf5'
         self._dmag_cutoff = 0.005
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
@@ -227,6 +229,8 @@ class AvroGenerator(object):
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75):
 
         t_start = time.time()
+
+        out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
@@ -446,7 +450,21 @@ class AvroGenerator(object):
                 i_star = 0
                 cat = cat_list[i_obs]
                 for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
-                    print valid_chunk[chunk_map['dmag']]
+                    data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
+
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'mag', 'mag_uncertainty', 'dmag', 'chipName', 'varParamStr'):
+                        data_tag = '%d_%d_%s'% (obs.OpsimMetaData['obsHistID'], i_chunk, col_name)
+                        if col_name == 'chipName' or col_name=='varParamStr':
+                            out_file.create_dataset(data_tag,
+                                                    data=valid_chunk[chunk_map[col_name]].astype(str))
+                        else:
+                            out_file.create_dataset(data_tag,
+                                                    data=valid_chunk[chunk_map[col_name]])
+                        if col_name == 'uniqueId':
+                            out_file[data_tag].attrs.create('TAI', data=obs.mjd.TAI, dtype=float)
+                            out_file[data_tag].attrs.create('band', data=obs.bandpass, dtype=(str, 1))
+                            out_file.flush()
+                    print('printed %d ' % len(valid_chunk[chunk_map['uniqueId']]))
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
