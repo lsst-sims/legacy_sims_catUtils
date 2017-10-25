@@ -181,7 +181,8 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
         dflux = flux - quiescent_flux
 
         snr_tot, gamma = calcSNR_m5(mag, self.lsstBandpassDict[self.obs_metadata.bandpass],
-                                    self.obs_metadata.m5, self.photParams, gamma=self._gamma)
+                                    self.obs_metadata.m5[self.obs_metadata.bandpass],
+                                    self.photParams, gamma=self._gamma)
 
         if self._gamma is None:
             self._gamma = gamma
