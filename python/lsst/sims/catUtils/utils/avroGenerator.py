@@ -77,6 +77,18 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
     default_formats = {'f':'%.4g'}
 
     @cached
+    def get_chipName(self):
+        if len(self.column_by_name('uniqueId')) == 0:
+            return np.array([])
+        raise RuntimeError("Should not get this far in get_chipName")
+
+    @compound('x_pupil', 'y_pupil')
+    def get_pupilFromSky(self):
+        if len(self.column_by_name('uniqueId')==0):
+            return np.array([[], []])
+        raise RuntimeError("Should not get this far in get_pupilFromSky")
+
+    @cached
     def get_chipNum(self):
         """
         Concatenate the digits in 'R:i,j S:m,n' to make the chip number ijmn
