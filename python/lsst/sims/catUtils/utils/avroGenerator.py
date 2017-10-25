@@ -346,6 +346,7 @@ class AvroGenerator(object):
             # Figure out which sources actually land on an LSST detector during
             # the observations in question
             #
+            print('finding chip names -- %d' % n_proc_chipName)
             t_before_chip_name = time.time()
             if n_proc_chipName == 1:
                 chip_name_dict = {}
@@ -403,7 +404,7 @@ class AvroGenerator(object):
                     p.join()
 
                 assert len(chip_name_dict) == len(obs_valid)
-
+            print('done finding chip names')
             self._t_chip_name += time.time()-t_before_chip_name
 
             ######################################################
