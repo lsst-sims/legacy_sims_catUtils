@@ -92,6 +92,8 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
         xpix, ypix = pixelCoordsFromPupilCoords(xPup, yPup, chipName=chipName,
                                                 camera=lsst_camera(),
                                                 includeDistortion=True)
+        return np.array([xpix, ypix])
+
 
     @compound('sigma_lsst_u', 'sigma_lsst_g', 'sigma_lsst_r',
               'sigma_lsst_i', 'sigma_lsst_z', 'sigma_lsst_y')
