@@ -13,7 +13,7 @@ from lsst.sims.coordUtils import pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils import lsst_camera
 
 from lsst.sims.catalogs.decorators import compound, cached
-from lsst.sims.photUtils import BandpassDict
+from lsst.sims.photUtils import BandpassDict, Sed
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
@@ -71,7 +71,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                 CameraCoordsLSST, _baseAvroCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
-                      'mag','mag_uncertainty', 'dmag',
+                      'flux','mag_uncertainty', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
@@ -158,13 +158,25 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
 
         return magnitudes
 
-    @compound('mag', 'mag_uncertainty', 'dmag')
+    @compound('mag', 'mag_uncertainty', 'dmag', 'quiescent_mag')
     def get_avroPhotometry(self):
         mag = self.column_by_name('lsst_%s' % self.obs_metadata.bandpass)
         mag_unc = self.column_by_name('sigma_lsst_%s' % self.obs_metadata.bandpass)
-        dmag = self.column_by_name('%smag' % self.obs_metadata.bandpass) - mag
+        quiescent_mag = self.column_by_name('%smag' % self.obs_metadata.bandpass)
+        dmag = mag - quiescent_mag
 
-        return np.array([mag, mag_unc, dmag])
+        return np.array([mag, mag_unc, dmag, quiescent_mag])
+
+    @compound('flux', 'dflux')
+    def get_avroFlux(self):
+        quiescent_mag = self.column_by_name('quiescent_mag')
+        mag = self.column_by_name('mag')
+        if not hasattr(self, '_dummy_sed'):
+            self._dummy_sed = Sed()
+
+        quiescent_flux = self._dummy_sed.fluxFromMag(quiescent_mag)
+        flux = self._dummy_sed.fluxFromMag(mag)
+        return np.array([flux, flux-quiescent_flux])
 
 
 def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
