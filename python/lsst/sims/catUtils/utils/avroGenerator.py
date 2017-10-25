@@ -164,7 +164,7 @@ class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBas
         if not hasattr(self, '_dummy_sed'):
             self._dummy_sed = Sed()
         if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()spock
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         if not hasattr(self, 'photParams'):
             self.photParams = PhotometricParameters()
         if not hasattr(self, '_gamma'):
