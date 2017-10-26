@@ -224,7 +224,8 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
 class AlertDataGenerator(object):
 
-    def __init__(self, n_proc_max=4, output_prefix='test_hdf5'):
+    def __init__(self, n_proc_max=4, output_prefix='test_hdf5',
+                 dmag_cutoff=0.005):
         self._t_chip_name=0.0
         self._t_mlt = 0.0
         self._t_param_lc = 0.0
@@ -235,7 +236,7 @@ class AlertDataGenerator(object):
         self._t_filter_phot = 0.0
 
         self._output_prefix = output_prefix
-        self._dmag_cutoff = 0.005
+        self._dmag_cutoff = dmag_cutoff
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
