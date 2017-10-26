@@ -5,6 +5,14 @@ import os
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--n_proc', type=int, default=1)
+
+args = parser.parse_args()
+
 opsim_db = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
                         'Development', 'garage', 'OpSimData',
                         'minion_1016_sqlite.db')
@@ -40,23 +48,22 @@ total_obs = len(obs_list)
 
 import multiprocessing as mproc
 t_start = time.time()
-n_proc = 8
 
 mgr = mproc.Manager()
 out_list = mgr.list()
 
 process_list = []
 htmid_list=[]
-for i_list in range(n_proc):
+for i_list in range(args.n_proc):
     htmid_list.append([])
 i_list = 0
 for htmid in avro_gen.htmid_list[:16]:
     htmid_list[i_list].append(htmid)
     i_list += 1
-    if i_list>=n_proc:
+    if i_list>=args.n_proc:
         i_list = 0
 
-for i_proc in range(n_proc):
+for i_proc in range(args.n_proc):
     p = mproc.Process(target=query_htmid,
                       args=(avro_gen, htmid_list[i_proc], out_list))
     p.start()
