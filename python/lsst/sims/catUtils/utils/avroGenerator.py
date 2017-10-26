@@ -224,7 +224,7 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
 class AvroGenerator(object):
 
-    def __init__(self, obs_list, n_proc_max=4):
+    def __init__(self, n_proc_max=4):
         self._t_chip_name=0.0
         self._t_mlt = 0.0
         self._t_param_lc = 0.0
@@ -240,14 +240,6 @@ class AvroGenerator(object):
         self._variability_cache = create_variability_cache()
         plm = ParametrizedLightCurveMixin()
         plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
-        self.obs_list = np.array(obs_list)
-        htmid_level = 7
-        self._htmid_list = []
-        for obs in self.obs_list:
-            htmid = findHtmid(obs.pointingRA, obs.pointingDec, htmid_level)
-            self._htmid_list.append(htmid)
-        self._htmid_list = np.array(self._htmid_list)
-        self._unq_htmid_list = np.unique(self._htmid_list)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
         self.chunk_size = 10000
         self._desired_columns = []
@@ -268,8 +260,23 @@ class AvroGenerator(object):
         self._desired_columns.append('ymag')
         self._desired_columns.append('ebv')
         self._desired_columns.append('redshift')
-        print('initialized with %d %d' %
-              (len(self.obs_list), len(self._unq_htmid_list)))
+
+    def subdivide_obs(self, obs_list):
+        obs_list = np.array(obs_list)
+        htmid_level = 7
+        htmid_list = []
+        for obs in obs_list:
+            htmid = findHtmid(obs.pointingRA, obs.pointingDec, htmid_level)
+            htmid_list.append(htmid)
+        htmid_list = np.array(htmid_list)
+        self._unq_htmid_list = np.unique(htmid_list)
+
+        self._htmid_dict = {}
+        for htmid in self._unq_htmid_list:
+            valid_dexes = np.where(htmid_list == htmid)
+            self._htmid_dict[htmid] = obs_list[valid_dexes]
+
+        print('%d obs; %d unique_htmid' % (len(obs_list), len(self._unq_htmid_list)))
 
     @property
     def htmid_list(self):
@@ -310,9 +317,8 @@ class AvroGenerator(object):
         dummy_name = chipNameFromPupilCoordsLSST(0.0, 0.0)
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
-        valid_dexes = np.where(self._htmid_list == htmid)
-        print('valid_dexes %s ' % str(valid_dexes))
-        obs_valid = self.obs_list[valid_dexes]
+        obs_valid = self._htmid_dict[htmid]
+        print('n valid obs %d' % len(obs_valid))
         center_trixel = trixelFromHtmid(htmid)
         center_ra, center_dec = center_trixel.get_center()
 
@@ -574,4 +580,5 @@ class AvroGenerator(object):
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
         self._t_apply_var += photometry_catalog._total_t_apply_var
+        print('that took %.2e hours per obs' % ((time.time()-t_start)/(3600.0*len(obs_valid))))
         return len(obs_valid)
