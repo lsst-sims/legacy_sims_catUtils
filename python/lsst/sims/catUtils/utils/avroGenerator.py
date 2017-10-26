@@ -580,5 +580,6 @@ class AvroGenerator(object):
         self._t_mlt += photometry_catalog._total_t_MLT
         self._t_param_lc += photometry_catalog._total_t_param_lc
         self._t_apply_var += photometry_catalog._total_t_apply_var
-        print('that took %.2e hours per obs' % ((time.time()-t_start)/(3600.0*len(obs_valid))))
+        print('that took %.2e hours per obs for %d obs' %
+              ((time.time()-t_start)/(3600.0*len(obs_valid)), len(obs_valid)))
         return len(obs_valid)
