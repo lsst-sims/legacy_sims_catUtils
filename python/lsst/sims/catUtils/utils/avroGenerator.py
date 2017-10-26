@@ -587,7 +587,7 @@ class AvroGenerator(object):
 
         for obshistid in self._obs_hist_to_ct_map:
             tag = '%d_map' % obshistid
-            out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid])
+            out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid]))
 
         out_file.close()
         self._t_mlt += photometry_catalog._total_t_MLT
