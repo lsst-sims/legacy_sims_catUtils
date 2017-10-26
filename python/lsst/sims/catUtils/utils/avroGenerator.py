@@ -279,25 +279,6 @@ class AvroGenerator(object):
         """
         return self._unq_htmid_list
 
-    def alerts_from_db(self, dbobj):
-        n_obs_total = 0
-        t_0 = time.time()
-
-        for i_h, htmid in enumerate(self._unq_htmid_list):
-            print('processing %d --- %d of %d' % (htmid, i_h, len(self._unq_htmid_list)))
-            t_start = time.time()
-            n_obs = self.alert_data_from_htmid(htmid, dbobj)
-            n_obs_total += n_obs
-            print("that took %e hours" % ((time.time()-t_start)/3600.0))
-            print("total should take %e hours" %
-            (len(self.obs_list)*(time.time()-t_0)/(3600.0*n_obs_total)))
-            print('total took %.2e chip name %.2e MLT %.2e paramLC %.2e' %
-            (time.time()-t_0, self._t_chip_name,self._t_mlt,self._t_param_lc))
-            print('applyVar %.2e setup %.2e' % (self._t_apply_var, self._t_setup))
-            print('phot %.2e output %.2e' % (self._t_phot, self._t_out))
-            print('filter_phot %.2e' % self._t_filter_phot)
-            if i_h>2:
-                exit()
 
     def output_to_hdf5(self, hdf5_file, data_cache):
         """
