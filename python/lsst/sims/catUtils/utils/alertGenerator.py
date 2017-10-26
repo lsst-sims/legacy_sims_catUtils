@@ -434,7 +434,7 @@ class AlertDataGenerator(object):
             for i_obs, obs in enumerate(obs_valid):
                 if n_proc_chipName == 1:
                     xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
-                                                                 pm_ra=pm_ra, pm_dec=pm_dec,
+                                                                 pm_ra=pmra, pm_dec=pmdec,
                                                                  parallax=px, v_rad=vrad,
                                                                  obs_metadata=obs)
 
