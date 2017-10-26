@@ -23,7 +23,7 @@ from lsst.sims.catUtils.mixins import create_variability_cache
 __all__ = ["AlertDataGenerator"]
 
 
-class _baseAvroCatalog(_baseLightCurveCatalog):
+class _baseAlertCatalog(_baseLightCurveCatalog):
 
     def iter_catalog_chunks(self, chunk_size=None, query_cache=None, column_cache=None):
         """
@@ -70,7 +70,7 @@ class _baseAvroCatalog(_baseLightCurveCatalog):
 
 
 class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
-                                CameraCoordsLSST, _baseAvroCatalog):
+                                CameraCoordsLSST, _baseAlertCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
