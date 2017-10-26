@@ -438,7 +438,7 @@ class AlertDataGenerator(object):
                                                                  parallax=px, v_rad=vrad,
                                                                  obs_metadata=obs)
 
-                    chip_name_list = _chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
+                    chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
 
                     chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
                     for i_chip, name in enumerate(chip_name_list):
