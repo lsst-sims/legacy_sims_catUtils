@@ -20,7 +20,7 @@ from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
-__all__ = ["AvroGenerator"]
+__all__ = ["AlertDataGenerator"]
 
 
 class _baseAvroCatalog(_baseLightCurveCatalog):
@@ -222,7 +222,7 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                            valid_obj)
 
 
-class AvroGenerator(object):
+class AlertDataGenerator(object):
 
     def __init__(self, n_proc_max=4):
         self._t_chip_name=0.0

@@ -1,5 +1,5 @@
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-from lsst.sims.catUtils.utils import AvroGenerator
+from lsst.sims.catUtils.utils import AlertDataGenerator
 
 import os
 from lsst.utils import getPackageDir
@@ -30,7 +30,7 @@ sims_clean_up()
 
 print('%d obs' % len(obs_list))
 
-avro_gen = AvroGenerator(n_proc_max=4)
+avro_gen = AlertDataGenerator(n_proc_max=4)
 avro_gen.subdivide_obs(obs_list)
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj
