@@ -30,18 +30,18 @@ sims_clean_up()
 
 print('%d obs' % len(obs_list))
 
-avro_gen = AlertDataGenerator(n_proc_max=4)
-avro_gen.subdivide_obs(obs_list)
+alert_gen = AlertDataGenerator(n_proc_max=4)
+alert_gen.subdivide_obs(obs_list)
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj
 
-def query_htmid(avro_gen, htmid_list, output_list):
+def query_htmid(alert_gen, htmid_list, output_list):
 
     db = StarObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
                  port=1433, driver='mssql+pymssql')
 
     for htmid in htmid_list:
-        ct = avro_gen.alert_data_from_htmid(htmid, db)
+        ct = alert_gen.alert_data_from_htmid(htmid, db)
         output_list.append(ct)
 
 import time
@@ -58,7 +58,7 @@ htmid_list=[]
 for i_list in range(args.n_proc):
     htmid_list.append([])
 i_list = 0
-for htmid in avro_gen.htmid_list[:16]:
+for htmid in alert_gen.htmid_list[:16]:
     htmid_list[i_list].append(htmid)
     i_list += 1
     if i_list>=args.n_proc:
@@ -66,7 +66,7 @@ for htmid in avro_gen.htmid_list[:16]:
 
 for i_proc in range(args.n_proc):
     p = mproc.Process(target=query_htmid,
-                      args=(avro_gen, htmid_list[i_proc], out_list))
+                      args=(alert_gen, htmid_list[i_proc], out_list))
     p.start()
     process_list.append(p)
 
