@@ -226,14 +226,6 @@ class AlertDataGenerator(object):
 
     def __init__(self, n_proc_max=4, output_prefix='test_hdf5',
                  dmag_cutoff=0.005):
-        self._t_chip_name=0.0
-        self._t_mlt = 0.0
-        self._t_param_lc = 0.0
-        self._t_apply_var = 0.0
-        self._t_setup = 0.0
-        self._t_phot = 0.0
-        self._t_out = 0.0
-        self._t_filter_phot = 0.0
 
         self._output_prefix = output_prefix
         self._dmag_cutoff = dmag_cutoff
@@ -385,8 +377,6 @@ class AlertDataGenerator(object):
                                                                        'lsst_z',
                                                                        'lsst_y'])
 
-        self._t_setup += time.time()-t_start
-
         print('chunking')
         i_chunk = 0
         t_chipName = 0.0
@@ -478,8 +468,6 @@ class AlertDataGenerator(object):
 
                 assert len(chip_name_dict) == len(obs_valid)
 
-            self._t_chip_name += time.time()-t_before_chip_name
-
             ######################################################
             # Calculate the delta_magnitude for all of the sources
             #
@@ -496,7 +484,6 @@ class AlertDataGenerator(object):
                 valid_photometry[valid_obj] += 2
             invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
-            self._t_filter_phot += time.time()-t_before_filter
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
@@ -505,8 +492,6 @@ class AlertDataGenerator(object):
 
             if np.abs(dmag_arr).max() < self._dmag_cutoff:
                 continue
-
-            self._t_phot += time.time()-t_before_phot
 
             ############################
             # Process and output sources
@@ -568,7 +553,6 @@ class AlertDataGenerator(object):
                     #print star_obj
                 #if i_chunk > 10:
                 #    exit()
-            self._t_out += time.time()-t_before_out
 
         if len(output_data_cache)>0:
             self.output_to_hdf5(out_file, output_data_cache)
@@ -578,9 +562,6 @@ class AlertDataGenerator(object):
             out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid]))
 
         out_file.close()
-        self._t_mlt += photometry_catalog._total_t_MLT
-        self._t_param_lc += photometry_catalog._total_t_param_lc
-        self._t_apply_var += photometry_catalog._total_t_apply_var
         print('that took %.2e hours per obs for %d obs' %
               ((time.time()-t_start)/(3600.0*len(obs_valid)), len(obs_valid)))
         return len(obs_valid)
