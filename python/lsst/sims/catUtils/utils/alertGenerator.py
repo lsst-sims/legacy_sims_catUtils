@@ -568,4 +568,5 @@ class AlertDataGenerator(object):
         out_file.close()
         print('that took %.2e hours per obs for %d obs' %
               ((time.time()-t_start)/(3600.0*len(obs_valid)), len(obs_valid)))
+
         return len(obs_valid)
