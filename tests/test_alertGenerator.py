@@ -5,12 +5,15 @@ import tempfile
 import sqlite3
 import shutil
 import numbers
+import gc
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.decorators import register_method
 from lsst.sims.catalogs.db import CatalogDBObject
+from lsst.sims.coordUtils import lsst_camera
+from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import AlertDataGenerator
@@ -27,6 +30,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        print('setting up %s' % sims_clean_up.targets)
         cls.opsim_db = os.path.join(getPackageDir('sims_data'),
                                     'OpSimData',
                                     'opsimblitz1_1133_sqlite.db')
@@ -48,7 +52,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                         dir=ROOT)
 
         cls.star_db_name = tempfile.mktemp(prefix='alertDataGen_star_db',
-                                           dir=cls.temp_dir)
+                                           dir=cls.temp_dir,
+                                           suffix='.db')
 
         conn = sqlite3.connect(cls.star_db_name)
         cursor = conn.cursor()
@@ -141,7 +146,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                             vrad[i_star], varParamStr))
 
                 cursor.execute(query)
-            conn.commit()
+        conn.commit()
         conn.close()
 
         cls.output_dir = tempfile.mkdtemp(dir=ROOT, prefix='alert_gen_output')
@@ -149,15 +154,19 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.star_db_name):
             os.unlink(cls.star_db_name)
         if os.path.exists(cls.temp_dir):
             shutil.rmtree(cls.temp_dir)
-
         for file_name in os.listdir(cls.output_dir):
             os.unlink(os.path.join(cls.output_dir, file_name))
         shutil.rmtree(cls.output_dir)
-        #sims_clean_up()
+        del lsst_camera._lsst_camera
+        attr_list = list(chipNameFromPupilCoordsLSST.__dict__.keys())
+        for attr in attr_list:
+            chipNameFromPupilCoordsLSST.__delattr__(attr)
+        gc.collect()
 
     def test_alert_generation(self):
 
@@ -202,17 +211,23 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
 
         star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
-        alert_gen = AlertDataGenerator(n_proc_max=4,
-                                       photometry_class=TestAlertVarCat)
-        alert_gen.subdivide_obs(self.obs_list)
 
         output_root = os.path.join(self.output_dir, 'alert_test')
+        alert_gen = AlertDataGenerator(n_proc_max=1,
+                                       photometry_class=TestAlertVarCat,
+                                       output_prefix = output_root)
+
+        alert_gen.subdivide_obs(self.obs_list)
+
         for htmid in alert_gen.htmid_list:
             alert_gen.alert_data_from_htmid(htmid, star_db)
 
+        del alert_gen
+        gc.collect()
 
-#class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
-#    pass
+
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 
 if __name__ == "__main__":
