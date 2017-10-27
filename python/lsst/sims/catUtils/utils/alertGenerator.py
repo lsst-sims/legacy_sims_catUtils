@@ -20,7 +20,9 @@ from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
-__all__ = ["AlertDataGenerator"]
+__all__ = ["AlertDataGenerator",
+           "AlertStellarVariabilityCatalog",
+           "_baseAlertCatalog"]
 
 
 class _baseAlertCatalog(_baseLightCurveCatalog):
@@ -69,8 +71,8 @@ class _baseAlertCatalog(_baseLightCurveCatalog):
                 yield chunk_cols, self._chunkColMap_output
 
 
-class StellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
-                                CameraCoordsLSST, _baseAlertCatalog):
+class AlertStellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
+                                     CameraCoordsLSST, _baseAlertCatalog):
     column_outputs = ['uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
@@ -225,8 +227,10 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 class AlertDataGenerator(object):
 
     def __init__(self, n_proc_max=4, output_prefix='test_hdf5',
-                 dmag_cutoff=0.005):
+                 dmag_cutoff=0.005,
+                 photometry_class=AlertStellarVariabilityCatalog):
 
+        self._photometry_class = photometry_class
         self._output_prefix = output_prefix
         self._dmag_cutoff = dmag_cutoff
         self._n_proc_max = n_proc_max
@@ -325,7 +329,7 @@ class AlertDataGenerator(object):
         for obs in obs_valid:
             ra_list.append(obs.pointingRA)
             dec_list.append(obs.pointingDec)
-            cat = StellarVariabilityCatalog(dbobj, obs_metadata=obs)
+            cat = self._photometry_class(dbobj, obs_metadata=obs)
             cat.lsstBandpassDict =  self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
@@ -369,13 +373,13 @@ class AlertDataGenerator(object):
                                         chunk_size=self.chunk_size)
 
 
-        photometry_catalog = StellarVariabilityCatalog(dbobj, obs_valid[0],
-                                                       column_outputs=['lsst_u',
-                                                                       'lsst_g',
-                                                                       'lsst_r',
-                                                                       'lsst_i',
-                                                                       'lsst_z',
-                                                                       'lsst_y'])
+        photometry_catalog = self._photometry_class(dbobj, obs_valid[0],
+                                                    column_outputs=['lsst_u',
+                                                                    'lsst_g',
+                                                                    'lsst_r',
+                                                                    'lsst_i',
+                                                                    'lsst_z',
+                                                                    'lsst_y'])
 
         print('chunking')
         i_chunk = 0
