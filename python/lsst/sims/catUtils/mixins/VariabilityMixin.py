@@ -658,7 +658,11 @@ class MLTflaringMixin(Variability):
                                + "to get the data")
 
         variability_cache['_MLT_LC_NPZ'] = np.load(mlt_lc_file)
-        sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
+
+        global _GLOBAL_VARIABILITY_CACHE
+        if variability_cache is _GLOBAL_VARRIABILITY_CACHE:
+            sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
+
         variability_cache['_MLT_LC_NPZ_NAME'] = mlt_lc_file
 
         if variability_cache['parallelizable']:
@@ -1029,14 +1033,16 @@ class ParametrizedLightCurveMixin(Variability):
         file_name is the absolute path to the file being loaded.
         If None, it will load the default Kepler-based light curve model.
         """
+        using_global = False
         if variability_cache is None:
             global _GLOBAL_VARIABILITY_CACHE
             variability_cache = _GLOBAL_VARIABILITY_CACHE
+            using_global = True
 
         if file_name in variability_cache['_PARAMETRIZED_MODELS_LOADED']:
             return
 
-        if len(variability_cache['_PARAMETRIZED_LC_MODELS']) == 0:
+        if len(variability_cache['_PARAMETRIZED_LC_MODELS']) == 0 and using_global:
             sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_LC_MODELS'])
             sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_MODELS_LOADED'])
 
