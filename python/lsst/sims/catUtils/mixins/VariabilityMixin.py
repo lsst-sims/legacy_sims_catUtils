@@ -647,9 +647,6 @@ class MLTflaringMixin(Variability):
         self._mlt_to_int['None'] = -1
         self._current_mlt_dex = 0
 
-        if variability_cache['parallelizable']:
-            mgr = mproc.Manager()
-
         if not os.path.exists(mlt_lc_file):
             catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
             raise RuntimeError("The MLT flaring light curve file:\n"
