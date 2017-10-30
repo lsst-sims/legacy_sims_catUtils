@@ -26,6 +26,8 @@ from lsst.sims.utils import _angularSeparation, angularSeparation
 from lsst.sims.photUtils import Sed
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
+from lsst.sims.photUtils import calcSNR_m5, BandpassDict
+from lsst.sims.photUtils import PhotometricParameters
 
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -242,6 +244,13 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         dummy_sed = Sed()
 
+        template_m5_dict = {'u': 23.9, 'g': 25.0, 'r': 24.7, 'i': 24.0,
+                            'z': 23.3, 'y': 22.1}  # from Table 2 of the overview paper
+
+        bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        photParams = PhotometricParameters()
+
         # First, verify that the contents of the hdf5 files are all correct
         hdf_file_list = os.listdir(self.output_dir)
         for file_name in hdf_file_list:
@@ -271,6 +280,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     chipnum_list = test_file['%d_%d_chipNum' % (obshistID, batch_ct)].value
                     xpix_list = test_file['%d_%d_xPix' % (obshistID, batch_ct)].value
                     ypix_list = test_file['%d_%d_yPix' % (obshistID, batch_ct)].value
+                    snr_list = test_file['%d_%d_SNR' % (obshistID, batch_ct)].value
                     self.assertGreater(len(id_list), 0)
                     self.assertEqual(len(id_list), len(ra_list))
                     self.assertEqual(len(id_list), len(dec_list))
@@ -330,12 +340,29 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         xpix, ypix = pixelCoordsFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
                                                               parallax=px, v_rad=vrad,
-                                                              obs_metadata=obs)
+                                                              obs_metadata=current_obs)
 
                         msg = '\nPixel position (hdf5): %.6f %.6f\n' % (xpix_list[i_obj], ypix_list[i_obj])
                         msg += 'Pixel position (true): %.6f %.6f\n' % (xpix, ypix)
                         self.assertAlmostEqual(xpix, xpix_list[i_obj], 4, msg=msg)
                         self.assertAlmostEqual(ypix, ypix_list[i_obj], 4, msg=msg)
+
+                        bp = bp_dict[current_obs.bandpass]
+                        q_m5 = template_m5_dict[current_obs.bandpass]
+                        m5 = current_obs.m5[current_obs.bandpass]
+
+                        q_snr, gamma = calcSNR_m5(mag0, bp, q_m5, photParams)
+
+                        obs_snr, gamma = calcSNR_m5(dummy_sed.magFromFlux(flux), bp, m5, photParams)
+
+                        q_sigma = dummy_sed.fluxFromMag(mag0)/q_snr
+                        obs_sigma = flux/obs_snr
+
+                        sigma = np.sqrt(q_sigma**2 + obs_sigma**2)
+                        snr = dflux/sigma
+
+                        self.assertAlmostEqual(snr_list[i_obj]/snr, 1.0, 4)
+
 
         del alert_gen
         gc.collect()
