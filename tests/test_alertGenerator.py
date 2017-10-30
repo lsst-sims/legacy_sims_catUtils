@@ -48,11 +48,11 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         # same field is revisited more than once
         assert len(np.unique(fieldid_list)) < len(fieldid_list)
 
-        cls.temp_dir = tempfile.mkdtemp(prefix='alertDataGen',
+        cls.input_dir = tempfile.mkdtemp(prefix='alertDataGen',
                                         dir=ROOT)
 
         cls.star_db_name = tempfile.mktemp(prefix='alertDataGen_star_db',
-                                           dir=cls.temp_dir,
+                                           dir=cls.input_dir,
                                            suffix='.db')
 
         conn = sqlite3.connect(cls.star_db_name)
@@ -157,8 +157,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         sims_clean_up()
         if os.path.exists(cls.star_db_name):
             os.unlink(cls.star_db_name)
-        if os.path.exists(cls.temp_dir):
-            shutil.rmtree(cls.temp_dir)
+        if os.path.exists(cls.input_dir):
+            shutil.rmtree(cls.input_dir)
         for file_name in os.listdir(cls.output_dir):
             os.unlink(os.path.join(cls.output_dir, file_name))
         shutil.rmtree(cls.output_dir)
