@@ -24,6 +24,8 @@ from lsst.sims.utils import radiansFromArcsec, arcsecFromRadians
 from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.utils import _angularSeparation, angularSeparation
 from lsst.sims.photUtils import Sed
+from lsst.sims.coordUtils import chipNameFromRaDecLSST
+
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -250,6 +252,13 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             band_list = test_file['bandpass'].value
             obshistID_list = test_file['obshistID'].value
             for obshistID, mjd, bandpass in zip(obshistID_list, mjd_list, band_list):
+
+                # get the current ObservationMetaData
+                for obs in self.obs_list:
+                    if obs.OpsimMetaData['obsHistID'] == obshistID:
+                        current_obs = obs
+                        break
+
                 ct_list = test_file['%d_map' % obshistID].value
                 self.assertGreater(len(ct_list), 0)
                 for batch_ct in ct_list:
@@ -258,6 +267,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     dec_list = test_file['%d_%d_decICRS' % (obshistID, batch_ct)].value
                     flux_list = test_file['%d_%d_flux' % (obshistID, batch_ct)].value
                     dflux_list = test_file['%d_%d_dflux' % (obshistID, batch_ct)].value
+                    chipnum_list = test_file['%d_%d_chipNum' % (obshistID, batch_ct)].value
                     self.assertGreater(len(id_list), 0)
                     self.assertEqual(len(id_list), len(ra_list))
                     self.assertEqual(len(id_list), len(dec_list))
@@ -308,6 +318,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 1, msg=msg)
 
+                        chipname = chipNameFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
+                                                         parallax=px, v_rad=vrad, obs_metadata=current_obs)
+
+                        chipnum = int(chipname.replace('R','').replace('S','').replace(':','').
+                                      replace(',','').replace(' ',''))
+                        self.assertEqual(chipnum, chipnum_list[i_obj])
         del alert_gen
         gc.collect()
 
