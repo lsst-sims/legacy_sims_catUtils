@@ -340,6 +340,9 @@ class AlertDataGenerator(object):
         expmjd_list = np.array(expmjd_list)
         obshistid_list = np.array(obshistid_list)
         band_list = np.array(band_list)
+        cat_list = np.array(cat_list)
+        ra_list = np.array(ra_list)
+        dec_list = np.array(dec_list)
         sorted_dex = np.argsort(expmjd_list)
 
         out_file.create_dataset('obshistID', data=obshistid_list)
@@ -348,9 +351,12 @@ class AlertDataGenerator(object):
         out_file.flush()
 
         expmjd_list = expmjd_list[sorted_dex]
-        ra_list = np.array(ra_list)[sorted_dex]
-        dec_list = np.array(dec_list)[sorted_dex]
-        cat_list = np.array(cat_list)[sorted_dex]
+        ra_list = ra_list[sorted_dex]
+        dec_list = dec_list[sorted_dex]
+        cat_list = cat_list[sorted_dex]
+        obs_valid = obs_valid[sorted_dex]
+        obshistid_list = obshistid_list[sorted_dex]
+        band_list = band_list[sorted_dex]
 
         print('built list')
 
