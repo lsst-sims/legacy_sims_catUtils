@@ -46,7 +46,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         obs_gen = ObservationMetaDataGenerator(database=cls.opsim_db)
         cls.obs_list = obs_gen.getObservationMetaData(night=(0,2))
-        cls.obs_list = rng.choice(cls.obs_list, 10)
+        cls.obs_list = rng.choice(cls.obs_list, 10, replace=False)
         fieldid_list = []
         for obs in cls.obs_list:
             fieldid_list.append(obs.OpsimMetaData['fieldID'])
