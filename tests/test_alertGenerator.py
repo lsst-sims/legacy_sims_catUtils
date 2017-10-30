@@ -113,8 +113,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             zmag = rng.random_sample(n_stars)*5.0 + 15.0
             ymag = rng.random_sample(n_stars)*5.0 + 15.0
             px = rng.random_sample(n_stars)*0.1 # say it is arcsec
-            pmra = rng.random_sample(n_stars)*0.5 # say it is arcsec/yr
-            pmdec = rng.random_sample(n_stars)*0.5 # say it is arcsec/yr
+            pmra = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
+            pmdec = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
             vrad = rng.random_sample(n_stars)*600.0 - 300.0
 
             cls.ra_truth[id_offset:id_offset+n_stars] = ra
@@ -282,10 +282,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         msg = '\nPosition (hdf5): %e %e\n' % (ra_list[i_obj], dec_list[i_obj])
                         msg += 'Position (truth): %e %e\n' % (np.radians(raICRS), np.radians(decICRS))
-                        msg += 'diff %e arcsec; moved %e arsec\n' % (dd, dd_moved)
+                        msg += 'diff %e arcsec; moved %e arsec\n' % (arcsecFromRadians(dd), dd_moved)
+                        msg += 'pmra %e pmdec %e px %e vrad %e\n' % (pmra, pmdec, px, vrad)
 
-                        self.assertLess(arcsecFromRadians(dd), 0.005, msg=msg)
-                        self.assertLess(dd/dd_moved, 0.002, msg=msg)
+                        self.assertLess(arcsecFromRadians(dd), 0.001, msg=msg)
 
                         amp = self.amp_truth[obj_dex]
                         period = self.period_truth[obj_dex]
