@@ -287,7 +287,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     for i_obj in range(len(id_list)):
                         obj_dex = (id_list[i_obj]//1024)-1
 
-                        # verify that ICRS positions are correct to within 0.005 arcsec
+                        # verify that ICRS positions are correct to within 0.001 arcsec
                         ra0 = self.ra_truth[obj_dex]
                         dec0 = self.dec_truth[obj_dex]
                         px = self.px_truth[obj_dex]
@@ -310,6 +310,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         self.assertLess(arcsecFromRadians(dd), 0.001, msg=msg)
 
+                        # verify that flux calculations are correct
                         amp = self.amp_truth[obj_dex]
                         period = self.period_truth[obj_dex]
                         mag0 = self.mag0_truth_dict[bandpass][obj_dex]
@@ -331,6 +332,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 1, msg=msg)
 
+                        # verify that chipNum and pixel positions are correct
                         chipname = chipNameFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
                                                          parallax=px, v_rad=vrad, obs_metadata=current_obs)
 
@@ -347,6 +349,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         self.assertAlmostEqual(xpix, xpix_list[i_obj], 4, msg=msg)
                         self.assertAlmostEqual(ypix, ypix_list[i_obj], 4, msg=msg)
 
+                        # verify that signal to noise calculation is correct
                         bp = bp_dict[current_obs.bandpass]
                         q_m5 = template_m5_dict[current_obs.bandpass]
                         m5 = current_obs.m5[current_obs.bandpass]
