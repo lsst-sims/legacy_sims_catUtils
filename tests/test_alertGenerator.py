@@ -6,6 +6,7 @@ import sqlite3
 import shutil
 import numbers
 import gc
+import h5py
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
@@ -18,6 +19,10 @@ from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import AlertDataGenerator
 
+from lsst.sims.utils import applyProperMotion
+from lsst.sims.utils import radiansFromArcsec, arcsecFromRadians
+from lsst.sims.utils import ModifiedJulianDate
+from lsst.sims.utils import _angularSeparation, angularSeparation
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -27,6 +32,8 @@ def setup_module(module):
 
 
 class AlertDataGeneratorTestCase(unittest.TestCase):
+
+    longMessage = True
 
     @classmethod
     def setUpClass(cls):
@@ -221,6 +228,52 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         for htmid in alert_gen.htmid_list:
             alert_gen.alert_data_from_htmid(htmid, star_db)
+
+        # First, verify that the contents of the hdf5 files are all correct
+        hdf_file_list = os.listdir(self.output_dir)
+        for file_name in hdf_file_list:
+            if not file_name.endswith('hdf5'):
+                continue
+            full_name = os.path.join(self.output_dir, file_name)
+            test_file = h5py.File(full_name, 'r')
+            tai_list = ModifiedJulianDate.get_list(TAI=test_file['TAI'].value)
+            obshistID_list = test_file['obshistID'].value
+            for obshistID, tai in zip(obshistID_list, tai_list):
+                ct_list = test_file['%d_map' % obshistID].value
+                self.assertGreater(len(ct_list), 0)
+                for batch_ct in ct_list:
+                    id_list = test_file['%d_%d_uniqueId' % (obshistID, batch_ct)].value
+                    ra_list = test_file['%d_%d_raICRS' % (obshistID, batch_ct)].value
+                    dec_list = test_file['%d_%d_decICRS' % (obshistID, batch_ct)].value
+                    self.assertGreater(len(id_list), 0)
+                    self.assertEqual(len(id_list), len(ra_list))
+                    self.assertEqual(len(id_list), len(dec_list))
+                    for i_obj in range(len(id_list)):
+                        obj_dex = (id_list[i_obj]//1024)-1
+
+                        # verify that ICRS positions are correct to within 0.005 arcsec
+                        ra0 = self.ra_truth[obj_dex]
+                        dec0 = self.dec_truth[obj_dex]
+                        px = self.px_truth[obj_dex]
+                        pmra = self.pmra_truth[obj_dex]
+                        pmdec = self.pmdec_truth[obj_dex]
+                        vrad = self.vrad_truth[obj_dex]
+                        raICRS, decICRS = applyProperMotion(ra0, dec0,
+                                                            pmra,pmdec,px,
+                                                            vrad, mjd=tai)
+
+                        dd = _angularSeparation(ra_list[i_obj], dec_list[i_obj],
+                                                np.radians(raICRS), np.radians(decICRS))
+
+                        dd_moved = angularSeparation(ra0, dec0, raICRS, decICRS)*3600.0
+
+                        msg = '\nPosition (hdf5): %e %e\n' % (ra_list[i_obj], dec_list[i_obj])
+                        msg += 'Position (truth): %e %e\n' % (np.radians(raICRS), np.radians(decICRS))
+                        msg += 'diff %e arcsec; moved %e arsec\n' % (dd, dd_moved)
+
+                        self.assertLess(arcsecFromRadians(dd), 0.005, msg=msg)
+                        self.assertLess(dd/dd_moved, 0.002, msg=msg)
+
 
         del alert_gen
         gc.collect()
