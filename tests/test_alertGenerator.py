@@ -23,6 +23,7 @@ from lsst.sims.utils import applyProperMotion
 from lsst.sims.utils import radiansFromArcsec, arcsecFromRadians
 from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.utils import _angularSeparation, angularSeparation
+from lsst.sims.photUtils import Sed
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -76,12 +77,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         cls.ra_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
         cls.dec_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
-        cls.u_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
-        cls.g_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
-        cls.r_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
-        cls.i_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
-        cls.z_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
-        cls.y_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
+        u_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
+        g_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
+        r_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
+        i_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
+        z_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
+        y_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
         cls.px_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
         cls.pmra_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
         cls.pmdec_truth = np.zeros(n_stars*len(cls.obs_list), dtype=float)
@@ -118,18 +119,18 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
             cls.ra_truth[id_offset:id_offset+n_stars] = ra
             cls.dec_truth[id_offset:id_offset+n_stars] = dec
-            cls.u_truth[id_offset:id_offset+n_stars] = umag
-            cls.g_truth[id_offset:id_offset+n_stars] = gmag
-            cls.r_truth[id_offset:id_offset+n_stars] = rmag
-            cls.i_truth[id_offset:id_offset+n_stars] = imag
-            cls.z_truth[id_offset:id_offset+n_stars] = zmag
-            cls.y_truth[id_offset:id_offset+n_stars] = ymag
+            u_truth[id_offset:id_offset+n_stars] = umag
+            g_truth[id_offset:id_offset+n_stars] = gmag
+            r_truth[id_offset:id_offset+n_stars] = rmag
+            i_truth[id_offset:id_offset+n_stars] = imag
+            z_truth[id_offset:id_offset+n_stars] = zmag
+            y_truth[id_offset:id_offset+n_stars] = ymag
             cls.px_truth[id_offset:id_offset+n_stars] = px
             cls.pmra_truth[id_offset:id_offset+n_stars] = pmra
             cls.pmdec_truth[id_offset:id_offset+n_stars] = pmdec
             cls.vrad_truth[id_offset:id_offset+n_stars] = vrad
-            cls.amp_truth[id_offset:id_offset+n_stars] = var_amp
-            cls.period_truth[id_offset:id_offset+n_stars] = var_period
+            cls.amp_truth[id_offset:id_offset+n_stars] = np.round(var_amp, decimals=4)
+            cls.period_truth[id_offset:id_offset+n_stars] = np.round(var_period, decimals=4)
 
             cls.max_str_len = -1
 
@@ -157,6 +158,13 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         conn.close()
 
         cls.output_dir = tempfile.mkdtemp(dir=ROOT, prefix='alert_gen_output')
+        cls.mag0_truth_dict = {}
+        cls.mag0_truth_dict[0] = u_truth
+        cls.mag0_truth_dict[1] = g_truth
+        cls.mag0_truth_dict[2] = r_truth
+        cls.mag0_truth_dict[3] = i_truth
+        cls.mag0_truth_dict[4] = z_truth
+        cls.mag0_truth_dict[5] = y_truth
 
 
     @classmethod
@@ -229,6 +237,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         for htmid in alert_gen.htmid_list:
             alert_gen.alert_data_from_htmid(htmid, star_db)
 
+        dummy_sed = Sed()
+
         # First, verify that the contents of the hdf5 files are all correct
         hdf_file_list = os.listdir(self.output_dir)
         for file_name in hdf_file_list:
@@ -236,15 +246,18 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 continue
             full_name = os.path.join(self.output_dir, file_name)
             test_file = h5py.File(full_name, 'r')
-            tai_list = ModifiedJulianDate.get_list(TAI=test_file['TAI'].value)
+            mjd_list = ModifiedJulianDate.get_list(TAI=test_file['TAI'].value)
+            band_list = test_file['bandpass'].value
             obshistID_list = test_file['obshistID'].value
-            for obshistID, tai in zip(obshistID_list, tai_list):
+            for obshistID, mjd, bandpass in zip(obshistID_list, mjd_list, band_list):
                 ct_list = test_file['%d_map' % obshistID].value
                 self.assertGreater(len(ct_list), 0)
                 for batch_ct in ct_list:
                     id_list = test_file['%d_%d_uniqueId' % (obshistID, batch_ct)].value
                     ra_list = test_file['%d_%d_raICRS' % (obshistID, batch_ct)].value
                     dec_list = test_file['%d_%d_decICRS' % (obshistID, batch_ct)].value
+                    flux_list = test_file['%d_%d_flux' % (obshistID, batch_ct)].value
+                    dflux_list = test_file['%d_%d_dflux' % (obshistID, batch_ct)].value
                     self.assertGreater(len(id_list), 0)
                     self.assertEqual(len(id_list), len(ra_list))
                     self.assertEqual(len(id_list), len(dec_list))
@@ -260,7 +273,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         vrad = self.vrad_truth[obj_dex]
                         raICRS, decICRS = applyProperMotion(ra0, dec0,
                                                             pmra,pmdec,px,
-                                                            vrad, mjd=tai)
+                                                            vrad, mjd=mjd)
 
                         dd = _angularSeparation(ra_list[i_obj], dec_list[i_obj],
                                                 np.radians(raICRS), np.radians(decICRS))
@@ -273,6 +286,25 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         self.assertLess(arcsecFromRadians(dd), 0.005, msg=msg)
                         self.assertLess(dd/dd_moved, 0.002, msg=msg)
+
+                        amp = self.amp_truth[obj_dex]
+                        period = self.period_truth[obj_dex]
+                        mag0 = self.mag0_truth_dict[bandpass][obj_dex]
+                        dmag = amp*np.cos(period*mjd.TAI)
+                        flux = dummy_sed.fluxFromMag(mag0+dmag)
+                        dflux = flux - dummy_sed.fluxFromMag(mag0)
+                        msg = ('\nuniqueID %d TAI %.4f\ndFlux (hdf5): %e\ndFlux (truth): %e\ndmag (truth): %e\n' %
+                               (id_list[i_obj], mjd.TAI, dflux_list[i_obj], dflux, dmag))
+                        msg+="amp %e period %e\n" % (amp, period)
+                        msg+="obsHistID %d\n" % obshistID
+
+                        self.assertAlmostEqual(dflux/dflux_list[i_obj], 1.0, 3, msg=msg)
+
+                        msg = ('\nuniqueID %d TAI %.4f\nFlux (hdf5): %e\nFlux (truth): %e\ndmag (truth): %e' %
+                               (id_list[i_obj], mjd.TAI, flux_list[i_obj], flux, dmag))
+                        msg+="amp %e period %e\n" % (amp, period)
+
+                        self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 3, msg=msg)
 
 
         del alert_gen
