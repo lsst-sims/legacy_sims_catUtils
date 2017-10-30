@@ -25,6 +25,7 @@ from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.utils import _angularSeparation, angularSeparation
 from lsst.sims.photUtils import Sed
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
+from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
 
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -268,6 +269,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     flux_list = test_file['%d_%d_flux' % (obshistID, batch_ct)].value
                     dflux_list = test_file['%d_%d_dflux' % (obshistID, batch_ct)].value
                     chipnum_list = test_file['%d_%d_chipNum' % (obshistID, batch_ct)].value
+                    xpix_list = test_file['%d_%d_xPix' % (obshistID, batch_ct)].value
+                    ypix_list = test_file['%d_%d_yPix' % (obshistID, batch_ct)].value
                     self.assertGreater(len(id_list), 0)
                     self.assertEqual(len(id_list), len(ra_list))
                     self.assertEqual(len(id_list), len(dec_list))
@@ -324,6 +327,16 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         chipnum = int(chipname.replace('R','').replace('S','').replace(':','').
                                       replace(',','').replace(' ',''))
                         self.assertEqual(chipnum, chipnum_list[i_obj])
+
+                        xpix, ypix = pixelCoordsFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
+                                                              parallax=px, v_rad=vrad,
+                                                              obs_metadata=obs)
+
+                        msg = '\nPixel position (hdf5): %.6f %.6f\n' % (xpix_list[i_obj], ypix_list[i_obj])
+                        msg += 'Pixel position (true): %.6f %.6f\n' % (xpix, ypix)
+                        self.assertAlmostEqual(xpix, xpix_list[i_obj], 4, msg=msg)
+                        self.assertAlmostEqual(ypix, ypix_list[i_obj], 4, msg=msg)
+
         del alert_gen
         gc.collect()
 
