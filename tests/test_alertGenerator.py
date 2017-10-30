@@ -117,18 +117,18 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             pmdec = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
             vrad = rng.random_sample(n_stars)*600.0 - 300.0
 
-            cls.ra_truth[id_offset:id_offset+n_stars] = ra
-            cls.dec_truth[id_offset:id_offset+n_stars] = dec
-            u_truth[id_offset:id_offset+n_stars] = umag
-            g_truth[id_offset:id_offset+n_stars] = gmag
-            r_truth[id_offset:id_offset+n_stars] = rmag
-            i_truth[id_offset:id_offset+n_stars] = imag
-            z_truth[id_offset:id_offset+n_stars] = zmag
-            y_truth[id_offset:id_offset+n_stars] = ymag
-            cls.px_truth[id_offset:id_offset+n_stars] = px
-            cls.pmra_truth[id_offset:id_offset+n_stars] = pmra
-            cls.pmdec_truth[id_offset:id_offset+n_stars] = pmdec
-            cls.vrad_truth[id_offset:id_offset+n_stars] = vrad
+            cls.ra_truth[id_offset:id_offset+n_stars] = np.round(ra, decimals=6)
+            cls.dec_truth[id_offset:id_offset+n_stars] = np.round(dec, decimals=6)
+            u_truth[id_offset:id_offset+n_stars] = np.round(umag, decimals=4)
+            g_truth[id_offset:id_offset+n_stars] = np.round(gmag, decimals=4)
+            r_truth[id_offset:id_offset+n_stars] = np.round(rmag, decimals=4)
+            i_truth[id_offset:id_offset+n_stars] = np.round(imag, decimals=4)
+            z_truth[id_offset:id_offset+n_stars] = np.round(zmag, decimals=4)
+            y_truth[id_offset:id_offset+n_stars] = np.round(ymag, decimals=4)
+            cls.px_truth[id_offset:id_offset+n_stars] = np.round(px, decimals=4)
+            cls.pmra_truth[id_offset:id_offset+n_stars] = np.round(pmra, decimals=4)
+            cls.pmdec_truth[id_offset:id_offset+n_stars] = np.round(pmdec, decimals=4)
+            cls.vrad_truth[id_offset:id_offset+n_stars] = np.round(vrad, decimals=4)
             cls.amp_truth[id_offset:id_offset+n_stars] = np.round(var_amp, decimals=4)
             cls.period_truth[id_offset:id_offset+n_stars] = np.round(var_period, decimals=4)
 
@@ -297,15 +297,16 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                (id_list[i_obj], mjd.TAI, dflux_list[i_obj], dflux, dmag))
                         msg+="amp %e period %e\n" % (amp, period)
                         msg+="obsHistID %d\n" % obshistID
+                        msg +="flux %.6f %.6f\n" % (flux, flux_list[i_obj])
+                        msg += "mag %e\n" % mag0
 
-                        self.assertAlmostEqual(dflux/dflux_list[i_obj], 1.0, 3, msg=msg)
+                        self.assertAlmostEqual(dflux/dflux_list[i_obj], 1.0, 1, msg=msg)
 
-                        msg = ('\nuniqueID %d TAI %.4f\nFlux (hdf5): %e\nFlux (truth): %e\ndmag (truth): %e' %
+                        msg = ('\nuniqueID %d TAI %.4f\nFlux (hdf5): %e\nFlux (truth): %e\ndmag (truth): %e\n' %
                                (id_list[i_obj], mjd.TAI, flux_list[i_obj], flux, dmag))
                         msg+="amp %e period %e\n" % (amp, period)
 
-                        self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 3, msg=msg)
-
+                        self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 1, msg=msg)
 
         del alert_gen
         gc.collect()
