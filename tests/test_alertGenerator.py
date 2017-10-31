@@ -232,10 +232,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
 
+        dmag_cutoff = 0.005
         output_root = os.path.join(self.output_dir, 'alert_test')
         alert_gen = AlertDataGenerator(n_proc_max=1,
                                        photometry_class=TestAlertVarCat,
-                                       output_prefix = output_root)
+                                       output_prefix = output_root,
+                                       dmag_cutoff=dmag_cutoff)
 
         alert_gen.subdivide_obs(self.obs_list)
 
@@ -324,6 +326,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         msg +="flux %.6f %.6f\n" % (flux, flux_list[i_obj])
                         msg += "mag %e\n" % mag0
 
+                        self.assertGreater(np.abs(dmag), dmag_cutoff)
                         self.assertAlmostEqual(dflux/dflux_list[i_obj], 1.0, 1, msg=msg)
 
                         msg = ('\nuniqueID %d TAI %.4f\nFlux (hdf5): %e\nFlux (truth): %e\ndmag (truth): %e\n' %
