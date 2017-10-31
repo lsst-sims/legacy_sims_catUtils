@@ -148,7 +148,7 @@ def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
 
     t0_mjd = numpy.random.sample(size)*10.0+mjd
     agn_tau = numpy.random.sample(size)*1000.0 + 1000.0
-    agnSeed = numpy.random.random_integers(low=2, high=4000, size=size)
+    agnSeed = numpy.random.randint(2, 4001, size=size)
     agn_sfu = numpy.random.sample(size)
     agn_sfg = numpy.random.sample(size)
     agn_sfr = numpy.random.sample(size)

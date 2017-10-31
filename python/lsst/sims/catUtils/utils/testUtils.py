@@ -284,7 +284,7 @@ def makePhoSimTestDB(filename='PhoSimTestDatabase.db', size=1000, seedVal=32, ra
 
     t0_mjd = mjd - rng.random_sample(size)*1000.0
     agn_tau = rng.random_sample(size)*1000.0 + 1000.0
-    agnSeed = rng.random_integers(low=2, high=4000, size=size)
+    agnSeed = rng.randint(2, 4001, size=size)
     agn_sfu = rng.random_sample(size)
     agn_sfg = rng.random_sample(size)
     agn_sfr = rng.random_sample(size)
