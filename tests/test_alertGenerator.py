@@ -19,7 +19,7 @@ from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import AlertDataGenerator
 
-from lsst.sims.utils import applyProperMotion
+from lsst.sims.utils import applyProperMotion, ObservationMetaData
 from lsst.sims.utils import radiansFromArcsec, arcsecFromRadians
 from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.utils import _angularSeparation, angularSeparation
@@ -220,10 +220,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     return np.array([[], [], [], [], [], []])
 
                 if isinstance(expmjd, numbers.Number):
-                    raise RuntimeError("did not mean for this method to operate "
-                                       "on a single MJD")
-
-                dMags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+                    dMags_out = np.zeros((6, self.num_variable_obj(params)))
+                else:
+                    dMags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
 
                 for i_star in range(self.num_variable_obj(params)):
                     if params['amp'][i_star] is not None:
@@ -386,10 +385,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         self.assertAlmostEqual(snr_list[i_obj]/snr, 1.0, 4)
 
         # now verify that we simulated all of the events we were supposed to
-        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, Variability, InstanceCatalog):
-            column_outputs = ['uniqueId', 'chipName']
-
-            cannot_be_null = ['chipName', 'dmag_valid']
+        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
+                                 Variability, InstanceCatalog):
+            column_outputs = ['uniqueId', 'chipName', 'dmagAlert']
 
             @compound('delta_umag', 'delta_gmag', 'delta_rmag',
                       'delta_imag', 'delta_zmag', 'delta_ymag')
@@ -397,23 +395,33 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 return self.applyVariability(self.column_by_name('varParamStr'))
 
             @cached
-            def get_dmag_valid(self):
-                dmag = self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
-                return np.where(dmag>0.005, dmag, None)
+            def get_dmagAlert(self):
+                return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
 
         for obs in self.obs_list:
+            # make a much larger ObservationMetaData to make sure we get all of
+            # the objects
+            obs.boundLength = 10.0
+
             obshistid = obs.OpsimMetaData['obsHistID']
             cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
             id_list = []
             for line in cat.iter_catalog():
-                id_list.append(line[0])
+                id_val = line[0]
+                chip_name = line[1]
+                dmag = line[2]
+                if chip_name is not None and np.abs(dmag)>=dmag_cutoff:
+                    id_list.append(id_val)
+                    msg = '\nchipName: %s\n' % chip_name
+                    msg += 'dmag: %e\n' % dmag
+                    msg += 'obshistid: %d\n' % obshistid
+                    self.assertIn(id_val, all_simulated_events_dict[obshistid], msg=msg)
 
-            for id_val in id_list:
-                self.assertIn(id_val, all_simulated_events_dict[obshistid])
-            for id_val in all_simulated_events.dict[obshistid]:
-                self.assertIn(id_val,id_list)
+            for id_val in all_simulated_events_dict[obshistid]:
+                self.assertIn(id_val, id_list)
 
         del alert_gen
+        del cat
         gc.collect()
 
 
