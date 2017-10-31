@@ -93,8 +93,8 @@ class StellarLightCurveTest(unittest.TestCase):
         # write the catalog as a text file to be ingested with fileDBObject
         cls.txt_name = os.path.join(cls.scratchDir, "stellar_lc_catalog.txt")
         with open(cls.txt_name, "w") as output_file:
-            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=n_stars)
-            lc_dex = rng.random_integers(0, len(list_of_lc)-1, size=n_stars)
+            sed_dex = rng.randint(0, len(list_of_seds), size=n_stars)
+            lc_dex = rng.randint(0, len(list_of_lc), size=n_stars)
             mjd0 = rng.random_sample(n_stars)*10000.0+40000.0
             raList = rng.random_sample(n_stars)*360.0
             decList = -90.0 + rng.random_sample(n_stars)*120.0
@@ -579,8 +579,8 @@ class AgnLightCurveTest(unittest.TestCase):
 
         sed_dir = os.path.join(getPackageDir("sims_sed_library"), "galaxySED")
         list_of_seds = os.listdir(sed_dir)
-        disk_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
-        bulge_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+        disk_sed_dexes = rng.randint(0, len(list_of_seds), size=n_galaxies)
+        bulge_sed_dexes = rng.randint(0, len(list_of_seds), size=n_galaxies)
 
         avBulge = rng.random_sample(n_galaxies)*0.3+0.1
         avDisk = rng.random_sample(n_galaxies)*0.3+0.1
