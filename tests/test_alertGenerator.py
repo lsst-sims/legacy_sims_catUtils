@@ -28,7 +28,11 @@ from lsst.sims.coordUtils import chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
 from lsst.sims.photUtils import calcSNR_m5, BandpassDict
 from lsst.sims.photUtils import PhotometricParameters
-
+from lsst.sims.catUtils.mixins import CameraCoordsLSST
+from lsst.sims.catUtils.mixins import AstrometryStars
+from lsst.sims.catUtils.mixins import Variability
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import compound, cached
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -208,7 +212,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                        ('variabilityParameters', 'varParamStr', str, _max_var_param_str)]
 
 
-        class TestAlertVarCat(AlertStellarVariabilityCatalog):
+        class TestAlertsVarCatMixin(object):
 
             @register_method('alert_test')
             def applyAlertTest(self, valid_dexes, params, expmjd, variability_cache=None):
@@ -229,13 +233,16 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 return dMags_out
 
+        class TestAlertsVarCat(TestAlertsVarCatMixin, AlertStellarVariabilityCatalog):
+            pass
+
 
         star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
 
         dmag_cutoff = 0.005
         output_root = os.path.join(self.output_dir, 'alert_test')
         alert_gen = AlertDataGenerator(n_proc_max=1,
-                                       photometry_class=TestAlertVarCat,
+                                       photometry_class=TestAlertsVarCat,
                                        output_prefix = output_root,
                                        dmag_cutoff=dmag_cutoff)
 
@@ -254,6 +261,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         photParams = PhotometricParameters()
 
         # First, verify that the contents of the hdf5 files are all correct
+
+        # While doing that, keep track of the uniqueId of every event that
+        # is simulated for each obsHistID.  Afteward, we will verify that we
+        # got all of the objects that satisfy dmag_cutoff
+        all_simulated_events_dict = {}
+
         hdf_file_list = os.listdir(self.output_dir)
         for file_name in hdf_file_list:
             if not file_name.endswith('hdf5'):
@@ -264,6 +277,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             band_list = test_file['bandpass'].value
             obshistID_list = test_file['obshistID'].value
             for obshistID, mjd, bandpass in zip(obshistID_list, mjd_list, band_list):
+                all_simulated_events_dict[obshistID] = []
 
                 # get the current ObservationMetaData
                 for obs in self.obs_list:
@@ -275,6 +289,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 self.assertGreater(len(ct_list), 0)
                 for batch_ct in ct_list:
                     id_list = test_file['%d_%d_uniqueId' % (obshistID, batch_ct)].value
+                    for id_val in id_list:
+                        all_simulated_events_dict[obshistID].append(id_val)
                     ra_list = test_file['%d_%d_raICRS' % (obshistID, batch_ct)].value
                     dec_list = test_file['%d_%d_decICRS' % (obshistID, batch_ct)].value
                     flux_list = test_file['%d_%d_flux' % (obshistID, batch_ct)].value
@@ -369,6 +385,33 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                         self.assertAlmostEqual(snr_list[i_obj]/snr, 1.0, 4)
 
+        # now verify that we simulated all of the events we were supposed to
+        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, Variability, InstanceCatalog):
+            column_outputs = ['uniqueId', 'chipName']
+
+            cannot_be_null = ['chipName', 'dmag_valid']
+
+            @compound('delta_umag', 'delta_gmag', 'delta_rmag',
+                      'delta_imag', 'delta_zmag', 'delta_ymag')
+            def get_TruthVariability(self):
+                return self.applyVariability(self.column_by_name('varParamStr'))
+
+            @cached
+            def get_dmag_valid(self):
+                dmag = self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
+                return np.where(dmag>0.005, dmag, None)
+
+        for obs in self.obs_list:
+            obshistid = obs.OpsimMetaData['obsHistID']
+            cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
+            id_list = []
+            for line in cat.iter_catalog():
+                id_list.append(line[0])
+
+            for id_val in id_list:
+                self.assertIn(id_val, all_simulated_events_dict[obshistid])
+            for id_val in all_simulated_events.dict[obshistid]:
+                self.assertIn(id_val,id_list)
 
         del alert_gen
         gc.collect()
