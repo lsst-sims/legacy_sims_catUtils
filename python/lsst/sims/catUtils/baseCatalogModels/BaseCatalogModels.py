@@ -1,7 +1,7 @@
 import warnings
 import os
 from lsst.sims.catalogs.db import CatalogDBObject,  ChunkIterator
-from sqlalchemy.sql import select, func, column
+from sqlalchemy.sql import select, func, column, text
 import lsst.pex.config as pexConfig
 from lsst.utils import getPackageDir
 
@@ -128,7 +128,7 @@ class BaseCatalogObj(CatalogDBObject):
 
 
         if constraint is not None:
-            query = query.filter(constraint)
+            query = query.filter(text(constraint))
 
         if limit is not None:
             query = query.limit(limit)
