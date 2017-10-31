@@ -6,7 +6,7 @@ import sqlite3
 import json
 import tempfile
 import shutil
-from astropy.analytic_functions import blackbody_lambda
+from astropy.modeling.blackbody import blackbody_lambda
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.utils.tests import getTempFilePath
