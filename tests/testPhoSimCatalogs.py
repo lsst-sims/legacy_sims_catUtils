@@ -340,6 +340,9 @@ class PhoSimCatalogTest(unittest.TestCase):
         self.assertIn("without specifying a phoSimHeaderMap",
                       context.exception.args[0])
 
+        if os.path.exists(catName):
+            os.unlink(catName)
+
         # now make sure that the exception is raised, even if ObservationMetaData
         # does not have an OpsimMetaData
         obs = ObservationMetaData(pointingRA=35.0, pointingDec=-23.0,
@@ -350,6 +353,9 @@ class PhoSimCatalogTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             with lsst.utils.tests.getTempFilePath('.txt') as catName:
                 testBulge.write_catalog(catName)
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
         self.assertIn("without specifying a phoSimHeaderMap",
                       context.exception.args[0])
