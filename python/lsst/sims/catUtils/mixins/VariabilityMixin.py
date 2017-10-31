@@ -660,7 +660,7 @@ class MLTflaringMixin(Variability):
         variability_cache['_MLT_LC_NPZ'] = np.load(mlt_lc_file)
 
         global _GLOBAL_VARIABILITY_CACHE
-        if variability_cache is _GLOBAL_VARRIABILITY_CACHE:
+        if variability_cache is _GLOBAL_VARIABILITY_CACHE:
             sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
 
         variability_cache['_MLT_LC_NPZ_NAME'] = mlt_lc_file
