@@ -10,6 +10,7 @@ import shutil
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -27,6 +28,7 @@ class ObsMetaDataGenDitherTestClass(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.exists(cls.fake_db_name):
             os.unlink(cls.fake_db_name)
         if os.path.exists(cls.scratch_space):

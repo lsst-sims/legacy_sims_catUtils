@@ -186,7 +186,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         for file_name in os.listdir(cls.output_dir):
             os.unlink(os.path.join(cls.output_dir, file_name))
         shutil.rmtree(cls.output_dir)
-        del lsst_camera._lsst_camera
         attr_list = list(chipNameFromPupilCoordsLSST.__dict__.keys())
         for attr in attr_list:
             chipNameFromPupilCoordsLSST.__delattr__(attr)
