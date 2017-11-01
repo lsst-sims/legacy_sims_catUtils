@@ -12,8 +12,6 @@ import h5py
 import os
 import numpy as np
 
-from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
-
 
 __all__ = ["AlertProcessor"]
 
@@ -267,12 +265,11 @@ class AlertProcessor(object):
                     data_writer.append(source)
 
 
-    def process(self, opsimdb, hdf5_dir, opsim_driver='sqlite'):
+    def process(self, hdf5_dir):
 
         if self._diasource_schema is None:
             raise RuntimeError("Need to specify diasource_schema")
 
-        obs_gen = ObservationMetaDataGenerator(opsimdb, driver=opsim_driver)
         hdf5_list = []
         for file_name in os.listdir(hdf5_dir):
             if file_name.endswith('hdf5'):
