@@ -149,7 +149,7 @@ class AlertProcessor(object):
                     source['apFluxErr'] = apFluxErr
 
                     source['snr'] = snr
-                    source['psFlux'] = dflux
+                    source['psFlux'] = dflux*(1.0 + self._rng.random_sample()*0.2)
                     source['psRa'] = ra + (self._rng.random_sample()-0.5)*0.001
                     source['psDecl'] = dec + (self._rng.random_sample()-0.5)*0.001
 
@@ -231,6 +231,27 @@ class AlertProcessor(object):
                     dip_cov['dipLength_dipAngle_Cov'] = self._rng.random_sample()
 
                     source['dip_Cov'] = dip_cov
+
+                    chi2 = self._rng.random_sample()*100.0
+                    lnl = -0.5*chi2
+                    source['dipLnL'] = lnl
+                    source['dipChi2'] = chi2
+                    source['dpNdata'] = self._rng.randint(10, 100)
+                    source['totFlux'] = flux
+                    source['totFluxErr'] = flux*self._rng.random_sample()  # should this be quiescent SNR?
+                    source['diffFlux'] = dflux
+                    source['diffFluxErr'] = dflux/snr
+                    source['fpBkgd'] = self._rng.random_sample()
+                    source['fpBkgdErr'] = self._rng.random_sample()
+                    source['ixx'] = self._rng.random_sample()
+                    source['iyy'] = self._rng.random_sample()
+                    source['ixy'] = self._rng.random_sample()
+
+                    i_cov = {}
+                    i_cov['ixxSigma'] = self._rng.random_sample()
+                    i_cov['iyySigma'] = self._rng.random_sample()
+                    i_cov['ixySigam'] = self._rng.random_sample()
+                    i_cov['ixx_iyy_Cov'] = self._rng.random_sample()
 
 
                     data_writer.append(source)
