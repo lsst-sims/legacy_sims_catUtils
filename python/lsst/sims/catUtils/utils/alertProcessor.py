@@ -267,8 +267,6 @@ class AlertProcessor(object):
                     data_writer.append(source)
 
 
-
-
     def process(self, opsimdb, hdf5_dir, opsim_driver='sqlite'):
 
         if self._diasource_schema is None:
