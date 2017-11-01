@@ -6,3 +6,4 @@ from .CatalogTestUtils import *
 from .LightCurveGenerator import *
 from .SNIaLightCurveGenerator import *
 from .alertGenerator import *
+from .alertProcessor import *
