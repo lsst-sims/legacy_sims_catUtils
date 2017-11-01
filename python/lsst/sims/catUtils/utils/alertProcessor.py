@@ -252,7 +252,17 @@ class AlertProcessor(object):
                     i_cov['iyySigma'] = self._rng.random_sample()
                     i_cov['ixySigam'] = self._rng.random_sample()
                     i_cov['ixx_iyy_Cov'] = self._rng.random_sample()
+                    i_cov['ixx_ixy_Cov'] = self._rng.random_sample()
+                    i_cov['iyy_ixy_Cov'] = self._rng.random_sample()
 
+                    source['i_cov'] = i_cov
+
+                    source['ixxPSF'] = self._rng.random_sample()
+                    source['iyyPSF'] = self._rng.random_sample()
+                    source['ixyPSF'] = self._rng.random_sample()
+                    source['extendedness'] = self._rng.random_sample()
+                    source['spuriousness'] = self._rng.random_sample()
+                    source['flags'] = self._rng.randint(0,1000)
 
                     data_writer.append(source)
 
