@@ -229,15 +229,17 @@ class AlertDataGenerator(object):
 
     def __init__(self, n_proc_max=4, output_prefix='test_hdf5',
                  dmag_cutoff=0.005,
-                 photometry_class=AlertStellarVariabilityCatalog):
+                 photometry_class=AlertStellarVariabilityCatalog,
+                 testing=False):
 
         self._photometry_class = photometry_class
         self._output_prefix = output_prefix
         self._dmag_cutoff = dmag_cutoff
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
-        plm = ParametrizedLightCurveMixin()
-        plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
+        if not testing:
+            plm = ParametrizedLightCurveMixin()
+            plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
         self.chunk_size = 10000
         self._desired_columns = []
