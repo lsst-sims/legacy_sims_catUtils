@@ -58,7 +58,7 @@ htmid_list=[]
 for i_list in range(args.n_proc):
     htmid_list.append([])
 i_list = 0
-for htmid in alert_gen.htmid_list[:16]:
+for htmid in alert_gen.htmid_list[:8]:
     htmid_list[i_list].append(htmid)
     i_list += 1
     if i_list>=args.n_proc:
