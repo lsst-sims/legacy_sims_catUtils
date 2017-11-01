@@ -163,6 +163,75 @@ class AlertProcessor(object):
 
                     source['ps_Cov'] = ps_cov
 
+                    chi2 = self._rng.random_sample()*10.0
+                    lnl = -0.5*chi2
+                    source['psLnL'] = lnl
+                    source['psChi2'] = chi2
+                    source['psNdata'] = self._rng.randint(10, 100)
+
+                    source['trailFlux'] = dflux + self._rng.random_sample()*0.1
+                    source['trailRa'] = ra + self._rng.random_sample()*0.1
+                    source['trailDecl'] = dec + self._rng.random_sample()*0.1
+                    source['trailLength']  = self._rng.random_sample*0.2
+                    source['trailAngle'] = self._rng.random_sample()*360.0
+
+                    trail_cov = {}
+                    trail_cov['trailFluxSigma'] = self._rng.random_sample()*0.01
+                    trail_cov['trailRaSigma'] = self._rng.random_sample()*0.01
+                    trail_cov['trailDeclSigma'] = self._rng.random_sample()*0.01
+                    trail_cov['trailLengthSigma'] = self._rng.random_sample()*0.01
+                    trail_cov['trailAngleSigma'] = self._rng.random_sample()*0.1
+                    trail_cov['trailFlux_trailRa_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailFlux_trailDecl_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailFlux_trailLength_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailFlux_trailAngle_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailRa_trailDecl_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailRa_trailLength_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailRa_trailAngle_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailDecl_trailLength_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailDecl_trailAngle_Cov'] = self._rng.random_sample()*0.01
+                    trail_cov['trailLength_trailAngle_Cov'] = self._rng.random_sample()*0.01
+
+                    source['trail_Cov'] = trail_cov
+
+                    chi2 = self._rng.random_sample()*100.0
+                    lnl = -0.5*chi2
+                    source['trailLnL'] = lnl
+                    source['trailChi2'] = chi2
+                    source['trailNdata'] = self._rng.randint(10, 100)
+
+                    source['dipMeanFlux'] = dflux * (1.0+self._rng.random_sample()*0.2)
+                    source['dipFluxDiff'] = dflux * (1.0+self._rng.random_sample()*0.2)
+                    source['dipRa'] = ra + self._rng.random_sample()*0.001
+                    source['dipDecl'] = dec + self._rng.random_sample()*0.001
+                    source['dipLength'] = self._rng.random_sample()*0.1
+                    source['dipAngle'] = self._rng.random_sample()*360.0
+
+                    dip_cov = {}
+                    dip_cov['dipMeanFluxSigma'] = dflux*(1.0+self._rng.random_sample()*0.2)/snr
+                    dip_cov['dipFluxDiffSigma'] = dflux*(1.0+self._rng.random_sample()*0.2)/snr
+                    dip_cov['dipRaSigma'] = self._rng.random_sample()*0.001
+                    dip_cov['dipDeclSigma'] = self._rng.random_sample()*0.001
+                    dip_cov['dipLengthSigma'] = self._rng.random_sample()*0.1
+                    dip_cov['dipAngleSigma'] = self._rng.random_sample()*10.0
+                    dip_cov['dipMeanFlux_dipFluxDiff_Cov'] = self._rng.random_sample()
+                    dip_cov['dipMeanFlux_dipRa_Cov'] = self._rng.random_sample()
+                    dip_cov['dipMeanFlux_dipDecl_Cov'] = self._rng.random_sample()
+                    dip_cov['dipMeanFlux_dipLength_Cov'] = self._rng.random_sample()
+                    dip_cov['dipMeanFlux_dipAngle_Cov'] = self._rng.random_sample()
+                    dip_cov['dipFluxDiff_dipRa_Cov'] = self._rng.random_sample()
+                    dip_cov['dipFluxDiff_dipDecl_Cov'] = self._rng.random_sample()
+                    dip_cov['dipFluxDiff_dipLength_Cov'] = self._rng.random_sample()
+                    dip_cov['dipFluxDiff_dipAngle_Cov'] = self._rng.random_sample()
+                    dip_cov['dipRa_dipDecl_Cov'] = self._rng.random_sample()
+                    dip_cov['dipRa_dipLength_Cov'] = self._rng.random_sample()
+                    dip_cov['dipRa_dipAngle_Cov'] = self._rng.random_sample()
+                    dip_cov['dipDecl_dipLength_Cov'] = self._rng.random_sample()
+                    dip_cov['dipDecl_dipAngle_Cov'] = self._rng.random_sample()
+                    dip_cov['dipLength_dipAngle_Cov'] = self._rng.random_sample()
+
+                    source['dip_Cov'] = dip_cov
+
 
                     data_writer.append(source)
 
