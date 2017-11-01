@@ -242,7 +242,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         alert_gen = AlertDataGenerator(n_proc_max=1,
                                        photometry_class=TestAlertsVarCat,
                                        output_prefix = output_root,
-                                       dmag_cutoff=dmag_cutoff)
+                                       dmag_cutoff=dmag_cutoff,
+                                       testing=True)
 
         alert_gen.subdivide_obs(self.obs_list)
 
