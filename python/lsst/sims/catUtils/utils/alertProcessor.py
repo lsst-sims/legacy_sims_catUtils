@@ -16,7 +16,7 @@ class AlertProcessor(object):
         self._open_file_handle = None
         self._open_file_name = None
 
-    def __del__(self)
+    def __del__(self):
         self._close_file()
 
     def _close_file(self):
