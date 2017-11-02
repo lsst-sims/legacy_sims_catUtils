@@ -29,7 +29,7 @@ class AlertProcessor(object):
 
     def load_diasource_schema(self, file_name):
         with open(file_name, "rb") as input_file:
-            self._diasource_schema = avro.schema.parse(input_file.read())
+            self._diasource_schema = avro.schema.Parse(input_file.read())
 
     def _close_file(self):
         if self._open_file_handle is None:
@@ -73,10 +73,12 @@ class AlertProcessor(object):
 
         bp_name_dict = {0: 'u', 1: 'g', 2: 'r', 3: 'i', 4: 'z', 5: 'y'}
 
+        batch_list = self._open_file_handle['%d_map' % obshistid].value
+
         with DataFileWriter(open("%s_%d.avro" % (out_file_root, obshistid), "wb"),
                             DatumWriter(), self._diasource_schema) as data_writer:
 
-            for batch_ct in self._obshistid_ct_list[obshistid]:
+            for batch_ct in batch_list:
                 field_root = '%d_%d' % (obshistid, batch_ct)
                 id_arr = self._open_file_handle['%s_uniqueId' % field_root].value
                 ra_arr = self._open_file_handle['%s_raICRS' % field_root].value
@@ -93,13 +95,14 @@ class AlertProcessor(object):
                     xpix_arr, ypix_arr):
 
                     source = {}
-                    source['diaSourceId'] = unqId << 22 + obshistid
+                    source['diaSourceId'] = self._rng.randint(10,1000) # unqId << 22 + obshistid
                     source['ccdVisitId'] = chipnum*10**7 + obshistid
                     source['diaObjectId'] = unqId
                     source['midPointTai'] = tai
-                    source['filtername'] = bp_name_dict[bandpass]
+                    source['filterName'] = bp_name_dict[bandpass]
                     source['ra'] = ra
                     source['decl'] = dec
+                    source['flags'] = self._rng.randint(10,1000)
 
                     ra_dec_cov = {}
                     ra_dec_cov['raSigma'] = self._rng.random_sample()*0.001
@@ -117,6 +120,12 @@ class AlertProcessor(object):
                     x_y_cov['x_y_Cov'] = self._rng.random_sample()*0.001
 
                     source['x_y_Cov'] = x_y_cov
+
+                    source['snr'] = snr
+                    source['psFlux'] = dflux*(1.0 + self._rng.random_sample()*0.2)
+
+
+                    """
 
                     apFlux = {}
                     apFlux['apMeanSb01'] = dflux * (1.0+self._rng.random_sample()-0.5)
@@ -146,8 +155,6 @@ class AlertProcessor(object):
 
                     source['apFluxErr'] = apFluxErr
 
-                    source['snr'] = snr
-                    source['psFlux'] = dflux*(1.0 + self._rng.random_sample()*0.2)
                     source['psRa'] = ra + (self._rng.random_sample()-0.5)*0.001
                     source['psDecl'] = dec + (self._rng.random_sample()-0.5)*0.001
 
@@ -170,7 +177,7 @@ class AlertProcessor(object):
                     source['trailFlux'] = dflux + self._rng.random_sample()*0.1
                     source['trailRa'] = ra + self._rng.random_sample()*0.1
                     source['trailDecl'] = dec + self._rng.random_sample()*0.1
-                    source['trailLength']  = self._rng.random_sample*0.2
+                    source['trailLength']  = self._rng.random_sample()*0.2
                     source['trailAngle'] = self._rng.random_sample()*360.0
 
                     trail_cov = {}
@@ -260,12 +267,12 @@ class AlertProcessor(object):
                     source['ixyPSF'] = self._rng.random_sample()
                     source['extendedness'] = self._rng.random_sample()
                     source['spuriousness'] = self._rng.random_sample()
-                    source['flags'] = self._rng.randint(0,1000)
+                    """
 
                     data_writer.append(source)
 
 
-    def process(self, hdf5_dir):
+    def process(self, hdf5_dir, out_file_name):
 
         if self._diasource_schema is None:
             raise RuntimeError("Need to specify diasource_schema")
@@ -281,27 +288,16 @@ class AlertProcessor(object):
         tai_list = []
         bandpass_list = []
         self._obshistid_to_file_name = {}
-        self_obhistid_ct_list = {}
         for file_name in hdf5_list:
             with h5py.File(file_name, 'r') as input_file:
                 for obshistid, tai, bp in zip(input_file['obshistID'].value,
                                               input_file['TAI'].value,
                                               input_file['bandpass'].value):
 
-                    obshistid_list.append(obhistid)
+                    obshistid_list.append(obshistid)
                     tai_list.append(tai)
                     bandpass_list.append(bp)
                     self._obshistid_to_file_name[obshistid] = file_name
-                    self._obshistid_ct_list[obshistid] = []
-
-                # figure out how many chunks each obsHistID is stored in
-                for arr_key in input_file.keys():
-                    params = arr_key.split('_')
-                    try:
-                        obshistid = int(params[0])
-                    except ValueError:
-                        continue
-                    self._obshistid_ct_list[obshistid].append(int(params[1]))
 
         obshistid_list = np.array(obshistid_list)
         tai_list = np.array(tai_list)
@@ -311,3 +307,5 @@ class AlertProcessor(object):
         tai_list = tai_list[sorted_dex]
         obshistid_list = obshistid_list[sorted_dex]
         bandpass_list = bandpass_list[sorted_dex]
+        for obs, tai, bp in zip(obshistid_list, tai_list, bandpass_list):
+            self._process_obs(obs,tai,bp,out_file_name)
