@@ -11,7 +11,7 @@ except ImportError:
 import h5py
 import os
 import numpy as np
-
+import time
 
 __all__ = ["AlertProcessor"]
 
@@ -270,6 +270,7 @@ class AlertProcessor(object):
 
 
     def process(self, hdf5_dir, out_file_name):
+        t_start = time.time()
 
         if self._diasource_schema is None:
             raise RuntimeError("Need to specify diasource_schema")
@@ -304,5 +305,9 @@ class AlertProcessor(object):
         tai_list = tai_list[sorted_dex]
         obshistid_list = obshistid_list[sorted_dex]
         bandpass_list = bandpass_list[sorted_dex]
+        ct_obs = 0
         for obs, tai, bp in zip(obshistid_list, tai_list, bandpass_list):
+            ct_obs += 1
             self._process_obs(obs,tai,bp,out_file_name)
+            elapsed_hrs = (time.time()-t_start)/3600.0
+            print("%d took %e hours; per %e\n" % (ct_obs, elapsed_hrs, elapsed_hrs/ct_obs))
