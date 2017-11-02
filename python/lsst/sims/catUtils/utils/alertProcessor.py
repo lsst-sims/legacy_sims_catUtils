@@ -95,9 +95,9 @@ class AlertProcessor(object):
                     xpix_arr, ypix_arr):
 
                     source = {}
-                    source['diaSourceId'] = self._rng.randint(10,1000) # unqId << 22 + obshistid
-                    source['ccdVisitId'] = chipnum*10**7 + obshistid
-                    source['diaObjectId'] = unqId
+                    source['diaSourceId'] = np.long(unqId << 22 + obshistid)
+                    source['ccdVisitId'] = np.long(chipnum*10**7 + obshistid)
+                    source['diaObjectId'] = np.long(unqId)
                     source['midPointTai'] = tai
                     source['filterName'] = bp_name_dict[bandpass]
                     source['ra'] = ra
@@ -124,8 +124,6 @@ class AlertProcessor(object):
                     source['snr'] = snr
                     source['psFlux'] = dflux*(1.0 + self._rng.random_sample()*0.2)
 
-
-                    """
 
                     apFlux = {}
                     apFlux['apMeanSb01'] = dflux * (1.0+self._rng.random_sample()-0.5)
@@ -255,7 +253,7 @@ class AlertProcessor(object):
                     i_cov = {}
                     i_cov['ixxSigma'] = self._rng.random_sample()
                     i_cov['iyySigma'] = self._rng.random_sample()
-                    i_cov['ixySigam'] = self._rng.random_sample()
+                    i_cov['ixySigma'] = self._rng.random_sample()
                     i_cov['ixx_iyy_Cov'] = self._rng.random_sample()
                     i_cov['ixx_ixy_Cov'] = self._rng.random_sample()
                     i_cov['iyy_ixy_Cov'] = self._rng.random_sample()
@@ -267,7 +265,6 @@ class AlertProcessor(object):
                     source['ixyPSF'] = self._rng.random_sample()
                     source['extendedness'] = self._rng.random_sample()
                     source['spuriousness'] = self._rng.random_sample()
-                    """
 
                     data_writer.append(source)
 
