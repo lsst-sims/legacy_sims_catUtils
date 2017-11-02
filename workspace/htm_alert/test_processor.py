@@ -12,4 +12,4 @@ if not os.path.exists(schema_name):
 
 processor.load_diasource_schema(schema_name)
 
-processor.process('test_data_0', 'avro_out_dir/first')
+processor.process('test_data_171101', 'avro_out_dir/many')
