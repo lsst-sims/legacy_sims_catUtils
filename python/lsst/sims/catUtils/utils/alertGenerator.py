@@ -305,7 +305,7 @@ class AlertDataGenerator(object):
                     self._unique_id_chunk_map[unique_id] = []
 
                 self._unique_id_obshistid_map[unique_id].append(obsHistID)
-                self._unique_id_chun_map[unique_id].append(self._output_ct)
+                self._unique_id_chunk_map[unique_id].append(self._output_ct)
 
             for col_name in data_cache[obsHistID].keys():
                 data_tag = '%d_%d_%s' % (obsHistID, self._output_ct, col_name)
