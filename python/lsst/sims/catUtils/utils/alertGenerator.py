@@ -320,8 +320,8 @@ class AlertDataGenerator(object):
         self._output_ct = -1
         self._obs_hist_to_ct_map = {}
         self._unique_id_set = set()
-        self._unique_id_obshistid_map = []
-        self._unique_id_chunk_map = []
+        self._unique_id_obshistid_map = {}
+        self._unique_id_chunk_map = {}
         out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
 
         # a dummy call to make sure that the initialization
