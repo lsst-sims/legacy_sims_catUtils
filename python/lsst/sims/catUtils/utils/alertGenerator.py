@@ -232,6 +232,7 @@ class AlertDataGenerator(object):
                  photometry_class=AlertStellarVariabilityCatalog,
                  testing=False):
 
+        self._htmid_level = 7
         self._photometry_class = photometry_class
         self._output_prefix = output_prefix
         self._dmag_cutoff = dmag_cutoff
@@ -263,10 +264,9 @@ class AlertDataGenerator(object):
 
     def subdivide_obs(self, obs_list):
         obs_list = np.array(obs_list)
-        htmid_level = 7
         htmid_list = []
         for obs in obs_list:
-            htmid = findHtmid(obs.pointingRA, obs.pointingDec, htmid_level)
+            htmid = findHtmid(obs.pointingRA, obs.pointingDec, self._htmid_level)
             htmid_list.append(htmid)
         htmid_list = np.array(htmid_list)
         self._unq_htmid_list = np.unique(htmid_list)
