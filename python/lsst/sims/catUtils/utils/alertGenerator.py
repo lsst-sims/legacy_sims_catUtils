@@ -591,7 +591,7 @@ class AlertDataGenerator(object):
         for unique_id in self._unique_id_set:
             # map the obsHistID and chunk information into a single integer.  Bitshift the chunk by 24
             # (2^24 = 1.6*10^7) to ensure that each chunk+obsHistID combination is unique
-            final_map = np.array(self._unique_id_chunk_map)<<24 + np.array(self._unique_id_obshistid_map[unique_id])
+            final_map = np.array(self._unique_id_chunk_map[unique_id])<<24 + np.array(self._unique_id_obshistid_map[unique_id])
             tag = '%d_obshistid_map' % unique_id
             out_file.create_dataset(tag, data=final_map)
 
