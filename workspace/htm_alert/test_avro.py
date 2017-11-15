@@ -58,7 +58,12 @@ htmid_list=[]
 for i_list in range(args.n_proc):
     htmid_list.append([])
 i_list = 0
+
+n_total_htmid = len(alert_gen.htmid_list)
+n_htmid = 0
+
 for htmid in alert_gen.htmid_list[:args.n_proc*3]:
+    n_htmid += 1
     htmid_list[i_list].append(htmid)
     i_list += 1
     if i_list>=args.n_proc:
@@ -77,5 +82,5 @@ so_far = 0
 for ii in out_list:
     so_far += ii
 elapsed = time.time()-t_start
-print('%d took %.2e hours' % (so_far, elapsed/3600.0))
-print('total will take %.2e hours' % (total_obs*elapsed/(3600.0*so_far)))
+print('%d took %.2e hours' % (n_htmid, elapsed/3600.0))
+print('total will take %.2e hours' % (n_total_htmid*elapsed/(3600.0*n_htmid)))
