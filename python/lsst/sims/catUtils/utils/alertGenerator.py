@@ -300,7 +300,7 @@ class AlertDataGenerator(object):
 
             distance = angularSeparation(ra_c, dec_c,
                                          np.array([ra0, ra1, ra2])
-                                         np.array([dec0, dec1, dec2])
+                                         np.array([dec0, dec1, dec2]))
 
             radius = distance.max()
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
