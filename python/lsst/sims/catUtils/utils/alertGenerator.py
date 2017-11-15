@@ -458,6 +458,7 @@ class AlertDataGenerator(object):
         output_data_cache = {}
         ct_to_write = 0
 
+        n_obj = 0
         for chunk in data_iter:
             i_chunk += 1
 
@@ -469,6 +470,7 @@ class AlertDataGenerator(object):
             if len(valid_htmid[0]) == 0:
                 continue
             chunk = chunk[valid_htmid]
+            n_obj += len(valid_htmid[0])
 
             if 'properMotionRa'in column_query:
                 pmra = chunk['properMotionRa']
@@ -651,7 +653,7 @@ class AlertDataGenerator(object):
             out_file.create_dataset(tag, data=final_map)
 
         out_file.close()
-        print('that took %.2e hours per obs for %d obs' %
-              ((time.time()-t_start)/(3600.0*len(obs_valid)), len(obs_valid)))
+        print('that took %.2e hours; n_obj %d ' %
+              ((time.time()-t_start)/3600.0, n_obj))
 
         return len(obs_valid)
