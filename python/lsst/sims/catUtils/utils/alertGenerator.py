@@ -345,7 +345,7 @@ class AlertDataGenerator(object):
                 radius = distance.max()+1.8
 
                 self._htmid_radius_dict[htmid] = radius
-                self._htmid_dict[htmid] = final_obs_list
+                self._htmid_dict[htmid] = np.array(final_obs_list)
                 self._htmid_list.append(htmid)
                 n_obs_list.append(len(final_obs_list))
             elapsed = time.time()-t_start
