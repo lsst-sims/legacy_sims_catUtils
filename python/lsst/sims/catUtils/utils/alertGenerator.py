@@ -323,7 +323,8 @@ class AlertDataGenerator(object):
         self._htmid_list = np.array(self._htmid_list)
         sorted_dex = np.argsort(-1.0*n_obs_list)
         self._htmid_list = self._htmid_list[sorted_dex]
-        print('done subdividing obs list')
+        print('done subdividing obs list -- %d htmid' %
+              len(self._htmid_list))
 
     @property
     def htmid_list(self):
