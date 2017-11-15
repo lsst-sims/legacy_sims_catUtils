@@ -299,7 +299,7 @@ class AlertDataGenerator(object):
             dec2 = np.degrees(dec2)
 
             distance = angularSeparation(ra_c, dec_c,
-                                         np.array([ra0, ra1, ra2])
+                                         np.array([ra0, ra1, ra2]),
                                          np.array([dec0, dec1, dec2]))
 
             radius = distance.max()
