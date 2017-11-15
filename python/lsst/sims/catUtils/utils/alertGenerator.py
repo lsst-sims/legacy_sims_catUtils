@@ -5,7 +5,7 @@ import multiprocessing as mproc
 from collections import OrderedDict
 import time
 from lsst.sims.utils import findHtmid, trixelFromHtmid, getAllTrixels
-from lsst.sims.utils import levelFromHtmid
+from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
 from lsst.sims.utils import sphericalFromCartesian
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
@@ -279,17 +279,25 @@ class AlertDataGenerator(object):
         obs_list = np.array(obs_list)
         obs_ra_list = []
         obs_dec_list = []
+        halfspace_list = []
         for obs in obs_list:
             obs_ra_list.append(obs.pointingRA)
             obs_dec_list.append(obs.pointingDec)
+            hs = halfSpaceFromRaDec(obs.pointingRA,
+                                    obs.pointingDec,
+                                    obs.boundLength)
+            halfspace_list.append(hs)
 
         obs_ra_list = np.array(obs_ra_list)
         obs_dec_list = np.array(obs_dec_list)
+        halfspace_list = np.array(halfspace_list)
         print("made ra and dec lists")
         self._htmid_dict = {}
         self._htmid_list = []
         self._htmid_radius_dict = {}
         n_obs_list = []
+        already_assigned = set()
+        n_already_assigned = 0
         for i_htmid, htmid in enumerate(valid_htmid):
             trixel = self._trixel_dict[htmid]
             ra_c, dec_c = trixel.get_center()
@@ -311,8 +319,21 @@ class AlertDataGenerator(object):
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
             valid_obs = np.where(obs_distance<radius+self._query_radius)
             if len(valid_obs[0])>0:
+                obs_candidates = obs_list[valid_obs]
+                hs_candidates = halfspace_list[valid_obs]
+                final_obs_list = []
+                for hs, obs, dex in zip(hs_candidates, obs_candidates, valid_obs[0]):
+                    if hs.contains_trixel(trixel) != 'outside':
+                        final_obs_list.append(obs)
+                        if dex in already_assigned:
+                            n_already_assigned += 1
+                        if dex not in already_assigned:
+                            already_assigned.add(dex)
+                if len(final_obs_list) == 0:
+                    continue
+
                 self._htmid_radius_dict[htmid] = radius+self._query_radius
-                self._htmid_dict[htmid] = obs_list[valid_obs]
+                self._htmid_dict[htmid] = final_obs_list
                 self._htmid_list.append(htmid)
                 n_obs_list.append(len(valid_obs[0]))
             elapsed = time.time()-t_start
@@ -325,6 +346,15 @@ class AlertDataGenerator(object):
         self._htmid_list = self._htmid_list[sorted_dex]
         print('done subdividing obs list -- %d htmid' %
               len(self._htmid_list))
+        #print('min nobs %d median %d max %d' % (n_obs_list.min(), np.median(n_obs_list), n_obs_list.max()))
+        n_obs_list = np.sort(n_obs_list)
+        print("%d %d %d %d %d" %
+              (n_obs_list[0],
+               n_obs_list[len(n_obs_list)//4],
+               n_obs_list[len(n_obs_list)//2],
+               n_obs_list[3*len(n_obs_list)//4],
+               n_obs_list[-1]))
+        print('n already %d' % n_already_assigned)
 
     @property
     def htmid_list(self):
