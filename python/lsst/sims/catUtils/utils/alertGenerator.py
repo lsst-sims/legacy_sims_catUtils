@@ -273,6 +273,8 @@ class AlertDataGenerator(object):
             if levelFromHtmid(htmid) == self._htmid_level:
                 valid_htmid.append(htmid)
 
+        print("made trixel dict")
+
         obs_list = np.array(obs_list)
         obs_ra_list = []
         obs_dec_list = []
@@ -282,6 +284,7 @@ class AlertDataGenerator(object):
 
         obs_ra_list = np.array(obs_ra_list)
         obs_dec_list = np.array(obs_dec_list)
+        print("made ra and dec lists")
         self._htmid_dict = {}
         self._htmid_list = []
         self._htmid_radius_dict = {}
@@ -312,7 +315,8 @@ class AlertDataGenerator(object):
                 self._htmid_list.append(htmid)
                 n_obs_list.append(len(valid_obs[0]))
             elapsed = time.time()-t_start
-            print('    %d took %e; total %e' % (i_htmid+1, elapsed, len(valid_htmid)*elapsed/(i_htmid+1)))
+            if(i_htmid%1000==0):
+                print('    %d took %e; total %e' % (i_htmid+1, elapsed, len(valid_htmid)*elapsed/(i_htmid+1)))
 
         n_obs_list = np.array(n_obs_list)
         self._htmid_list = np.array(self._htmid_list)
