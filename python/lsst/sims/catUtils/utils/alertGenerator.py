@@ -407,7 +407,6 @@ class AlertDataGenerator(object):
 
         t_start = time.time()
 
-
         print('htmid %d radius %e' % (htmid, self._htmid_radius_dict[htmid]))
 
         self._output_ct = -1
