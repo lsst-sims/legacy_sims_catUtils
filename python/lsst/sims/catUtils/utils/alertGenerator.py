@@ -279,8 +279,8 @@ class AlertDataGenerator(object):
             obs_ra_list.append(obs.pointingRA)
             obs_dec_list.append(obs.pointingDec)
 
-        obs_ra_list = np.array(obs_list)
-        obs_dec_list = np.array(obs_list)
+        obs_ra_list = np.array(obs_ra_list)
+        obs_dec_list = np.array(obs_dec_list)
         self._htmid_dict = {}
         self._htmid_list = []
         self._htmid_radius_dict = {}
