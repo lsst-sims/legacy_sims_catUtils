@@ -38,7 +38,7 @@ from lsst.sims.catUtils.baseCatalogModels import StarObj
 def query_htmid(alert_gen, htmid_list, output_list):
 
     db = StarObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
-                 port=1433, driver='mssql+pymssql')
+                 port=1433, driver='mssql+pymssql', cache_connection=False)
 
     for htmid in htmid_list:
         ct = alert_gen.alert_data_from_htmid(htmid, db)
