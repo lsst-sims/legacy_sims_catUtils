@@ -271,11 +271,11 @@ class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
     catalog_type = 'phoSim_catalog_POINT'
 
     column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
-                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'redshift', 'gamma1', 'gamma2', 'kappa', 'raOffset', 'decOffset',
                       'spatialmodel', 'internalExtinctionModel',
                       'galacticExtinctionModel', 'galacticAv', 'galacticRv']
 
-    default_columns = [('redshift', 0., float), ('shear1', 0., float), ('shear2', 0., float),
+    default_columns = [('redshift', 0., float), ('gamma1', 0., float), ('gamma2', 0., float),
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float),
                        ('galacticExtinctionModel', 'CCM', (str, 3)), ('galacticRv', 3.1, float),
                        ('internalExtinctionModel', 'none', (str, 4))]
@@ -292,11 +292,11 @@ class PhoSimCatalogZPoint(PhosimInputBase, PhoSimAstrometryGalaxies, EBVmixin):
     catalog_type = 'phoSim_catalog_ZPOINT'
 
     column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
-                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'redshift', 'gamma1', 'gamma2', 'kappa', 'raOffset', 'decOffset',
                       'spatialmodel', 'internalExtinctionModel',
                       'galacticExtinctionModel', 'galacticAv', 'galacticRv']
 
-    default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
+    default_columns = [('gamma1', 0., float), ('gamma2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float),
                        ('spatialmodel', 'ZPOINT', (str, 6)),
                        ('galacticExtinctionModel', 'CCM', (str, 3)),
@@ -329,12 +329,12 @@ class PhoSimCatalogSersic2D(PhoSimCatalogZPoint):
     catalog_type = 'phoSim_catalog_SERSIC2D'
 
     column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
-                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'redshift', 'gamma1', 'gamma2', 'kappa', 'raOffset', 'decOffset',
                       'spatialmodel', 'majorAxis', 'minorAxis', 'positionAngle', 'sindex',
                       'internalExtinctionModel', 'internalAv', 'internalRv',
                       'galacticExtinctionModel', 'galacticAv', 'galacticRv',]
 
-    default_columns = [('shear1', 0., float), ('shear2', 0., float), ('kappa', 0., float),
+    default_columns = [('gamma1', 0., float), ('gamma2', 0., float), ('kappa', 0., float),
                        ('raOffset', 0., float), ('decOffset', 0., float),
                        ('galacticAv', 0.1, float), ('galacticRv', 3.1, float),
                        ('galacticExtinctionModel', 'CCM', (str, 3)),
@@ -371,10 +371,10 @@ class PhoSimCatalogSSM(PhosimInputBase, PhoSimAstrometrySSM):
     catalog_type = 'phoSim_catalog_SSM'
 
     column_outputs = ['prefix', 'uniqueId', 'raPhoSim', 'decPhoSim', 'phoSimMagNorm', 'sedFilepath',
-                      'redshift', 'shear1', 'shear2', 'kappa', 'raOffset', 'decOffset',
+                      'redshift', 'gamma1', 'gamma2', 'kappa', 'raOffset', 'decOffset',
                       'spatialmodel', 'internalExtinctionModel', 'galacticExtinctionModel']
 
-    default_columns = [('redshift', 0., float), ('shear1', 0., float), ('shear2', 0., float),
+    default_columns = [('redshift', 0., float), ('gamma1', 0., float), ('gamma2', 0., float),
                        ('kappa', 0., float), ('raOffset', 0., float), ('decOffset', 0., float),
                        ('galacticExtinctionModel', 'none', (str, 4)),
                        ('internalExtinctionModel', 'none', (str, 4))]
