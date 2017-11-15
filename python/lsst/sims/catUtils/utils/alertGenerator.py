@@ -264,6 +264,7 @@ class AlertDataGenerator(object):
         self._desired_columns.append('ymag')
         self._desired_columns.append('ebv')
         self._desired_columns.append('redshift')
+        self._desired_columns.append('htmid')
 
     def subdivide_obs(self, obs_list):
         t_start = time.time()
