@@ -407,6 +407,9 @@ class AlertDataGenerator(object):
 
         t_start = time.time()
 
+
+        print('htmid %d radius %e' % (htmid, self._htmid_radius_dict[htmid]))
+
         self._output_ct = -1
         self._obs_hist_to_ct_map = {}
         self._unique_id_set = set()
@@ -469,8 +472,6 @@ class AlertDataGenerator(object):
                                          pointingDec=center_dec,
                                          boundType='circle',
                                          boundLength=self._htmid_radius_dict[htmid])
-
-        print('radius %e' % self._htmid_radius_dict[htmid])
 
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
