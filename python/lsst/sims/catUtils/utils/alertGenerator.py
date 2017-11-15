@@ -467,7 +467,7 @@ class AlertDataGenerator(object):
             # the trixel being considered
             reduced_htmid = chunk['htmid'] >> 2*(21-self._htmid_level)
             assert levelFromHtmid(reduced_htmid[0]) == self._htmid_level
-            valid_htmid = np.where(reduced_htmid == self._htmid_level)
+            valid_htmid = np.where(reduced_htmid == htmid)
             if len(valid_htmid[0]) == 0:
                 continue
             chunk = chunk[valid_htmid]
