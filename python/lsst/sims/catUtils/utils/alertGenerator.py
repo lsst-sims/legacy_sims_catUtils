@@ -645,6 +645,7 @@ class AlertDataGenerator(object):
             tag = '%d_map' % obshistid
             out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid]))
 
+        """
         out_file.create_dataset('uniqueId_list', data=np.array([ii for ii in self._unique_id_set]))
         for unique_id in self._unique_id_set:
             # map the obsHistID and chunk information into a single integer.  Bitshift the chunk by 24
@@ -652,6 +653,7 @@ class AlertDataGenerator(object):
             final_map = np.array(self._unique_id_chunk_map)<<24 + np.array(self._unique_id_obshistid_map[unique_id])
             tag = '%d_obshistid_map' % unique_id
             out_file.create_dataset(tag, data=final_map)
+        """
 
         out_file.close()
         print('that took %.2e hours; n_obj %d ' %
