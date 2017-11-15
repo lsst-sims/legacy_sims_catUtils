@@ -266,6 +266,7 @@ class AlertDataGenerator(object):
         self._desired_columns.append('redshift')
 
     def subdivide_obs(self, obs_list):
+        t_start = time.time()
         self._trixel_dict = getAllTrixels(self._htmid_level)
         valid_htmid = []
         for htmid in self._trixel_dict:
@@ -285,7 +286,7 @@ class AlertDataGenerator(object):
         self._htmid_list = []
         self._htmid_radius_dict = {}
         n_obs_list = []
-        for htmid in valid_htmid:
+        for i_htmid, htmid in enumerate(valid_htmid):
             trixel = self._trixel_dict[htmid]
             ra_c, dec_c = trixel.get_center()
             ra0, dec0 = sphericalFromCartesian(trixel.corners[0])
@@ -310,6 +311,8 @@ class AlertDataGenerator(object):
                 self._htmid_dict[htmid] = obs_list[valid_obs]
                 self._htmid_list.append(htmid)
                 n_obs_list.append(len(valid_obs[0]))
+            elapsed = time.time()-t_start
+            print('    %d took %e; total %e' % (i_htmid+1, elapsed, len(valid_htmid)*elapsed/(i_htmid+1)))
 
         n_obs_list = np.array(n_obs_list)
         self._htmid_list = np.array(self._htmid_list)
