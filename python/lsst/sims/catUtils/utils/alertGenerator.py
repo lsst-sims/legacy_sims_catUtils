@@ -335,7 +335,7 @@ class AlertDataGenerator(object):
                 self._htmid_radius_dict[htmid] = radius+self._query_radius
                 self._htmid_dict[htmid] = final_obs_list
                 self._htmid_list.append(htmid)
-                n_obs_list.append(len(valid_obs[0]))
+                n_obs_list.append(len(final_obs_list))
             elapsed = time.time()-t_start
             if(i_htmid%1000==0):
                 print('    %d took %e; total %e' % (i_htmid+1, elapsed, len(valid_htmid)*elapsed/(i_htmid+1)))
