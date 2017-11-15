@@ -418,7 +418,7 @@ class AlertDataGenerator(object):
                                          boundType='circle',
                                          boundLength=self._htmid_radius_dict[htmid])
 
-        print('radius %e' % radius)
+        print('radius %e' % self._htmid_radius_dict[htmid])
 
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
