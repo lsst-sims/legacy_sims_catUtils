@@ -4,8 +4,10 @@ import h5py
 import multiprocessing as mproc
 from collections import OrderedDict
 import time
-from lsst.sims.utils import findHtmid, trixelFromHtmid
+from lsst.sims.utils import findHtmid, trixelFromHtmid, getAllTrixels
+from lsst.sims.utils import levelFromHtmid
 from lsst.sims.utils import angularSeparation, ObservationMetaData
+from lsst.sims.utils import sphericalFromCartesian
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
@@ -74,7 +76,7 @@ class _baseAlertCatalog(_baseLightCurveCatalog):
 
 class AlertStellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
                                      CameraCoordsLSST, _baseAlertCatalog):
-    column_outputs = ['uniqueId', 'raICRS', 'decICRS',
+    column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
@@ -233,6 +235,7 @@ class AlertDataGenerator(object):
                  testing=False):
 
         self._htmid_level = 7
+        self._query_radius = 1.75
         self._photometry_class = photometry_class
         self._output_prefix = output_prefix
         self._dmag_cutoff = dmag_cutoff
@@ -263,20 +266,55 @@ class AlertDataGenerator(object):
         self._desired_columns.append('redshift')
 
     def subdivide_obs(self, obs_list):
+        self._trixel_dict = getAllTrixels(self._htmid_level)
+        valid_htmid = []
+        for htmid in self._trixel_dict:
+            if levelFromHtmid(htmid) == self._htmid_level:
+                valid_htmid.append(htmid)
+
         obs_list = np.array(obs_list)
-        htmid_list = []
+        obs_ra_list = []
+        obs_dec_list = []
         for obs in obs_list:
-            htmid = findHtmid(obs.pointingRA, obs.pointingDec, self._htmid_level)
-            htmid_list.append(htmid)
-        htmid_list = np.array(htmid_list)
-        self._unq_htmid_list = np.unique(htmid_list)
+            obs_ra_list.append(obs.pointingRA)
+            obs_dec_list.append(obs.pointingDec)
 
+        obs_ra_list = np.array(obs_list)
+        obs_dec_list = np.array(obs_list)
         self._htmid_dict = {}
-        for htmid in self._unq_htmid_list:
-            valid_dexes = np.where(htmid_list == htmid)
-            self._htmid_dict[htmid] = obs_list[valid_dexes]
+        self._htmid_list = []
+        self._htmid_radius_dict = {}
+        n_obs_list = []
+        for htmid in valid_htmid:
+            trixel = self._trixel_dict[htmid]
+            ra_c, dec_c = trixel.get_center()
+            ra0, dec0 = sphericalFromCartesian(trixel.corners[0])
+            ra0 = np.degrees(ra0)
+            dec0 = np.degrees(dec0)
+            ra1, dec1 = sphericalFromCartesian(trixel.corners[1])
+            ra1 = np.degrees(ra1)
+            dec1 = np.degrees(dec1)
+            ra2, dec2 = sphericalFromCartesian(trixel.corners[2])
+            ra2 = np.degrees(ra2)
+            dec2 = np.degrees(dec2)
 
-        print('%d obs; %d unique_htmid' % (len(obs_list), len(self._unq_htmid_list)))
+            distance = angularSeparation(ra_c, dec_c,
+                                         np.array([ra0, ra1, ra2])
+                                         np.array([dec0, dec1, dec2])
+
+            radius = distance.max()
+            obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
+            valid_obs = np.where(obs_distance<radius+self._query_radius)
+            if len(valid_obs[0])>0:
+                self._htmid_radius_dict[htmid] = radius+self._query_radius
+                self._htmid_dict[htmid] = obs_list[valid_obs]
+                self._htmid_list.append(htmid)
+                n_obs_list.append(len(valid_obs[0]))
+
+        n_obs_list = np.array(n_obs_list)
+        self._htmid_list = np.array(self._htmid_list)
+        sorted_dex = np.argsort(-1.0*n_obs_list)
+        self._htmid_list = self._htmid_list[sorted_dex]
 
     @property
     def htmid_list(self):
@@ -284,7 +322,7 @@ class AlertDataGenerator(object):
         A list of the unique htmid's corresponding to the fields
         of view that need to be queried to generate the alert data
         """
-        return self._unq_htmid_list
+        return self._htmid_list
 
 
     def output_to_hdf5(self, hdf5_file, data_cache):
@@ -332,7 +370,7 @@ class AlertDataGenerator(object):
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
         obs_valid = self._htmid_dict[htmid]
         print('n valid obs %d' % len(obs_valid))
-        center_trixel = trixelFromHtmid(htmid)
+        center_trixel = self._trixel_dict[htmid]spock
         center_ra, center_dec = center_trixel.get_center()
 
         ra_list = []
@@ -375,12 +413,10 @@ class AlertDataGenerator(object):
 
         print('built list')
 
-        dist_list = angularSeparation(center_ra, center_dec, ra_list, dec_list)
-        radius += dist_list.max()
         center_obs = ObservationMetaData(pointingRA=center_ra,
                                          pointingDec=center_dec,
                                          boundType='circle',
-                                         boundLength=radius)
+                                         boundLength=self._htmid_radius_dict[htmid])
 
         print('radius %e' % radius)
 
@@ -415,6 +451,16 @@ class AlertDataGenerator(object):
 
         for chunk in data_iter:
             i_chunk += 1
+
+            # filter the chunk so that we are only considering sources that are in
+            # the trixel being considered
+            reduced_htmid = chunk['htmid'] >> 2*(21-self._htmid_level)
+            assert levelFromHtmid(reduced_htmid[0]) == self._htmid_level
+            valid_htmid = np.where(reduced_htmid == self._htmid_level)
+            if len(valid_htmid[0]) == 0:
+                continue
+            chunk = chunk[valid_htmid]
+
             if 'properMotionRa'in column_query:
                 pmra = chunk['properMotionRa']
                 pmdec = chunk['properMotionDec']
