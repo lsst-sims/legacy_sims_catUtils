@@ -36,9 +36,9 @@ class StellarAlertDBObj(StarObj):
     Mimics StarObj class, except it allows you to directly query
     all objects whose htmids are between two values.
     """
-    def query_columns(self, colnames=None, chunk_size=None,
-                      obs_metadata=None, constraint=None,
-                      limit=None, htmid_range=None):
+    def query_columns_htmid(self, colnames=None, chunk_size=None,
+                            obs_metadata=None, constraint=None,
+                            limit=None, htmid_range=None):
         """Execute a query from the primary catsim database
 
         Execute a query, taking advantage of the spherical geometry library and
