@@ -456,7 +456,6 @@ class AlertDataGenerator(object):
         ra_list = ra_list[sorted_dex]
         dec_list = dec_list[sorted_dex]
         cat_list = cat_list[sorted_dex]
-        print('sorted dex %s' % str(sorted_dex))
         obs_valid = obs_valid[sorted_dex]
         obshistid_list = obshistid_list[sorted_dex]
         band_list = band_list[sorted_dex]
