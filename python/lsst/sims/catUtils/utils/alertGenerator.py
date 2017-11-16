@@ -527,11 +527,6 @@ class AlertDataGenerator(object):
 
         print('built list')
 
-        center_obs = ObservationMetaData(pointingRA=center_ra,
-                                         pointingDec=center_dec,
-                                         boundType='circle',
-                                         boundLength=self._htmid_radius_dict[htmid])
-
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
         for col in self._desired_columns:
