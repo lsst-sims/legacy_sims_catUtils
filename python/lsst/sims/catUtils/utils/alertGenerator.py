@@ -306,7 +306,7 @@ class AlertDataGenerator(object):
                  photometry_class=AlertStellarVariabilityCatalog,
                  testing=False):
 
-        self._htmid_level = 7
+        self._htmid_level = 5
         self._query_radius = 1.75
         self._photometry_class = photometry_class
         self._output_prefix = output_prefix
