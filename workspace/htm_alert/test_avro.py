@@ -30,7 +30,7 @@ sims_clean_up()
 
 print('%d obs' % len(obs_list))
 
-alert_gen = AlertDataGenerator(n_proc_max=4)
+alert_gen = AlertDataGenerator(n_proc_max=1)
 alert_gen.subdivide_obs(obs_list)
 
 from lsst.sims.catUtils.utils import StellarAlertDBObj
