@@ -342,7 +342,7 @@ class AlertDataGenerator(object):
                 local_ra_list = np.array(local_ra_list)
                 local_dec_list = np.array(local_dec_list)
                 distance = angularSeparation(ra_c, dec_c, local_ra_list, local_dec_list)
-                radius = distance.max()+1.8
+                radius = distance.max()
 
                 self._htmid_radius_dict[htmid] = radius
                 self._htmid_dict[htmid] = np.array(final_obs_list)
