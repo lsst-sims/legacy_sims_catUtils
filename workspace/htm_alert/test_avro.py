@@ -34,17 +34,21 @@ alert_gen = AlertDataGenerator(n_proc_max=4)
 alert_gen.subdivide_obs(obs_list)
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj
+import time
 
 def query_htmid(alert_gen, htmid_list, output_list):
 
     db = StarObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
                  port=1433, driver='mssql+pymssql', cache_connection=False)
 
-    for htmid in htmid_list:
+    t_start = time.time()
+    for i_htmid, htmid in enumerate(htmid_list):
         ct = alert_gen.alert_data_from_htmid(htmid, db)
         output_list.append(ct)
+        elapsed = time.time()-t_start
+        print('%d took %.2e hours; total %.2e' %
+        (i_htmid+1,elapsed/3600.0,len(htmid_list)*elapsed/(3600.0*(i_htmid+1))))
 
-import time
 total_obs = len(obs_list)
 
 import multiprocessing as mproc
@@ -62,7 +66,7 @@ i_list = 0
 n_total_htmid = len(alert_gen.htmid_list)
 n_htmid = 0
 
-for htmid in alert_gen.htmid_list[:args.n_proc*3]:
+for htmid in alert_gen.htmid_list[:args.n_proc*10]:
     n_htmid += 1
     htmid_list[i_list].append(htmid)
     i_list += 1
