@@ -33,13 +33,15 @@ print('%d obs' % len(obs_list))
 alert_gen = AlertDataGenerator(n_proc_max=4)
 alert_gen.subdivide_obs(obs_list)
 
-from lsst.sims.catUtils.baseCatalogModels import StarObj
+from lsst.sims.catUtils.utils import StellarAlertDBObj
 import time
 
 def query_htmid(alert_gen, htmid_list, output_list):
 
-    db = StarObj(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
-                 port=1433, driver='mssql+pymssql', cache_connection=False)
+    db = StellarAlertDBObj(database='LSSTCATSIM',
+                           host='fatboy.phys.washington.edu',
+                           port=1433, driver='mssql+pymssql',
+                           cache_connection=False)
 
     t_start = time.time()
     for i_htmid, htmid in enumerate(htmid_list):
