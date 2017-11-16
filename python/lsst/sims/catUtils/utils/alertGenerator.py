@@ -22,10 +22,82 @@ from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
+from lsst.sims.catUtils.baseCatalogModels import StarObj
+from sqlalchemy.sql import select, column, func
+from lsst.sims.catalogs.db import ChunkIterator
 
 __all__ = ["AlertDataGenerator",
            "AlertStellarVariabilityCatalog",
-           "_baseAlertCatalog"]
+           "_baseAlertCatalog",
+           "StellarAlertDBObj"]
+
+class StellarAlertDBObj(StarObj):
+    """
+    Mimics StarObj class, except it allows you to directly query
+    all objects whose htmids are between two values.
+    """
+    def query_columns(self, colnames=None, chunk_size=None,
+                      obs_metadata=None, constraint=None,
+                      limit=None, htmid_range=None):
+        """Execute a query from the primary catsim database
+
+        Execute a query, taking advantage of the spherical geometry library and
+        htmid indexes on all catalog tables in the UW catsim database
+
+        **Parameters**
+
+            * colnames : list or None
+              a list of valid column names, corresponding to entries in the
+              `columns` class attribute.  If not specified, all columns are
+              queried.
+            * chunk_size : int (optional)
+              if specified, then return an iterator object to query the database,
+              each time returning the next `chunk_size` elements.  If not
+              specified, all matching results will be returned.
+            * obs_metadata : object (optional)
+              This will be ignored
+            * constraint : str (optional)
+              a string which is interpreted as SQL and used as a predicate on the query
+            * limit : int (optional)
+              limits the number of rows returned by the query
+            * htmid_range is a tuple of the form (min, max) which denotes
+              the limits of htmid that will be queried.
+
+        **Returns**
+
+            * result : list or iterator
+              If chunk_size is not specified, then result is a list of all
+              items which match the specified query.  If chunk_size is specified,
+              then result is an iterator over lists of the given size.
+        """
+        query = self._get_column_query(colnames)
+
+        #add spatial constraints to query.
+
+        #Hint sql engine to seek on htmid
+        if not self.tableid.endswith('forceseek'):
+            query = query.with_hint(self.table, ' WITH(FORCESEEK)', 'mssql')
+
+        #SQL is not case sensitive but python is:
+        if 'htmID' in self.columnMap:
+            htmidName = 'htmID'
+        elif 'htmid' in self.columnMap:
+            htmidName = 'htmid'
+        else:
+            htmidName = 'htmId'
+
+        #Range join on htmid ranges
+        query = query.filter(self.table.c[htmidName].between(htmid_range[0],
+                                                           htmid_range[1])
+                          )
+
+        if constraint is not None:
+            query = query.filter(text(constraint))
+
+        if limit is not None:
+            query = query.limit(limit)
+
+        return ChunkIterator(self, query, chunk_size)
 
 
 class _baseAlertCatalog(_baseLightCurveCatalog):
