@@ -579,8 +579,10 @@ class AlertDataGenerator(object):
             valid_htmid = np.where(reduced_htmid == htmid)
             if len(valid_htmid[0]) == 0:
                 continue
+            n_htmid_trim = len(chunk)-len(valid_htmid[0])
             chunk = chunk[valid_htmid]
             n_obj += len(valid_htmid[0])
+            print('    n_obj %d trimmed %d' % (n_obj, n_htmid_trim))
 
             if 'properMotionRa'in column_query:
                 pmra = chunk['properMotionRa']
