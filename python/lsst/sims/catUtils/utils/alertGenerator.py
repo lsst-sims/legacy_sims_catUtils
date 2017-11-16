@@ -534,13 +534,21 @@ class AlertDataGenerator(object):
                 column_query.append(col)
 
         n_bits_off = 2*(21-self._htmid_level)
-        htmid_min = htmid << n_bits_off
-        htmid_max = (htmid+1) << n_bits_off
 
-        data_iter = dbobj.query_columns(colnames=column_query,
-                                        htmid_range=(htmid_min, htmid_max),
-                                        chunk_size=self.chunk_size)
+        # sqlalchemy does not like np.int64
+        # as a data type
+        htmid_min = int(htmid << n_bits_off)
+        htmid_max = int((htmid+1) << n_bits_off)
 
+        print('htmid range')
+        print(htmid_min,type(htmid_min))
+        print(htmid_max, type(htmid_max))
+
+        data_iter = dbobj.query_columns_htmid(colnames=column_query,
+                                              htmid_range=(htmid_min, htmid_max),
+                                              chunk_size=self.chunk_size)
+
+        print("time for photometry catalog")
 
         photometry_catalog = self._photometry_class(dbobj, obs_valid[0],
                                                     column_outputs=['lsst_u',
