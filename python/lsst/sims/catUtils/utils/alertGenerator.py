@@ -332,18 +332,6 @@ class AlertDataGenerator(object):
                 if len(final_obs_list) == 0:
                     continue
 
-                # set the database query radius to encompass all of the
-                # ObservationMetaData actually associated with this trixel
-                local_ra_list = []
-                local_dec_list = []
-                for obs in final_obs_list:
-                    local_ra_list.append(obs.pointingRA)
-                    local_dec_list.append(obs.pointingDec)
-                local_ra_list = np.array(local_ra_list)
-                local_dec_list = np.array(local_dec_list)
-                distance = angularSeparation(ra_c, dec_c, local_ra_list, local_dec_list)
-                radius = distance.max()
-
                 self._htmid_radius_dict[htmid] = radius
                 self._htmid_dict[htmid] = np.array(final_obs_list)
                 self._htmid_list.append(htmid)
