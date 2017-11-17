@@ -573,6 +573,14 @@ class AlertDataGenerator(object):
         for chunk in data_iter:
             i_chunk += 1
 
+            if n_actual_obj>0:
+                elapsed = (time.time()-t_start)/3600.0
+                elapsed_per = elapsed/n_actual_obj
+                total_projection = 1800000.0*elapsed_per
+                print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
+                print('    elapd %.2e hrs per %.2e total %2e' %
+                (elapsed, elapsed_per, total_projection))
+
             # filter the chunk so that we are only considering sources that are in
             # the trixel being considered
             reduced_htmid = chunk['htmid'] >> n_bits_off
@@ -681,7 +689,6 @@ class AlertDataGenerator(object):
             chunk['varParamStr'][invalid_dex] = 'None'
 
             n_actual_obj += len(chunk)-len(invalid_dex[0])
-            print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
