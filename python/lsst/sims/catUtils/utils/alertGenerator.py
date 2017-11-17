@@ -349,6 +349,7 @@ class AlertDataGenerator(object):
         print("made trixel dict")
 
         obs_list = np.array(obs_list)
+        self._obs_list = obs_list
         obs_ra_list = []
         obs_dec_list = []
         halfspace_list = []
@@ -391,12 +392,12 @@ class AlertDataGenerator(object):
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
             valid_obs = np.where(obs_distance<radius+self._query_radius)
             if len(valid_obs[0])>0:
-                obs_candidates = obs_list[valid_obs]
-                hs_candidates = halfspace_list[valid_obs]
                 final_obs_list = []
-                for hs, obs, dex in zip(hs_candidates, obs_candidates, valid_obs[0]):
+                for obs_dex in valid_obs[0]:
+                    hs = halfspace_list[obs_dex]
+                    obs = obs_list[obs_dex]
                     if hs.contains_trixel(trixel) != 'outside':
-                        final_obs_list.append(obs)
+                        final_obs_list.append(obs_dex)
                         if dex in already_assigned:
                             n_already_assigned += 1
                         if dex not in already_assigned:
@@ -484,8 +485,8 @@ class AlertDataGenerator(object):
         dummy_name = chipNameFromPupilCoordsLSST(0.0, 0.0)
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
-        obs_valid = self._htmid_dict[htmid]
-        print('n valid obs %d' % len(obs_valid))
+        obs_valid_dex = self._htmid_dict[htmid]
+        print('n valid obs %d' % len(obs_valid_dex))
         center_trixel = self._trixel_dict[htmid]
         center_ra, center_dec = center_trixel.get_center()
 
@@ -496,7 +497,8 @@ class AlertDataGenerator(object):
         obshistid_list = []
         band_list = []
         mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
-        for obs in obs_valid:
+        for obs_dex in obs_valid_dex:
+            obs = self._obs_list[obs_dex]
             ra_list.append(obs.pointingRA)
             dec_list.append(obs.pointingDec)
             cat = self._photometry_class(dbobj, obs_metadata=obs)
@@ -518,7 +520,7 @@ class AlertDataGenerator(object):
         ra_list = ra_list[sorted_dex]
         dec_list = dec_list[sorted_dex]
         cat_list = cat_list[sorted_dex]
-        obs_valid = obs_valid[sorted_dex]
+        obs_valid_dex = obs_valid_dex[sorted_dex]
         obshistid_list = obshistid_list[sorted_dex]
         band_list = band_list[sorted_dex]
 
@@ -552,7 +554,7 @@ class AlertDataGenerator(object):
 
         print("time for photometry catalog")
 
-        photometry_catalog = self._photometry_class(dbobj, obs_valid[0],
+        photometry_catalog = self._photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
                                                     column_outputs=['lsst_u',
                                                                     'lsst_g',
                                                                     'lsst_r',
@@ -565,7 +567,7 @@ class AlertDataGenerator(object):
         t_chipName = 0.0
         t_before_obj = time.time()
 
-        n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
+        n_proc_possible = int(np.ceil(len(obs_valid_dex)/5.0))
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         output_data_cache = {}
@@ -627,7 +629,8 @@ class AlertDataGenerator(object):
                     obs_sub_list.append([])
                 sub_list_ct = 0
 
-            for i_obs, obs in enumerate(obs_valid):
+            for i_obs, obs_dex in enumerate(obs_valid_dex):
+                obs = self._obs_list[obs_dex]
                 if n_proc_chipName == 1:
                     xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
                                                                  pm_ra=pmra, pm_dec=pmdec,
@@ -672,7 +675,7 @@ class AlertDataGenerator(object):
                 for p in process_list:
                     p.join()
 
-                assert len(chip_name_dict) == len(obs_valid)
+                assert len(chip_name_dict) == len(obs_valid_dex)
 
             ######################################################
             # Calculate the delta_magnitude for all of the sources
@@ -685,7 +688,7 @@ class AlertDataGenerator(object):
             valid_photometry = -1*np.ones(len(chunk))
 
             t_before_filter = time.time()
-            for i_obs in range(len(obs_valid)):
+            for i_obs in range(len(obs_valid_dex)):
                 name_list, xpup_list, ypup_list, valid_obj = chip_name_dict[i_obs]
                 valid_photometry[valid_obj] += 2
             invalid_dex = np.where(valid_photometry<0)
@@ -705,7 +708,8 @@ class AlertDataGenerator(object):
             # Process and output sources
             #
             t_before_out = time.time()
-            for i_obs, obs in enumerate(obs_valid):
+            for i_obs, obs_dex in enumerate(obs_valid_dex):
+                obs = self._obs_list[obs_dex]
                 obshistid = obs.OpsimMetaData['obsHistID']
 
                 obs_mag = obs.bandpass
@@ -784,4 +788,4 @@ class AlertDataGenerator(object):
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
 
-        return len(obs_valid)
+        return len(obs_valid_dex)
