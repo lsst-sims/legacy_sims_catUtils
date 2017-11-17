@@ -317,7 +317,7 @@ class AlertDataGenerator(object):
             plm = ParametrizedLightCurveMixin()
             plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
-        self.chunk_size = 10000
+        self.chunk_size = 1000
         self._desired_columns = []
         self._desired_columns.append('simobjid')
         self._desired_columns.append('variabilityParameters')
