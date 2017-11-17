@@ -563,6 +563,7 @@ class AlertDataGenerator(object):
         print('chunking')
         i_chunk = 0
         t_chipName = 0.0
+        t_before_obj = time.time()
 
         n_proc_possible = int(np.ceil(len(obs_valid)/5.0))
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
@@ -576,7 +577,7 @@ class AlertDataGenerator(object):
             i_chunk += 1
 
             if n_actual_obj>0:
-                elapsed = (time.time()-t_start)/3600.0
+                elapsed = (time.time()-t_before_obj)/3600.0
                 elapsed_per = elapsed/n_actual_obj
                 total_projection = 1800000.0*elapsed_per
                 print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
