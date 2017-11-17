@@ -398,10 +398,10 @@ class AlertDataGenerator(object):
                     obs = obs_list[obs_dex]
                     if hs.contains_trixel(trixel) != 'outside':
                         final_obs_list.append(obs_dex)
-                        if dex in already_assigned:
+                        if obs_dex in already_assigned:
                             n_already_assigned += 1
-                        if dex not in already_assigned:
-                            already_assigned.add(dex)
+                        if obs_dex not in already_assigned:
+                            already_assigned.add(obs_dex)
                 if len(final_obs_list) == 0:
                     continue
 
