@@ -569,6 +569,7 @@ class AlertDataGenerator(object):
         ct_to_write = 0
 
         n_obj = 0
+        n_actual_obj = 0
         for chunk in data_iter:
             i_chunk += 1
 
@@ -582,7 +583,6 @@ class AlertDataGenerator(object):
             n_htmid_trim = len(chunk)-len(valid_htmid[0])
             chunk = chunk[valid_htmid]
             n_obj += len(valid_htmid[0])
-            print('    n_obj %d trimmed %d' % (n_obj, n_htmid_trim))
 
             if 'properMotionRa'in column_query:
                 pmra = chunk['properMotionRa']
@@ -679,6 +679,9 @@ class AlertDataGenerator(object):
                 valid_photometry[valid_obj] += 2
             invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
+
+            n_actual_obj += len(chunk)-len(invalid_dex[0])
+            print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
