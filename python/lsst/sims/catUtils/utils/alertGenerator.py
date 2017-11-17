@@ -758,7 +758,7 @@ class AlertDataGenerator(object):
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
                     # print('ct_to_write %d' % ct_to_write)
                     if ct_to_write >= 10000:
-                        #print('writing to hdf5-- obs %d chunk %d' % (i_obs, i_chunk))
+                        print('writing to hdf5-- obs %d chunk %d' % (i_obs, i_chunk))
                         self.output_to_hdf5(out_file, output_data_cache)
                         ct_to_write = 0
                         output_data_cache = {}
