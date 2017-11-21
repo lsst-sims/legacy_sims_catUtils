@@ -1309,6 +1309,7 @@ class ExtraGalacticVariabilityModels(Variability):
         sfy_arr = params['agn_sfy'].astype(float)
 
         for i_time, expmjd_val in enumerate(expmjd_arr):
+            print('    %d of %d timesteps' % (i_time, len(expmjd_arr)))
             for ix in valid_dexes[0]:
                 toff = 58580.0
                 seed = seed_arr[ix]
