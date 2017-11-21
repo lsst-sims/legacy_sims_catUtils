@@ -32,7 +32,6 @@ __all__ = ["AlertDataGenerator",
            "AlertStellarVariabilityCatalog",
            "AlertAgnVariabilityCatalog",
            "_baseAlertCatalog",
-           "AlertPhotometryCatalog",
            "StellarAlertDBObj",
            "AgnAlertDBObj"]
 
@@ -179,7 +178,13 @@ class AgnAlertDBObj(GalaxyAgnObj):
         return results
 
 
-class _baseAlertCatalog(_baseLightCurveCatalog):
+class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog):
+
+    column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
+                      'flux', 'SNR', 'dflux',
+                      'chipNum', 'xPix', 'yPix']
+
+    default_formats = {'f':'%.4g'}
 
     def iter_catalog_chunks(self, chunk_size=None, query_cache=None, column_cache=None):
         """
@@ -223,16 +228,6 @@ class _baseAlertCatalog(_baseLightCurveCatalog):
                 if not hasattr(self, '_chunkColMap_output'):
                     self._chunkColMap_output = dict([(col, i) for i, col in enumerate(self.iter_column_names())])
                 yield chunk_cols, self._chunkColMap_output
-
-
-class AlertPhotometryCatalog(PhotometryBase,
-                             CameraCoordsLSST,
-                             _baseAlertCatalog):
-    column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
-                      'flux', 'SNR', 'dflux',
-                      'chipNum', 'xPix', 'yPix']
-
-    default_formats = {'f':'%.4g'}
 
     @cached
     def get_chipName(self):
@@ -351,7 +346,7 @@ class AlertPhotometryCatalog(PhotometryBase,
         return np.array([flux, dflux, snr])
 
 
-class AlertStellarVariabilityCatalog(AlertPhotometryCatalog,
+class AlertStellarVariabilityCatalog(_baseAlertCatalog,
                                      VariabilityStars,
                                      AstrometryStars):
 
@@ -363,7 +358,7 @@ class AlertStellarVariabilityCatalog(AlertPhotometryCatalog,
                          self.column_by_name('zmag'), self.column_by_name('ymag')])
 
 
-class AlertAgnVariabilityCatalog(AlertPhotometryCatalog,
+class AlertAgnVariabilityCatalog(_baseAlertCatalog,
                                  VariabilityGalaxies,
                                  AstrometryGalaxies):
 
