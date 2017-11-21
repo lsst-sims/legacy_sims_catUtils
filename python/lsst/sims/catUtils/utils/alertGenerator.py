@@ -222,7 +222,7 @@ class _baseAlertCatalog(_baseLightCurveCatalog):
                 yield chunk_cols, self._chunkColMap_output
 
 
-class AlertStellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
+class AlertStellarVariabilityCatalog(AstrometryStars, PhotometryBase,
                                      CameraCoordsLSST, _baseAlertCatalog):
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
