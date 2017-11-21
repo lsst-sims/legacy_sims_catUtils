@@ -38,7 +38,7 @@ class StellarAlertDBObj(StarObj):
     """
     def query_columns_htmid(self, colnames=None, chunk_size=None,
                             obs_metadata=None, constraint=None,
-                            limit=None, htmid_range=None):
+                            limit=None, htmid=None):
         """Execute a query from the primary catsim database
 
         Execute a query, taking advantage of the spherical geometry library and
@@ -60,8 +60,7 @@ class StellarAlertDBObj(StarObj):
               a string which is interpreted as SQL and used as a predicate on the query
             * limit : int (optional)
               limits the number of rows returned by the query
-            * htmid_range is a tuple of the form (min, max) which denotes
-              the limits of htmid that will be queried.
+            * htmid is the htmid to be queried
 
         **Returns**
 
@@ -70,6 +69,19 @@ class StellarAlertDBObj(StarObj):
               items which match the specified query.  If chunk_size is specified,
               then result is an iterator over lists of the given size.
         """
+
+
+        # sqlalchemy does not like np.int64
+        # as a data type
+        current_level = levelFromHtmid(htmid)
+        n_bits_off = 2*(21-current_level)
+        htmid_min = int(htmid << n_bits_off)
+        htmid_max = int((htmid+1) << n_bits_off)
+
+        print('htmid range')
+        print(htmid_min,type(htmid_min))
+        print(htmid_max, type(htmid_max))
+
         query = self._get_column_query(colnames)
 
         #add spatial constraints to query.
@@ -87,9 +99,7 @@ class StellarAlertDBObj(StarObj):
             htmidName = 'htmId'
 
         #Range join on htmid ranges
-        query = query.filter(self.table.c[htmidName].between(htmid_range[0],
-                                                           htmid_range[1])
-                          )
+        query = query.filter(self.table.c[htmidName].between(htmid_min, htmid_max))
 
         if constraint is not None:
             query = query.filter(text(constraint))
@@ -529,17 +539,8 @@ class AlertDataGenerator(object):
 
         n_bits_off = 2*(21-self._htmid_level)
 
-        # sqlalchemy does not like np.int64
-        # as a data type
-        htmid_min = int(htmid << n_bits_off)
-        htmid_max = int((htmid+1) << n_bits_off)
-
-        print('htmid range')
-        print(htmid_min,type(htmid_min))
-        print(htmid_max, type(htmid_max))
-
         data_iter = dbobj.query_columns_htmid(colnames=column_query,
-                                              htmid_range=(htmid_min, htmid_max),
+                                              htmid=htmid,
                                               chunk_size=chunk_size)
 
         print("time for photometry catalog")
