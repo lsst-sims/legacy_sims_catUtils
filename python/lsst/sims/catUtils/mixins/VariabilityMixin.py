@@ -635,7 +635,7 @@ class MLTflaringMixin(Variability):
 
     # the file wherein light curves for MLT dwarf flares are stored
     _mlt_lc_file = os.path.join(getPackageDir('sims_data'),
-                                'catUtilsData', 'mdwarf_flare_light_curves_171012.npz')
+                                'catUtilsData', 'mlt_shortened_lc.npz')
 
     def load_MLT_light_curves(self, mlt_lc_file, variability_cache):
         """
