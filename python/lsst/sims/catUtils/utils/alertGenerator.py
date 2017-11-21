@@ -302,12 +302,10 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 class AlertDataGenerator(object):
 
     def __init__(self, n_proc_max=4,
-                 photometry_class=AlertStellarVariabilityCatalog,
                  testing=False):
 
         self._htmid_level = 5
         self._query_radius = 1.75
-        self._photometry_class = photometry_class
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         if not testing:
@@ -454,7 +452,8 @@ class AlertDataGenerator(object):
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
                               dmag_cutoff=0.005,
                               chunk_size=1000, write_every=10000,
-                              output_dir='.', output_prefixe=''):
+                              output_dir='.', output_prefix='',
+                              photometry_class=AlertStellarVariabilityCatalog):
 
         t_start = time.time()
 
@@ -492,7 +491,7 @@ class AlertDataGenerator(object):
             obs = self._obs_list[obs_dex]
             ra_list.append(obs.pointingRA)
             dec_list.append(obs.pointingDec)
-            cat = self._photometry_class(dbobj, obs_metadata=obs)
+            cat = photometry_class(dbobj, obs_metadata=obs)
             cat.lsstBandpassDict =  self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
