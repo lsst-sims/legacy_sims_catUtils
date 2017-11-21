@@ -30,6 +30,7 @@ from lsst.sims.catalogs.db import ChunkIterator
 __all__ = ["AlertDataGenerator",
            "AlertStellarVariabilityCatalog",
            "_baseAlertCatalog",
+           "AlertPhotometryCatalog",
            "StellarAlertDBObj",
            "AgnAlertDBObj"]
 
