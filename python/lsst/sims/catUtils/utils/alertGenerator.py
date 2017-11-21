@@ -19,6 +19,7 @@ from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.photUtils import BandpassDict, Sed, calcSNR_m5
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
+from lsst.sims.catUtils.mixins import VariabilityGalaxies, AstrometryGalaxies
 from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
@@ -29,6 +30,7 @@ from lsst.sims.catalogs.db import ChunkIterator
 
 __all__ = ["AlertDataGenerator",
            "AlertStellarVariabilityCatalog",
+           "AlertAgnVariabilityCatalog",
            "_baseAlertCatalog",
            "AlertPhotometryCatalog",
            "StellarAlertDBObj",
@@ -359,6 +361,19 @@ class AlertStellarVariabilityCatalog(AlertPhotometryCatalog,
         return np.array([self.column_by_name('umag'), self.column_by_name('gmag'),
                          self.column_by_name('rmag'), self.column_by_name('imag'),
                          self.column_by_name('zmag'), self.column_by_name('ymag')])
+
+
+class AlertAgnVariabilityCatalog(AlertPhotometryCatalog,
+                                 VariabilityGalaxies,
+                                 AstrometryGalaxies):
+
+    @compound('quiescent_lsst_u', 'quiescent_lsst_g', 'quiescent_lsst_r',
+              'quiescent_lsst_i', 'quiescent_lsst_z', 'quiescent_lsst_y')
+    def get_quiescent_lsst_magnitudes(self):
+        return np.array([self.column_by_name('u_ab'), self.column_by_name('g_ab'),
+                         self.column_by_name('r_ab'), self.column_by_name('i_ab'),
+                         self.column_by_name('z_ab'), self.column_by_name('y_ab')])
+
 
 
 def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
