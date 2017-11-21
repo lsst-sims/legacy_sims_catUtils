@@ -462,9 +462,6 @@ class AlertDataGenerator(object):
 
         self._output_ct = -1
         self._obs_hist_to_ct_map = {}
-        self._unique_id_set = set()
-        self._unique_id_obshistid_map = {}
-        self._unique_id_chunk_map = {}
         out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
 
         # a dummy call to make sure that the initialization
@@ -761,16 +758,6 @@ class AlertDataGenerator(object):
         for obshistid in self._obs_hist_to_ct_map:
             tag = '%d_map' % obshistid
             out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid]))
-
-        """
-        out_file.create_dataset('uniqueId_list', data=np.array([ii for ii in self._unique_id_set]))
-        for unique_id in self._unique_id_set:
-            # map the obsHistID and chunk information into a single integer.  Bitshift the chunk by 24
-            # (2^24 = 1.6*10^7) to ensure that each chunk+obsHistID combination is unique
-            final_map = np.array(self._unique_id_chunk_map)<<24 + np.array(self._unique_id_obshistid_map[unique_id])
-            tag = '%d_obshistid_map' % unique_id
-            out_file.create_dataset(tag, data=final_map)
-        """
 
         out_file.close()
         print('that took %.2e hours; n_obj %d ' %
