@@ -23,7 +23,7 @@ from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
-from lsst.sims.catUtils.baseCatalogModels import StarObj
+from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj
 from sqlalchemy.sql import select, column, func
 from lsst.sims.catalogs.db import ChunkIterator
 
