@@ -53,7 +53,6 @@ htmid_max=-1
 n_max=0
 for htmid in alert_gen.htmid_list:
     n_obs = len(alert_gen._htmid_dict[htmid])
-    print(htmid,n_obs)
     if n_obs>n_max:
         n_max = n_obs
         htmid_max = htmid
