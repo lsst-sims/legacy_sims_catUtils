@@ -315,7 +315,6 @@ class AlertDataGenerator(object):
                  testing=False):
 
         self._htmid_level = 5
-        query_radius = 1.75
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         if not testing:
@@ -375,6 +374,7 @@ class AlertDataGenerator(object):
         n_obs_list = []
         already_assigned = set()
         n_already_assigned = 0
+        query_radius = 1.75
         for i_htmid, htmid in enumerate(valid_htmid):
             trixel = self._trixel_dict[htmid]
             ra_c, dec_c = trixel.get_center()
