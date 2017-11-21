@@ -150,7 +150,7 @@ class AgnAlertDBObj(GalaxyAgnObj):
                                       boundLength=trixel.get_radius()+0.1)
 
         self._queried_trixel = trixel
-        self._htmid_level = levelFromHtmid(htmid)
+        self._queried_htmid_level = levelFromHtmid(htmid)
 
         return self.query_columns(colnames=colnames, chunk_size=chunk_size,
                                   obs_metadata=new_obs, constraint=constraint,
@@ -170,7 +170,8 @@ class AgnAlertDBObj(GalaxyAgnObj):
 
         if hasattr(self, '_queried_trixel'):
             htmid= self._queried_trixel.htmid
-            htmid_21 = htmid << 2*(21-self._htmid_level)
+            htmid_21 = htmid << 2*(21-self._queried_htmid_level)
+            assert levelFromHtmid(htmid_21) == 21
             contains_arr = self._queried_trixel.contains(results['raJ2000'], results['decJ2000'])
             results['htmid'] = np.where(contains_arr, htmid_21, 0)
 
