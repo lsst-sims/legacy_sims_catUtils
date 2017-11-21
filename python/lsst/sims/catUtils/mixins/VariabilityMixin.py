@@ -1298,6 +1298,7 @@ class ExtraGalacticVariabilityModels(Variability):
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             expmjd_arr = expmjd
 
+        t_start = time.time()
         toff_arr = params['t0_mjd'].astype(float)
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
@@ -1309,7 +1310,8 @@ class ExtraGalacticVariabilityModels(Variability):
         sfy_arr = params['agn_sfy'].astype(float)
 
         for i_time, expmjd_val in enumerate(expmjd_arr):
-            print('    %d of %d timesteps' % (i_time, len(expmjd_arr)))
+            elapsed = (time.time()-t_start)/3600.0
+            print('    %d of %d timesteps -- %.3e' % (i_time, len(expmjd_arr), elapsed))
             for ix in valid_dexes[0]:
                 toff = 58580.0
                 seed = seed_arr[ix]
