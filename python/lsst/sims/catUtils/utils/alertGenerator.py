@@ -448,17 +448,6 @@ class AlertDataGenerator(object):
 
             self._obs_hist_to_ct_map[obsHistID].append(self._output_ct)
 
-            """
-            for unique_id in data_cache[obsHistID]['uniqueId']:
-                if unique_id not in self._unique_id_set:
-                    self._unique_id_set.add(unique_id)
-                    self._unique_id_obshistid_map[unique_id] = []
-                    self._unique_id_chunk_map[unique_id] = []
-
-                self._unique_id_obshistid_map[unique_id].append(obsHistID)
-                self._unique_id_chunk_map[unique_id].append(self._output_ct)
-            """
-
             for col_name in data_cache[obsHistID].keys():
                 data_tag = '%d_%d_%s' % (obsHistID, self._output_ct, col_name)
                 hdf5_file.create_dataset(data_tag, data=np.array(data_cache[obsHistID][col_name]))
