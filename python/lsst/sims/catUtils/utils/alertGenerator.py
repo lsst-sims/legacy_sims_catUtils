@@ -119,17 +119,8 @@ def AgnAlertDBObj(GalaxyAgnObj):
 
         trixel = trixelFromHtmid(htmid)
         ra_0, dec_0 = trixel.get_center()
-        ra_list = []
-        dec_list = []
-        for cc in trixel.corners:
-            ra, dec = sphericalFromCartesian(cc)
-            ra_list.append(np.degrees(ra))
-            dec_list.append(np.degrees(dec))
-        ra_list = np.array(ra_list)
-        dec_list = np.array(dec_list)
-        distance = angularSeparation(ra_0, dec_0, ra_list, dec_list)
         new_obs = ObservationMetaData(ra_0, dec_0, boundType='circle',
-                                      boundLength=distance.max()+0.1)
+                                      boundLength=trixel.get_radius()+0.1)
 
         return self.query_columns(colnames=colnames, chunk_size=chunk_size,
                                   obs_metadata=new_obs, constraint=constraint,
@@ -404,21 +395,7 @@ class AlertDataGenerator(object):
         for i_htmid, htmid in enumerate(valid_htmid):
             trixel = self._trixel_dict[htmid]
             ra_c, dec_c = trixel.get_center()
-            ra0, dec0 = sphericalFromCartesian(trixel.corners[0])
-            ra0 = np.degrees(ra0)
-            dec0 = np.degrees(dec0)
-            ra1, dec1 = sphericalFromCartesian(trixel.corners[1])
-            ra1 = np.degrees(ra1)
-            dec1 = np.degrees(dec1)
-            ra2, dec2 = sphericalFromCartesian(trixel.corners[2])
-            ra2 = np.degrees(ra2)
-            dec2 = np.degrees(dec2)
-
-            distance = angularSeparation(ra_c, dec_c,
-                                         np.array([ra0, ra1, ra2]),
-                                         np.array([dec0, dec1, dec2]))
-
-            radius = distance.max()
+            radius = trixel.get_radius()
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
             valid_obs = np.where(obs_distance<radius+query_radius)
             if len(valid_obs[0])>0:
