@@ -222,8 +222,9 @@ class _baseAlertCatalog(_baseLightCurveCatalog):
                 yield chunk_cols, self._chunkColMap_output
 
 
-class AlertStellarVariabilityCatalog(VariabilityStars, AstrometryStars, PhotometryBase,
-                                     CameraCoordsLSST, _baseAlertCatalog):
+class AlertPhotometryCatalog(PhotometryBase,
+                             CameraCoordsLSST,
+                             _baseAlertCatalog):
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
@@ -271,13 +272,6 @@ class AlertStellarVariabilityCatalog(VariabilityStars, AstrometryStars, Photomet
 
         raise RuntimeError("Should not have gotten this far in delta mag getter")
 
-
-    @compound('quiescent_lsst_u', 'quiescent_lsst_g', 'quiescent_lsst_r',
-              'quiescent_lsst_i', 'quiescent_lsst_z', 'quiescent_lsst_y')
-    def get_quiescent_lsst_magnitudes(self):
-        return np.array([self.column_by_name('umag'), self.column_by_name('gmag'),
-                         self.column_by_name('rmag'), self.column_by_name('imag'),
-                         self.column_by_name('zmag'), self.column_by_name('ymag')])
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_lsst_magnitudes(self):
@@ -352,6 +346,18 @@ class AlertStellarVariabilityCatalog(VariabilityStars, AstrometryStars, Photomet
         snr = dflux/sigma
 
         return np.array([flux, dflux, snr])
+
+
+class AlertStellarVariabilityCatalog(AlertPhotometryCatalog,
+                                     VariabilityStars,
+                                     AstrometryStars):
+
+    @compound('quiescent_lsst_u', 'quiescent_lsst_g', 'quiescent_lsst_r',
+              'quiescent_lsst_i', 'quiescent_lsst_z', 'quiescent_lsst_y')
+    def get_quiescent_lsst_magnitudes(self):
+        return np.array([self.column_by_name('umag'), self.column_by_name('gmag'),
+                         self.column_by_name('rmag'), self.column_by_name('imag'),
+                         self.column_by_name('zmag'), self.column_by_name('ymag')])
 
 
 def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
