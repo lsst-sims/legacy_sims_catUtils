@@ -305,7 +305,7 @@ class AlertDataGenerator(object):
                  testing=False):
 
         self._htmid_level = 5
-        self._query_radius = 1.75
+        query_radius = 1.75
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         if not testing:
@@ -384,7 +384,7 @@ class AlertDataGenerator(object):
 
             radius = distance.max()
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
-            valid_obs = np.where(obs_distance<radius+self._query_radius)
+            valid_obs = np.where(obs_distance<radius+query_radius)
             if len(valid_obs[0])>0:
                 final_obs_list = []
                 for obs_dex in valid_obs[0]:
