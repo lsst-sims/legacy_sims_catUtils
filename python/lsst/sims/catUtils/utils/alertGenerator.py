@@ -145,7 +145,6 @@ class AgnAlertDBObj(GalaxyAgnObj):
                             limit=None, htmid=None):
 
         trixel = trixelFromHtmid(htmid)
-        print('radius ',trixel.get_radius())
         ra_0, dec_0 = trixel.get_center()
         new_obs = ObservationMetaData(pointingRA=ra_0, pointingDec=dec_0, boundType='circle',
                                       boundLength=trixel.get_radius()+0.1)
@@ -453,7 +452,6 @@ class AlertDataGenerator(object):
         print("made ra and dec lists")
         self._htmid_dict = {}
         self._htmid_list = []
-        self._htmid_radius_dict = {}
         n_obs_list = []
         already_assigned = set()
         n_already_assigned = 0
@@ -478,7 +476,6 @@ class AlertDataGenerator(object):
                 if len(final_obs_list) == 0:
                     continue
 
-                self._htmid_radius_dict[htmid] = radius
                 self._htmid_dict[htmid] = np.array(final_obs_list)
                 self._htmid_list.append(htmid)
                 n_obs_list.append(len(final_obs_list))
@@ -541,7 +538,7 @@ class AlertDataGenerator(object):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-        print('htmid %d radius %e' % (htmid, self._htmid_radius_dict[htmid]))
+        print('htmid %d' % (htmid))
 
         self._output_ct = -1
         self._obs_hist_to_ct_map = {}
