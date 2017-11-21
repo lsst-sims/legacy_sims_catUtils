@@ -301,15 +301,13 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
 class AlertDataGenerator(object):
 
-    def __init__(self, n_proc_max=4, output_prefix='test_hdf5',
-                 dmag_cutoff=0.005,
+    def __init__(self, n_proc_max=4, dmag_cutoff=0.005,
                  photometry_class=AlertStellarVariabilityCatalog,
                  testing=False):
 
         self._htmid_level = 5
         self._query_radius = 1.75
         self._photometry_class = photometry_class
-        self._output_prefix = output_prefix
         self._dmag_cutoff = dmag_cutoff
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
@@ -455,15 +453,22 @@ class AlertDataGenerator(object):
         hdf5_file.flush()
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
-                              chunk_size=1000, write_every=10000):
+                              chunk_size=1000, write_every=10000,
+                              output_dir='.', output_prefixe=''):
 
         t_start = time.time()
+
+        if os.path.exists(output_dir) and not os.path.isdir(output_dir):
+            raise RuntimeError('%s is not a dir' % output_dir)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
         print('htmid %d radius %e' % (htmid, self._htmid_radius_dict[htmid]))
 
         self._output_ct = -1
         self._obs_hist_to_ct_map = {}
-        out_file = h5py.File('%s_%d.hdf5' % (self._output_prefix, htmid), 'w')
+        out_file_name = os.path.join(output_dir, '%s_%d.hdf5' % (output_prefix, htmid))
+        out_file = h5py.File(out_file_name, 'w')
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
