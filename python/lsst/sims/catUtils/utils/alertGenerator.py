@@ -30,7 +30,8 @@ from lsst.sims.catalogs.db import ChunkIterator
 __all__ = ["AlertDataGenerator",
            "AlertStellarVariabilityCatalog",
            "_baseAlertCatalog",
-           "StellarAlertDBObj"]
+           "StellarAlertDBObj",
+           "AgnAlertDBObj"]
 
 class StellarAlertDBObj(StarObj):
     """
@@ -111,20 +112,68 @@ class StellarAlertDBObj(StarObj):
         return ChunkIterator(self, query, chunk_size)
 
 
-def AgnAlertDBObj(GalaxyAgnObj):
+class AgnAlertDBObj(GalaxyAgnObj):
+
+    columns = [('htmid', 0, np.int64),
+               ('galtileid', None, np.int64),
+               ('galid', None, str, 30),
+               ('componentra', 'agnra*PI()/180.'),
+               ('componentdec', 'agndec*PI()/180.'),
+               #: This is actually a problem with the stored procedure.
+               #: We need to be able to map columns other than
+               #: just ra/dec to raJ2000/decJ2000.  This gets
+               #: important when we start perturbing the three galaxy components
+               ('raJ2000', 'ra'),
+               ('decJ2000', 'dec'),
+               ('magNorm', 'magnorm_agn'),
+               ('magNormAgn', 'magnorm_agn'),
+               ('sedFilename', 'sedname_agn', str, 40),
+               ('sedFilenameAgn', 'sedname_agn', str, 40),
+               ('variabilityParameters', 'varParamStr', str, 256),
+               ('lsst_u', 'u_ab'),
+               ('lsst_g', 'g_ab'),
+               ('lsst_r', 'r_ab'),
+               ('lsst_i', 'i_ab'),
+               ('lsst_z', 'z_ab'),
+               ('lsst_y', 'y_ab')]
+
 
     def query_columns_htmid(self, colnames=None, chunk_size=None,
                             obs_metadata=None, constraint=None,
                             limit=None, htmid=None):
 
         trixel = trixelFromHtmid(htmid)
+        print('radius ',trixel.get_radius())
         ra_0, dec_0 = trixel.get_center()
-        new_obs = ObservationMetaData(ra_0, dec_0, boundType='circle',
+        new_obs = ObservationMetaData(pointingRA=ra_0, pointingDec=dec_0, boundType='circle',
                                       boundLength=trixel.get_radius()+0.1)
+
+        self._queried_trixel = trixel
 
         return self.query_columns(colnames=colnames, chunk_size=chunk_size,
                                   obs_metadata=new_obs, constraint=constraint,
                                   limit=limit)
+
+    def _final_pass(self, results):
+        """Modify the results of raJ2000 and decJ2000 to be in radians
+        **Parameters**
+
+            * results : Structured array of results from query
+
+        **Returns**
+
+            * results : Modified structured array
+
+        """
+
+        if hasattr(self, '_queried_trixel'):
+            htmid= self._queried_trixel.htmid
+            contains_arr = self._queried_trixel.contains(results['raJ2000'], results['decJ2000'])
+            results['htmid'] = np.where(contains_arr, htmid, -1*htmid)
+
+        results['raJ2000'] = np.radians(results['raJ2000'])
+        results['decJ2000'] = np.radians(results['decJ2000'])
+        return results
 
 
 class _baseAlertCatalog(_baseLightCurveCatalog):
