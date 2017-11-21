@@ -62,7 +62,7 @@ for htmid in alert_gen.htmid_list:
 import time
 t_start = time.time()
 alert_gen.alert_data_from_htmid(htmid_max, db,
-                                chunk_size=10000,
+                                chunk_size=1000,
                                 write_every=100000,
                                 photometry_class=AlertAgnVariabilityCatalog)
 
