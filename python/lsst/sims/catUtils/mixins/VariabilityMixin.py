@@ -1310,7 +1310,7 @@ class ExtraGalacticVariabilityModels(Variability):
 
         for i_time, expmjd_val in enumerate(expmjd_arr):
             for ix in valid_dexes[0]:
-                toff = toff_arr[ix]
+                toff = 58580.0
                 seed = seed_arr[ix]
                 tau = tau_arr[ix]
 
