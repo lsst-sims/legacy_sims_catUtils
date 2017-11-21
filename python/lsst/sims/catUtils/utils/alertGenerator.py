@@ -648,7 +648,7 @@ class AlertDataGenerator(object):
             # filter the chunk so that we are only considering sources that are in
             # the trixel being considered
             reduced_htmid = chunk['htmid'] >> n_bits_off
-            assert levelFromHtmid(reduced_htmid[0]) == self._htmid_level
+
             valid_htmid = np.where(reduced_htmid == htmid)
             if len(valid_htmid[0]) == 0:
                 continue
