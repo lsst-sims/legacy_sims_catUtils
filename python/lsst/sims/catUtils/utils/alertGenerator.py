@@ -297,7 +297,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
     @compound('mag', 'dmag', 'quiescent_mag')
     def get_avroPhotometry(self):
         mag = self.column_by_name('lsst_%s' % self.obs_metadata.bandpass)
-        quiescent_mag = self.column_by_name('%smag' % self.obs_metadata.bandpass)
+        quiescent_mag = self.column_by_name('quiescent_lsst_%s' % self.obs_metadata.bandpass)
         dmag = mag - quiescent_mag
 
         return np.array([mag, dmag, quiescent_mag])
