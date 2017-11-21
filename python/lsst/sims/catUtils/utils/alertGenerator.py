@@ -111,6 +111,31 @@ class StellarAlertDBObj(StarObj):
         return ChunkIterator(self, query, chunk_size)
 
 
+def AgnAlertDBObj(GalaxyAgnObj):
+
+    def query_columns_htmid(self, colnames=None, chunk_size=None,
+                            obs_metadata=None, constraint=None,
+                            limit=None, htmid=None):
+
+        trixel = trixelFromHtmid(htmid)
+        ra_0, dec_0 = trixel.get_center()
+        ra_list = []
+        dec_list = []
+        for cc in trixel.corners:
+            ra, dec = sphericalFromCartesian(cc)
+            ra_list.append(np.degrees(ra))
+            dec_list.append(np.degrees(dec))
+        ra_list = np.array(ra_list)
+        dec_list = np.array(dec_list)
+        distance = angularSeparation(ra_0, dec_0, ra_list, dec_list)
+        new_obs = ObservationMetaData(ra_0, dec_0, boundType='circle',
+                                      boundLength=distance.max()+0.1)
+
+        return self.query_columns(colnames=colnames, chunk_size=chunk_size,
+                                  obs_metadata=new_obs, constraint=constraint,
+                                  limit=limit)
+
+
 class _baseAlertCatalog(_baseLightCurveCatalog):
 
     def iter_catalog_chunks(self, chunk_size=None, query_cache=None, column_cache=None):
