@@ -301,14 +301,13 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
 class AlertDataGenerator(object):
 
-    def __init__(self, n_proc_max=4, dmag_cutoff=0.005,
+    def __init__(self, n_proc_max=4,
                  photometry_class=AlertStellarVariabilityCatalog,
                  testing=False):
 
         self._htmid_level = 5
         self._query_radius = 1.75
         self._photometry_class = photometry_class
-        self._dmag_cutoff = dmag_cutoff
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         if not testing:
@@ -453,6 +452,7 @@ class AlertDataGenerator(object):
         hdf5_file.flush()
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
+                              dmag_cutoff=0.005,
                               chunk_size=1000, write_every=10000,
                               output_dir='.', output_prefixe=''):
 
@@ -692,7 +692,7 @@ class AlertDataGenerator(object):
                                                            variability_cache=self._variability_cache,
                                                            expmjd=expmjd_list,).transpose((2,0,1))
 
-            if np.abs(dmag_arr).max() < self._dmag_cutoff:
+            if np.abs(dmag_arr).max() < dmag_cutoff:
                 continue
 
             ############################
@@ -710,13 +710,13 @@ class AlertDataGenerator(object):
                 # only include those sources which fall on a detector for this pointing
                 valid_chip_name, valid_xpup, valid_ypup, valid_obj = chip_name_dict[i_obs]
 
-                actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][valid_obj]) >= self._dmag_cutoff)
+                actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][valid_obj]) >= dmag_cutoff)
                 if len(actually_valid_sources[0]) == 0:
                     continue
 
-                # only include those sources for which np.abs(delta_mag) >= self._dmag_cutoff
+                # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
                 # this is technically only selecting sources that differ from the quiescent
-                # magnitude by at least self._dmag_cutoff.  If a source changes from quiescent_mag+dmag
+                # magnitude by at least dmag_cutoff.  If a source changes from quiescent_mag+dmag
                 # to quiescent_mag, it will not make the cut
 
                 valid_sources = chunk[valid_obj][actually_valid_sources]
