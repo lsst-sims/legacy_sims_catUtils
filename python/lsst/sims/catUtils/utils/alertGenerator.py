@@ -454,7 +454,8 @@ class AlertDataGenerator(object):
 
         hdf5_file.flush()
 
-    def alert_data_from_htmid(self, htmid, dbobj, radius=1.75, chunk_size=1000):
+    def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
+                              chunk_size=1000, write_every=10000):
 
         t_start = time.time()
 
@@ -742,7 +743,7 @@ class AlertDataGenerator(object):
 
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
                     # print('ct_to_write %d' % ct_to_write)
-                    if ct_to_write >= 10000:
+                    if ct_to_write >= write_every:
                         print('writing to hdf5-- obs %d chunk %d' % (i_obs, i_chunk))
                         self.output_to_hdf5(out_file, output_data_cache)
                         ct_to_write = 0
