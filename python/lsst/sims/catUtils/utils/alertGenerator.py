@@ -317,7 +317,6 @@ class AlertDataGenerator(object):
             plm = ParametrizedLightCurveMixin()
             plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
-        self.chunk_size = 1000
         self._desired_columns = []
         self._desired_columns.append('simobjid')
         self._desired_columns.append('variabilityParameters')
@@ -466,7 +465,7 @@ class AlertDataGenerator(object):
 
         hdf5_file.flush()
 
-    def alert_data_from_htmid(self, htmid, dbobj, radius=1.75):
+    def alert_data_from_htmid(self, htmid, dbobj, radius=1.75, chunk_size=1000):
 
         t_start = time.time()
 
@@ -550,7 +549,7 @@ class AlertDataGenerator(object):
 
         data_iter = dbobj.query_columns_htmid(colnames=column_query,
                                               htmid_range=(htmid_min, htmid_max),
-                                              chunk_size=self.chunk_size)
+                                              chunk_size=chunk_size)
 
         print("time for photometry catalog")
 
