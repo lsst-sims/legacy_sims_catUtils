@@ -546,13 +546,13 @@ class AlertDataGenerator(object):
 
         print("time for photometry catalog")
 
-        photometry_catalog = self._photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
-                                                    column_outputs=['lsst_u',
-                                                                    'lsst_g',
-                                                                    'lsst_r',
-                                                                    'lsst_i',
-                                                                    'lsst_z',
-                                                                    'lsst_y'])
+        photometry_catalog = photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
+                                              column_outputs=['lsst_u',
+                                                              'lsst_g',
+                                                              'lsst_r',
+                                                              'lsst_i',
+                                                              'lsst_z',
+                                                              'lsst_y'])
 
         print('chunking')
         i_chunk = 0
