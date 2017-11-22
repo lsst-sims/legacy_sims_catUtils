@@ -278,6 +278,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 continue
             full_name = os.path.join(self.output_dir, file_name)
             test_file = h5py.File(full_name, 'r')
+            if 'TAI' not in list(test_file.keys()):
+                continue
             mjd_list = ModifiedJulianDate.get_list(TAI=test_file['TAI'].value)
             band_list = test_file['bandpass'].value
             obshistID_list = test_file['obshistID'].value
