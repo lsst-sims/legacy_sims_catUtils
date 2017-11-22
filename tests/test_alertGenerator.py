@@ -398,7 +398,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                (id_list[i_obj], mjd.TAI, flux_list[i_obj], flux, dmag))
                         msg+="amp %e period %e\n" % (amp, period)
 
-                        self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 1, msg=msg)
+                        self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 5, msg=msg)
 
                         # verify that chipNum and pixel positions are correct
                         chipname = chipNameFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
