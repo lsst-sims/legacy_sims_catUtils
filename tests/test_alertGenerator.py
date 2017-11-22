@@ -309,6 +309,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         # is simulated for each obsHistID.  Afteward, we will verify that we
         # got all of the objects that satisfy dmag_cutoff
         all_simulated_events_dict = {}
+        n_tot_simulated = 0
 
         hdf_file_list = os.listdir(self.output_dir)
         for file_name in hdf_file_list:
@@ -351,6 +352,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     self.assertEqual(len(id_list), len(ra_list))
                     self.assertEqual(len(id_list), len(dec_list))
                     for i_obj in range(len(id_list)):
+                        n_tot_simulated += 1
                         obj_dex = (id_list[i_obj]//1024)-1
 
                         # verify that ICRS positions are correct to within 0.001 arcsec
@@ -456,6 +458,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         del alert_gen
         del cat
         gc.collect()
+        self.assertGreater(n_tot_simulated, 0)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
