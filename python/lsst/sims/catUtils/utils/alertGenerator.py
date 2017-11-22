@@ -5,6 +5,7 @@ import h5py
 import multiprocessing as mproc
 from collections import OrderedDict
 import time
+import gc
 from lsst.sims.utils import findHtmid, trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
@@ -766,6 +767,23 @@ class AlertDataGenerator(object):
                                                            variability_cache=self._variability_cache,
                                                            expmjd=expmjd_list,).transpose((2,0,1))
 
+
+            dmag_arr_transpose = dmag_arr.transpose(2,1,0)
+            assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
+            photometrically_valid_obj = []
+            for i_obj in range(len(chunk)):
+                keep_it = False
+                for i_filter in range(len(mag_names)):
+                    if np.abs(dmag_arr_transpose[i_obj][i_filter]).max()>dmag_cutoff:
+                        keep_it = True
+                        break
+                if keep_it:
+                    photometrically_valid_obj.append(i_obj)
+            photometrically_valid_obj = np.array(photometrically_valid_sources)
+
+            del dmag_arr_transpose
+            gc.collect()
+
             if np.abs(dmag_arr).max() < dmag_cutoff:
                 continue
 
@@ -784,8 +802,8 @@ class AlertDataGenerator(object):
                 # only include those sources which fall on a detector for this pointing
                 valid_chip_name, valid_xpup, valid_ypup, chip_valid_obj = chip_name_dict[i_obs]
 
-                actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][chip_valid_obj]) >= dmag_cutoff)
-                if len(actually_valid_sources[0]) == 0:
+                actually_valid_obj = np.intersect1d(photometrically_valid_obj, chip_valid_obj)
+                if len(actually_valid_obj) == 0:
                     continue
 
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
@@ -793,15 +811,15 @@ class AlertDataGenerator(object):
                 # magnitude by at least dmag_cutoff.  If a source changes from quiescent_mag+dmag
                 # to quiescent_mag, it will not make the cut
 
-                valid_sources = chunk[chip_valid_obj][actually_valid_sources]
+                valid_sources = chunk[actually_valid_obj]
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag],
-                                                                  dmag_arr[i_obs][i_mag][chip_valid_obj][actually_valid_sources])
+                                                                  dmag_arr[i_obs][i_mag][actually_valid_obj])
                                                                   for i_mag in range(len(mag_names))])
 
-                local_column_cache['chipName'] = valid_chip_name[actually_valid_sources]
-                local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_sources]),
-                                                                  ('y_pupil', valid_ypup[actually_valid_sources])])
+                local_column_cache['chipName'] = valid_chip_name[actually_valid_obj]
+                local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_obj]),
+                                                                  ('y_pupil', valid_ypup[actually_valid_obj])])
 
                 i_star = 0
                 cat = cat_list[i_obs]
