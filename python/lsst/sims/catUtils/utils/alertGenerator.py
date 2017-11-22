@@ -772,6 +772,11 @@ class AlertDataGenerator(object):
 
             dmag_arr_transpose = dmag_arr.transpose(2,1,0)
             assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
+
+            # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
+            # at some point in their history (note that delta_mag is defined with
+            # respect to the quiescent magnitude)
+
             photometrically_valid_obj = []
             for i_obj in range(len(chunk)):
                 keep_it = False
@@ -807,11 +812,6 @@ class AlertDataGenerator(object):
                 actually_valid_obj = np.intersect1d(photometrically_valid_obj, chip_valid_obj)
                 if len(actually_valid_obj) == 0:
                     continue
-
-                # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
-                # this is technically only selecting sources that differ from the quiescent
-                # magnitude by at least dmag_cutoff.  If a source changes from quiescent_mag+dmag
-                # to quiescent_mag, it will not make the cut
 
                 if obshistid not in actual_obshistid_list:
                     actual_obshistid_list.add(obshistid)
