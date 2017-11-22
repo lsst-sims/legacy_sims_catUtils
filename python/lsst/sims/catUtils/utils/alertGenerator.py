@@ -510,6 +510,8 @@ class AlertDataGenerator(object):
         """
         return self._htmid_list
 
+    def n_obs(self, htmid):
+        return len(self._htmid_dict[htmid])
 
     def output_to_hdf5(self, hdf5_file, data_cache):
         """
@@ -532,9 +534,12 @@ class AlertDataGenerator(object):
                               dmag_cutoff=0.005,
                               chunk_size=1000, write_every=10000,
                               output_dir='.', output_prefix='',
-                              photometry_class=AlertStellarVariabilityCatalog):
+                              photometry_class=None):
 
         t_start = time.time()
+
+        if photometry_class is None:
+            raise RuntimeError('Must specify photometry_class')
 
         if os.path.exists(output_dir) and not os.path.isdir(output_dir):
             raise RuntimeError('%s is not a dir' % output_dir)
