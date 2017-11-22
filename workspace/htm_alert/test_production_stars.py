@@ -26,6 +26,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
 
     for i_htmid, htmid in enumerate(htmid_list):
         t_start = time.time()
+        print('passing in %s' % str(htmid))
         ct = alert_gen.alert_data_from_htmid(htmid, db, chunk_size=10000,
                                              write_every=100000,
                                              output_dir=out_dir,
