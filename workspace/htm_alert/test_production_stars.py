@@ -106,6 +106,7 @@ if __name__ == "__main__":
         htmid_list[i_min].append(htmid)
         n_htmid_list[i_min] += n_obs
 
+    print('htmid_list %s' % str(htmid_list))
     lock = mproc.Lock()
     p_list = []
     for i_p in range(len(htmid_list)):
