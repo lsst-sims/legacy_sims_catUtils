@@ -1,5 +1,6 @@
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertDataGenerator
+from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 
 import os
 from lsst.utils import getPackageDir
@@ -62,7 +63,8 @@ import time
 t_start = time.time()
 alert_gen.alert_data_from_htmid(htmid_max, db,
                                 chunk_size=10000,
-                                write_every=100000)
+                                write_every=100000,
+                                photometry_class=AlertStellarVariabilityCatalog)
 
 elapsed = time.time()-t_start
 print("that took %.2e hours" % (elapsed/3600.0))
