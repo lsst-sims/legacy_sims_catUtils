@@ -390,7 +390,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         msg +="flux %.6f %.6f\n" % (flux, flux_list[i_obj])
                         msg += "mag %e\n" % mag0
 
-                        self.assertGreater(np.abs(dmag), dmag_cutoff)
                         self.assertAlmostEqual(dflux/dflux_list[i_obj], 1.0, 1, msg=msg)
 
                         msg = ('\nuniqueID %d TAI %.4f\nFlux (hdf5): %e\nFlux (truth): %e\ndmag (truth): %e\n' %
