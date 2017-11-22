@@ -284,7 +284,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             band_list = test_file['bandpass'].value
             obshistID_list = test_file['obshistID'].value
             for obshistID, mjd, bandpass in zip(obshistID_list, mjd_list, band_list):
-                all_simulated_events_dict[obshistID] = []
+                if obshistID not in all_simulated_events_dict:
+                    all_simulated_events_dict[obshistID] = []
 
                 # get the current ObservationMetaData
                 for obs in self.obs_list:
