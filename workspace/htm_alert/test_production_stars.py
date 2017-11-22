@@ -30,7 +30,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                              write_every=100000,
                                              output_dir=out_dir,
                                              output_prefix=out_prefix,
-                                             dmag_cutoff=-1.0,
+                                             dmag_cutoff=0.001,
                                              photometry_class=AlertStellarVariabilityCatalog)
 
         lock.acquire()
