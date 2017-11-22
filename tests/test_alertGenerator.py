@@ -293,7 +293,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         current_obs = obs
                         break
 
-                self.assertLess(np.abs(current_obs.mjd.TAI-mjd.TAI), 1.0e-10, msg=msg)
+                self.assertLess(np.abs(current_obs.mjd.TAI-mjd.TAI), 1.0e-10)
 
                 ct_list = test_file['%d_map' % obshistID].value
                 self.assertGreater(len(ct_list), 0)
