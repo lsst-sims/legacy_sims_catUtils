@@ -240,10 +240,48 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         class TestAlertsVarCat(TestAlertsVarCatMixin, AlertStellarVariabilityCatalog):
             pass
 
+        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
+                                 Variability, InstanceCatalog):
+            column_outputs = ['uniqueId', 'chipName', 'dmagAlert']
+
+            @compound('delta_umag', 'delta_gmag', 'delta_rmag',
+                      'delta_imag', 'delta_zmag', 'delta_ymag')
+            def get_TruthVariability(self):
+                return self.applyVariability(self.column_by_name('varParamStr'))
+
+            @cached
+            def get_dmagAlert(self):
+                return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
+
 
         star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
 
+        # assemble the true light curves for each object; we need to figure out
+        # if their np.max(dMag) ever goes over dmag_cutoff; then we will know if
+        # we are supposed to simulate them
+        true_lc_dict = {}
+        for obs in self.obs_list:
+
+            obshistid = obs.OpsimMetaData['obsHistID']
+            cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
+            for line in cat.iter_catalog():
+                if line[1] is None:
+                    continue
+
+                if line[0] not in true_lc_dict:
+                    true_lc_dict[line[0]] = []
+
+                true_lc_dict[line[0]].append(line[2])
+
         dmag_cutoff = 0.005
+
+        objects_to_simulate = []
+        for obj_id in true_lc_dict:
+            lc = np.array(true_lc_dict[obj_id])
+            dmag_max = np.max(np.abs(lc))
+            if dmag_max>=dmag_cutoff:
+                objects_to_simulate.append(obj_id)
+
         output_root = os.path.join(self.output_dir, 'alert_test')
         alert_gen = AlertDataGenerator(n_proc_max=1,
                                        testing=True)
@@ -396,18 +434,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                         self.assertAlmostEqual(snr_list[i_obj]/snr, 1.0, 4)
 
         # now verify that we simulated all of the events we were supposed to
-        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
-                                 Variability, InstanceCatalog):
-            column_outputs = ['uniqueId', 'chipName', 'dmagAlert']
-
-            @compound('delta_umag', 'delta_gmag', 'delta_rmag',
-                      'delta_imag', 'delta_zmag', 'delta_ymag')
-            def get_TruthVariability(self):
-                return self.applyVariability(self.column_by_name('varParamStr'))
-
-            @cached
-            def get_dmagAlert(self):
-                return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
 
         for obs in self.obs_list:
             # make a much larger ObservationMetaData to make sure we get all of
@@ -421,7 +447,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 id_val = line[0]
                 chip_name = line[1]
                 dmag = line[2]
-                if chip_name is not None and np.abs(dmag)>=dmag_cutoff:
+                if chip_name is not None and id_val in objects_to_simulate:
                     id_list.append(id_val)
                     msg = '\nchipName: %s\n' % chip_name
                     msg += 'dmag: %e\n' % dmag
