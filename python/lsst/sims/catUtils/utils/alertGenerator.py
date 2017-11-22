@@ -34,9 +34,10 @@ __all__ = ["AlertDataGenerator",
            "AlertAgnVariabilityCatalog",
            "_baseAlertCatalog",
            "StellarAlertDBObj",
-           "AgnAlertDBObj"]
+           "AgnAlertDBObj",
+           "StellarAlertDBObjMixin"]
 
-class StellarAlertDBObj(StarObj):
+class StellarAlertDBObjMixin(object):
     """
     Mimics StarObj class, except it allows you to directly query
     all objects whose htmids are between two values.
@@ -114,6 +115,8 @@ class StellarAlertDBObj(StarObj):
 
         return ChunkIterator(self, query, chunk_size)
 
+class StellarAlertDBObj(StellarAlertDBObjMixin, StarObj):
+    pass
 
 class AgnAlertDBObj(GalaxyAgnObj):
 
