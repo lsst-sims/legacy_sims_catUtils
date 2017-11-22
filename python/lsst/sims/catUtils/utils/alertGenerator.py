@@ -779,7 +779,7 @@ class AlertDataGenerator(object):
                         break
                 if keep_it:
                     photometrically_valid_obj.append(i_obj)
-            photometrically_valid_obj = np.array(photometrically_valid_sources)
+            photometrically_valid_obj = np.array(photometrically_valid_obj)
 
             del dmag_arr_transpose
             gc.collect()
