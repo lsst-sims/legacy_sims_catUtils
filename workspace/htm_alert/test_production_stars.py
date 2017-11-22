@@ -58,7 +58,7 @@ if __name__ == "__main__":
     if args.log_file is None:
         raise RuntimeError('must specify log file')
     if os.path.exists(args.log_file):
-        raise RuntimeError('%s already exists' % log_file)
+        raise RuntimeError('%s already exists' % args.log_file)
 
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
