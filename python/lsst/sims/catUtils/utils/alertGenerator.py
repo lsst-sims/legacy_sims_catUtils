@@ -555,7 +555,7 @@ class AlertDataGenerator(object):
         self._output_ct = -1
         self._obs_hist_to_ct_map = {}
         out_file_name = os.path.join(output_dir, '%s_%d.hdf5' % (output_prefix, htmid))
-        out_file = h5py.File(out_file_name, 'w')
+        out_file = None
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
@@ -851,6 +851,8 @@ class AlertDataGenerator(object):
                     # print('ct_to_write %d' % ct_to_write)
                     if ct_to_write >= write_every:
                         print('writing to hdf5-- obs %d chunk %d' % (i_obs, i_chunk))
+                        if out_file is None:
+                            out_file = h5py.File(out_file_name, 'w')
                         self.output_to_hdf5(out_file, output_data_cache)
                         ct_to_write = 0
                         output_data_cache = {}
@@ -860,6 +862,8 @@ class AlertDataGenerator(object):
                 #    exit()
 
         if len(output_data_cache)>0:
+            if out_file is None:
+                out_file = h5py.File(out_file_name, 'w')
             self.output_to_hdf5(out_file, output_data_cache)
 
         for obshistid in self._obs_hist_to_ct_map:
@@ -869,6 +873,7 @@ class AlertDataGenerator(object):
 
 
         if len(actual_obshistid_list)>0:
+            assert out_file is not None
             actual_obshistid_list = np.array(actual_obshistid_list)
             actual_expmjd_list = np.array(actual_expmjd_list)
             actual_band_list = np.array(actual_band_list)
@@ -883,7 +888,9 @@ class AlertDataGenerator(object):
             out_file.create_dataset('TAI', data=list(actual_expmjd_list))
             out_file.create_dataset('bandpass', data=list(actual_band_list))
 
-        out_file.close()
+        if out_file is not None:
+            out_file.close()
+
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
 
