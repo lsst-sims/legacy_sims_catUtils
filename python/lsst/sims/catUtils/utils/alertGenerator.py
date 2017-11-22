@@ -390,8 +390,8 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                 chip_int_arr[i_chip] = 1
         valid_obj = np.where(chip_int_arr>0)
 
-        out_dict[i_obs] = (chip_name_list[valid_obj],
-                           xPup_list[valid_obj], yPup_list[valid_obj],
+        out_dict[i_obs] = (chip_name_list,
+                           xPup_list, yPup_list,
                            valid_obj)
 
 
@@ -711,9 +711,9 @@ class AlertDataGenerator(object):
                             chip_int_arr[i_chip] = 1
 
                     valid_obj = np.where(chip_int_arr>0)
-                    chip_name_dict[i_obs] = (chip_name_list[valid_obj],
-                                             xPup_list[valid_obj],
-                                             yPup_list[valid_obj],
+                    chip_name_dict[i_obs] = (chip_name_list,
+                                             xPup_list,
+                                             yPup_list,
                                              valid_obj)
 
                 else:
