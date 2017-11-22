@@ -602,7 +602,8 @@ class AlertDataGenerator(object):
         obshistid_list = obshistid_list[sorted_dex]
         band_list = band_list[sorted_dex]
 
-        actual_obshistid_list = set()
+        actual_obshistid_list = []
+        actual_obshistid_set = set()
         actual_expmjd_list = []
         actual_band_list = []
 
@@ -813,8 +814,9 @@ class AlertDataGenerator(object):
                 if len(actually_valid_obj) == 0:
                     continue
 
-                if obshistid not in actual_obshistid_list:
-                    actual_obshistid_list.add(obshistid)
+                if obshistid not in actual_obshistid_set:
+                    actual_obshistid_set.add(obshistid)
+                    actual_obshistid_list.append(obshistid)
                     actual_expmjd_list.append(obs.mjd.TAI)
                     actual_band_list.append(actual_i_mag)
 
@@ -867,9 +869,19 @@ class AlertDataGenerator(object):
 
 
         if len(actual_obshistid_list)>0:
+            actual_obshistid_list = np.array(actual_obshistid_list)
+            actual_expmjd_list = np.array(actual_expmjd_list)
+            actual_band_list = np.array(actual_band_list)
+
+            sorted_dex = np.argsort(actual_expmjd_list)
+
+            actual_obshistid_list = actual_obshistid_list[sorted_dex]
+            actual_expmjd_list = actual_expmjd_list[sorted_dex]
+            actual_band_list = actual_band_list[sorted_dex]
+
             out_file.create_dataset('obshistID', data=list(actual_obshistid_list))
-            out_file.create_dataset('TAI', data=actual_expmjd_list)
-            out_file.create_dataset('bandpass', data=actual_band_list)
+            out_file.create_dataset('TAI', data=list(actual_expmjd_list))
+            out_file.create_dataset('bandpass', data=list(actual_band_list))
 
         out_file.close()
         print('that took %.2e hours; n_obj %d ' %
