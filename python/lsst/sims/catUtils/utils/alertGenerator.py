@@ -782,9 +782,9 @@ class AlertDataGenerator(object):
                 assert mag_names[actual_i_mag] == obs_mag
 
                 # only include those sources which fall on a detector for this pointing
-                valid_chip_name, valid_xpup, valid_ypup, valid_obj = chip_name_dict[i_obs]
+                valid_chip_name, valid_xpup, valid_ypup, chip_valid_obj = chip_name_dict[i_obs]
 
-                actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][valid_obj]) >= dmag_cutoff)
+                actually_valid_sources = np.where(np.abs(dmag_arr[i_obs][actual_i_mag][chip_valid_obj]) >= dmag_cutoff)
                 if len(actually_valid_sources[0]) == 0:
                     continue
 
@@ -793,10 +793,10 @@ class AlertDataGenerator(object):
                 # magnitude by at least dmag_cutoff.  If a source changes from quiescent_mag+dmag
                 # to quiescent_mag, it will not make the cut
 
-                valid_sources = chunk[valid_obj][actually_valid_sources]
+                valid_sources = chunk[chip_valid_obj][actually_valid_sources]
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag],
-                                                                  dmag_arr[i_obs][i_mag][valid_obj][actually_valid_sources])
+                                                                  dmag_arr[i_obs][i_mag][chip_valid_obj][actually_valid_sources])
                                                                   for i_mag in range(len(mag_names))])
 
                 local_column_cache['chipName'] = valid_chip_name[actually_valid_sources]
