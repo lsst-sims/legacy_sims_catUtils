@@ -85,7 +85,7 @@ if __name__ == "__main__":
     htmid_list = []
     n_htmid_list = []
     for i_p in range(args.n_proc):
-        htmid_list.append([[]])
+        htmid_list.append([])
         n_htmid_list.append(0)
 
     n_tot_obs=0
