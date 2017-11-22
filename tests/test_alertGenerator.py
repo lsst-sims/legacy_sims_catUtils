@@ -18,10 +18,12 @@ from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import AlertDataGenerator
+from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
 
 from lsst.sims.utils import applyProperMotion, ObservationMetaData
 from lsst.sims.utils import radiansFromArcsec, arcsecFromRadians
 from lsst.sims.utils import ModifiedJulianDate
+from lsst.sims.utils import findHtmid
 from lsst.sims.utils import _angularSeparation, angularSeparation
 from lsst.sims.photUtils import Sed
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
@@ -75,7 +77,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         conn = sqlite3.connect(cls.star_db_name)
         cursor = conn.cursor()
         cursor.execute('''CREATE TABLE stars
-                          (simobjid int, ra real, dec real,
+                          (simobjid int, htmid int, ra real, dec real,
                            umag real, gmag real, rmag real,
                            imag real, zmag real, ymag real,
                            px real, pmra real, pmdec real,
@@ -153,10 +155,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 if len(varParamStr) > cls.max_str_len:
                     cls.max_str_len = len(varParamStr)
 
-                query = ('''INSERT INTO stars VALUES(%d, %.6f, %.6f,
+                htmid = findHtmid(ra[i_star], dec[i_star], 21)
+
+                query = ('''INSERT INTO stars VALUES(%d, %d, %.6f, %.6f,
                                                     %.4f, %.4f, %.4f, %.4f, %.4f, %.4f,
                                                     %.4f, %.4f, %.4f, %.4f, '%s')'''
-                         % (i_star+id_offset+1, ra[i_star], dec[i_star],
+                         % (i_star+id_offset+1, htmid, ra[i_star], dec[i_star],
                             umag[i_star], gmag[i_star], rmag[i_star],
                             imag[i_star], zmag[i_star], ymag[i_star],
                             px[i_star], pmra[i_star], pmdec[i_star],
@@ -197,7 +201,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         _max_var_param_str = self.max_str_len
 
-        class StarAlertTestDBObj(CatalogDBObject):
+        class StarAlertTestDBObj(StellarAlertDBObjMixin, CatalogDBObject):
             objid = 'star_alert'
             tableid = 'stars'
             idColKey = 'simobjid'
@@ -242,15 +246,15 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         dmag_cutoff = 0.005
         output_root = os.path.join(self.output_dir, 'alert_test')
         alert_gen = AlertDataGenerator(n_proc_max=1,
-                                       photometry_class=TestAlertsVarCat,
-                                       output_prefix = output_root,
-                                       dmag_cutoff=dmag_cutoff,
                                        testing=True)
 
         alert_gen.subdivide_obs(self.obs_list)
 
         for htmid in alert_gen.htmid_list:
-            alert_gen.alert_data_from_htmid(htmid, star_db)
+            alert_gen.alert_data_from_htmid(htmid, star_db,
+                                            photometry_class=TestAlertsVarCat,
+                                            output_prefix=output_root,
+                                            dmag_cutoff=dmag_cutoff)
 
         dummy_sed = Sed()
 
