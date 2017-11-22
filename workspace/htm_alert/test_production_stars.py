@@ -78,7 +78,7 @@ if __name__ == "__main__":
     sims_clean_up()
     gc.collect()
 
-    alert_gen = AlertDataGenerator(n_proc_max=4)
+    alert_gen = AlertDataGenerator(n_proc_max=1)
     alert_gen.subdivide_obs(obs_list)
 
     htmid_list = []
