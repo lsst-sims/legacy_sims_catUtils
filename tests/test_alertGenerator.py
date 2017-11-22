@@ -435,9 +435,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         # now verify that we simulated all of the events we were supposed to
 
         for obs in self.obs_list:
-            # make a much larger ObservationMetaData to make sure we get all of
-            # the objects
-            obs.boundLength = 10.0
 
             obshistid = obs.OpsimMetaData['obsHistID']
             cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
