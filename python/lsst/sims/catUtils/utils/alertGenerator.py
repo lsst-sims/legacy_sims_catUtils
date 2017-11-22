@@ -602,10 +602,9 @@ class AlertDataGenerator(object):
         obshistid_list = obshistid_list[sorted_dex]
         band_list = band_list[sorted_dex]
 
-        out_file.create_dataset('obshistID', data=obshistid_list)
-        out_file.create_dataset('TAI', data=expmjd_list)
-        out_file.create_dataset('bandpass', data=band_list)
-        out_file.flush()
+        actual_obshistid_list = set()
+        actual_expmjd_list = []
+        actual_band_list = []
 
         print('built list')
 
@@ -814,6 +813,11 @@ class AlertDataGenerator(object):
                 # magnitude by at least dmag_cutoff.  If a source changes from quiescent_mag+dmag
                 # to quiescent_mag, it will not make the cut
 
+                if obshistid not in actual_obshistid_list:
+                    actual_obshistid_list.add(obshistid)
+                    actual_expmjd_list.append(obs.mjd.TAI)
+                    actual_band_list.append(actual_i_mag)
+
                 valid_sources = chunk[actually_valid_obj]
                 local_column_cache = {}
                 local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag],
@@ -858,7 +862,14 @@ class AlertDataGenerator(object):
 
         for obshistid in self._obs_hist_to_ct_map:
             tag = '%d_map' % obshistid
+            print('writing %s' % tag)
             out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid]))
+
+
+        if len(actual_obshistid_list)>0:
+            out_file.create_dataset('obshistID', data=list(actual_obshistid_list))
+            out_file.create_dataset('TAI', data=actual_expmjd_list)
+            out_file.create_dataset('bandpass', data=actual_band_list)
 
         out_file.close()
         print('that took %.2e hours; n_obj %d ' %
