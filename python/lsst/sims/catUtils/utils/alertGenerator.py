@@ -517,18 +517,38 @@ class AlertDataGenerator(object):
     def n_obs(self, htmid):
         return len(self._htmid_dict[htmid])
 
-    def output_to_hdf5(self, hdf5_file, data_cache):
+    def output_to_hdf5(self, output_dir, output_prefix, htmid, output_ct, data_cache,
+                       obshistid_list, expmjd_list, band_list):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
-        self._output_ct += 1
-        for obsHistID in data_cache.keys():
+        print('    writing %d %d' % (htmid, output_ct))
+        out_file_name = os.path.join(output_dir, '%s_%d_%d.hdf5' % (output_prefix, htmid, output_ct))
+        hdf5_file = h5py.File(out_file_name, 'w')
 
+        for obsHistID in data_cache.keys():
+            assert obsHistID in obshistid_list
+
+        obshistid_list = np.array(obshistid_list)
+        expmjd_list = np.array(expmjd_list)
+        band_list = np.array(band_list)
+
+        sorted_dex = np.argsort(expmjd_list)
+
+        obshistid_list = obshistid_list[sorted_dex]
+        expmjd_list = expmjd_list[sorted_dex]
+        band_list = band_list[sorted_dex]
+
+        hdf5_file.create_dataset('obshistID', data=obshistid_list)
+        hdf5_file.create_dataset('TAI', data=expmjd_list)
+        hdf5_file.create_dataset('bandpass', data=band_list)
+
+        for obsHistID in obshistid_list:
             for col_name in data_cache[obsHistID].keys():
-                data_tag = '%d_%d_%s' % (obsHistID, self._output_ct, col_name)
+                data_tag = '%d_%s' % (obsHistID, col_name)
                 hdf5_file.create_dataset(data_tag, data=np.array(data_cache[obsHistID][col_name]))
 
-        hdf5_file.flush()
+        hdf5_file.close()
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
                               dmag_cutoff=0.005,
@@ -547,10 +567,6 @@ class AlertDataGenerator(object):
             os.mkdir(output_dir)
 
         print('htmid %d' % (htmid))
-
-        self._output_ct = -1
-        out_file_name = os.path.join(output_dir, '%s_%d.hdf5' % (output_prefix, htmid))
-        out_file = None
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
@@ -639,6 +655,7 @@ class AlertDataGenerator(object):
 
         n_obj = 0
         n_actual_obj = 0
+        output_ct = 0
         for chunk in data_iter:
             i_chunk += 1
 
@@ -838,50 +855,38 @@ class AlertDataGenerator(object):
                     for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
 
-
-
                         if col_name not in output_data_cache[obshistid]:
                             output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
                         else:
                             output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
 
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
-                    # print('ct_to_write %d' % ct_to_write)
-                    if ct_to_write >= write_every:
-                        print('writing to hdf5-- obs %d chunk %d' % (i_obs, i_chunk))
-                        if out_file is None:
-                            out_file = h5py.File(out_file_name, 'w')
-                        self.output_to_hdf5(out_file, output_data_cache)
-                        ct_to_write = 0
-                        output_data_cache = {}
 
-                    #print star_obj
-                #if i_chunk > 10:
-                #    exit()
+            if i_chunk%5 == 0:
+                self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
+                                    output_data_cache, actual_obshistid_list,
+                                    actual_expmjd_list, actual_band_list)
+
+                output_ct += 1
+                output_data_cache = {}
+                actual_expmjd_list = []
+                actual_band_list = []
+                actual_obshistid_list = []
+                actual_obshistid_set = set()
+
+
 
         if len(output_data_cache)>0:
-            if out_file is None:
-                out_file = h5py.File(out_file_name, 'w')
-            self.output_to_hdf5(out_file, output_data_cache)
+            self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
+                                    output_data_cache, actual_obshistid_list,
+                                    actual_expmjd_list, actual_band_list)
 
-        if len(actual_obshistid_list)>0:
-            assert out_file is not None
-            actual_obshistid_list = np.array(actual_obshistid_list)
-            actual_expmjd_list = np.array(actual_expmjd_list)
-            actual_band_list = np.array(actual_band_list)
-
-            sorted_dex = np.argsort(actual_expmjd_list)
-
-            actual_obshistid_list = actual_obshistid_list[sorted_dex]
-            actual_expmjd_list = actual_expmjd_list[sorted_dex]
-            actual_band_list = actual_band_list[sorted_dex]
-
-            out_file.create_dataset('obshistID', data=list(actual_obshistid_list))
-            out_file.create_dataset('TAI', data=list(actual_expmjd_list))
-            out_file.create_dataset('bandpass', data=list(actual_band_list))
-
-        if out_file is not None:
-            out_file.close()
+            output_ct += 1
+            output_data_cache = {}
+            actual_expmjd_list = []
+            actual_band_list = []
+            actual_obshistid_list = []
+            actual_obshistid_set = set()
 
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
