@@ -39,8 +39,8 @@ colnames = ['raJ2000', 'decJ2000',
 data_iter = db.query_columns_htmid(htmid=htmid, chunk_size=1000)
 
 for i_chunk, chunk in enumerate(data_iter):
-    if i_chunk%1000 ==0:
-        print('    %d' % i_chunk)
+    if i_chunk%100 ==0:
+        print('    name %d' % i_chunk)
     for obs in obs_list:
         xp, yp = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
                                        pm_ra=chunk['properMotionRa'],
