@@ -656,6 +656,7 @@ class AlertDataGenerator(object):
         n_obj = 0
         n_actual_obj = 0
         output_ct = 0
+        n_time_last = 0
         for chunk in data_iter:
             i_chunk += 1
 
@@ -666,7 +667,9 @@ class AlertDataGenerator(object):
                 print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
                 print('    elapsed %.2e hrs per %.2e total %2e' %
                 (elapsed, elapsed_per, total_projection))
+                print('    n_time_last %.4e' % float(n_time_last))
 
+            n_time_last = 0
             # filter the chunk so that we are only considering sources that are in
             # the trixel being considered
             reduced_htmid = chunk['htmid'] >> n_bits_off
@@ -845,6 +848,7 @@ class AlertDataGenerator(object):
                 i_star = 0
                 cat = cat_list[i_obs]
                 for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
+                    n_time_last += len(valid_chunk)
 
                     if obshistid not in output_data_cache:
                         output_data_cache[obshistid] = {}
