@@ -523,10 +523,6 @@ class AlertDataGenerator(object):
         """
         self._output_ct += 1
         for obsHistID in data_cache.keys():
-            if obsHistID not in self._obs_hist_to_ct_map:
-                self._obs_hist_to_ct_map[obsHistID] = []
-
-            self._obs_hist_to_ct_map[obsHistID].append(self._output_ct)
 
             for col_name in data_cache[obsHistID].keys():
                 data_tag = '%d_%d_%s' % (obsHistID, self._output_ct, col_name)
@@ -553,7 +549,6 @@ class AlertDataGenerator(object):
         print('htmid %d' % (htmid))
 
         self._output_ct = -1
-        self._obs_hist_to_ct_map = {}
         out_file_name = os.path.join(output_dir, '%s_%d.hdf5' % (output_prefix, htmid))
         out_file = None
 
@@ -842,6 +837,9 @@ class AlertDataGenerator(object):
 
                     for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
+
+
+
                         if col_name not in output_data_cache[obshistid]:
                             output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
                         else:
@@ -865,12 +863,6 @@ class AlertDataGenerator(object):
             if out_file is None:
                 out_file = h5py.File(out_file_name, 'w')
             self.output_to_hdf5(out_file, output_data_cache)
-
-        for obshistid in self._obs_hist_to_ct_map:
-            tag = '%d_map' % obshistid
-            print('writing %s' % tag)
-            out_file.create_dataset(tag, data=np.array(self._obs_hist_to_ct_map[obshistid]))
-
 
         if len(actual_obshistid_list)>0:
             assert out_file is not None
