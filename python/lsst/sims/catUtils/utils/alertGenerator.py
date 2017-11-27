@@ -522,6 +522,7 @@ class AlertDataGenerator(object):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
+        return None
         print('    writing %d %d' % (htmid, output_ct))
         out_file_name = os.path.join(output_dir, '%s_%d_%d.hdf5' % (output_prefix, htmid, output_ct))
         hdf5_file = h5py.File(out_file_name, 'w')
