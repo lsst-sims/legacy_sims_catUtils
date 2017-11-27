@@ -664,7 +664,7 @@ class AlertDataGenerator(object):
                 elapsed_per = elapsed/n_actual_obj
                 total_projection = 1800000.0*elapsed_per
                 print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
-                print('    elapd %.2e hrs per %.2e total %2e' %
+                print('    elapsed %.2e hrs per %.2e total %2e' %
                 (elapsed, elapsed_per, total_projection))
 
             # filter the chunk so that we are only considering sources that are in
