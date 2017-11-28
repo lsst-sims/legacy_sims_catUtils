@@ -406,13 +406,12 @@ class AlertDataGenerator(object):
     def __init__(self, n_proc_max=4,
                  testing=False):
 
-        self._rng = np.random.RandomState(99)
         self._htmid_level = 5
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
-        #if not testing:
-        #    plm = ParametrizedLightCurveMixin()
-        #    plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
+        if not testing:
+            plm = ParametrizedLightCurveMixin()
+            plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
         self._desired_columns = []
         self._desired_columns.append('simobjid')
@@ -786,13 +785,10 @@ class AlertDataGenerator(object):
             n_actual_obj += len(chunk)-len(invalid_dex[0])
 
             photometry_catalog._set_current_chunk(chunk)
-            #dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-            #                                               variability_cache=self._variability_cache,
-            #                                               expmjd=expmjd_list,).transpose((2,0,1))
+            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                           variability_cache=self._variability_cache,
+                                                           expmjd=expmjd_list,).transpose((2,0,1))
 
-
-            dmag_arr = self._rng.random_sample((6, len(chunk), len(expmjd_list)))*0.25-0.125
-            dmag_arr = dmag_arr.transpose(2,0,1)
 
             dmag_arr_transpose = dmag_arr.transpose(2,1,0)
             assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
