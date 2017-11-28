@@ -814,6 +814,7 @@ class AlertDataGenerator(object):
             ############################
             # Process and output sources
             #
+            """
             t_before_out = time.time()
             for i_obs, obs_dex in enumerate(obs_valid_dex):
                 obs = self._obs_list[obs_dex]
@@ -878,9 +879,9 @@ class AlertDataGenerator(object):
                 actual_band_list = []
                 actual_obshistid_list = []
                 actual_obshistid_set = set()
+            """
 
-
-
+        """
         if len(output_data_cache)>0:
             self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
                                     output_data_cache, actual_obshistid_list,
@@ -892,6 +893,7 @@ class AlertDataGenerator(object):
             actual_band_list = []
             actual_obshistid_list = []
             actual_obshistid_set = set()
+        """
 
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
