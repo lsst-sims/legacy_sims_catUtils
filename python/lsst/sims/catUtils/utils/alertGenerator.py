@@ -17,7 +17,7 @@ from lsst.sims.coordUtils import pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils import lsst_camera
 
 from lsst.sims.catalogs.decorators import compound, cached
-from lsst.sims.photUtils import BandpassDict, Sed
+from lsst.sims.photUtils import BandpassDict, Sed, calcSNR_m5
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import VariabilityGalaxies, AstrometryGalaxies
@@ -187,7 +187,7 @@ class AgnAlertDBObj(GalaxyAgnObj):
 class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog):
 
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
-                      'flux', 'dflux',
+                      'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
@@ -308,7 +308,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
         return np.array([mag, dmag, quiescent_mag])
 
-    @compound('flux', 'dflux')
+    @compound('flux', 'dflux', 'SNR')
     def get_avroFlux(self):
         quiescent_mag = self.column_by_name('quiescent_mag')
         mag = self.column_by_name('mag')
@@ -331,7 +331,25 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         flux = self._dummy_sed.fluxFromMag(mag)
         dflux = flux - quiescent_flux
 
-        return np.array([flux, dflux])
+        snr_tot, gamma = calcSNR_m5(mag, self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                    self.obs_metadata.m5[self.obs_metadata.bandpass],
+                                    self.photParams, gamma=self._gamma)
+
+        if self._gamma is None:
+            self._gamma = gamma
+
+        snr_template, gamma_template = calcSNR_m5(quiescent_mag,
+                                                  self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                                  template_m5[self.obs_metadata.bandpass],
+                                                  self.photParams, gamma=self._gamma_template)
+
+        if self._gamma_template is None:
+            self._gamma_template = gamma_template
+
+        sigma = np.sqrt((flux/snr_tot)**2 + (quiescent_flux/snr_template)**2)
+        snr = dflux/sigma
+
+        return np.array([flux, dflux, snr])
 
 
 class AlertStellarVariabilityCatalog(_baseAlertCatalog,
@@ -839,7 +857,7 @@ class AlertDataGenerator(object):
 
                     data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux',
+                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
 
                         if col_name not in output_data_cache[obshistid]:
