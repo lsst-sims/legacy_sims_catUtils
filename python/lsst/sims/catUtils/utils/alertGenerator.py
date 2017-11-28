@@ -235,6 +235,9 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
                     self._chunkColMap_output = dict([(col, i) for i, col in enumerate(self.iter_column_names())])
                 yield chunk_cols, self._chunkColMap_output
 
+        self._column_cache = {}
+        self._current_chunk = None
+
     @cached
     def get_chipName(self):
         if len(self.column_by_name('uniqueId')) == 0:
