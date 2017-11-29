@@ -3,6 +3,7 @@ import os
 import json
 import multiprocessing as mproc
 import argparse
+import time
 
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
@@ -11,13 +12,14 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
     evm = ExtraGalacticVariabilityModels()
 
     duration = 3654.0
-    t_start = 59580.0
+    survey_start = 59580.0
 
+    t_start = time.time()
     for galid, param_dict in zip(galid_list, param_dict_list):
 
         tau = param_dict['pars']['agn_tau']
         dt = tau/100.0
-        mjd_arr = t_start + np.arange(0.0, duration, dt)
+        mjd_arr = survey_start + np.arange(0.0, duration, dt)
 
         params = {}
         for key in param_dict['pars']:
@@ -25,7 +27,9 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
 
         lock.acquire()
         with open(log_file, 'a') as out_file:
-            out_file.write('simulating %d -- %d -- %e\n' % (galid, len(mjd_arr),tau))
+            elapsed = (time.time()-t_start)/3600.0
+            out_file.write('simulating %d -- %d -- tau %e hrs elapsed %e\n' %
+                           (galid, len(mjd_arr),tau,elapsed))
         lock.release()
 
         dmag_arr = evm.applyAgn(np.array([[0]]), params, mjd_arr)
