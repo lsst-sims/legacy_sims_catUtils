@@ -1324,9 +1324,6 @@ class ExtraGalacticVariabilityModels(Variability):
 
                 start_date = toff
                 rng = np.random.RandomState(seed)
-                dx_0 = {}
-                for k in sfint:
-                    dx_0[k]=0.0
 
                 endepoch = expmjd_val - start_date
 
@@ -1346,7 +1343,7 @@ class ExtraGalacticVariabilityModels(Variability):
                 es = rng.normal(0., 1., nbins)*math.sqrt(dt)
 
                 for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
-                    dx2 = dx_0[k]
+                    dx2 = 0.0
                     for i in range(nbins):
                         #The second term differs from Zeljko's equation by sqrt(2.)
                         #because he assumes stdev = sfint/sqrt(2)
