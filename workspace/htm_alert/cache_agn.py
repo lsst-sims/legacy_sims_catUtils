@@ -15,6 +15,7 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
     survey_start = 59580.0
 
     t_start = time.time()
+    n_simulated = 0
     for galid, param_dict in zip(galid_list, param_dict_list):
 
         tau = param_dict['pars']['agn_tau']
@@ -40,12 +41,13 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
                     out_file.write('%.4f ' % (dmag_arr[i_filter][0][i_time]))
                 out_file.write('\n')
 
-
+        n_simulated += 1
         lock.acquire()
         with open(log_file, 'a') as out_file:
             elapsed = (time.time()-t_start)/3600.0
-            out_file.write('simulated %d -- %d -- tau %e hrs elapsed %e\n' %
-                           (galid, len(mjd_arr),tau,elapsed))
+            projected = len(galid_list)*elapsed/n_simulated
+            out_file.write('simulated %d -- %d -- tau %e hrs elapsed %e proj %e\n' %
+                           (galid, len(mjd_arr),tau,elapsed,projected))
         lock.release()
 
 
