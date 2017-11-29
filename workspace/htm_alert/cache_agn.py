@@ -25,13 +25,6 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
         for key in param_dict['pars']:
             params[key]=np.array([param_dict['pars'][key]])
 
-        lock.acquire()
-        with open(log_file, 'a') as out_file:
-            elapsed = (time.time()-t_start)/3600.0
-            out_file.write('simulating %d -- %d -- tau %e hrs elapsed %e\n' %
-                           (galid, len(mjd_arr),tau,elapsed))
-        lock.release()
-
         dmag_arr = evm.applyAgn(np.array([[0]]), params, mjd_arr)
         assert dmag_arr.shape == (6, 1, len(mjd_arr))
 
@@ -46,6 +39,14 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
                 for i_filter in range(6):
                     out_file.write('%.4f ' % (dmag_arr[i_filter][0][i_time]))
                 out_file.write('\n')
+
+
+        lock.acquire()
+        with open(log_file, 'a') as out_file:
+            elapsed = (time.time()-t_start)/3600.0
+            out_file.write('simulated %d -- %d -- tau %e hrs elapsed %e\n' %
+                           (galid, len(mjd_arr),tau,elapsed))
+        lock.release()
 
 
 if __name__== "__main__":
