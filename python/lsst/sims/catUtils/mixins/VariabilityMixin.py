@@ -1342,19 +1342,22 @@ class ExtraGalacticVariabilityModels(Variability):
                 dt = dt/tau
                 es = rng.normal(0., 1., nbins)*math.sqrt(dt)
 
-                for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
-                    dx2 = 0.0
-                    for i in range(nbins):
-                        #The second term differs from Zeljko's equation by sqrt(2.)
-                        #because he assumes stdev = sfint/sqrt(2)
-                        dx1 = dx2
-                        dx2 = -dx1*dt + sfint[k]*es[i] + dx1
+                dx2 = 0.0
+                for i in range(nbins):
+                    #The second term differs from Zeljko's equation by sqrt(2.)
+                    #because he assumes stdev = sfint/sqrt(2)
+                    dx1 = dx2
+                    dx2 = -dx1*dt + sfint['u']*es[i] + dx1
 
-                    dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
-                    if isinstance(expmjd, numbers.Number):
-                        dMags[ik][ix] = dm_val
-                    else:
-                        dMags[ik][ix][i_time] = dm_val
+                dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                if isinstance(expmjd, numbers.Number):
+                    dMags[0][ix] = dm_val
+                else:
+                    dMags[0][ix][i_time] = dm_val
+
+        for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
+            for ix in valid_dexes[0]:
+                dMags[i_filter+1][ix] = dMags[0][ix]*params['agn_sf%s' % filter_name][ix]/params['agn_sfu'][ix]
 
         return dMags
 
