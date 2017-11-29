@@ -1344,7 +1344,6 @@ class ExtraGalacticVariabilityModels(Variability):
 
                 dt = dt/tau
                 es = rng.normal(0., 1., nbins)*math.sqrt(dt)
-                dx_cached = {}
 
                 for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
                     dx2 = dx_0[k]
@@ -1354,7 +1353,6 @@ class ExtraGalacticVariabilityModels(Variability):
                         dx1 = dx2
                         dx2 = -dx1*dt + sfint[k]*es[i] + dx1
 
-                    dx_cached[k] = dx2
                     dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                     if isinstance(expmjd, numbers.Number):
                         dMags[ik][ix] = dm_val
