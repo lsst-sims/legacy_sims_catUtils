@@ -7,7 +7,7 @@ import argparse
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 
-def simulate_agn(galid_list, param_dict_list, output_dir):
+def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
     evm = ExtraGalacticVariabilityModels()
 
     duration = 3654.0
@@ -23,7 +23,10 @@ def simulate_agn(galid_list, param_dict_list, output_dir):
         for key in param_dict['pars']:
             params[key]=np.array([param_dict['pars'][key]])
 
-        print('simulating %d -- %d -- %e' % (galid, len(mjd_arr),tau))
+        lock.acquire()
+        with open(log_file, 'a') as out_file:
+            out_file.write('simulating %d -- %d -- %e\n' % (galid, len(mjd_arr),tau))
+        lock.release()
 
         dmag_arr = evm.applyAgn(np.array([[0]]), params, mjd_arr)
         assert dmag_arr.shape == (6, 1, len(mjd_arr))
@@ -45,15 +48,17 @@ if __name__== "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_proc', type=int, default=4)
     parser.add_argument('--out_dir', type=str, default=None)
+    parser.add_argument('--log_file', type=str, default=None)
     args= parser.parse_args()
 
     if args.out_dir is None:
         raise RuntimeError("must specify output dir")
 
-
     if not os.path.isdir(args.out_dir):
         raise RuntimeError('%s is not a dir' % args.out_dir)
 
+    if args.log_file is None:
+        raise RuntimeError("must specify log file")
 
     dtype = np.dtype([('galid', int), ('varParamStr', str, 300)])
     agn_data_file_name = 'agn_var_param_str.txt'
@@ -103,10 +108,13 @@ if __name__== "__main__":
     assert len(galid_grid) == args.n_proc
     assert len(param_dict_grid) == args.n_proc
 
+    lock = mproc.Lock()
     for i_proc in range(args.n_proc):
         p = mproc.Process(target=simulate_agn,
                           args=(galid_grid[i_proc],
                                 param_dict_grid[i_proc],
-                                args.out_dir))
+                                args.out_dir,
+                                args.log_file,
+                                lock))
 
         p.start()
