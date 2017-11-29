@@ -1322,13 +1322,6 @@ class ExtraGalacticVariabilityModels(Variability):
                 sfint['z'] = sfz_arr[ix]
                 sfint['y'] = sfy_arr[ix]
 
-                # A string made up of this AGNs variability parameters that ought
-                # to uniquely identify it.
-                #
-                agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
-                %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
-                  sfint['y'], tau, toff)
-
                 start_date = toff
                 rng = np.random.RandomState(seed)
                 dx_0 = {}
