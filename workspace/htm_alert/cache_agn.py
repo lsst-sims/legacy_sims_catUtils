@@ -46,8 +46,14 @@ if __name__== "__main__":
     parser.add_argument('--n_proc', type=int, default=4)
     parser.add_argument('--out_dir', type=str, default=None)
     args= parser.parse_args()
+
     if args.out_dir is None:
         raise RuntimeError("must specify output dir")
+
+
+    if not os.path.isdir(args.out_dir):
+        raise RuntimeError('%s is not a dir' % args.out_dir)
+
 
     dtype = np.dtype([('galid', int), ('varParamStr', str, 300)])
     agn_data_file_name = 'agn_var_param_str.txt'
