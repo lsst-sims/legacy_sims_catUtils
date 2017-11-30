@@ -657,7 +657,6 @@ class AlertDataGenerator(object):
 
         output_data_cache = {}
         output_data_start_dex = {}
-        ct_to_write = 0
 
         n_obj = 0
         n_actual_obj = 0
@@ -665,6 +664,7 @@ class AlertDataGenerator(object):
         n_time_last = 0
         for chunk in data_iter:
             n_raw_obj = len(chunk)
+            print('n_raw_obj %d' % n_raw_obj)
             i_chunk += 1
 
             if n_actual_obj>0:
@@ -684,7 +684,7 @@ class AlertDataGenerator(object):
             valid_htmid = np.where(reduced_htmid == htmid)
             if len(valid_htmid[0]) == 0:
                 continue
-            n_htmid_trim = len(chunk)-len(valid_htmid[0])
+            n_htmid_trim = n_raw_obj-len(valid_htmid[0])
             chunk = chunk[valid_htmid]
             n_obj += len(valid_htmid[0])
 
@@ -776,7 +776,7 @@ class AlertDataGenerator(object):
             # only calculate photometry for objects that actually land
             # on LSST detectors
 
-            valid_photometry = -1*np.ones(len(chunk))
+            valid_photometry = -1*np.ones(n_raw_obj)
 
             t_before_filter = time.time()
             for i_obs in range(len(obs_valid_dex)):
@@ -785,7 +785,7 @@ class AlertDataGenerator(object):
             invalid_dex = np.where(valid_photometry<0)
             chunk['varParamStr'][invalid_dex] = 'None'
 
-            n_actual_obj += len(chunk)-len(invalid_dex[0])
+            n_actual_obj += n_raw_obj-len(invalid_dex[0])
 
             photometry_catalog._set_current_chunk(chunk)
             dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
@@ -794,14 +794,14 @@ class AlertDataGenerator(object):
 
 
             dmag_arr_transpose = dmag_arr.transpose(2,1,0)
-            assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
+            assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
 
             # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
             # at some point in their history (note that delta_mag is defined with
             # respect to the quiescent magnitude)
 
             photometrically_valid_obj = []
-            for i_obj in range(len(chunk)):
+            for i_obj in range(n_raw_obj):
                 keep_it = False
                 for i_filter in range(len(mag_names)):
                     if np.abs(dmag_arr_transpose[i_obj][i_filter]).max()>dmag_cutoff:
@@ -855,7 +855,8 @@ class AlertDataGenerator(object):
                 i_star = 0
                 cat = cat_list[i_obs]
                 for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
-                    n_time_last += len(valid_chunk)
+                    n_time_last += len(valid_chunk[0])
+                    length_of_chunk = len(valid_chunk[chunk_map['uniqueId']])
 
                     if obshistid not in output_data_cache:
                         output_data_cache[obshistid] = {}
@@ -875,23 +876,20 @@ class AlertDataGenerator(object):
                     for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
 
+                        output_data_cache[obshistid][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
 
-                        output_data_cache[obshistid][col_name][data_start_dex:data_start_dex+len(valid_chunk)] = valid_chunk[chunk_map[col_name]]
+                    data_start_dex += length_of_chunk
 
-                    ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
-                    data_start_dex += len(valid_chunk)
+            self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
+                                output_data_cache, actual_obshistid_list,
+                                actual_expmjd_list, actual_band_list)
 
-            if i_chunk%5 == 0:
-                self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
-                                    output_data_cache, actual_obshistid_list,
-                                    actual_expmjd_list, actual_band_list)
-
-                output_ct += 1
-                output_data_cache = {}
-                actual_expmjd_list = []
-                actual_band_list = []
-                actual_obshistid_list = []
-                actual_obshistid_set = set()
+            output_ct += 1
+            output_data_cache = {}
+            actual_expmjd_list = []
+            actual_band_list = []
+            actual_obshistid_list = []
+            actual_obshistid_set = set()
 
 
 
