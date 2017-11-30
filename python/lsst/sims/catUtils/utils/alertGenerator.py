@@ -26,7 +26,7 @@ from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj
-from sqlalchemy.sql import select, column, func
+from sqlalchemy.sql import select, column, func, text
 from lsst.sims.catalogs.db import ChunkIterator
 
 __all__ = ["AlertDataGenerator",
