@@ -43,7 +43,7 @@ if __name__ == "__main__":
     lc_dtype = np.dtype([('mjd', float), ('du', float), ('dg', float),
                          ('dr', float), ('di', float), ('dz', float)])
 
-    for i_t, t_min in enumerate(np.arange(t_start, duration, args.t_step)):
+    for i_t, t_min in enumerate(np.arange(t_start, t_start+duration, args.t_step)):
         t_max = t_min + args.t_step
         output_lc = {}
         print('time range %e %e' % (t_min, t_max))
