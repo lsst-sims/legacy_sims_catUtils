@@ -46,6 +46,7 @@ if __name__ == "__main__":
     for i_t, t_min in enumerate(np.arange(t_start, duration, t_step)):
         t_max = t_min + t_step
         output_lc = {}
+        print('time range %e %e' % (t_min, t_max))
 
         for galid, file_name in zip(galid_list, lc_file_list):
             data = np.genfromtxt(file_name, dtype=lc_dtype)
@@ -59,6 +60,6 @@ if __name__ == "__main__":
             output_lc['%d_du' % galid] = du
             output_lc['%d_norms' % galid] = normalizing_factors[galid]
 
-        out_file_name = os.path.join(args.out_dir, 'agn_lc_cache.npz')
+        out_file_name = os.path.join(args.out_dir, 'agn_lc_cache_%.1f_%.1f.npz' % (t_min, t_max))
         with open(out_file_name, 'wb') as file_handle:
             np.savez(file_handle, **output_lc)
