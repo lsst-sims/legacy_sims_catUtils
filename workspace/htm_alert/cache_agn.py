@@ -41,7 +41,7 @@ if __name__ == "__main__":
     n_t_steps = np.floor(duration/args.t_step).astype(int)
 
     lc_dtype = np.dtype([('mjd', float), ('du', float), ('dg', float),
-                         ('dr', float),, ('di', float), ('dz', float)])
+                         ('dr', float), ('di', float), ('dz', float)])
 
     for i_t, t_min in enumerate(np.arange(t_start, duration, t_step)):
         t_max = t_min + t_step
