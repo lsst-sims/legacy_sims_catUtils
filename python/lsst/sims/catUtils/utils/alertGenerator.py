@@ -856,9 +856,6 @@ class AlertDataGenerator(object):
                     if obshistid not in output_data_cache:
                         output_data_cache[obshistid] = {}
 
-
-                    data_tag = '%d_%d' % (obs.OpsimMetaData['obsHistID'], i_chunk)
-
                     for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
 
