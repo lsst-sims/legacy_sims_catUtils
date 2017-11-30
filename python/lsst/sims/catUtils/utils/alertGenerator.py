@@ -521,8 +521,8 @@ class AlertDataGenerator(object):
     def n_obs(self, htmid):
         return len(self._htmid_dict[htmid])
 
-    def output_to_hdf5(self, output_dir, output_prefix, htmid, output_ct, data_cache,
-                       obshistid_list, expmjd_list, band_list):
+    def output_alert_data(self, output_dir, output_prefix, htmid, output_ct, data_cache,
+                          obshistid_list, expmjd_list, band_list):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
@@ -883,9 +883,9 @@ class AlertDataGenerator(object):
 
                     data_start_dex += length_of_chunk
 
-            self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
-                                output_data_cache, actual_obshistid_list,
-                                actual_expmjd_list, actual_band_list)
+            self.output_alert_data(output_dir, output_prefix, htmid, output_ct,
+                                   output_data_cache, actual_obshistid_list,
+                                   actual_expmjd_list, actual_band_list)
 
             output_ct += 1
             output_data_cache = {}
@@ -897,9 +897,9 @@ class AlertDataGenerator(object):
 
 
         if len(output_data_cache)>0:
-            self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
-                                output_data_cache, actual_obshistid_list,
-                                actual_expmjd_list, actual_band_list)
+            self.output_alert_data(output_dir, output_prefix, htmid, output_ct,
+                                   output_data_cache, actual_obshistid_list,
+                                   actual_expmjd_list, actual_band_list)
 
             output_ct += 1
             output_data_cache = {}
