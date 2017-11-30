@@ -27,7 +27,7 @@ def simulate_agn(galid_list, param_dict_list, output_dir, log_file, lock):
 
         tau = param_dict['pars']['agn_tau']
         dt = tau/100.0
-        mjd_arr = survey_start + np.arange(0.0, duration, dt)
+        mjd_arr = survey_start + np.arange(0.0, duration+5.0*dt, dt)
 
         params = {}
         for key in param_dict['pars']:
