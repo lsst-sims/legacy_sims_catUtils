@@ -547,12 +547,15 @@ class AlertDataGenerator(object):
         hdf5_file.create_dataset('TAI', data=expmjd_list)
         hdf5_file.create_dataset('bandpass', data=band_list)
 
+        n_written = 0
         for obsHistID in obshistid_list:
             where_valid = np.where(data_cache[obsHistID]['uniqueId']>(self._flag_val+10.0))
+            n_written += len(where_valid[0])
             for col_name in data_cache[obsHistID].keys():
                 data_tag = '%d_%s' % (obsHistID, col_name)
                 hdf5_file.create_dataset(data_tag, data=data_cache[obsHistID][col_name][where_valid])
 
+        print('n_written %d' % n_written)
         hdf5_file.close()
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
