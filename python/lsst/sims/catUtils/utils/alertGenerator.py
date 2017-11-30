@@ -406,6 +406,7 @@ class AlertDataGenerator(object):
     def __init__(self, n_proc_max=4,
                  testing=False):
 
+        self._flag_val = -999.0
         self._htmid_level = 5
         self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
@@ -547,9 +548,10 @@ class AlertDataGenerator(object):
         hdf5_file.create_dataset('bandpass', data=band_list)
 
         for obsHistID in obshistid_list:
+            where_valid = np.where(data_cache[obsHistID]['uniqueId']>self._flag_val)
             for col_name in data_cache[obsHistID].keys():
                 data_tag = '%d_%s' % (obsHistID, col_name)
-                hdf5_file.create_dataset(data_tag, data=np.array(data_cache[obsHistID][col_name]))
+                hdf5_file.create_dataset(data_tag, data=data_cache[obsHistID][col_name][where_valid])
 
         hdf5_file.close()
 
@@ -654,6 +656,7 @@ class AlertDataGenerator(object):
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         output_data_cache = {}
+        output_data_start_dex = {}
         ct_to_write = 0
 
         n_obj = 0
@@ -661,6 +664,7 @@ class AlertDataGenerator(object):
         output_ct = 0
         n_time_last = 0
         for chunk in data_iter:
+            n_raw_obj = len(chunk)
             i_chunk += 1
 
             if n_actual_obj>0:
@@ -855,16 +859,27 @@ class AlertDataGenerator(object):
 
                     if obshistid not in output_data_cache:
                         output_data_cache[obshistid] = {}
+                        data_start_dex =0
+
+                        for col_name in ('uniqueId', 'raICRS', 'decICRS',
+                                         'flux', 'dflux', 'SNR',
+                                         'chipNum', 'xPix', 'yPix'):
+
+                            if col_name in ('uniqueId', 'chipNum'):
+                                arr_type = int
+                            else:
+                                arr_type = float
+
+                            output_data_cache[obshistid][col_name] = self._flag_val*np.ones(n_raw_obj, dtype=arr_type)
 
                     for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                      'chipNum', 'xPix', 'yPix'):
 
-                        if col_name not in output_data_cache[obshistid]:
-                            output_data_cache[obshistid][col_name] = list(valid_chunk[chunk_map[col_name]])
-                        else:
-                            output_data_cache[obshistid][col_name] += list(valid_chunk[chunk_map[col_name]])
+
+                        output_data_cache[obshistid][col_name][data_start_dex:data_start_dex+len(valid_chunk)] = valid_chunk[chunk_map[col_name]]
 
                     ct_to_write += len(valid_chunk[chunk_map['uniqueId']])
+                    data_start_dex += len(valid_chunk)
 
             if i_chunk%5 == 0:
                 self.output_to_hdf5(output_dir, output_prefix, htmid, output_ct,
