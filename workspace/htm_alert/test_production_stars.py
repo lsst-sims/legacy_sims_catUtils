@@ -27,18 +27,19 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
     for i_htmid, htmid in enumerate(htmid_list):
         t_start = time.time()
         print('passing in %s' % str(htmid))
-        ct = alert_gen.alert_data_from_htmid(htmid, db, chunk_size=5000,
-                                             write_every=100000,
-                                             output_dir=out_dir,
-                                             output_prefix=out_prefix,
-                                             dmag_cutoff=0.001,
-                                             photometry_class=AlertStellarVariabilityCatalog)
+        n_rows = alert_gen.alert_data_from_htmid(htmid, db, chunk_size=5000,
+                                                 write_every=100000,
+                                                 output_dir=out_dir,
+                                                 output_prefix=out_prefix,
+                                                 dmag_cutoff=0.001,
+                                                 photometry_class=AlertStellarVariabilityCatalog)
 
         lock.acquire()
         with open(log_file_name, 'a') as out_file:
             elapsed = (time.time()-t_start)/3600.0
-            out_file.write('htmid %d nobs %d time %.2e hrs\n' %
-                           (htmid, alert_gen.n_obs(htmid), elapsed))
+            out_file.write('htmid %d nobs %d n_rows %d time %.2e hrs; per_row %.2e -- n_htmid %d of %d\n' %
+                           (htmid, alert_gen.n_obs(htmid), n_rows, elapsed,
+                            elapsed/n_rows, i_htmid, len(htmid_list)))
 
         lock.release()
 
@@ -73,7 +74,7 @@ if __name__ == "__main__":
 
     obs_gen = ObservationMetaDataGenerator(opsim_db, driver='sqlite')
 
-    obs_list = obs_gen.getObservationMetaData(night=(30,91))
+    obs_list = obs_gen.getObservationMetaData(night=(30,61))
 
     del obs_gen
     sims_clean_up()
