@@ -812,7 +812,7 @@ class AlertDataGenerator(object):
                 unq = photometry_catalog.column_by_name('uniqueId')
                 cmd = 'BEGIN; '
                 for i_q in range(len(unq)):
-                    sub_cmd = 'INSERT INTO quiesent_flux VALUES(%d, %.9e, %.9e, %.9e, %.9e, %.9e, %.9e); ' % \
+                    sub_cmd = 'INSERT INTO quiescent_flux VALUES(%d, %.9e, %.9e, %.9e, %.9e, %.9e, %.9e); ' % \
                               (unq[i_q], q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
                     cmd += sub_cmd
                 cmd += 'END;'
