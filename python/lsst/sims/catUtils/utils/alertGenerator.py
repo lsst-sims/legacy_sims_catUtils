@@ -84,9 +84,9 @@ class StellarAlertDBObjMixin(object):
         htmid_min = int(htmid << n_bits_off)
         htmid_max = int((htmid+1) << n_bits_off)
 
-        print('htmid range')
-        print(htmid_min,type(htmid_min))
-        print(htmid_max, type(htmid_max))
+        #print('htmid range')
+        #print(htmid_min,type(htmid_min))
+        #print(htmid_max, type(htmid_max))
 
         query = self._get_column_query(colnames)
 
@@ -442,7 +442,7 @@ class AlertDataGenerator(object):
             if levelFromHtmid(htmid) == self._htmid_level:
                 valid_htmid.append(htmid)
 
-        print("made trixel dict")
+        #print("made trixel dict")
 
         obs_list = np.array(obs_list)
         self._obs_list = obs_list
@@ -460,7 +460,7 @@ class AlertDataGenerator(object):
         obs_ra_list = np.array(obs_ra_list)
         obs_dec_list = np.array(obs_dec_list)
         halfspace_list = np.array(halfspace_list)
-        print("made ra and dec lists")
+        #print("made ra and dec lists")
         self._htmid_dict = {}
         self._htmid_list = []
         n_obs_list = []
@@ -548,7 +548,7 @@ class AlertDataGenerator(object):
         conn.commit()
         elapsed = (time.time()-t_start)/3600.0
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
-        print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
+        #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
         return n_written
 
 
@@ -570,7 +570,7 @@ class AlertDataGenerator(object):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-        print('htmid %d' % (htmid))
+        #print('htmid %d' % (htmid))
 
         dummy_sed = Sed()
 
@@ -601,7 +601,7 @@ class AlertDataGenerator(object):
         cat_list = cat_list[sorted_dex]
         obs_valid_dex = obs_valid_dex[sorted_dex]
 
-        print('built list')
+        #print('built list')
 
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
@@ -615,7 +615,7 @@ class AlertDataGenerator(object):
                                               htmid=htmid,
                                               chunk_size=chunk_size)
 
-        print("time for photometry catalog")
+        #print("time for photometry catalog")
 
         photometry_catalog = photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
                                               column_outputs=['lsst_u',
@@ -625,7 +625,7 @@ class AlertDataGenerator(object):
                                                               'lsst_z',
                                                               'lsst_y'])
 
-        print('chunking')
+        #print('chunking')
         i_chunk = 0
         t_chipName = 0.0
         t_before_obj = time.time()
@@ -675,6 +675,7 @@ class AlertDataGenerator(object):
                 n_raw_obj = len(chunk)
                 i_chunk += 1
 
+                """
                 if n_rows>0:
                     elapsed = (time.time()-t_before_obj)/3600.0
                     elapsed_per = elapsed/n_rows
@@ -684,6 +685,7 @@ class AlertDataGenerator(object):
                     print('    elapsed %.2e hrs per row %.2e total %2e' %
                     (elapsed, elapsed_per, total_projection))
                     print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
+                """
 
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
