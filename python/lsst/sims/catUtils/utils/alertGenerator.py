@@ -610,7 +610,8 @@ class AlertDataGenerator(object):
 
         data_iter = dbobj.query_columns_htmid(colnames=column_query,
                                               htmid=htmid,
-                                              chunk_size=chunk_size)
+                                              chunk_size=chunk_size,
+                                              constraint='ORDER BY simobjid')
 
         print("time for photometry catalog")
 
