@@ -555,7 +555,8 @@ class AlertDataGenerator(object):
                               dmag_cutoff=0.005,
                               chunk_size=1000, write_every=10000,
                               output_dir='.', output_prefix='',
-                              photometry_class=None):
+                              photometry_class=None,
+                              chunk_cutoff=-1):
 
         t_start = time.time()
 
@@ -689,6 +690,8 @@ class AlertDataGenerator(object):
                 if i_chunk == 1:
                     t_before_obj = time.time()
                     n_actual_obj = 0
+                if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
+                    break
 
                 n_time_last = 0
                 # filter the chunk so that we are only considering sources that are in
