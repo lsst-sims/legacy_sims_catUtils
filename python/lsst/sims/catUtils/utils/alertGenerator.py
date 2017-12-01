@@ -639,7 +639,7 @@ class AlertDataGenerator(object):
         n_time_last = 0
 
         db_name = os.path.join(output_dir, '%s_%d_sqlite.db' % (output_prefix, htmid))
-        with sqlite3.connect(db_name) as conn:
+        with sqlite3.connect(db_name, isolation_level='EXCLUSIVE') as conn:
             creation_cmd = '''CREATE TABLE alert_data
                            (uniqueId int, obshistId int, xPix float, yPix float,
                             chipNum int, dflux float, snr float, ra float, dec float)'''
