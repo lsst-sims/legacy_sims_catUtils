@@ -545,7 +545,7 @@ class AlertDataGenerator(object):
                            data_cache[obsHistID]['decICRS'][i_obj])
                 cmd += sub_cmd
             cmd += 'END;'
-            cursor.execute(cmd)
+            cursor.executescript(cmd)
         conn.commit()
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
@@ -816,7 +816,7 @@ class AlertDataGenerator(object):
                               (unq[i_q], q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
                     cmd += sub_cmd
                 cmd += 'END;'
-                cursor.execute(cmd)
+                cursor.executescript(cmd)
                 conn.commit()
 
                 dmag_arr_transpose = dmag_arr.transpose(2,1,0)
