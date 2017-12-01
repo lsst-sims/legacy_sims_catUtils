@@ -527,15 +527,11 @@ class AlertDataGenerator(object):
         """
 
         cursor = conn.cursor()
-        n_written = 0
+        n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
+
         for obsHistID in data_cache:
             valid_obj = np.where(data_cache[obsHistID]['uniqueId']>0.0)
-            for i_obj in valid_obj[0]:
-                n_written += 1
-                cmd = '''INSERT INTO alert_data
-                      VALUES(%ld, %d, %.3f, %.3f, %d,
-                      %.9e, %.9e, %.7f, %.7f)''' % \
-                      (data_cache[obsHistID]['uniqueId'][i_obj],
+            values = [(data_cache[obsHistID]['uniqueId'][i_obj],
                        obsHistID,
                        data_cache[obsHistID]['xPix'][i_obj],
                        data_cache[obsHistID]['yPix'][i_obj],
@@ -544,11 +540,12 @@ class AlertDataGenerator(object):
                        data_cache[obsHistID]['SNR'][i_obj],
                        data_cache[obsHistID]['raICRS'][i_obj],
                        data_cache[obsHistID]['decICRS'][i_obj])
-
-                cursor.execute(cmd)
-            conn.commit()
-
-        print('    n_written %d' % n_written)
+                      for i_obj in valid_obj[0]]
+            cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+        conn.commit()
+        n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
+        conn.commit()
+        print('    n_written %d' % (n_rows_1[0][0]-n_rows_0[0][0]))
 
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
@@ -812,11 +809,9 @@ class AlertDataGenerator(object):
                 q_z = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_z'))
                 q_y = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
                 unq = photometry_catalog.column_by_name('uniqueId')
-                for i_q in range(len(unq)):
-                    cmd = '''INSERT INTO quiescent_flux
-                          VALUES(%ld, %.9e, %.9e, %.9e, %.9e, %.9e, %.9e)''' % (unq[i_q],
-                          q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
-                    cursor.execute(cmd)
+                values = [(unq[i_q], q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
+                           for i_q in range(len(unq))]
+                cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?,?,?,?)', values)
                 conn.commit()
 
                 dmag_arr_transpose = dmag_arr.transpose(2,1,0)
