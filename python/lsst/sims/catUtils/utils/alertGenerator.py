@@ -533,16 +533,16 @@ class AlertDataGenerator(object):
             valid_obj = np.where(data_cache[obsHistID]['uniqueId']>0.0)
             cmd = 'BEGIN; '
             for i_obj in valid_obj[0]:
-                sub_cmd += 'INSERT INTO alert_data VALUES (%ld, %d, %.4f, %.4f, %d, %.9e, %.9e, %.7f, %.7f); ' % \
-                           (data_cache[obsHistID]['uniqueId'][i_obj],
-                            obsHistID,
-                            data_cache[obsHistID]['xPix'][i_obj],
-                            data_cache[obsHistID]['yPix'][i_obj],
-                            data_cache[obsHistID]['chipNum'][i_obj],
-                            data_cache[obsHistID]['dflux'][i_obj],
-                            data_cache[obsHistID]['SNR'][i_obj],
-                            data_cache[obsHistID]['raICRS'][i_obj],
-                            data_cache[obsHistID]['decICRS'][i_obj])
+                sub_cmd = 'INSERT INTO alert_data VALUES (%ld, %d, %.4f, %.4f, %d, %.9e, %.9e, %.7f, %.7f); ' % \
+                          (data_cache[obsHistID]['uniqueId'][i_obj],
+                           obsHistID,
+                           data_cache[obsHistID]['xPix'][i_obj],
+                           data_cache[obsHistID]['yPix'][i_obj],
+                           data_cache[obsHistID]['chipNum'][i_obj],
+                           data_cache[obsHistID]['dflux'][i_obj],
+                           data_cache[obsHistID]['SNR'][i_obj],
+                           data_cache[obsHistID]['raICRS'][i_obj],
+                           data_cache[obsHistID]['decICRS'][i_obj])
                 cmd += sub_cmd
             cmd += 'END;'
             cursor.execute(cmd)
@@ -812,8 +812,8 @@ class AlertDataGenerator(object):
                 unq = photometry_catalog.column_by_name('uniqueId')
                 cmd = 'BEGIN; '
                 for i_q in range(len(unq)):
-                    sub_cmd += 'INSERT INTO quiesent_flux VALUES(%d, %.9e, %.9e, %.9e, %.9e, %.9e, %.9e); ' % \
-                               (unq[i_q], q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
+                    sub_cmd = 'INSERT INTO quiesent_flux VALUES(%d, %.9e, %.9e, %.9e, %.9e, %.9e, %.9e); ' % \
+                              (unq[i_q], q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
                     cmd += sub_cmd
                 cmd += 'END;'
                 cursor.execute(cmd)
