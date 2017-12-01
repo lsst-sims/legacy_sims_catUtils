@@ -683,7 +683,7 @@ class AlertDataGenerator(object):
                     print('\n    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
                     print('    elapsed %.2e hrs per row %.2e total %2e' %
                     (elapsed, elapsed_per, total_projection))
-                    print('    n_time_last %d' % n_time_last)
+                    print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
 
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
@@ -912,4 +912,4 @@ class AlertDataGenerator(object):
         cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId)')
         cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
 
-        return len(obs_valid_dex)
+        return n_rows
