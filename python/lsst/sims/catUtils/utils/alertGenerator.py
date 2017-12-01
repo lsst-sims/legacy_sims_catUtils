@@ -113,6 +113,8 @@ class StellarAlertDBObjMixin(object):
         if limit is not None:
             query = query.limit(limit)
 
+        query = query.order_by('simobjid')
+
         return ChunkIterator(self, query, chunk_size)
 
 class StellarAlertDBObj(StellarAlertDBObjMixin, StarObj):
@@ -610,8 +612,7 @@ class AlertDataGenerator(object):
 
         data_iter = dbobj.query_columns_htmid(colnames=column_query,
                                               htmid=htmid,
-                                              chunk_size=chunk_size,
-                                              constraint='ORDER BY simobjid')
+                                              chunk_size=chunk_size)
 
         print("time for photometry catalog")
 
