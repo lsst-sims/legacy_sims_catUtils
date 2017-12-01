@@ -686,6 +686,10 @@ class AlertDataGenerator(object):
                     (elapsed, elapsed_per, total_projection))
                     print('    n_time_last %d' % n_time_last)
 
+                if i_chunk == 1:
+                    t_before_obj = time.time()
+                    n_actual_obj = 0
+
                 n_time_last = 0
                 # filter the chunk so that we are only considering sources that are in
                 # the trixel being considered
