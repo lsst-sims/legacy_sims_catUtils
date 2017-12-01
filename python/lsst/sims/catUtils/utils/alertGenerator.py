@@ -582,8 +582,6 @@ class AlertDataGenerator(object):
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
         obs_valid_dex = self._htmid_dict[htmid]
         print('n valid obs %d' % len(obs_valid_dex))
-        center_trixel = self._trixel_dict[htmid]
-        center_ra, center_dec = center_trixel.get_center()
 
         cat_list = []
         expmjd_list = []
