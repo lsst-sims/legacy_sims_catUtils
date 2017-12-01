@@ -531,17 +531,21 @@ class AlertDataGenerator(object):
 
         for obsHistID in data_cache:
             valid_obj = np.where(data_cache[obsHistID]['uniqueId']>0.0)
-            values = [(data_cache[obsHistID]['uniqueId'][i_obj],
-                       obsHistID,
-                       data_cache[obsHistID]['xPix'][i_obj],
-                       data_cache[obsHistID]['yPix'][i_obj],
-                       data_cache[obsHistID]['chipNum'][i_obj],
-                       data_cache[obsHistID]['dflux'][i_obj],
-                       data_cache[obsHistID]['SNR'][i_obj],
-                       data_cache[obsHistID]['raICRS'][i_obj],
-                       data_cache[obsHistID]['decICRS'][i_obj])
-                      for i_obj in valid_obj[0]]
-            cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+            cmd = 'BEGIN; '
+            for i_obj in valid_obj[0]:
+                sub_cmd += 'INSERT INTO alert_data VALUES (%ld, %d, %.4f, %.4f, %d, %.9e, %.9e, %.7f, %.7f); ' % \
+                           (data_cache[obsHistID]['uniqueId'][i_obj],
+                            obsHistID,
+                            data_cache[obsHistID]['xPix'][i_obj],
+                            data_cache[obsHistID]['yPix'][i_obj],
+                            data_cache[obsHistID]['chipNum'][i_obj],
+                            data_cache[obsHistID]['dflux'][i_obj],
+                            data_cache[obsHistID]['SNR'][i_obj],
+                            data_cache[obsHistID]['raICRS'][i_obj],
+                            data_cache[obsHistID]['decICRS'][i_obj])
+                cmd += sub_cmd
+            cmd += 'END;'
+            cursor.execute(cmd)
         conn.commit()
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
