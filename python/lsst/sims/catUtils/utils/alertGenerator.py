@@ -529,9 +529,10 @@ class AlertDataGenerator(object):
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
+        values = []
         for obsHistID in data_cache:
             valid_obj = np.where(data_cache[obsHistID]['uniqueId']>0.0)
-            values = [(data_cache[obsHistID]['uniqueId'][i_obj],
+            values += [(data_cache[obsHistID]['uniqueId'][i_obj],
                        obsHistID,
                        data_cache[obsHistID]['xPix'][i_obj],
                        data_cache[obsHistID]['yPix'][i_obj],
@@ -541,7 +542,7 @@ class AlertDataGenerator(object):
                        data_cache[obsHistID]['raICRS'][i_obj],
                        data_cache[obsHistID]['decICRS'][i_obj])
                       for i_obj in valid_obj[0]]
-            cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+        cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
