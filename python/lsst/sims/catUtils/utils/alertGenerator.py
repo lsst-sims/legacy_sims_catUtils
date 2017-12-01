@@ -113,8 +113,6 @@ class StellarAlertDBObjMixin(object):
         if limit is not None:
             query = query.limit(limit)
 
-        query = query.order_by('simobjid')
-
         return ChunkIterator(self, query, chunk_size)
 
 class StellarAlertDBObj(StellarAlertDBObjMixin, StarObj):
@@ -644,16 +642,14 @@ class AlertDataGenerator(object):
         with sqlite3.connect(db_name) as conn:
             creation_cmd = '''CREATE TABLE alert_data
                            (uniqueId int, obshistId int, xPix float, yPix float,
-                            chipNum int, dflux float, snr float, ra float, dec float,
-                            PRIMARY KEY(uniqueId, obshistId))'''
+                            chipNum int, dflux float, snr float, ra float, dec float)'''
 
             cursor = conn.cursor()
             cursor.execute(creation_cmd)
             conn.commit()
 
             creation_cmd = '''CREATE TABLE metadata
-                           (obshistId int, TAI float, band int,
-                           PRIMARY KEY(obshistId))'''
+                           (obshistId int, TAI float, band int)'''
             cursor.execute(creation_cmd)
             conn.commit()
 
@@ -668,8 +664,7 @@ class AlertDataGenerator(object):
 
             creation_cmd = '''CREATE TABLE quiescent_flux
                           (uniqueId int, u_flux float, g_flux float, r_flux float,
-                          i_flux float, z_flux float, y_flux float,
-                          PRIMARY KEY(uniqueId))'''
+                          i_flux float, z_flux float, y_flux float)'''
 
             cursor.execute(creation_cmd)
             conn.commit()
@@ -910,5 +905,9 @@ class AlertDataGenerator(object):
 
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
+
+        cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
+        cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId)')
+        cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
 
         return len(obs_valid_dex)
