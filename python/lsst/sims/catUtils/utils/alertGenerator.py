@@ -636,7 +636,6 @@ class AlertDataGenerator(object):
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         output_data_cache = {}
-        output_data_start_dex = {}
 
         n_obj = 0
         n_actual_obj = 0
