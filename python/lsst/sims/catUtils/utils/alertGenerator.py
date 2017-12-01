@@ -673,7 +673,6 @@ class AlertDataGenerator(object):
 
             for chunk in data_iter:
                 n_raw_obj = len(chunk)
-                print('n_raw_obj %d' % n_raw_obj)
                 i_chunk += 1
 
                 if n_rows>0:
