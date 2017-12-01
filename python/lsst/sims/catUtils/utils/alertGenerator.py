@@ -525,7 +525,6 @@ class AlertDataGenerator(object):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
-        t_start = time.time()
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
@@ -542,6 +541,7 @@ class AlertDataGenerator(object):
                        data_cache[obsHistID]['raICRS'][i_obj],
                        data_cache[obsHistID]['decICRS'][i_obj])
                       for i_obj in valid_obj[0]]
+        t_start = time.time()
         cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
