@@ -525,7 +525,7 @@ class AlertDataGenerator(object):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
-
+        t_start = time.time()
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
@@ -546,7 +546,9 @@ class AlertDataGenerator(object):
         conn.commit()
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
-        print('    n_written %d' % (n_rows_1[0][0]-n_rows_0[0][0]))
+        elapsed = (time.time()-t_start)/3600.0
+        n_written = (n_rows_1[0][0]-n_rows_0[0][0])
+        print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
 
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
