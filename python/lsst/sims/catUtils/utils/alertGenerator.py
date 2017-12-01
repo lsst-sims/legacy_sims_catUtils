@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import re
-import h5py
+import sqlite3
 import multiprocessing as mproc
 from collections import OrderedDict
 import time
@@ -521,42 +521,35 @@ class AlertDataGenerator(object):
     def n_obs(self, htmid):
         return len(self._htmid_dict[htmid])
 
-    def output_alert_data(self, output_dir, output_prefix, htmid, output_ct, data_cache,
-                          obshistid_list, expmjd_list, band_list):
+    def output_alert_data(self, conn, data_cache):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
-        print('    writing %d %d' % (htmid, output_ct))
-        out_file_name = os.path.join(output_dir, '%s_%d_%d.hdf5' % (output_prefix, htmid, output_ct))
-        hdf5_file = h5py.File(out_file_name, 'w')
 
-        for obsHistID in data_cache.keys():
-            assert obsHistID in obshistid_list
-
-        obshistid_list = np.array(obshistid_list)
-        expmjd_list = np.array(expmjd_list)
-        band_list = np.array(band_list)
-
-        sorted_dex = np.argsort(expmjd_list)
-
-        obshistid_list = obshistid_list[sorted_dex]
-        expmjd_list = expmjd_list[sorted_dex]
-        band_list = band_list[sorted_dex]
-
-        hdf5_file.create_dataset('obshistID', data=obshistid_list)
-        hdf5_file.create_dataset('TAI', data=expmjd_list)
-        hdf5_file.create_dataset('bandpass', data=band_list)
-
+        cursor = conn.cursor()
         n_written = 0
-        for obsHistID in obshistid_list:
-            where_valid = np.where(data_cache[obsHistID]['uniqueId']>(self._flag_val+10.0))
-            n_written += len(where_valid[0])
-            for col_name in data_cache[obsHistID].keys():
-                data_tag = '%d_%s' % (obsHistID, col_name)
-                hdf5_file.create_dataset(data_tag, data=data_cache[obsHistID][col_name][where_valid])
+        for obsHistID in data_cache:
+            valid_obj = np.where(data_cache[obsHistID]['uniqueId']>0.0)
+            for i_obj in valid_obj[0]:
+                n_written += 1
+                cmd = '''INSERT INTO alert_data
+                      VALUES(%ld, %d, %.3f, %.3f, %d,
+                      %.9e, %.9e, %.7f, %.7f)''' % \
+                      (data_cache[obsHistID]['uniqueId'][i_obj],
+                       obsHistID,
+                       data_cache[obsHistID]['xPix'][i_obj],
+                       data_cache[obsHistID]['yPix'][i_obj],
+                       data_cache[obsHistID]['chipNum'][i_obj],
+                       data_cache[obsHistID]['dflux'][i_obj],
+                       data_cache[obsHistID]['SNR'][i_obj],
+                       data_cache[obsHistID]['raICRS'][i_obj],
+                       data_cache[obsHistID]['decICRS'][i_obj])
 
-        print('n_written %d' % n_written)
-        hdf5_file.close()
+                cursor.execute(cmd)
+            conn.commit()
+
+        print('    n_written %d' % n_written)
+
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
                               dmag_cutoff=0.005,
@@ -565,6 +558,7 @@ class AlertDataGenerator(object):
                               photometry_class=None):
 
         t_start = time.time()
+
 
         if photometry_class is None:
             raise RuntimeError('Must specify photometry_class')
@@ -575,6 +569,8 @@ class AlertDataGenerator(object):
             os.mkdir(output_dir)
 
         print('htmid %d' % (htmid))
+
+        dummy_sed = Sed()
 
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
@@ -587,44 +583,23 @@ class AlertDataGenerator(object):
         center_trixel = self._trixel_dict[htmid]
         center_ra, center_dec = center_trixel.get_center()
 
-        ra_list = []
-        dec_list = []
         cat_list = []
         expmjd_list = []
-        obshistid_list = []
-        band_list = []
         mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
         for obs_dex in obs_valid_dex:
             obs = self._obs_list[obs_dex]
-            ra_list.append(obs.pointingRA)
-            dec_list.append(obs.pointingDec)
             cat = photometry_class(dbobj, obs_metadata=obs)
             cat.lsstBandpassDict =  self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
-            obshistid_list.append(obs.OpsimMetaData['obsHistID'])
-            band_list.append(mag_name_to_int[obs.bandpass])
 
         expmjd_list = np.array(expmjd_list)
-        obshistid_list = np.array(obshistid_list)
-        band_list = np.array(band_list)
         cat_list = np.array(cat_list)
-        ra_list = np.array(ra_list)
-        dec_list = np.array(dec_list)
         sorted_dex = np.argsort(expmjd_list)
 
         expmjd_list = expmjd_list[sorted_dex]
-        ra_list = ra_list[sorted_dex]
-        dec_list = dec_list[sorted_dex]
         cat_list = cat_list[sorted_dex]
         obs_valid_dex = obs_valid_dex[sorted_dex]
-        obshistid_list = obshistid_list[sorted_dex]
-        band_list = band_list[sorted_dex]
-
-        actual_obshistid_list = []
-        actual_obshistid_set = set()
-        actual_expmjd_list = []
-        actual_band_list = []
 
         print('built list')
 
@@ -665,248 +640,276 @@ class AlertDataGenerator(object):
         n_actual_obj = 0
         output_ct = 0
         n_time_last = 0
-        for chunk in data_iter:
-            n_raw_obj = len(chunk)
-            print('n_raw_obj %d' % n_raw_obj)
-            i_chunk += 1
 
-            if n_actual_obj>0:
-                elapsed = (time.time()-t_before_obj)/3600.0
-                elapsed_per = elapsed/n_actual_obj
-                total_projection = 1800000.0*elapsed_per
-                print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
-                print('    elapsed %.2e hrs per %.2e total %2e' %
-                (elapsed, elapsed_per, total_projection))
-                print('    n_time_last %.4e' % float(n_time_last))
+        db_name = os.path.join(output_dir, '%s_%d_sqlite.db' % (output_prefix, htmid))
+        with sqlite3.connect(db_name) as conn:
+            creation_cmd = '''CREATE TABLE alert_data
+                           (uniqueId int, obshistId int, xPix float, yPix float,
+                            chipNum int, dflux float, snr float, ra float, dec float,
+                            PRIMARY KEY(uniqueId, obshistId))'''
 
-            n_time_last = 0
-            # filter the chunk so that we are only considering sources that are in
-            # the trixel being considered
-            reduced_htmid = chunk['htmid'] >> n_bits_off
+            cursor = conn.cursor()
+            cursor.execute(creation_cmd)
+            conn.commit()
 
-            valid_htmid = np.where(reduced_htmid == htmid)
-            if len(valid_htmid[0]) == 0:
-                continue
-            n_htmid_trim = n_raw_obj-len(valid_htmid[0])
-            chunk = chunk[valid_htmid]
-            n_obj += len(valid_htmid[0])
+            creation_cmd = '''CREATE TABLE metadata
+                           (obshistId int, TAI float, band int,
+                           PRIMARY KEY(obshistId))'''
+            cursor.execute(creation_cmd)
+            conn.commit()
 
-            if 'properMotionRa'in column_query:
-                pmra = chunk['properMotionRa']
-                pmdec = chunk['properMotionDec']
-                px = chunk['parallax']
-                vrad = chunk['radialVelocity']
-            else:
-                pmra = None
-                pmdec = None
-                px = None
-                vrad = None
-
-            #for ii in range(6):
-            #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
-            #exit()
-
-            ###################################################################
-            # Figure out which sources actually land on an LSST detector during
-            # the observations in question
-            #
-            t_before_chip_name = time.time()
-            if n_proc_chipName == 1:
-                chip_name_dict = {}
-            else:
-                mgr = mproc.Manager()
-                chip_name_dict = mgr.dict()
-                iobs_sub_list = []
-                obs_sub_list = []
-                for i_obs in range(n_proc_chipName):
-                    iobs_sub_list.append([])
-                    obs_sub_list.append([])
-                sub_list_ct = 0
-
-            for i_obs, obs_dex in enumerate(obs_valid_dex):
+            for obs_dex in obs_valid_dex:
                 obs = self._obs_list[obs_dex]
-                if n_proc_chipName == 1:
-                    xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
-                                                                 pm_ra=pmra, pm_dec=pmdec,
-                                                                 parallax=px, v_rad=vrad,
-                                                                 obs_metadata=obs)
+                cmd = '''INSERT INTO metadata
+                      VALUES(%d, %.5f, %d)''' % (obs.OpsimMetaData['obsHistID'],
+                      obs.mjd.TAI, mag_name_to_int[obs.bandpass])
 
-                    chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
+                cursor.execute(cmd)
+            conn.commit()
 
-                    chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
-                    for i_chip, name in enumerate(chip_name_list):
-                        if name is not None:
-                            chip_int_arr[i_chip] = 1
+            creation_cmd = '''CREATE TABLE quiescent_flux
+                          (uniqueId int, u_flux float, g_flux float, r_flux float,
+                          i_flux float, z_flux float, y_flux float,
+                          PRIMARY KEY(uniqueId))'''
 
-                    valid_obj = np.where(chip_int_arr>0)
-                    chip_name_dict[i_obs] = (chip_name_list,
-                                             xPup_list,
-                                             yPup_list,
-                                             valid_obj)
+            cursor.execute(creation_cmd)
+            conn.commit()
 
+            for chunk in data_iter:
+                n_raw_obj = len(chunk)
+                print('n_raw_obj %d' % n_raw_obj)
+                i_chunk += 1
+
+                if n_actual_obj>0:
+                    elapsed = (time.time()-t_before_obj)/3600.0
+                    elapsed_per = elapsed/n_actual_obj
+                    total_projection = 1800000.0*elapsed_per
+                    print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
+                    print('    elapsed %.2e hrs per %.2e total %2e' %
+                    (elapsed, elapsed_per, total_projection))
+                    print('    n_time_last %d' % n_time_last)
+
+                n_time_last = 0
+                # filter the chunk so that we are only considering sources that are in
+                # the trixel being considered
+                reduced_htmid = chunk['htmid'] >> n_bits_off
+
+                valid_htmid = np.where(reduced_htmid == htmid)
+                if len(valid_htmid[0]) == 0:
+                    continue
+                n_htmid_trim = n_raw_obj-len(valid_htmid[0])
+                chunk = chunk[valid_htmid]
+                n_obj += len(valid_htmid[0])
+
+                if 'properMotionRa'in column_query:
+                    pmra = chunk['properMotionRa']
+                    pmdec = chunk['properMotionDec']
+                    px = chunk['parallax']
+                    vrad = chunk['radialVelocity']
                 else:
-                    iobs_sub_list[sub_list_ct].append(i_obs)
-                    obs_sub_list[sub_list_ct].append(obs)
-                    sub_list_ct += 1
-                    if sub_list_ct >= n_proc_chipName:
-                        sub_list_ct = 0
+                    pmra = None
+                    pmdec = None
+                    px = None
+                    vrad = None
 
-            if n_proc_chipName>1:
-                process_list = []
-                for sub_list_ct in range(len(iobs_sub_list)):
-                    p = mproc.Process(target=_find_chipNames_parallel,
-                                      args=(chunk['raJ2000'], chunk['decJ2000']),
-                                      kwargs={'pm_ra': pmra,
-                                              'pm_dec': pmdec,
-                                              'parallax': px,
-                                              'v_rad': vrad,
-                                              'obs_metadata_list': obs_sub_list[sub_list_ct],
-                                              'i_obs_list': iobs_sub_list[sub_list_ct],
-                                              'out_dict': chip_name_dict})
-                    p.start()
-                    process_list.append(p)
+                #for ii in range(6):
+                #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
+                #exit()
 
-                for p in process_list:
-                    p.join()
+                ###################################################################
+                # Figure out which sources actually land on an LSST detector during
+                # the observations in question
+                #
+                t_before_chip_name = time.time()
+                if n_proc_chipName == 1:
+                    chip_name_dict = {}
+                else:
+                    mgr = mproc.Manager()
+                    chip_name_dict = mgr.dict()
+                    iobs_sub_list = []
+                    obs_sub_list = []
+                    for i_obs in range(n_proc_chipName):
+                        iobs_sub_list.append([])
+                        obs_sub_list.append([])
+                    sub_list_ct = 0
 
-                assert len(chip_name_dict) == len(obs_valid_dex)
+                for i_obs, obs_dex in enumerate(obs_valid_dex):
+                    obs = self._obs_list[obs_dex]
+                    if n_proc_chipName == 1:
+                        xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
+                                                                     pm_ra=pmra, pm_dec=pmdec,
+                                                                     parallax=px, v_rad=vrad,
+                                                                     obs_metadata=obs)
 
-            ######################################################
-            # Calculate the delta_magnitude for all of the sources
-            #
-            t_before_phot = time.time()
+                        chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
 
-            # only calculate photometry for objects that actually land
-            # on LSST detectors
+                        chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
+                        for i_chip, name in enumerate(chip_name_list):
+                            if name is not None:
+                                chip_int_arr[i_chip] = 1
 
-            valid_photometry = -1*np.ones(n_raw_obj)
+                        valid_obj = np.where(chip_int_arr>0)
+                        chip_name_dict[i_obs] = (chip_name_list,
+                                                 xPup_list,
+                                                 yPup_list,
+                                                 valid_obj)
 
-            t_before_filter = time.time()
-            for i_obs in range(len(obs_valid_dex)):
-                name_list, xpup_list, ypup_list, valid_obj = chip_name_dict[i_obs]
-                valid_photometry[valid_obj] += 2
-            invalid_dex = np.where(valid_photometry<0)
-            chunk['varParamStr'][invalid_dex] = 'None'
+                    else:
+                        iobs_sub_list[sub_list_ct].append(i_obs)
+                        obs_sub_list[sub_list_ct].append(obs)
+                        sub_list_ct += 1
+                        if sub_list_ct >= n_proc_chipName:
+                            sub_list_ct = 0
 
-            n_actual_obj += n_raw_obj-len(invalid_dex[0])
+                if n_proc_chipName>1:
+                    process_list = []
+                    for sub_list_ct in range(len(iobs_sub_list)):
+                        p = mproc.Process(target=_find_chipNames_parallel,
+                                          args=(chunk['raJ2000'], chunk['decJ2000']),
+                                          kwargs={'pm_ra': pmra,
+                                                  'pm_dec': pmdec,
+                                                  'parallax': px,
+                                                  'v_rad': vrad,
+                                                  'obs_metadata_list': obs_sub_list[sub_list_ct],
+                                                  'i_obs_list': iobs_sub_list[sub_list_ct],
+                                                  'out_dict': chip_name_dict})
+                        p.start()
+                        process_list.append(p)
 
-            photometry_catalog._set_current_chunk(chunk)
-            dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-                                                           variability_cache=self._variability_cache,
-                                                           expmjd=expmjd_list,).transpose((2,0,1))
+                    for p in process_list:
+                        p.join()
 
+                    assert len(chip_name_dict) == len(obs_valid_dex)
 
-            dmag_arr_transpose = dmag_arr.transpose(2,1,0)
-            assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
+                ######################################################
+                # Calculate the delta_magnitude for all of the sources
+                #
+                t_before_phot = time.time()
 
-            # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
-            # at some point in their history (note that delta_mag is defined with
-            # respect to the quiescent magnitude)
+                # only calculate photometry for objects that actually land
+                # on LSST detectors
 
-            photometrically_valid_obj = []
-            for i_obj in range(n_raw_obj):
-                keep_it = False
-                for i_filter in range(len(mag_names)):
-                    if np.abs(dmag_arr_transpose[i_obj][i_filter]).max()>dmag_cutoff:
-                        keep_it = True
-                        break
-                if keep_it:
-                    photometrically_valid_obj.append(i_obj)
-            photometrically_valid_obj = np.array(photometrically_valid_obj)
+                valid_photometry = -1*np.ones(n_raw_obj)
 
-            del dmag_arr_transpose
-            gc.collect()
+                t_before_filter = time.time()
+                for i_obs in range(len(obs_valid_dex)):
+                    name_list, xpup_list, ypup_list, valid_obj = chip_name_dict[i_obs]
+                    valid_photometry[valid_obj] += 2
+                invalid_dex = np.where(valid_photometry<0)
+                chunk['varParamStr'][invalid_dex] = 'None'
 
-            if np.abs(dmag_arr).max() < dmag_cutoff:
-                continue
+                n_actual_obj += n_raw_obj-len(invalid_dex[0])
 
-            ############################
-            # Process and output sources
-            #
-            t_before_out = time.time()
-            for i_obs, obs_dex in enumerate(obs_valid_dex):
-                obs = self._obs_list[obs_dex]
-                obshistid = obs.OpsimMetaData['obsHistID']
+                photometry_catalog._set_current_chunk(chunk)
+                dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                               variability_cache=self._variability_cache,
+                                                               expmjd=expmjd_list,).transpose((2,0,1))
 
-                obs_mag = obs.bandpass
-                actual_i_mag = mag_name_to_int[obs_mag]
-                assert mag_names[actual_i_mag] == obs_mag
+                q_u = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_u'))
+                q_g = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_g'))
+                q_r = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_r'))
+                q_i = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_i'))
+                q_z = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_z'))
+                q_y = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
+                unq = photometry_catalog.column_by_name('uniqueId')
+                for i_q in range(len(unq)):
+                    cmd = '''INSERT INTO quiescent_flux
+                          VALUES(%ld, %.9e, %.9e, %.9e, %.9e, %.9e, %.9e)''' % (unq[i_q],
+                          q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
+                    cursor.execute(cmd)
+                conn.commit()
 
-                # only include those sources which fall on a detector for this pointing
-                valid_chip_name, valid_xpup, valid_ypup, chip_valid_obj = chip_name_dict[i_obs]
+                dmag_arr_transpose = dmag_arr.transpose(2,1,0)
+                assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
 
-                actually_valid_obj = np.intersect1d(photometrically_valid_obj, chip_valid_obj)
-                if len(actually_valid_obj) == 0:
+                # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
+                # at some point in their history (note that delta_mag is defined with
+                # respect to the quiescent magnitude)
+
+                photometrically_valid_obj = []
+                for i_obj in range(n_raw_obj):
+                    keep_it = False
+                    for i_filter in range(len(mag_names)):
+                        if np.abs(dmag_arr_transpose[i_obj][i_filter]).max()>dmag_cutoff:
+                            keep_it = True
+                            break
+                    if keep_it:
+                        photometrically_valid_obj.append(i_obj)
+                photometrically_valid_obj = np.array(photometrically_valid_obj)
+
+                del dmag_arr_transpose
+                gc.collect()
+
+                if np.abs(dmag_arr).max() < dmag_cutoff:
                     continue
 
-                if obshistid not in actual_obshistid_set:
-                    actual_obshistid_set.add(obshistid)
-                    actual_obshistid_list.append(obshistid)
-                    actual_expmjd_list.append(obs.mjd.TAI)
-                    actual_band_list.append(actual_i_mag)
+                ############################
+                # Process and output sources
+                #
+                t_before_out = time.time()
+                for i_obs, obs_dex in enumerate(obs_valid_dex):
+                    obs = self._obs_list[obs_dex]
+                    obshistid = obs.OpsimMetaData['obsHistID']
 
-                valid_sources = chunk[actually_valid_obj]
-                local_column_cache = {}
-                local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag],
-                                                                  dmag_arr[i_obs][i_mag][actually_valid_obj])
-                                                                  for i_mag in range(len(mag_names))])
+                    obs_mag = obs.bandpass
+                    actual_i_mag = mag_name_to_int[obs_mag]
+                    assert mag_names[actual_i_mag] == obs_mag
 
-                local_column_cache['chipName'] = valid_chip_name[actually_valid_obj]
-                local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_obj]),
-                                                                  ('y_pupil', valid_ypup[actually_valid_obj])])
+                    # only include those sources which fall on a detector for this pointing
+                    valid_chip_name, valid_xpup, valid_ypup, chip_valid_obj = chip_name_dict[i_obs]
 
-                i_star = 0
-                cat = cat_list[i_obs]
-                for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
-                    n_time_last += len(valid_chunk[0])
-                    length_of_chunk = len(valid_chunk[chunk_map['uniqueId']])
+                    actually_valid_obj = np.intersect1d(photometrically_valid_obj, chip_valid_obj)
+                    if len(actually_valid_obj) == 0:
+                        continue
 
-                    if obshistid not in output_data_cache:
-                        output_data_cache[obshistid] = {}
-                        data_start_dex =0
+                    valid_sources = chunk[actually_valid_obj]
+                    local_column_cache = {}
+                    local_column_cache['deltaMagAvro'] = OrderedDict([('delta_%smag' % mag_names[i_mag],
+                                                                      dmag_arr[i_obs][i_mag][actually_valid_obj])
+                                                                      for i_mag in range(len(mag_names))])
 
-                        for col_name in ('uniqueId', 'raICRS', 'decICRS',
-                                         'flux', 'dflux', 'SNR',
+                    local_column_cache['chipName'] = valid_chip_name[actually_valid_obj]
+                    local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_obj]),
+                                                                      ('y_pupil', valid_ypup[actually_valid_obj])])
+
+                    i_star = 0
+                    cat = cat_list[i_obs]
+                    for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
+                        n_time_last += len(valid_chunk[0])
+                        length_of_chunk = len(valid_chunk[chunk_map['uniqueId']])
+
+                        if obshistid not in output_data_cache:
+                            output_data_cache[obshistid] = {}
+                            data_start_dex =0
+
+                            for col_name in ('uniqueId', 'raICRS', 'decICRS',
+                                             'flux', 'dflux', 'SNR',
+                                             'chipNum', 'xPix', 'yPix'):
+
+                                if col_name in ('uniqueId', 'chipNum'):
+                                    arr_type = int
+                                else:
+                                    arr_type = float
+
+                                output_data_cache[obshistid][col_name] = (self._flag_val*np.ones(n_raw_obj)).astype(arr_type)
+
+                        for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                          'chipNum', 'xPix', 'yPix'):
 
-                            if col_name in ('uniqueId', 'chipNum'):
-                                arr_type = int
-                            else:
-                                arr_type = float
+                            output_data_cache[obshistid][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
 
-                            output_data_cache[obshistid][col_name] = self._flag_val*np.ones(n_raw_obj, dtype=arr_type)
+                        data_start_dex += length_of_chunk
 
-                    for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
-                                     'chipNum', 'xPix', 'yPix'):
+                self.output_alert_data(conn, output_data_cache)
 
-                        output_data_cache[obshistid][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
+                output_ct += 1
+                output_data_cache = {}
 
-                    data_start_dex += length_of_chunk
+            if len(output_data_cache)>0:
+                self.output_alert_data(conn, output_data_cache)
 
-            self.output_alert_data(output_dir, output_prefix, htmid, output_ct,
-                                   output_data_cache, actual_obshistid_list,
-                                   actual_expmjd_list, actual_band_list)
-
-            output_ct += 1
-            output_data_cache = {}
-            actual_expmjd_list = []
-            actual_band_list = []
-            actual_obshistid_list = []
-            actual_obshistid_set = set()
-
-
-
-        if len(output_data_cache)>0:
-            self.output_alert_data(output_dir, output_prefix, htmid, output_ct,
-                                   output_data_cache, actual_obshistid_list,
-                                   actual_expmjd_list, actual_band_list)
-
-            output_ct += 1
-            output_data_cache = {}
-            actual_expmjd_list = []
-            actual_band_list = []
-            actual_obshistid_list = []
-            actual_obshistid_set = set()
+                output_ct += 1
+                output_data_cache = {}
 
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
