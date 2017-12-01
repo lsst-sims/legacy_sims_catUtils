@@ -549,6 +549,7 @@ class AlertDataGenerator(object):
         elapsed = (time.time()-t_start)/3600.0
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
         print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
+        return n_written
 
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
@@ -641,6 +642,7 @@ class AlertDataGenerator(object):
         n_actual_obj = 0
         output_ct = 0
         n_time_last = 0
+        n_rows = 0
 
         db_name = os.path.join(output_dir, '%s_%d_sqlite.db' % (output_prefix, htmid))
         with sqlite3.connect(db_name, isolation_level='EXCLUSIVE') as conn:
@@ -678,18 +680,16 @@ class AlertDataGenerator(object):
                 print('n_raw_obj %d' % n_raw_obj)
                 i_chunk += 1
 
-                if n_actual_obj>0:
+                if n_rows>0:
                     elapsed = (time.time()-t_before_obj)/3600.0
-                    elapsed_per = elapsed/n_actual_obj
-                    total_projection = 1800000.0*elapsed_per
+                    elapsed_per = elapsed/n_rows
+                    rows_per_chunk = float(n_rows)/float(i_chunk)
+                    total_projection = 1000.0*rows_per_chunk*elapsed_per
                     print('    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
-                    print('    elapsed %.2e hrs per %.2e total %2e' %
+                    print('    elapsed %.2e hrs per row %.2e total %2e' %
                     (elapsed, elapsed_per, total_projection))
                     print('    n_time_last %d' % n_time_last)
 
-                if i_chunk == 1:
-                    t_before_obj = time.time()
-                    n_actual_obj = 0
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
 
@@ -902,13 +902,13 @@ class AlertDataGenerator(object):
 
                         data_start_dex += length_of_chunk
 
-                self.output_alert_data(conn, output_data_cache)
+                n_rows += self.output_alert_data(conn, output_data_cache)
 
                 output_ct += 1
                 output_data_cache = {}
 
             if len(output_data_cache)>0:
-                self.output_alert_data(conn, output_data_cache)
+                n_rows += self.output_alert_data(conn, output_data_cache)
 
                 output_ct += 1
                 output_data_cache = {}
