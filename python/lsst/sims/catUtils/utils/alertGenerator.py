@@ -637,7 +637,6 @@ class AlertDataGenerator(object):
 
         n_obj = 0
         n_actual_obj = 0
-        output_ct = 0
         n_time_last = 0
         n_rows = 0
 
@@ -901,13 +900,10 @@ class AlertDataGenerator(object):
 
                 n_rows += self.output_alert_data(conn, output_data_cache)
 
-                output_ct += 1
                 output_data_cache = {}
 
             if len(output_data_cache)>0:
                 n_rows += self.output_alert_data(conn, output_data_cache)
-
-                output_ct += 1
                 output_data_cache = {}
 
         print('that took %.2e hours; n_obj %d ' %
