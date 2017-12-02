@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     with open(args.log_file, 'a') as out_file:
         for htmid in alert_gen.htmid_list:
-            out_file.write('htmid %d n_obs %d\n' % (htmid, alerg_gen.n_obs(htmid)))
+            out_file.write('htmid %d n_obs %d\n' % (htmid, alert_gen.n_obs(htmid)))
         out_file.write('n_htmid %d n_obs(total) %d\n' % (len(alert_gen.htmid_list), n_tot_obs))
 
     for htmid in alert_gen.htmid_list:
