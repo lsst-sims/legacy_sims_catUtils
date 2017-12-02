@@ -557,7 +557,8 @@ class AlertDataGenerator(object):
                               chunk_size=1000, write_every=10000,
                               output_dir='.', output_prefix='',
                               photometry_class=None,
-                              chunk_cutoff=-1):
+                              chunk_cutoff=-1,
+                              lock=None):
 
         t_start = time.time()
 
@@ -675,7 +676,8 @@ class AlertDataGenerator(object):
                 n_raw_obj = len(chunk)
                 i_chunk += 1
 
-                """
+                if lock is not None:
+                    lock.acquire()
                 if n_rows>0:
                     elapsed = (time.time()-t_before_obj)/3600.0
                     elapsed_per = elapsed/n_rows
@@ -685,7 +687,8 @@ class AlertDataGenerator(object):
                     print('    elapsed %.2e hrs per row %.2e total %2e' %
                     (elapsed, elapsed_per, total_projection))
                     print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
-                """
+                if lock is not None:
+                    lock.release()
 
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
