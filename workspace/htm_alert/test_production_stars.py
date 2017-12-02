@@ -32,7 +32,8 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  output_dir=out_dir,
                                                  output_prefix=out_prefix,
                                                  dmag_cutoff=0.001,
-                                                 photometry_class=AlertStellarVariabilityCatalog)
+                                                 photometry_class=AlertStellarVariabilityCatalog,
+                                                 lock=lock)
 
         lock.acquire()
         with open(log_file_name, 'a') as out_file:
