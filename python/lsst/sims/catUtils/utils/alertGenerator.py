@@ -913,6 +913,11 @@ class AlertDataGenerator(object):
         print('that took %.2e hours; n_obj %d ' %
               ((time.time()-t_start)/3600.0, n_obj))
 
+        if lock is not None:
+            lock.acquire()
+            print("INDEXING")
+            lock.release()
+
         cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
         cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId)')
         cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
