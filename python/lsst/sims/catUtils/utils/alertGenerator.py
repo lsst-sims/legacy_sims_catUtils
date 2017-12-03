@@ -913,7 +913,8 @@ class AlertDataGenerator(object):
 
                 if is_least or lock is None:
                     if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
-                        print('%d is writing %d -- %d' % (os.getpid(),ct_dict[this_pid],min_ct))
+                        print('%d is writing %d -- %d (%d)' %
+                              (os.getpid(),ct_dict[this_pid],min_ct,ct_dict['number_writing']))
                         ct_dict[this_pid] += 1
                         ct_dict['number_writing'] += 1
                         n_rows += self.output_alert_data(conn, output_data_cache)
