@@ -558,7 +558,12 @@ class AlertDataGenerator(object):
                               photometry_class=None,
                               chunk_cutoff=-1,
                               lock=None,
-                              stdout_lock=None):
+                              stdout_lock=None,
+                              ct_dict=None):
+
+        this_pid = os.getpid()
+        if os.getpid() not in ct_dict:
+            ct_dict[this_pid] = 0
 
         t_start = time.time()
 
@@ -635,6 +640,7 @@ class AlertDataGenerator(object):
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         output_data_cache = {}
+        ct_dict[this_pid] = 0
 
         n_obj = 0
         n_actual_obj = 0
@@ -903,10 +909,23 @@ class AlertDataGenerator(object):
 
                         data_start_dex += length_of_chunk
 
-                if lock is None or lock.acquire(block=False):
+                ct = 0
+                for cache_tag in output_data_cache:
+                    ct += len(output_data_cache[cache_tag]['uniqueId'])
+
+                is_most = True
+                if lock is not None and lock.acquire(block=False):
+                    for pid in ct_dict:
+                        if ct_dict[pid]>ct:
+                            is_most = False
+                            break
+                    lock.release()
+
+                if lock is None or (lock.acquire(block=False) and is_most):
                     print('%d has acquired the lock' % os.getpid())
                     n_rows += self.output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
+                    ct_dict[this_pid] = 0
                     if lock is not None:
                         lock.release()
                     print('%d has released the lock' % os.getpid())
