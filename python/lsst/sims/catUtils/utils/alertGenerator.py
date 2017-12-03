@@ -901,6 +901,10 @@ class AlertDataGenerator(object):
                 if ct_lock is not None:
                     ct_lock.acquire()
                     for pid in ct_dict.keys():
+                        if pid == 'number_writing':
+                            continue
+                        if pid == 'allowed_to_write':
+                            continue
                         if min_ct<0 or ct_dict[pid]<min_ct:
                             min_ct = ct_dict[pid]
                         if pid == this_pid:
