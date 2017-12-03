@@ -918,7 +918,6 @@ class AlertDataGenerator(object):
                 is_most = True
                 if ct_lock is not None:
                     ct_lock.acquire()
-                    print('%d has ct_lock' % this_pid)
                     is_most = True
                     for pid in ct_dict.keys():
                         if pid == this_pid:
@@ -926,7 +925,6 @@ class AlertDataGenerator(object):
                         if ct_dict[pid] > ct_dict[this_pid]:
                             is_most = False
                             break
-                    print('%d releasing ct_lock' % this_pid)
                     ct_lock.release()
 
                 if lock is None or (lock.acquire(block=False) and is_most):
