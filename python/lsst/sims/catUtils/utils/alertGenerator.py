@@ -919,7 +919,7 @@ class AlertDataGenerator(object):
                             is_least = False
                             break
                     ct_lock.release()
-                print('%d is least %s' % (this_pid,str(is_least))
+                print('%d is least %s' % (this_pid,str(is_least)))
                 print(ct_dict)
 
                 if lock is None or (lock.acquire(block=False) and is_least):
