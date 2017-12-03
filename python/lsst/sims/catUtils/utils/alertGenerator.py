@@ -922,7 +922,7 @@ class AlertDataGenerator(object):
 
                 if is_least or lock is None:
                     if lock is None or lock.acquire(block=False):
-                        print('%d has acquired the lock' % os.getpid())
+                        print('%d has acquired the lock %d' % (os.getpid(),ct_dict[this_pid]))
                         ct_dict[this_pid] += 1
                         n_rows += self.output_alert_data(conn, output_data_cache)
                         output_data_cache = {}
