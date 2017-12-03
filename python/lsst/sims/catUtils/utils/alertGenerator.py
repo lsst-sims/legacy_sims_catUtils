@@ -559,6 +559,7 @@ class AlertDataGenerator(object):
                               chunk_cutoff=-1,
                               lock=None,
                               stdout_lock=None,
+                              ct_lock=None,
                               ct_dict=None):
 
         this_pid = os.getpid()
@@ -912,20 +913,23 @@ class AlertDataGenerator(object):
                 ct = 0
                 for cache_tag in output_data_cache:
                     ct += len(output_data_cache[cache_tag]['uniqueId'])
+                ct_dict[this_pid] = ct
 
-                is_most = True
-                if lock is not None and lock.acquire(block=False):
+                if ct_lock is None or ct_lock.acquire():
+                    is_most = True
                     for pid in ct_dict:
-                        if ct_dict[pid]>ct:
+                        if pid == this_pid:
+                           continue
+                        if ct_dict[pid] > ct_dict[this_pid]:
                             is_most = False
                             break
-                    lock.release()
+                    ct_lock.release()
 
                 if lock is None or (lock.acquire(block=False) and is_most):
                     print('%d has acquired the lock' % os.getpid())
+                    ct_dict[this_pid] = 0
                     n_rows += self.output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
-                    ct_dict[this_pid] = 0
                     if lock is not None:
                         lock.release()
                     print('%d has released the lock' % os.getpid())
