@@ -529,17 +529,18 @@ class AlertDataGenerator(object):
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
         values = []
-        for obsHistID in data_cache:
-            valid_obj = np.where(data_cache[obsHistID]['uniqueId']>0.0)
-            values += [(data_cache[obsHistID]['uniqueId'][i_obj],
+        for cache_tag in data_cache:
+            obsHistID = int(data_cache.split()[0])
+            valid_obj = np.where(data_cache[cache_tag]['uniqueId']>0.0)
+            values += [(data_cache[cache_tag]['uniqueId'][i_obj],
                        obsHistID,
-                       data_cache[obsHistID]['xPix'][i_obj],
-                       data_cache[obsHistID]['yPix'][i_obj],
-                       data_cache[obsHistID]['chipNum'][i_obj],
-                       data_cache[obsHistID]['dflux'][i_obj],
-                       data_cache[obsHistID]['SNR'][i_obj],
-                       data_cache[obsHistID]['raICRS'][i_obj],
-                       data_cache[obsHistID]['decICRS'][i_obj])
+                       data_cache[cache_tag]['xPix'][i_obj],
+                       data_cache[cache_tag]['yPix'][i_obj],
+                       data_cache[cache_tag]['chipNum'][i_obj],
+                       data_cache[cache_tag]['dflux'][i_obj],
+                       data_cache[cache_tag]['SNR'][i_obj],
+                       data_cache[cache_tag]['raICRS'][i_obj],
+                       data_cache[cache_tag]['decICRS'][i_obj])
                       for i_obj in valid_obj[0]]
         t_start = time.time()
         cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
@@ -879,9 +880,10 @@ class AlertDataGenerator(object):
                     for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
                         n_time_last += len(valid_chunk[0])
                         length_of_chunk = len(valid_chunk[chunk_map['uniqueId']])
+                        cache_tag = '%d_%d' % (obshistid, i_chunk)
 
-                        if obshistid not in output_data_cache:
-                            output_data_cache[obshistid] = {}
+                        if cache_tag not in output_data_cache:
+                            output_data_cache[cache_tag] = {}
                             data_start_dex =0
 
                             for col_name in ('uniqueId', 'raICRS', 'decICRS',
@@ -893,12 +895,12 @@ class AlertDataGenerator(object):
                                 else:
                                     arr_type = float
 
-                                output_data_cache[obshistid][col_name] = (self._flag_val*np.ones(n_raw_obj)).astype(arr_type)
+                                output_data_cache[cache_tag][col_name] = (self._flag_val*np.ones(n_raw_obj)).astype(arr_type)
 
                         for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                          'chipNum', 'xPix', 'yPix'):
 
-                            output_data_cache[obshistid][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
+                            output_data_cache[cache_tag][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
 
                         data_start_dex += length_of_chunk
 
