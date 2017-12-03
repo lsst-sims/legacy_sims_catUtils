@@ -904,7 +904,6 @@ class MLTflaringMixin(Variability):
                 lc_name = lc_name.replace('in', '')
 
             if lc_name not in variability_cache['_MLT_LC_DURATION_CACHE']:
-                print('reading in %s' % lc_name)
                 time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
                 variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
                 dt = time_arr.max() - time_arr.min()
