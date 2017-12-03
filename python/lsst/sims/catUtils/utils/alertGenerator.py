@@ -915,6 +915,7 @@ class AlertDataGenerator(object):
                     ct += len(output_data_cache[cache_tag]['uniqueId'])
                 ct_dict[this_pid] = ct
 
+                is_most = True
                 if ct_lock is None or ct_lock.acquire():
                     is_most = True
                     for pid in ct_dict:
