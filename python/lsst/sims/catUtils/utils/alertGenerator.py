@@ -563,7 +563,7 @@ class AlertDataGenerator(object):
                               ct_dict=None):
 
         this_pid = os.getpid()
-        if os.getpid() not in ct_dict:
+        if os.getpid() not in ct_dict.keys():
             ct_dict[this_pid] = 0
 
         t_start = time.time()
@@ -641,7 +641,6 @@ class AlertDataGenerator(object):
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         output_data_cache = {}
-        ct_dict[this_pid] = 0
 
         n_obj = 0
         n_actual_obj = 0
@@ -910,33 +909,25 @@ class AlertDataGenerator(object):
 
                         data_start_dex += length_of_chunk
 
-                ct = 0
-                for cache_tag in output_data_cache:
-                    ct += len(output_data_cache[cache_tag]['uniqueId'])
-                ct_dict[this_pid] = ct
-
-                is_most = True
+                is_least = True
                 if ct_lock is not None:
                     ct_lock.acquire()
-                    is_most = True
                     for pid in ct_dict.keys():
                         if pid == this_pid:
                            continue
-                        if ct_dict[pid] > ct_dict[this_pid]:
-                            is_most = False
+                        if ct_dict[pid] < ct_dict[this_pid]:
+                            is_least = False
                             break
                     ct_lock.release()
 
-                if lock is None or (lock.acquire(block=False) and is_most):
+                if lock is None or (lock.acquire(block=False) and is_least):
                     print('%d has acquired the lock' % os.getpid())
-                    ct_dict[this_pid] = 0
+                    ct_dict[this_pid] += 1
                     n_rows += self.output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
                     if lock is not None:
                         lock.release()
                     print('%d has released the lock' % os.getpid())
-                else:
-                    print('%d is running anyway' % os.getpid())
 
             if len(output_data_cache)>0:
                 if lock is not None:
