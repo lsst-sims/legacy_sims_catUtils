@@ -909,6 +909,8 @@ class AlertDataGenerator(object):
                     if lock is not None:
                         lock.release()
                     print('%d has released the lock' % os.getpid())
+                else:
+                    print('%d is running anyway' % os.getpid())
 
             if len(output_data_cache)>0:
                 if lock is not None:
