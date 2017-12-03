@@ -916,7 +916,8 @@ class AlertDataGenerator(object):
                 ct_dict[this_pid] = ct
 
                 is_most = True
-                if ct_lock is None or ct_lock.acquire():
+                if ct_lock is not None:
+                    ct_lock.acquire():
                     print('%d has ct_lock' % this_pid)
                     is_most = True
                     for pid in ct_dict:
