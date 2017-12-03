@@ -120,6 +120,8 @@ if __name__ == "__main__":
     mgr = mproc.Manager()
     ct_dict = mgr.dict()
     ct_lock = mproc.Lock()
+    ct_dict['number_writing'] = 0
+    ct_dict['allowed_to_write'] = 5
     p_list = []
     for i_p in range(len(htmid_list)):
         p = mproc.Process(target=query_htmid,
