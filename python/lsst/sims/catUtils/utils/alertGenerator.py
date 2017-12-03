@@ -935,7 +935,7 @@ class AlertDataGenerator(object):
                             stdout_lock.release()
 
                         ct_dict['number_writing'] -= 1
-                        print('%d is done writing' % os.getpid())
+                        print('%d is done writing (%d)' % (os.getpid(),ct_dict['number_writing']))
 
             if len(output_data_cache)>0:
                 if lock is not None:
