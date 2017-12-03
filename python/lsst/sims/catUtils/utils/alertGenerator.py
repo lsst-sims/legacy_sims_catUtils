@@ -542,14 +542,10 @@ class AlertDataGenerator(object):
                        data_cache[obsHistID]['decICRS'][i_obj])
                       for i_obj in valid_obj[0]]
         t_start = time.time()
-        if lock is not None:
-            lock.acquire()
         cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
-        if lock is not None:
-            lock.release()
         elapsed = (time.time()-t_start)/3600.0
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
         #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
@@ -906,12 +902,18 @@ class AlertDataGenerator(object):
 
                         data_start_dex += length_of_chunk
 
-                n_rows += self.output_alert_data(conn, output_data_cache, lock=lock)
-
-                output_data_cache = {}
+                if lock is None or lock.acquire(block=False):
+                    n_rows += self.output_alert_data(conn, output_data_cache, lock=lock)
+                    output_data_cache = {}
+                    if lock is not None:
+                        lock.release()
 
             if len(output_data_cache)>0:
+                if lock is not None:
+                    lock.acquire()
                 n_rows += self.output_alert_data(conn, output_data_cache, lock=lock)
+                if lock is not None:
+                    lock.release()
                 output_data_cache = {}
 
         print('that took %.2e hours; n_obj %d ' %
