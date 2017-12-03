@@ -530,7 +530,7 @@ class AlertDataGenerator(object):
 
         values = []
         for cache_tag in data_cache:
-            obsHistID = int(data_cache.split()[0])
+            obsHistID = int(cache_tag.split()[0])
             valid_obj = np.where(data_cache[cache_tag]['uniqueId']>0.0)
             values += [(data_cache[cache_tag]['uniqueId'][i_obj],
                        obsHistID,
