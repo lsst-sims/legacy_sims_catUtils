@@ -910,9 +910,12 @@ class AlertDataGenerator(object):
                         data_start_dex += length_of_chunk
 
                 is_least = True
+                min_ct = -1
                 if ct_lock is not None:
                     ct_lock.acquire()
                     for pid in ct_dict.keys():
+                        if min_ct<0 or ct_dict[pid]<min_ct:
+                            min_ct = ct_dict[pid]
                         if pid == this_pid:
                            continue
                         if ct_dict[pid] < ct_dict[this_pid]:
@@ -922,7 +925,7 @@ class AlertDataGenerator(object):
 
                 if is_least or lock is None:
                     if lock is None or lock.acquire(block=False):
-                        print('%d has acquired the lock %d' % (os.getpid(),ct_dict[this_pid]))
+                        print('%d has acquired the lock %d -- %d' % (os.getpid(),ct_dict[this_pid],min_ct))
                         ct_dict[this_pid] += 1
                         n_rows += self.output_alert_data(conn, output_data_cache)
                         output_data_cache = {}
