@@ -528,26 +528,24 @@ class AlertDataGenerator(object):
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
-        values = []
         for cache_tag in data_cache:
             obsHistID = int(cache_tag.split()[0])
             valid_obj = np.where(data_cache[cache_tag]['uniqueId']>0.0)
-            values += [(data_cache[cache_tag]['uniqueId'][i_obj],
-                       obsHistID,
-                       data_cache[cache_tag]['xPix'][i_obj],
-                       data_cache[cache_tag]['yPix'][i_obj],
-                       data_cache[cache_tag]['chipNum'][i_obj],
-                       data_cache[cache_tag]['dflux'][i_obj],
-                       data_cache[cache_tag]['SNR'][i_obj],
-                       data_cache[cache_tag]['raICRS'][i_obj],
-                       data_cache[cache_tag]['decICRS'][i_obj])
+            values = [(data_cache[cache_tag]['uniqueId'][i_obj],
+                      obsHistID,
+                      data_cache[cache_tag]['xPix'][i_obj],
+                      data_cache[cache_tag]['yPix'][i_obj],
+                      data_cache[cache_tag]['chipNum'][i_obj],
+                      data_cache[cache_tag]['dflux'][i_obj],
+                      data_cache[cache_tag]['SNR'][i_obj],
+                      data_cache[cache_tag]['raICRS'][i_obj],
+                      data_cache[cache_tag]['decICRS'][i_obj])
                       for i_obj in valid_obj[0]]
-        t_start = time.time()
-        cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
-        conn.commit()
+            cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+            conn.commit()
+
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
-        elapsed = (time.time()-t_start)/3600.0
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
         #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
         return n_written
