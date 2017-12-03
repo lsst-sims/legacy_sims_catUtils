@@ -521,7 +521,7 @@ class AlertDataGenerator(object):
     def n_obs(self, htmid):
         return len(self._htmid_dict[htmid])
 
-    def output_alert_data(self, conn, data_cache, lock=None):
+    def output_alert_data(self, conn, data_cache):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
@@ -905,15 +905,17 @@ class AlertDataGenerator(object):
                         data_start_dex += length_of_chunk
 
                 if lock is None or lock.acquire(block=False):
-                    n_rows += self.output_alert_data(conn, output_data_cache, lock=lock)
+                    print('%d has acquired the lock' % os.getpid())
+                    n_rows += self.output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
                     if lock is not None:
                         lock.release()
+                    print('%d has released the lock' % os.getpid())
 
             if len(output_data_cache)>0:
                 if lock is not None:
                     lock.acquire()
-                n_rows += self.output_alert_data(conn, output_data_cache, lock=lock)
+                n_rows += self.output_alert_data(conn, output_data_cache)
                 if lock is not None:
                     lock.release()
                 output_data_cache = {}
