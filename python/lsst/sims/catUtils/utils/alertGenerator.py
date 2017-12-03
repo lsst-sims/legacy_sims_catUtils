@@ -913,8 +913,11 @@ class AlertDataGenerator(object):
 
                 if is_least or lock is None:
                     if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
+                        stdout_lock.acquired()
                         print('%d is writing %d -- %d (%d)' %
                               (os.getpid(),ct_dict[this_pid],min_ct,ct_dict['number_writing']))
+                        stdout_lock.release()
+
                         ct_dict[this_pid] += 1
                         ct_dict['number_writing'] += 1
                         n_rows += self.output_alert_data(conn, output_data_cache)
@@ -931,11 +934,11 @@ class AlertDataGenerator(object):
                             print('    elapsed %.2e hrs per row %.2e total %2e' %
                             (elapsed, elapsed_per, total_projection))
                             print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
-                        if stdout_lock is not None:
-                            stdout_lock.release()
 
                         ct_dict['number_writing'] -= 1
                         print('%d is done writing (%d)' % (os.getpid(),ct_dict['number_writing']))
+                        if stdout_lock is not None:
+                            stdout_lock.release()
 
             if len(output_data_cache)>0:
                 if lock is not None:
