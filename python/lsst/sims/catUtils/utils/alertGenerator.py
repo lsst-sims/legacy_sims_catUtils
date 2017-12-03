@@ -683,20 +683,6 @@ class AlertDataGenerator(object):
                 n_raw_obj = len(chunk)
                 i_chunk += 1
 
-                if stdout_lock is not None:
-                    stdout_lock.acquire()
-                if n_rows>0:
-                    elapsed = (time.time()-t_before_obj)/3600.0
-                    elapsed_per = elapsed/n_rows
-                    rows_per_chunk = float(n_rows)/float(i_chunk)
-                    total_projection = 1000.0*rows_per_chunk*elapsed_per
-                    print('\n    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
-                    print('    elapsed %.2e hrs per row %.2e total %2e' %
-                    (elapsed, elapsed_per, total_projection))
-                    print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
-                if stdout_lock is not None:
-                    stdout_lock.release()
-
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
 
@@ -922,6 +908,7 @@ class AlertDataGenerator(object):
                         if ct_dict[pid] < ct_dict[this_pid]:
                             is_least = False
                             break
+
                     ct_lock.release()
 
                 if is_least or lock is None:
@@ -930,6 +917,21 @@ class AlertDataGenerator(object):
                         ct_dict[this_pid] += 1
                         n_rows += self.output_alert_data(conn, output_data_cache)
                         output_data_cache = {}
+
+                        if stdout_lock is not None:
+                            stdout_lock.acquire()
+                        if n_rows>0:
+                            elapsed = (time.time()-t_before_obj)/3600.0
+                            elapsed_per = elapsed/n_rows
+                            rows_per_chunk = float(n_rows)/float(i_chunk)
+                            total_projection = 1000.0*rows_per_chunk*elapsed_per
+                            print('\n    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
+                            print('    elapsed %.2e hrs per row %.2e total %2e' %
+                            (elapsed, elapsed_per, total_projection))
+                            print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
+                        if stdout_lock is not None:
+                            stdout_lock.release()
+
                         if lock is not None:
                             lock.release()
                         print('%d has released the lock' % os.getpid())
