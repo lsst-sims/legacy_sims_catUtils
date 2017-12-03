@@ -920,7 +920,7 @@ class AlertDataGenerator(object):
                     ct_lock.acquire()
                     print('%d has ct_lock' % this_pid)
                     is_most = True
-                    for pid in ct_dict:
+                    for pid in ct_dict.keys():
                         if pid == this_pid:
                            continue
                         if ct_dict[pid] > ct_dict[this_pid]:
