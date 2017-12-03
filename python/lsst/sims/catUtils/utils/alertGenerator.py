@@ -919,17 +919,16 @@ class AlertDataGenerator(object):
                             is_least = False
                             break
                     ct_lock.release()
-                print('%d is least %s' % (this_pid,str(is_least)))
-                print(ct_dict)
 
-                if lock is None or (lock.acquire(block=False) and is_least):
-                    print('%d has acquired the lock' % os.getpid())
-                    ct_dict[this_pid] += 1
-                    n_rows += self.output_alert_data(conn, output_data_cache)
-                    output_data_cache = {}
-                    if lock is not None:
-                        lock.release()
-                    print('%d has released the lock' % os.getpid())
+                if is_least or lock is None:
+                    if lock is None or lock.acquire(block=False):
+                        print('%d has acquired the lock' % os.getpid())
+                        ct_dict[this_pid] += 1
+                        n_rows += self.output_alert_data(conn, output_data_cache)
+                        output_data_cache = {}
+                        if lock is not None:
+                            lock.release()
+                        print('%d has released the lock' % os.getpid())
 
             if len(output_data_cache)>0:
                 if lock is not None:
