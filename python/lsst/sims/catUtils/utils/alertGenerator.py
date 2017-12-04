@@ -554,7 +554,7 @@ class AlertDataGenerator(object):
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
         #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
 
-        chunk_lenghts = np.sort(chunk_lengths)
+        chunk_lengths = np.sort(chunk_lengths)
         if self._stdout_lock is not None:
             self._stdout_lock.acquire()
             elapsed = (time.time()-t_start)/3600.0
@@ -564,7 +564,7 @@ class AlertDataGenerator(object):
             first_q = chunk_lengths[n_chunks//4]
             third_q = chunk_lengths[(n_chunks*3)//4]
             second_q = chunk_lengths[n_chunks//2]
-            print('    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
+            print('\n    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
             first_q, second_q, third_q, max_chunk))
             print('    wrote %d rows in %.2e hrs; per %.2e' % (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
