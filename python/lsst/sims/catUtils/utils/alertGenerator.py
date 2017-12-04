@@ -539,7 +539,7 @@ class AlertDataGenerator(object):
                       data_cache[cache_tag]['SNR'][i_obj],
                       data_cache[cache_tag]['raICRS'][i_obj],
                       data_cache[cache_tag]['decICRS'][i_obj])
-                      for i_obj range(len(data_cache[cache_tag]['uniqueId'])))
+                      for i_obj in range(len(data_cache[cache_tag]['uniqueId'])))
             cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
 
