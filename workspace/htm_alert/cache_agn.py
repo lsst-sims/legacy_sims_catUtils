@@ -19,6 +19,7 @@ if __name__ == "__main__":
     if args.out_dir is None:
         raise RuntimeError("you must specify out_dir")
 
+    print('cacheing AGN in pid %d' % os.getpid())
 
     lc_dtype = np.dtype([('mjd', float), ('du', float), ('dg', float),
                          ('dr', float), ('di', float), ('dz', float)])
