@@ -17,7 +17,20 @@ import gc
 import argparse
 
 class WdAlertDBObj(StellarAlertDBObjMixin, WdStarObj):
-    pass
+    columns = [('id','simobjid', int),
+               ('htmid', 'htmID', long),
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'decl*PI()/180.'),
+               ('glon', 'gal_l*PI()/180.'),
+               ('glat', 'gal_b*PI()/180.'),
+               ('magNorm', '(-2.5*log(flux_scale)/log(10.)) - 18.402732642'),
+               ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
+               ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
+               ('parallax', 'parallax*PI()/648000000.'),
+               ('galacticAv', 'CONVERT(float, ebv*3.1)'),
+               ('radialVelocity', 'vrad'),
+               ('variabilityParameters', 'varParamStr', str, 256),
+               ('sedFilename', 'sedfilename', str, 40)]
 
 
 def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
