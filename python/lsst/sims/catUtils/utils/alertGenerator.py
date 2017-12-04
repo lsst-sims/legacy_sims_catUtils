@@ -968,8 +968,8 @@ class AlertDataGenerator(object):
                 n_rows += self.output_alert_data(conn, output_data_cache)
                 output_data_cache = {}
 
-            print('that took %.2e hours; n_obj %d ' %
-                 ((time.time()-t_start)/3600.0, n_obj))
+            print('that took %.2e hours; n_obj %d n_rows %d' %
+                 ((time.time()-t_start)/3600.0, n_obj, n_rows))
 
             if lock is not None:
                 lock.acquire()
