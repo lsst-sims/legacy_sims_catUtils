@@ -71,7 +71,7 @@ if __name__ == "__main__":
     p_list = []
     for i_p in range(n_proc):
         p = mpc.Process(target=get_dmag,
-                        args=[lc_id_list[i_p],, out_file_name,
+                        args=[lc_id_list[i_p], out_file_name,
                               101+i_p, lock, v_cache])
         p.start()
         p_list.append(p)
