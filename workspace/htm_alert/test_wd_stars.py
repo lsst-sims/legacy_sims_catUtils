@@ -18,7 +18,7 @@ import argparse
 
 class WdAlertDBObj(StellarAlertDBObjMixin, WdStarObj):
     columns = [('id','simobjid', int),
-               ('htmid', 'htmID', long),
+               ('htmid', 'htmID', int),
                ('raJ2000', 'ra*PI()/180.'),
                ('decJ2000', 'decl*PI()/180.'),
                ('glon', 'gal_l*PI()/180.'),
