@@ -897,7 +897,6 @@ class AlertDataGenerator(object):
 
                             output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
-                        data_start_dex += length_of_chunk
                         n_rows_cached += length_of_chunk
 
                 is_least = True
