@@ -947,11 +947,11 @@ class AlertDataGenerator(object):
                         if stdout_lock is not None:
                             stdout_lock.release()
 
-                if ct_dict['number_writing'] == 0:
-                    stdout_lock.acquire()
-                    print('\nnothing writing %d is_least %s' % (this_pid, str(is_least)))
-                    print(ct_dict)
-                    stdout_lock.release()
+                #if ct_dict['number_writing'] == 0:
+                #    stdout_lock.acquire()
+                #    print('\nnothing writing %d is_least %s' % (this_pid, str(is_least)))
+                #    print(ct_dict)
+                #    stdout_lock.release()
 
             if len(output_data_cache)>0:
                 if lock is not None:
