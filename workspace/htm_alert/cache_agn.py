@@ -49,7 +49,7 @@ if __name__ == "__main__":
     t_start = 59580.0
     duration = 3654.0
     n_t_steps = np.floor(duration/args.t_step).astype(int)
-
+    print('read in all agn')
     time.sleep(30)
     exit(1)
 
