@@ -18,7 +18,7 @@ import argparse
 
 class OBAFKObj(StarBase):
     objid = 'obafgkstars'
-    tableid = 'StarOBAFKForceseek'
+    tableid = 'StarOBAFGKForceseek'
     objectTypeId = 14
     doRunTest = True
     #These types should be matched to the database.
