@@ -641,6 +641,7 @@ class AlertDataGenerator(object):
         n_proc_chipName = min(n_proc_possible, self._n_proc_max)
 
         output_data_cache = {}
+        n_rows_cached = 0
 
         n_obj = 0
         n_actual_obj = 0
@@ -894,6 +895,7 @@ class AlertDataGenerator(object):
                             output_data_cache[cache_tag][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
 
                         data_start_dex += length_of_chunk
+                        n_rows_cached += length_of_chunk
 
                 is_least = True
                 min_ct = -1
@@ -914,8 +916,9 @@ class AlertDataGenerator(object):
 
                     ct_lock.release()
 
-                if is_least or lock is None:
-                    if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
+                if True:
+                    #if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
+                    if n_rows_cached >= 5000000
                         stdout_lock.acquire()
                         print('%d is writing %d -- %d (%d)' %
                               (os.getpid(),ct_dict[this_pid],min_ct,ct_dict['number_writing']))
@@ -925,6 +928,7 @@ class AlertDataGenerator(object):
                         ct_dict['number_writing'] += 1
                         n_rows += self.output_alert_data(conn, output_data_cache)
                         output_data_cache = {}
+                        n_rows_cached = 0
 
                         if stdout_lock is not None:
                             stdout_lock.acquire()
