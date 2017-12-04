@@ -6,7 +6,7 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
-from lsst.sims.catUtils.baseCatalogModels import MsStarObj
+from lsst.sims.catUtils.baseCatalogModels import StarBase
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 
 
@@ -16,7 +16,31 @@ import time
 import gc
 import argparse
 
-class MSAlertDBObj(StellarAlertDBObjMixin, MsStarObj):
+class OBAFKObj(StarBase):
+    objid = 'obafgkstars'
+    tableid = 'StarOBAFKForceseek'
+    objectTypeId = 14
+    doRunTest = True
+    testObservationMetaData = ObservationMetaData(boundType = 'circle', pointingRA=210.0, pointingDec=-30.0,
+                                                  boundLength=0.1, mjd=52000., bandpassName='r', m5=22.0)
+    #These types should be matched to the database.
+    #: Default map is float.  If the column mapping is the same as the column name, None can be specified
+    columns = [('id','simobjid', int),
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'decl*PI()/180.'),
+               ('glon', 'gal_l*PI()/180.'),
+               ('glat', 'gal_b*PI()/180.'),
+               ('magNorm', '(-2.5*log(flux_scale)/log(10.)) - 18.402732642'),
+               ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
+               ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
+               ('parallax', 'parallax*PI()/648000000.'),
+               ('galacticAv', 'CONVERT(float, ebv*3.1)'),
+               ('radialVelocity', 'vrad'),
+               ('variabilityParameters', 'varParamStr', str, 256),
+               ('sedFilename', 'sedfilename', str, 40)]
+
+
+class MSAlertDBObj(StellarAlertDBObjMixin, OBAFKObj):
     pass
 
 
