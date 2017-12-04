@@ -954,11 +954,7 @@ class AlertDataGenerator(object):
                 #    stdout_lock.release()
 
             if len(output_data_cache)>0:
-                if lock is not None:
-                    lock.acquire()
                 n_rows += self.output_alert_data(conn, output_data_cache)
-                if lock is not None:
-                    lock.release()
                 output_data_cache = {}
 
         print('that took %.2e hours; n_obj %d ' %
