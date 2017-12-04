@@ -24,13 +24,13 @@ def get_dmag(lc_id_list, out_file_name, seed, lock, v_cache):
             q_flux, d_flux = plc._calc_dflux(lc_int, mjd_arr,
                                              variability_cache=v_cache)
 
-                d_flux_max = np.abs(d_flux/q_flux).max()
-                dmag_max_local = 2.5*np.log10(1.0+d_flux_max)
+            d_flux_max = np.abs(d_flux/q_flux).max()
+            dmag_max_local = 2.5*np.log10(1.0+d_flux_max)
 
-                if dmag_max_local>dmag_max:
-                    dmag_max = dmag_max_local
+            if dmag_max_local>dmag_max:
+                dmag_max = dmag_max_local
 
-            dmag_list[i_lc] = dmag_max
+        dmag_list[i_lc] = dmag_max
 
     lock.acquire()
     with open(out_file_name, 'a') as out_file:
