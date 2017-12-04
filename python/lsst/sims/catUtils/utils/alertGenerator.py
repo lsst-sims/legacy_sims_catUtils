@@ -565,7 +565,7 @@ class AlertDataGenerator(object):
             third_q = chunk_lengths[(n_chunks*3)//4]
             second_q = chunk_lengths[n_chunks//2]
             print('    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
-            first_q, second_q, third_q, max_chunk)))
+            first_q, second_q, third_q, max_chunk))
             print('    wrote %d rows in %.2e hrs; per %.2e' % (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
 
