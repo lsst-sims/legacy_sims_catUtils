@@ -947,7 +947,7 @@ class AlertDataGenerator(object):
                             elapsed_per = elapsed/n_rows
                             rows_per_chunk = float(n_rows)/float(i_chunk)
                             total_projection = 1000.0*rows_per_chunk*elapsed_per
-                            print('\n    n_obj %d %d trimmed %d' % (n_obj, n_actual_obj, n_htmid_trim))
+                            print('\n    %d n_obj %d %d trimmed %d' % (this_pid, n_obj, n_actual_obj, n_htmid_trim))
                             print('    elapsed %.2e hrs per row %.2e total %2e' %
                             (elapsed, elapsed_per, total_projection))
                             print('    n_time_last %d; rows %d' % (n_time_last,n_rows))
