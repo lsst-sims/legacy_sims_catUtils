@@ -21,8 +21,6 @@ class OBAFKObj(StarBase):
     tableid = 'StarOBAFKForceseek'
     objectTypeId = 14
     doRunTest = True
-    testObservationMetaData = ObservationMetaData(boundType = 'circle', pointingRA=210.0, pointingDec=-30.0,
-                                                  boundLength=0.1, mjd=52000., bandpassName='r', m5=22.0)
     #These types should be matched to the database.
     #: Default map is float.  If the column mapping is the same as the column name, None can be specified
     columns = [('id','simobjid', int),
