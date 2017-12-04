@@ -918,7 +918,7 @@ class AlertDataGenerator(object):
 
                 if True:
                     #if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
-                    if n_rows_cached >= 5000000
+                    if n_rows_cached >= 5000000:
                         stdout_lock.acquire()
                         print('%d is writing %d -- %d (%d)' %
                               (os.getpid(),ct_dict[this_pid],min_ct,ct_dict['number_writing']))
