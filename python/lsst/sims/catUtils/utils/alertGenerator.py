@@ -529,12 +529,12 @@ class AlertDataGenerator(object):
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
-        min_chunk = -1
+        chunk_lengths = np.zeros(len(data_cache))
 
-        for cache_tag in data_cache:
+        for i_cache_tag, cache_tag in enumerate(data_cache):
             obsHistID = int(cache_tag.split()[0])
-            if min_chunk<0 or len(data_cache[cache_tag]['uniqueId'])<min_chunk:
-                min_chunk = len(data_cache[cache_tag]['uniqueId'])
+            n_obj = len(data_cache[cache_tag]['uniqueId'])
+            chunk_lengths[i_cache_tag] = n_obj
 
             values = ((data_cache[cache_tag]['uniqueId'][i_obj],
                       obsHistID,
@@ -545,7 +545,7 @@ class AlertDataGenerator(object):
                       data_cache[cache_tag]['SNR'][i_obj],
                       data_cache[cache_tag]['raICRS'][i_obj],
                       data_cache[cache_tag]['decICRS'][i_obj])
-                      for i_obj in range(len(data_cache[cache_tag]['uniqueId'])))
+                      for i_obj in range(n_obj))
             cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
 
@@ -554,10 +554,18 @@ class AlertDataGenerator(object):
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
         #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
 
+        chunk_lenghts = np.sort(chunk_lengths)
         if self._stdout_lock is not None:
             self._stdout_lock.acquire()
-            elapsed = (time.time()-t_start)
-            print('    %d min_chunk %d' % (os.getpid(), min_chunk))
+            elapsed = (time.time()-t_start)/3600.0
+            min_chunk = chunk_lengths.min()
+            max_chunk = chunk_lengths.max()
+            n_chunks = len(chunk_lengths)
+            first_q = chunk_lengths[n_chunks//4]
+            third_q = chunk_lengths[(n_chunks*3)//4]
+            second_q = chunk_lengths[n_chunks//2]
+            print('    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
+            first_q, second_q, third_q, max_chunk)))
             print('    wrote %d rows in %.2e hrs; per %.2e' % (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
 
