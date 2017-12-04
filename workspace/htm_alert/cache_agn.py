@@ -19,16 +19,19 @@ if __name__ == "__main__":
         raise RuntimeError("you must specify out_dir")
 
 
-    lc_file_list = []
+    lc_dtype = np.dtype([('mjd', float), ('du', float), ('dg', float),
+                         ('dr', float), ('di', float), ('dz', float)])
+
     galid_list = []
     normalizing_factors = {}
+    lc_data = {}
     list_of_all_files = os.listdir(args.in_dir)
     for file_name in list_of_all_files:
         if file_name.startswith('agn') and file_name.endswith('lc.txt'):
-            lc_file_list.append(os.path.join(args.in_dir, file_name))
+            full_name = os.path.join(args.in_dir, file_name)
             galid = int(file_name.split('_')[1])
             galid_list.append(galid)
-            with open(lc_file_list[-1], 'r') as in_file:
+            with open(full_name, 'r') as in_file:
                 first_line = in_file.readline().strip()
                 params = first_line.split()
                 assert params[0] == '#'
@@ -36,12 +39,15 @@ if __name__ == "__main__":
                 for i_filter in range(6):
                     normalizing_factors[galid].append(float(params[i_filter+1]))
 
+            raw_data = np.genfromtxt(full_name, dtype=lc_dtype)
+            lc_data[galid] = {}
+            lc_data[galid]['mjd'] = raw_data['mjd']
+            lc_data[galid]['du'] = raw_data['du']
+
     t_start = 59580.0
     duration = 3654.0
     n_t_steps = np.floor(duration/args.t_step).astype(int)
 
-    lc_dtype = np.dtype([('mjd', float), ('du', float), ('dg', float),
-                         ('dr', float), ('di', float), ('dz', float)])
 
     for i_t, t_min in enumerate(np.arange(t_start, t_start+duration, args.t_step)):
         t_max = t_min + args.t_step
