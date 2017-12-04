@@ -558,7 +558,7 @@ class AlertDataGenerator(object):
             self._stdout_lock.acquire()
             elapsed = (time.time()-t_start)
             print('    %d min_chunk %d' % (os.getpid(), min_chunk))
-            print('    wrote %d rows in %.2e hrs; per %.2e' (n_written, elapsed, elapsed/n_written))
+            print('    wrote %d rows in %.2e hrs; per %.2e' % (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
 
         return n_written
