@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import argparse
+import time
 
 if __name__ == "__main__":
 
@@ -48,6 +49,8 @@ if __name__ == "__main__":
     duration = 3654.0
     n_t_steps = np.floor(duration/args.t_step).astype(int)
 
+    time.sleep(30)
+    exit(1)
 
     for i_t, t_min in enumerate(np.arange(t_start, t_start+duration, args.t_step)):
         t_max = t_min + args.t_step
