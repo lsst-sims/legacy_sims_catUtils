@@ -530,7 +530,6 @@ class AlertDataGenerator(object):
 
         for cache_tag in data_cache:
             obsHistID = int(cache_tag.split()[0])
-            valid_obj = np.where(data_cache[cache_tag]['uniqueId']>0.0)
             values = ((data_cache[cache_tag]['uniqueId'][i_obj],
                       obsHistID,
                       data_cache[cache_tag]['xPix'][i_obj],
@@ -540,7 +539,7 @@ class AlertDataGenerator(object):
                       data_cache[cache_tag]['SNR'][i_obj],
                       data_cache[cache_tag]['raICRS'][i_obj],
                       data_cache[cache_tag]['decICRS'][i_obj])
-                      for i_obj in valid_obj[0])
+                      for i_obj range(len(data_cache[cache_tag]['uniqueId'])))
             cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
 
@@ -869,30 +868,19 @@ class AlertDataGenerator(object):
 
                     i_star = 0
                     cat = cat_list[i_obs]
+                    i_valid_chunk = 0
                     for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
+                        i_valid_chunk += 1
+                        assert i_valid_chunk == 1
                         n_time_last += len(valid_chunk[0])
                         length_of_chunk = len(valid_chunk[chunk_map['uniqueId']])
                         cache_tag = '%d_%d' % (obshistid, i_chunk)
-
-                        if cache_tag not in output_data_cache:
-                            output_data_cache[cache_tag] = {}
-                            data_start_dex =0
-
-                            for col_name in ('uniqueId', 'raICRS', 'decICRS',
-                                             'flux', 'dflux', 'SNR',
-                                             'chipNum', 'xPix', 'yPix'):
-
-                                if col_name in ('uniqueId', 'chipNum'):
-                                    arr_type = int
-                                else:
-                                    arr_type = float
-
-                                output_data_cache[cache_tag][col_name] = (self._flag_val*np.ones(n_raw_obj)).astype(arr_type)
+                        output_data_cache[cache_tag] = {}
 
                         for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
                                          'chipNum', 'xPix', 'yPix'):
 
-                            output_data_cache[cache_tag][col_name][data_start_dex:data_start_dex+length_of_chunk] = valid_chunk[chunk_map[col_name]]
+                            output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
                         data_start_dex += length_of_chunk
                         n_rows_cached += length_of_chunk
