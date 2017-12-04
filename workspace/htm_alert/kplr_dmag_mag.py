@@ -35,7 +35,7 @@ def get_dmag(lc_id_list, out_file_name, seed, lock, v_cache):
     lock.acquire()
     with open(out_file_name, 'a') as out_file:
         for lc_id, dmag in zip(lc_id_list, dmag_list):
-            out_file.write('%d %e' % (lc_id, dmag)
+            out_file.write('%d %e' % (lc_id, dmag))
     lock.release()
 
 if __name__ == "__main__":
