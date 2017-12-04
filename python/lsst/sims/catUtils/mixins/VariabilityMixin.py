@@ -773,6 +773,9 @@ class MLTflaringMixin(Variability):
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
 
+        print('WARNING calling MLT')
+        exit(1)
+
         if quiescent_mags is None:
             quiescent_mags = {}
             for mag_name in ('u', 'g', 'r', 'i', 'z', 'y'):
