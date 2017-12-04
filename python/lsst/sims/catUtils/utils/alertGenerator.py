@@ -528,8 +528,13 @@ class AlertDataGenerator(object):
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
+        min_chunk = -1
+
         for cache_tag in data_cache:
             obsHistID = int(cache_tag.split()[0])
+            if min_chunk<0 or len(data_cache[cache_tag]['uniqueId'])<min_chunk:
+                min_chunk = len(data_cache[cache_tag]['uniqueId'])
+
             values = ((data_cache[cache_tag]['uniqueId'][i_obj],
                       obsHistID,
                       data_cache[cache_tag]['xPix'][i_obj],
@@ -547,6 +552,12 @@ class AlertDataGenerator(object):
         conn.commit()
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
         #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
+
+        if self._stdout_lock is not None:
+            self._stdout_lock.acquire()
+            print('    %d min_chunk %d' % (os.getpid(), min_chunk))
+            self._stdout_lock.release()
+
         return n_written
 
 
@@ -561,6 +572,7 @@ class AlertDataGenerator(object):
                               ct_lock=None,
                               ct_dict=None):
 
+        self._stdout_lock = stdout_lock
         this_pid = os.getpid()
         if os.getpid() not in ct_dict.keys():
             ct_dict[this_pid] = 0
@@ -907,10 +919,10 @@ class AlertDataGenerator(object):
                 if True:
                     #if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
                     if n_rows_cached >= 5000000:
-                        stdout_lock.acquire()
+                        self._stdout_lock.acquire()
                         print('%d is writing %d -- %d (%d)' %
                               (os.getpid(),ct_dict[this_pid],min_ct,ct_dict['number_writing']))
-                        stdout_lock.release()
+                        self._stdout_lock.release()
 
                         ct_dict[this_pid] += 1
                         ct_dict['number_writing'] += 1
@@ -918,8 +930,8 @@ class AlertDataGenerator(object):
                         output_data_cache = {}
                         n_rows_cached = 0
 
-                        if stdout_lock is not None:
-                            stdout_lock.acquire()
+                        if self._stdout_lock is not None:
+                            self._stdout_lock.acquire()
                         if n_rows>0:
                             elapsed = (time.time()-t_before_obj)/3600.0
                             elapsed_per = elapsed/n_rows
@@ -932,8 +944,8 @@ class AlertDataGenerator(object):
 
                         ct_dict['number_writing'] -= 1
                         print('%d is done writing (%d)' % (os.getpid(),ct_dict['number_writing']))
-                        if stdout_lock is not None:
-                            stdout_lock.release()
+                        if self._stdout_lock is not None:
+                            self._stdout_lock.release()
 
                 #if ct_dict['number_writing'] == 0:
                 #    stdout_lock.acquire()
