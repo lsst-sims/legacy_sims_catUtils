@@ -525,6 +525,7 @@ class AlertDataGenerator(object):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
+        t_start = time.time()
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
@@ -555,7 +556,9 @@ class AlertDataGenerator(object):
 
         if self._stdout_lock is not None:
             self._stdout_lock.acquire()
+            elapsed = (time.time()-t_start)
             print('    %d min_chunk %d' % (os.getpid(), min_chunk))
+            print('    wrote %d rows in %.2e hrs; per %.2e' (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
 
         return n_written
