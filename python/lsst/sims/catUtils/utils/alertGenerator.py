@@ -702,8 +702,7 @@ class AlertDataGenerator(object):
             conn.commit()
 
             creation_cmd = '''CREATE TABLE quiescent_flux
-                          (uniqueId int, u_flux float, g_flux float, r_flux float,
-                          i_flux float, z_flux float, y_flux float)'''
+                          (uniqueId int, band int, flux float)'''
 
             cursor.execute(creation_cmd)
             conn.commit()
@@ -835,17 +834,19 @@ class AlertDataGenerator(object):
                                                                variability_cache=self._variability_cache,
                                                                expmjd=expmjd_list,).transpose((2,0,1))
 
-                q_u = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_u'))
-                q_g = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_g'))
-                q_r = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_r'))
-                q_i = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_i'))
-                q_z = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_z'))
-                q_y = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
+                q_f_dict = {}
+                q_f_dict[0] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_u'))
+                q_f_dict[1] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_g'))
+                q_f_dict[2] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_r'))
+                q_f_dict[3] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_i'))
+                q_f_dict[4] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_z'))
+                q_f_dict[5] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
                 unq = photometry_catalog.column_by_name('uniqueId')
-                values = [(int(unq[i_q]), q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
-                           for i_q in range(len(unq))]
-                cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?,?,?,?)', values)
-                conn.commit()
+                for i_filter in range(6):
+                    values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q]),
+                              for i_q in range(unq[i_q]))
+                    cursor.executemany('INSERT INTO quiescent_flux VALUE(?,?,?)', values)
+                    conn.commit()
 
                 dmag_arr_transpose = dmag_arr.transpose(2,1,0)
                 assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
