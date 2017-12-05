@@ -536,7 +536,7 @@ class AlertDataGenerator(object):
             n_obj = len(data_cache[cache_tag]['uniqueId'])
             chunk_lengths[i_cache_tag] = n_obj
 
-            values = ((data_cache[cache_tag]['uniqueId'][i_obj],
+            values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
                       obsHistID,
                       data_cache[cache_tag]['xPix'][i_obj],
                       data_cache[cache_tag]['yPix'][i_obj],
@@ -832,7 +832,7 @@ class AlertDataGenerator(object):
                 q_z = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_z'))
                 q_y = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
                 unq = photometry_catalog.column_by_name('uniqueId')
-                values = [(unq[i_q], q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
+                values = [(int(unq[i_q]), q_u[i_q], q_g[i_q], q_r[i_q], q_i[i_q], q_z[i_q], q_y[i_q])
                            for i_q in range(len(unq))]
                 cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?,?,?,?)', values)
                 conn.commit()
