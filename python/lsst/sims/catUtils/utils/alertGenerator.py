@@ -843,9 +843,9 @@ class AlertDataGenerator(object):
                 q_f_dict[5] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
                 unq = photometry_catalog.column_by_name('uniqueId')
                 for i_filter in range(6):
-                    values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q]),
-                              for i_q in range(unq[i_q]))
-                    cursor.executemany('INSERT INTO quiescent_flux VALUE(?,?,?)', values)
+                    values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q])
+                              for i_q in range(len(unq)))
+                    cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?)', values)
                     conn.commit()
 
                 dmag_arr_transpose = dmag_arr.transpose(2,1,0)
