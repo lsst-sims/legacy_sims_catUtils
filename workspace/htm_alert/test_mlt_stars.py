@@ -63,7 +63,8 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  lock=lock,
                                                  stdout_lock=stdout_lock,
                                                  ct_lock=ct_lock,
-                                                 ct_dict=ct_dict)
+                                                 ct_dict=ct_dict,
+                                                 chunk_cutoff=10)
 
         lock.acquire()
         with open(log_file_name, 'a') as out_file:
@@ -73,6 +74,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                             elapsed/n_rows, i_htmid, len(htmid_list)))
 
         lock.release()
+        exit()
 
 if __name__ == "__main__":
 
