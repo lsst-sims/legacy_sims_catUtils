@@ -521,7 +521,7 @@ class AlertDataGenerator(object):
     def n_obs(self, htmid):
         return len(self._htmid_dict[htmid])
 
-    def output_alert_data(self, conn, data_cache):
+    def output_alert_data(self, conn, data_cache, log_file_name):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
@@ -564,10 +564,12 @@ class AlertDataGenerator(object):
             first_q = chunk_lengths[n_chunks//4]
             third_q = chunk_lengths[(n_chunks*3)//4]
             second_q = chunk_lengths[n_chunks//2]
-            print('\n    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
-            first_q, second_q, third_q, max_chunk))
-            print('    %d chunks' % len(chunk_lengths))
-            print('    wrote %d rows in %.2e hrs; per %.2e' % (n_written, elapsed, elapsed/n_written))
+            with open(log_file_name, 'a') as out_file:
+                out_file.write('\n    %d chunk stats %d %d %d %d %d\n' % (os.getpid(), min_chunk,
+                               first_q, second_q, third_q, max_chunk))
+                out_file.write('    %d chunks\n' % len(chunk_lengths))
+                out_file.write('    wrote %d rows in %.2e hrs; per %.2e\n' %
+                               (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
 
         return n_written
@@ -947,7 +949,7 @@ class AlertDataGenerator(object):
 
                         ct_dict[this_pid] += 1
                         ct_dict['number_writing'] += 1
-                        n_rows += self.output_alert_data(conn, output_data_cache)
+                        n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
                         output_data_cache = {}
                         n_rows_cached = 0
 
@@ -979,7 +981,7 @@ class AlertDataGenerator(object):
                 #    stdout_lock.release()
 
             if len(output_data_cache)>0:
-                n_rows += self.output_alert_data(conn, output_data_cache)
+                n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
                 output_data_cache = {}
 
             print('that took %.2e hours; n_obj %d n_rows %d' %
