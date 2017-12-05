@@ -753,6 +753,10 @@ class AlertDataGenerator(object):
                         obs_sub_list.append([])
                     sub_list_ct = 0
 
+                #spock put a time_arr here
+                #that can be applied when getting photometrically_valid objects
+                #in fact... create it as transpose; use numpy to set switches
+                #then transpose it to be time_arr[i_obj][i_time]
                 for i_obs, obs_dex in enumerate(obs_valid_dex):
                     obs = self._obs_list[obs_dex]
                     if n_proc_chipName == 1:
