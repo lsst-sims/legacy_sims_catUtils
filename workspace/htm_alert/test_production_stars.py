@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default=None)
     parser.add_argument('--out_prefix', type=str, default='stellar')
     parser.add_argument('--log_file', type=str, default=None)
-    parser.add_argment('--night0', type=int, default=30)
+    parser.add_argument('--night0', type=int, default=30)
     parser.add_argument('--night1', type=int, default=61)
 
     args = parser.parse_args()
