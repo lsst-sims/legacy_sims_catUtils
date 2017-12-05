@@ -994,7 +994,7 @@ class AlertDataGenerator(object):
                 lock.release()
 
             cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
-            cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId)')
+            cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
             conn.commit()
 
