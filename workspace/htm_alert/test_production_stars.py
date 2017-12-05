@@ -37,7 +37,8 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  lock=lock,
                                                  stdout_lock=stdout_lock,
                                                  ct_lock=ct_lock,
-                                                 ct_dict=ct_dict)
+                                                 ct_dict=ct_dict,
+                                                 log_file_name=log_file_name)
 
         lock.acquire()
         with open(log_file_name, 'a') as out_file:
