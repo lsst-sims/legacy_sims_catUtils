@@ -57,6 +57,8 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default=None)
     parser.add_argument('--out_prefix', type=str, default='stellar')
     parser.add_argument('--log_file', type=str, default=None)
+    parser.add_argment('--night0', type=int, default=30)
+    parser.add_argument('--night1', type=int, default=61)
 
     args = parser.parse_args()
 
@@ -80,7 +82,7 @@ if __name__ == "__main__":
 
     obs_gen = ObservationMetaDataGenerator(opsim_db, driver='sqlite')
 
-    obs_list = obs_gen.getObservationMetaData(night=(30,61))
+    obs_list = obs_gen.getObservationMetaData(night=(args.night0,args.night1))
 
     del obs_gen
     sims_clean_up()
