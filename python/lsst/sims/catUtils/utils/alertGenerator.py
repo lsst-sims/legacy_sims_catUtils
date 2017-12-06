@@ -818,6 +818,8 @@ class AlertDataGenerator(object):
                 for i_obj in range(n_raw_obj):
                     keep_it = False
                     valid_times = np.where(time_arr[i_obj]>0)
+                    if len(valid_times[0]) == 0:
+                        continue
                     for i_filter in range(len(mag_names)):
                         if np.abs(dmag_arr_transpose[i_obj][i_filter][valid_times]).max()>dmag_cutoff:
                             dmag_min = dmag_arr_transpose[i_obj][i_filter][valid_times].min()
