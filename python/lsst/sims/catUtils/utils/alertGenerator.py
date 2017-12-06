@@ -729,11 +729,10 @@ class AlertDataGenerator(object):
                 t_before_chip_name = time.time()
                 chip_name_dict = {}
 
-                # time_arr will keep track of which objects appear in which observations;
-                # 1 means the object appears; -1 means it does not
-                time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
-                                                dtype=int)
-
+                #spock put a time_arr here
+                #that can be applied when getting photometrically_valid objects
+                #in fact... create it as transpose; use numpy to set switches
+                #then transpose it to be time_arr[i_obj][i_time]
                 for i_obs, obs_dex in enumerate(obs_valid_dex):
                     obs = self._obs_list[obs_dex]
                     xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
@@ -749,13 +748,11 @@ class AlertDataGenerator(object):
                             chip_int_arr[i_chip] = 1
 
                     valid_obj = np.where(chip_int_arr>0)
-                    time_arr_transpose[i_obs][valid_obj] = 1
                     chip_name_dict[i_obs] = (chip_name_list,
                                              xPup_list,
                                              yPup_list,
                                              valid_obj)
 
-                time_arr = time_arr_transpose.transpose()
                 assert len(chip_name_dict) == len(obs_valid_dex)
 
                 ######################################################
@@ -806,11 +803,8 @@ class AlertDataGenerator(object):
                 photometrically_valid_obj = []
                 for i_obj in range(n_raw_obj):
                     keep_it = False
-                    valid_times = np.where(time_arr[i_obj]>0)
-                    if len(valid_times[0]) == 0:
-                        continue
                     for i_filter in range(len(mag_names)):
-                        if np.abs(dmag_arr_transpose[i_obj][i_filter][valid_times]).max()>dmag_cutoff:
+                        if np.abs(dmag_arr_transpose[i_obj][i_filter]).max()>dmag_cutoff:
                             keep_it = True
                             break
                     if keep_it:
