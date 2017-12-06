@@ -44,7 +44,7 @@ class MLTAlertDBObj(StellarAlertDBObjMixin, MLTObj):
 
 def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                 log_file_name, lock, stdout_lock, ct_lock,
-                ct_dict):
+                ct_dict, write_every):
 
     db = MLTAlertDBObj(database='LSSTCATSIM',
                       host='fatboy.phys.washington.edu',
@@ -55,7 +55,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
         t_start = time.time()
         print('passing in %s' % str(htmid))
         n_rows = alert_gen.alert_data_from_htmid(htmid, db, chunk_size=5000,
-                                                 write_every=100000,
+                                                 write_every=write_every,
                                                  output_dir=out_dir,
                                                  output_prefix=out_prefix,
                                                  dmag_cutoff=0.001,
@@ -83,6 +83,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, default=None)
     parser.add_argument('--out_prefix', type=str, default='stellar')
     parser.add_argument('--log_file', type=str, default=None)
+    parser.add_argument('--write_every', type=int, default=5000000)
 
     args = parser.parse_args()
 
@@ -155,7 +156,7 @@ if __name__ == "__main__":
                           args = (alert_gen, htmid_list[i_p],
                                   args.out_dir, args.out_prefix,
                                   args.log_file, lock, stdout_lock,
-                                  ct_lock, ct_dict))
+                                  ct_lock, ct_dict, args.write_every))
 
         p.start()
         p_list.append(p)

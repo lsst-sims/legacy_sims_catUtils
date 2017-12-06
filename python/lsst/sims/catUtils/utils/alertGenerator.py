@@ -879,7 +879,7 @@ class AlertDataGenerator(object):
 
                 if True:
                     #if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
-                    if n_rows_cached >= 5000000:
+                    if n_rows_cached >= write_every:
                         self._stdout_lock.acquire()
                         with open(log_file_name,'a') as out_file:
                             out_file.write('%d is writing %d -- %d (%d)\n' %
