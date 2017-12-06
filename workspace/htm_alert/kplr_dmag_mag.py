@@ -14,9 +14,11 @@ def get_dmag(lc_id_list, out_file_name, seed, lock, v_cache):
 
     dt = (60.0*10.0)/(3600.0*24.0)
     mjd_base = np.arange(0.0, 180.0+2.0*dt, dt)
-    dmag_list = np.zeros(len(lc_id_list), dtype=float)
+    dmag_abs_list = np.zeros(len(lc_id_list), dtype=float)
+    dmag_true_list = np.zeros(len(lc_id_list), dtype=float)
     for i_lc, lc_int in enumerate(lc_id_list):
-        dmag_max = -1.0
+        dmag_abs_max = -1.0
+        dmag_true_max = -1.0
         for mjd_start in np.arange(59580.0, 59580.0+3654.0+181.0,180.0):
             mjd_arr = mjd_base+mjd_start
             d_mjd = rng.random_sample(len(mjd_arr))*0.9*dt
@@ -24,18 +26,25 @@ def get_dmag(lc_id_list, out_file_name, seed, lock, v_cache):
             q_flux, d_flux = plc._calc_dflux(lc_int, mjd_arr,
                                              variability_cache=v_cache)
 
-            d_flux_max = np.abs(d_flux/q_flux).max()
-            dmag_max_local = 2.5*np.log10(1.0+d_flux_max)
+            d_flux = d_flux/q_flux
+            d_flux_abs_max = np.abs(d_flux).max()
+            dmag_abs_max_local = 2.5*np.log10(1.0+d_flux_abs_max)
 
-            if dmag_max_local>dmag_max:
-                dmag_max = dmag_max_local
+            if dmag_abs_max_local>dmag_abs_max:
+                dmag_abs_max = dmag_abs_max_local
 
-        dmag_list[i_lc] = dmag_max
+            d_flux_true_max = d_flux.max()
+            dmag_true_max_local = 2.5*np.log10(1.0+d_flux_true_max)
+            if dmag_true_max_local > dmag_true_max:
+                dmag_true_max = dmag_true_max_local
+
+        dmag_abs_list[i_lc] = dmag_abs_max
+        dmag_true_list[i_lc] = dmag_true_max
 
     lock.acquire()
     with open(out_file_name, 'a') as out_file:
-        for lc_id, dmag in zip(lc_id_list, dmag_list):
-            out_file.write('%d %e\n' % (lc_id, dmag))
+        for lc_id, dmag_abs, dmag_true in zip(lc_id_list, dmag_abs_list, dmag_true_list):
+            out_file.write('%d %e %e\n' % (lc_id, dmag_abs, dmag_true))
     lock.release()
 
 if __name__ == "__main__":
@@ -47,7 +56,7 @@ if __name__ == "__main__":
     if not os.path.isdir(out_dir):
         raise RuntimeError('%s is not a dir' % out_dir)
 
-    out_file_name = os.path.join(out_dir,'kpr_dmag_171204.txt')
+    out_file_name = os.path.join(out_dir,'kplr_dmag_171206.txt')
     if os.path.exists(out_file_name):
         raise RuntimeError('%s exists' % out_file_name)
 
