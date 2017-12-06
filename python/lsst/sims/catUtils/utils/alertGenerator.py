@@ -594,6 +594,10 @@ class AlertDataGenerator(object):
         dummy_name = chipNameFromPupilCoordsLSST(0.0, 0.0)
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
+
+        # from Table 2 of the overview paper
+        obs_mag_cutoff = (23.68, 24.89, 24.43, 24.0, 24.45, 22.60)
+
         obs_valid_dex = self._htmid_dict[htmid]
         print('n valid obs %d' % len(obs_valid_dex))
 
@@ -777,13 +781,24 @@ class AlertDataGenerator(object):
                                                                expmjd=expmjd_list,).transpose((2,0,1))
 
                 q_f_dict = {}
-                q_f_dict[0] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_u'))
-                q_f_dict[1] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_g'))
-                q_f_dict[2] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_r'))
-                q_f_dict[3] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_i'))
-                q_f_dict[4] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_z'))
-                q_f_dict[5] = dummy_sed.fluxFromMag(photometry_catalog.column_by_name('quiescent_lsst_y'))
+                q_m_dict = {}
+
+                q_m_dict[0] = photometry_catalog.column_by_name('quiescent_lsst_u')
+                q_m_dict[1] = photometry_catalog.column_by_name('quiescent_lsst_g')
+                q_m_dict[2] = photometry_catalog.column_by_name('quiescent_lsst_r')
+                q_m_dict[3] = photometry_catalog.column_by_name('quiescent_lsst_i')
+                q_m_dict[4] = photometry_catalog.column_by_name('quiescent_lsst_z')
+                q_m_dict[5] = photometry_catalog.column_by_name('quiescent_lsst_y')
+
+                q_f_dict[0] = dummy_sed.fluxFromMag(q_m_dict[0])
+                q_f_dict[1] = dummy_sed.fluxFromMag(q_m_dict[1])
+                q_f_dict[2] = dummy_sed.fluxFromMag(q_m_dict[2])
+                q_f_dict[3] = dummy_sed.fluxFromMag(q_m_dict[3])
+                q_f_dict[4] = dummy_sed.fluxFromMag(q_m_dict[4])
+                q_f_dict[5] = dummy_sed.fluxFromMag(q_m_dict[5])
+
                 unq = photometry_catalog.column_by_name('uniqueId')
+
                 for i_filter in range(6):
                     values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q])
                               for i_q in range(len(unq)))
@@ -796,6 +811,8 @@ class AlertDataGenerator(object):
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
                 # at some point in their history (note that delta_mag is defined with
                 # respect to the quiescent magnitude)
+                #
+                # also demand that the magnitude at some point is less than obs_mag_cutoff
 
                 photometrically_valid_obj = []
                 for i_obj in range(n_raw_obj):
@@ -803,8 +820,10 @@ class AlertDataGenerator(object):
                     valid_times = np.where(time_arr[i_obj]>0)
                     for i_filter in range(len(mag_names)):
                         if np.abs(dmag_arr_transpose[i_obj][i_filter][valid_times]).max()>dmag_cutoff:
-                            keep_it = True
-                            break
+                            dmag_min = dmag_arr_transpose[i_obj][i_filter][valid_times].min()
+                            if q_m_dict[i_filter][i_obj] + dmag_min <= obs_mag_cutoff[i_filter]:
+                                keep_it = True
+                                break
                     if keep_it:
                         photometrically_valid_obj.append(i_obj)
                 photometrically_valid_obj = np.array(photometrically_valid_obj)
