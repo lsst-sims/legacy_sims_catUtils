@@ -380,27 +380,6 @@ class AlertAgnVariabilityCatalog(_baseAlertCatalog,
 
 
 
-def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-                             v_rad=None, obs_metadata_list=None, i_obs_list=None, out_dict=None):
-
-    for i_obs, obs in zip(i_obs_list, obs_metadata_list):
-        xPup_list, yPup_list = _pupilCoordsFromRaDec(ra, dec, pm_ra=pm_ra,
-                                                     pm_dec=pm_dec, parallax=parallax,
-                                                     v_rad=v_rad, obs_metadata=obs)
-
-        chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
-
-        chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
-        for i_chip, name in enumerate(chip_name_list):
-            if name is not None:
-                chip_int_arr[i_chip] = 1
-        valid_obj = np.where(chip_int_arr>0)
-
-        out_dict[i_obs] = (chip_name_list,
-                           xPup_list, yPup_list,
-                           valid_obj)
-
-
 class AlertDataGenerator(object):
 
     def __init__(self,
