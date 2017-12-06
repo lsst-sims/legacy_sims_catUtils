@@ -386,7 +386,6 @@ class AlertDataGenerator(object):
                  testing=False):
 
         self._flag_val = -999.0
-        self._htmid_level = 5
         self._variability_cache = create_variability_cache()
         if not testing:
             plm = ParametrizedLightCurveMixin()
@@ -412,12 +411,12 @@ class AlertDataGenerator(object):
         self._desired_columns.append('redshift')
         self._desired_columns.append('htmid')
 
-    def subdivide_obs(self, obs_list):
+    def subdivide_obs(self, obs_list, htmid_level=5):
         t_start = time.time()
-        self._trixel_dict = getAllTrixels(self._htmid_level)
+        self._trixel_dict = getAllTrixels(htmid_level)
         valid_htmid = []
         for htmid in self._trixel_dict:
-            if levelFromHtmid(htmid) == self._htmid_level:
+            if levelFromHtmid(htmid) == htmid_level:
                 valid_htmid.append(htmid)
 
         #print("made trixel dict")
@@ -571,6 +570,7 @@ class AlertDataGenerator(object):
                               ct_lock=None,
                               ct_dict=None):
 
+        htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
             raise RuntimeError('must specify log_file_name')
 
@@ -633,7 +633,7 @@ class AlertDataGenerator(object):
             if col in available_columns:
                 column_query.append(col)
 
-        n_bits_off = 2*(21-self._htmid_level)
+        n_bits_off = 2*(21-htmid_level)
 
         data_iter = dbobj.query_columns_htmid(colnames=column_query,
                                               htmid=htmid,
