@@ -548,6 +548,12 @@ class AlertDataGenerator(object):
                 out_file.write('    %d chunks\n' % len(chunk_lengths))
                 out_file.write('    wrote %d rows in %.2e hrs; per %.2e\n' %
                                (n_written, elapsed, elapsed/n_written))
+
+                print('\n    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
+                               first_q, second_q, third_q, max_chunk))
+                print('    %d chunks' % len(chunk_lengths))
+                print('    wrote %d rows in %.2e hrs; per %.2e' %
+                               (n_written, elapsed, elapsed/n_written))
             self._stdout_lock.release()
 
         return n_written
@@ -910,6 +916,10 @@ class AlertDataGenerator(object):
                             out_file.write('%d is writing %d -- %d (%d)\n' %
                                            (os.getpid(),ct_dict[this_pid],min_ct,
                                             ct_dict['number_writing']))
+
+                            print('%d is writing %d -- %d (%d)' %
+                                           (os.getpid(),ct_dict[this_pid],min_ct,
+                                            ct_dict['number_writing']))
                             self._stdout_lock.release()
 
                         ct_dict[this_pid] += 1
@@ -936,6 +946,16 @@ class AlertDataGenerator(object):
                                 ct_dict['number_writing'] -= 1
                                 out_file.write('%d is done writing (%d)\n' %
                                                (os.getpid(),ct_dict['number_writing']))
+
+                                print('\n    %d n_obj %d %d trimmed %d' %
+                                               (this_pid, n_obj, n_actual_obj, n_htmid_trim))
+                                print('    elapsed %.2e hrs per row %.2e total %2e' %
+                                                (elapsed, elapsed_per, total_projection))
+                                print('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
+                                print('%d is done writing (%d)' %
+                                               (os.getpid(),ct_dict['number_writing']))
+
+
                         if self._stdout_lock is not None:
                             self._stdout_lock.release()
 
