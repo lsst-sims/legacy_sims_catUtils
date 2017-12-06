@@ -403,12 +403,11 @@ def _find_chipNames_parallel(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
 class AlertDataGenerator(object):
 
-    def __init__(self, n_proc_max=4,
+    def __init__(self,
                  testing=False):
 
         self._flag_val = -999.0
         self._htmid_level = 5
-        self._n_proc_max = n_proc_max
         self._variability_cache = create_variability_cache()
         if not testing:
             plm = ParametrizedLightCurveMixin()
@@ -666,9 +665,6 @@ class AlertDataGenerator(object):
         t_chipName = 0.0
         t_before_obj = time.time()
 
-        n_proc_possible = int(np.ceil(len(obs_valid_dex)/5.0))
-        n_proc_chipName = min(n_proc_possible, self._n_proc_max)
-
         output_data_cache = {}
         n_rows_cached = 0
 
@@ -746,17 +742,7 @@ class AlertDataGenerator(object):
                 # the observations in question
                 #
                 t_before_chip_name = time.time()
-                if n_proc_chipName == 1:
-                    chip_name_dict = {}
-                else:
-                    mgr = mproc.Manager()
-                    chip_name_dict = mgr.dict()
-                    iobs_sub_list = []
-                    obs_sub_list = []
-                    for i_obs in range(n_proc_chipName):
-                        iobs_sub_list.append([])
-                        obs_sub_list.append([])
-                    sub_list_ct = 0
+                chip_name_dict = {}
 
                 #spock put a time_arr here
                 #that can be applied when getting photometrically_valid objects
@@ -764,51 +750,25 @@ class AlertDataGenerator(object):
                 #then transpose it to be time_arr[i_obj][i_time]
                 for i_obs, obs_dex in enumerate(obs_valid_dex):
                     obs = self._obs_list[obs_dex]
-                    if n_proc_chipName == 1:
-                        xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
-                                                                     pm_ra=pmra, pm_dec=pmdec,
-                                                                     parallax=px, v_rad=vrad,
-                                                                     obs_metadata=obs)
+                    xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
+                                                                 pm_ra=pmra, pm_dec=pmdec,
+                                                                 parallax=px, v_rad=vrad,
+                                                                 obs_metadata=obs)
 
-                        chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
+                    chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
 
-                        chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
-                        for i_chip, name in enumerate(chip_name_list):
-                            if name is not None:
-                                chip_int_arr[i_chip] = 1
+                    chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
+                    for i_chip, name in enumerate(chip_name_list):
+                        if name is not None:
+                            chip_int_arr[i_chip] = 1
 
-                        valid_obj = np.where(chip_int_arr>0)
-                        chip_name_dict[i_obs] = (chip_name_list,
-                                                 xPup_list,
-                                                 yPup_list,
-                                                 valid_obj)
+                    valid_obj = np.where(chip_int_arr>0)
+                    chip_name_dict[i_obs] = (chip_name_list,
+                                             xPup_list,
+                                             yPup_list,
+                                             valid_obj)
 
-                    else:
-                        iobs_sub_list[sub_list_ct].append(i_obs)
-                        obs_sub_list[sub_list_ct].append(obs)
-                        sub_list_ct += 1
-                        if sub_list_ct >= n_proc_chipName:
-                            sub_list_ct = 0
-
-                if n_proc_chipName>1:
-                    process_list = []
-                    for sub_list_ct in range(len(iobs_sub_list)):
-                        p = mproc.Process(target=_find_chipNames_parallel,
-                                          args=(chunk['raJ2000'], chunk['decJ2000']),
-                                          kwargs={'pm_ra': pmra,
-                                                  'pm_dec': pmdec,
-                                                  'parallax': px,
-                                                  'v_rad': vrad,
-                                                  'obs_metadata_list': obs_sub_list[sub_list_ct],
-                                                  'i_obs_list': iobs_sub_list[sub_list_ct],
-                                                  'out_dict': chip_name_dict})
-                        p.start()
-                        process_list.append(p)
-
-                    for p in process_list:
-                        p.join()
-
-                    assert len(chip_name_dict) == len(obs_valid_dex)
+                assert len(chip_name_dict) == len(obs_valid_dex)
 
                 ######################################################
                 # Calculate the delta_magnitude for all of the sources
