@@ -558,6 +558,85 @@ class AlertDataGenerator(object):
 
         return n_written
 
+    def filter_on_chip_name_then_photometry(self, chunk, column_query,
+                                            obs_valid_dex, expmjd_list,
+                                            photometry_catalog):
+        if 'properMotionRa'in column_query:
+            pmra = chunk['properMotionRa']
+            pmdec = chunk['properMotionDec']
+            px = chunk['parallax']
+            vrad = chunk['radialVelocity']
+        else:
+            pmra = None
+            pmdec = None
+            px = None
+            vrad = None
+
+        #for ii in range(6):
+        #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
+        #exit()
+
+        ###################################################################
+        # Figure out which sources actually land on an LSST detector during
+        # the observations in question
+        #
+        t_before_chip_name = time.time()
+        chip_name_dict = {}
+
+        # time_arr will keep track of which objects appear in which observations;
+        # 1 means the object appears; -1 means it does not
+        time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
+                                        dtype=int)
+
+        for i_obs, obs_dex in enumerate(obs_valid_dex):
+            obs = self._obs_list[obs_dex]
+            xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
+                                                         pm_ra=pmra, pm_dec=pmdec,
+                                                         parallax=px, v_rad=vrad,
+                                                         obs_metadata=obs)
+
+            chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
+
+            chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
+            for i_chip, name in enumerate(chip_name_list):
+                if name is not None:
+                    chip_int_arr[i_chip] = 1
+
+            valid_obj = np.where(chip_int_arr>0)
+            time_arr_transpose[i_obs][valid_obj] = 1
+            chip_name_dict[i_obs] = (chip_name_list,
+                                     xPup_list,
+                                     yPup_list,
+                                     valid_obj)
+
+        time_arr = time_arr_transpose.transpose()
+        assert len(chip_name_dict) == len(obs_valid_dex)
+
+        ######################################################
+        # Calculate the delta_magnitude for all of the sources
+        #
+        t_before_phot = time.time()
+
+        # only calculate photometry for objects that actually land
+        # on LSST detectors
+
+        n_raw_obj = len(chunk)
+        valid_photometry = -1*np.ones(n_raw_obj)
+
+        t_before_filter = time.time()
+        for i_obs in range(len(obs_valid_dex)):
+            name_list, xpup_list, ypup_list, valid_obj = chip_name_dict[i_obs]
+            valid_photometry[valid_obj] += 2
+        invalid_dex = np.where(valid_photometry<0)
+        chunk['varParamStr'][invalid_dex] = 'None'
+
+        photometry_catalog._set_current_chunk(chunk)
+        dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                       variability_cache=self._variability_cache,
+                                                       expmjd=expmjd_list,).transpose((2,0,1))
+
+        return chip_name_dict, dmag_arr, time_arr
+
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
                               dmag_cutoff=0.005,
@@ -724,80 +803,12 @@ class AlertDataGenerator(object):
                 chunk = chunk[valid_htmid]
                 n_obj += len(valid_htmid[0])
 
-                if 'properMotionRa'in column_query:
-                    pmra = chunk['properMotionRa']
-                    pmdec = chunk['properMotionDec']
-                    px = chunk['parallax']
-                    vrad = chunk['radialVelocity']
-                else:
-                    pmra = None
-                    pmdec = None
-                    px = None
-                    vrad = None
-
-                #for ii in range(6):
-                #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
-                #exit()
-
-                ###################################################################
-                # Figure out which sources actually land on an LSST detector during
-                # the observations in question
-                #
-                t_before_chip_name = time.time()
-                chip_name_dict = {}
-
-                # time_arr will keep track of which objects appear in which observations;
-                # 1 means the object appears; -1 means it does not
-                time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
-                                                dtype=int)
-
-                for i_obs, obs_dex in enumerate(obs_valid_dex):
-                    obs = self._obs_list[obs_dex]
-                    xPup_list, yPup_list = _pupilCoordsFromRaDec(chunk['raJ2000'], chunk['decJ2000'],
-                                                                 pm_ra=pmra, pm_dec=pmdec,
-                                                                 parallax=px, v_rad=vrad,
-                                                                 obs_metadata=obs)
-
-                    chip_name_list = chipNameFromPupilCoordsLSST(xPup_list, yPup_list)
-
-                    chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
-                    for i_chip, name in enumerate(chip_name_list):
-                        if name is not None:
-                            chip_int_arr[i_chip] = 1
-
-                    valid_obj = np.where(chip_int_arr>0)
-                    time_arr_transpose[i_obs][valid_obj] = 1
-                    chip_name_dict[i_obs] = (chip_name_list,
-                                             xPup_list,
-                                             yPup_list,
-                                             valid_obj)
-
-                time_arr = time_arr_transpose.transpose()
-                assert len(chip_name_dict) == len(obs_valid_dex)
-
-                ######################################################
-                # Calculate the delta_magnitude for all of the sources
-                #
-                t_before_phot = time.time()
-
-                # only calculate photometry for objects that actually land
-                # on LSST detectors
-
-                valid_photometry = -1*np.ones(n_raw_obj)
-
-                t_before_filter = time.time()
-                for i_obs in range(len(obs_valid_dex)):
-                    name_list, xpup_list, ypup_list, valid_obj = chip_name_dict[i_obs]
-                    valid_photometry[valid_obj] += 2
-                invalid_dex = np.where(valid_photometry<0)
-                chunk['varParamStr'][invalid_dex] = 'None'
-
-                n_actual_obj += n_raw_obj-len(invalid_dex[0])
-
-                photometry_catalog._set_current_chunk(chunk)
-                dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
-                                                               variability_cache=self._variability_cache,
-                                                               expmjd=expmjd_list,).transpose((2,0,1))
+                (chip_name_dict,
+                 dmag_arr,
+                 time_arr) = self.filter_on_chip_name_then_photometry(chunk, column_query,
+                                                                      obs_valid_dex,
+                                                                      expmjd_list,
+                                                                      photometry_catalog)
 
                 q_f_dict = {}
                 q_m_dict = {}
