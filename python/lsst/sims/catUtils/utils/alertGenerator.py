@@ -6,6 +6,7 @@ import multiprocessing as mproc
 from collections import OrderedDict
 import time
 import gc
+from lsst.utils import getPackageDir
 from lsst.sims.utils import findHtmid, trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
@@ -573,6 +574,18 @@ class AlertDataGenerator(object):
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
             raise RuntimeError('must specify log_file_name')
+
+        if '_PARAMETRIZED_LC_DMAG_LOOKUP' not in self._variability_cache:
+            self._variability_cache['_PARAMETRIZED_LC_DMAG_CUTOFF'] = dmag_cutoff
+            self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'] = {}
+            dmag_lookup_file = os.path.join(getPackageDir('sims_data'),
+                                            'catUtilsData',
+                                            'kplr_dmag_171204.txt')
+
+            with open(dmag_lookup_file, 'r') as in_file:
+                for line in in_file:
+                    params = line.split()
+                    self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][int(params[0])] = float(params[1])
 
         self._stdout_lock = stdout_lock
         this_pid = os.getpid()

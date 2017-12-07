@@ -1228,6 +1228,9 @@ class ParametrizedLightCurveMixin(Variability):
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
+            if '_PARAMETRIZED_LC_DMAG_CUTOFF' in variability_cache:
+                if variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][lc_int] < 0.75*variability_cache['_PARAMETRIZED_LC_DMAG_CUTOFF']:
+                    continue
             # t_before = time.time()
             if n_t == 1:
                 use_this_lc = np.where(lc_int_arr == lc_int)[0]
