@@ -517,7 +517,7 @@ class AlertDataGenerator(object):
                       obsHistID,
                       data_cache[cache_tag]['xPix'][i_obj],
                       data_cache[cache_tag]['yPix'][i_obj],
-                      data_cache[cache_tag]['chipNum'][i_obj],
+                      int(data_cache[cache_tag]['chipNum'][i_obj]),
                       data_cache[cache_tag]['dflux'][i_obj],
                       data_cache[cache_tag]['SNR'][i_obj],
                       data_cache[cache_tag]['raICRS'][i_obj],
