@@ -60,6 +60,9 @@ if __name__ == "__main__":
     if os.path.exists(out_file_name):
         raise RuntimeError('%s exists' % out_file_name)
 
+    with open(out_file_name, 'w') as out_file:
+        out_file.write('# lc_id dmag_abs.max() dmag_true.max()\n')
+
     n_proc = 20
 
     plc = ParametrizedLightCurveMixin()
