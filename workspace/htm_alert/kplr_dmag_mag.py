@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if os.path.exists(out_file_name):
         raise RuntimeError('%s exists' % out_file_name)
 
-    n_proc = 10
+    n_proc = 20
 
     plc = ParametrizedLightCurveMixin()
     v_cache = create_variability_cache()
