@@ -924,7 +924,7 @@ class AlertDataGenerator(object):
 
                     snr_template, local_gamma = calcSNR_m5(q_m_dict[i_filter],
                                                            self.bp_dict[mag_names[i_filter]],
-                                                           obs_mag_cutoff[mag_names[i_filter]],
+                                                           obs_mag_cutoff[i_filter],
                                                            photParams, gamma=gamma_template[i_filter])
                     q_snr_dict[i_filter] = snr_template
                     gamma_template[i_filter] = local_gamma
