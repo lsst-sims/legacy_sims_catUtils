@@ -14,7 +14,7 @@ if __name__ == "__main__":
                         "group light curves")
 
 
-    log_file_name = 'agn_cache_log.txt')
+    log_file_name = 'agn_cache_log.txt'
     if os.path.exists(log_file_name):
         os.unlink(log_file_name)
 
