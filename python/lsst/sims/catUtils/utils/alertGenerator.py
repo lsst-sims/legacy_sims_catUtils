@@ -664,7 +664,6 @@ class AlertDataGenerator(object):
                 photometrically_valid[i_obj] = 1
 
         photometrically_valid = np.where(photometrically_valid>=0)
-        print('valid %d tot %d' % (len(photometrically_valid[0]),n_raw_obj))
 
         if 'properMotionRa'in column_query:
             pmra = chunk['properMotionRa'][photometrically_valid]
