@@ -14,6 +14,10 @@ if __name__ == "__main__":
                         "group light curves")
 
 
+    log_file_name = 'agn_cache_log.txt')
+    if os.path.exists(log_file_name):
+        os.unlink(log_file_name)
+
     args = parser.parse_args()
     if args.in_dir is None:
         raise RuntimeError("you must specify in_dir")
@@ -28,7 +32,8 @@ if __name__ == "__main__":
                          ('dr', float), ('di', float), ('dz', float)])
 
     list_of_all_files = os.listdir(args.in_dir)
-    for file_name in list_of_all_files:
+    t_start = time.time()
+    for i_file, file_name in enumerate(list_of_all_files):
         if file_name.startswith('agn') and file_name.endswith('lc.txt'):
             full_name = os.path.join(args.in_dir, file_name)
             galid = int(file_name.split('_')[1])
@@ -61,3 +66,9 @@ if __name__ == "__main__":
                     out_file.create_dataset('%d_norm' % galid, data=normalizing_factors)
                     out_file.create_dataset('%d_mjd' % galid, data=lc_data['mjd'][valid])
                     out_file.create_dataset('%d_du' % galid, data=lc_data['du'][valid])
+
+        with open(log_file_name,'a') as out_file:
+            elapsed = (time.time()-t_start)/3600.0
+            out_file.write('did %d of %d in %.2e hours\n' %
+                           (i_file, len(list_of_all_files), elapsed))
+    print('all done')
