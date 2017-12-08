@@ -635,7 +635,108 @@ class AlertDataGenerator(object):
                                                        variability_cache=self._variability_cache,
                                                        expmjd=expmjd_list,).transpose((2,0,1))
 
-        return chip_name_dict, dmag_arr, time_arr
+        dmag_arr_transpose = dmag_arr.transpose(2,1,0)
+
+        return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
+
+    def filter_on_photometry_then_chip_name(self, chunk, column_query,
+                                            obs_valid_dex, expmjd_list,
+                                            photometry_catalog,
+                                            dmag_cutoff):
+
+
+        photometry_catalog._set_current_chunk(chunk)
+        dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
+                                                       variability_cache=self._variability_cache,
+                                                       expmjd=expmjd_list,).transpose((2,0,1))
+
+        dmag_arr_transpose = dmag_arr.transpose(2,1,0)
+
+        n_raw_obj = len(chunk)
+        photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
+        for i_obj in range(n_raw_obj):
+            keep_it = False
+            for i_filter in range(6):
+               if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
+                   keep_it = True
+                   break
+            if keep_it:
+                photometrically_valid[i_obj] = 1
+
+        photometrically_valid = np.where(photometrically_valid>=0)
+        print('valid %d tot %d' % (len(photometrically_valid[0]),n_raw_obj))
+
+        if 'properMotionRa'in column_query:
+            pmra = chunk['properMotionRa'][photometrically_valid]
+            pmdec = chunk['properMotionDec'][photometrically_valid]
+            px = chunk['parallax'][photometrically_valid]
+            vrad = chunk['radialVelocity'][photometrically_valid]
+        else:
+            pmra = None
+            pmdec = None
+            px = None
+            vrad = None
+
+        #for ii in range(6):
+        #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
+        #exit()
+
+        ###################################################################
+        # Figure out which sources actually land on an LSST detector during
+        # the observations in question
+        #
+        t_before_chip_name = time.time()
+        chip_name_dict = {}
+
+        # time_arr will keep track of which objects appear in which observations;
+        # 1 means the object appears; -1 means it does not
+        time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
+                                        dtype=int)
+
+        for i_obs, obs_dex in enumerate(obs_valid_dex):
+            obs = self._obs_list[obs_dex]
+            chip_name_list = np.array([None]*n_raw_obj)
+            xPup_list = np.zeros(n_raw_obj, dtype=float)
+            yPup_list = np.zeros(n_raw_obj, dtype=float)
+            chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
+
+            if len(photometrically_valid[0])>0:
+                xPup_list_val, yPup_list_val = _pupilCoordsFromRaDec(chunk['raJ2000'][photometrically_valid],
+                                                                     chunk['decJ2000'][photometrically_valid],
+                                                                     pm_ra=pmra, pm_dec=pmdec,
+                                                                     parallax=px, v_rad=vrad,
+                                                                     obs_metadata=obs)
+
+                xPup_list[photometrically_valid] = xPup_list_val
+                yPup_list[photometrically_valid] = yPup_list_val
+
+                chip_name_list[photometrically_valid] = chipNameFromPupilCoordsLSST(xPup_list_val,
+                                                                                    yPup_list_val)
+
+                for i_chip, name in enumerate(chip_name_list):
+                    if name is not None:
+                        chip_int_arr[i_chip] = 1
+
+            valid_obj = np.where(chip_int_arr>0)
+            time_arr_transpose[i_obs][valid_obj] = 1
+
+            chip_name_dict[i_obs] = (chip_name_list,
+                                     xPup_list,
+                                     yPup_list,
+                                     valid_obj)
+
+        time_arr = time_arr_transpose.transpose()
+        assert len(chip_name_dict) == len(obs_valid_dex)
+
+        ######################################################
+        # Calculate the delta_magnitude for all of the sources
+        #
+        t_before_phot = time.time()
+
+        # only calculate photometry for objects that actually land
+        # on LSST detectors
+
+        return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
 
     def alert_data_from_htmid(self, htmid, dbobj, radius=1.75,
@@ -805,10 +906,12 @@ class AlertDataGenerator(object):
 
                 (chip_name_dict,
                  dmag_arr,
-                 time_arr) = self.filter_on_chip_name_then_photometry(chunk, column_query,
+                 dmag_arr_transpose,
+                 time_arr) = self.filter_on_photometry_then_chip_name(chunk, column_query,
                                                                       obs_valid_dex,
                                                                       expmjd_list,
-                                                                      photometry_catalog)
+                                                                      photometry_catalog,
+                                                                      dmag_cutoff)
 
                 q_f_dict = {}
                 q_m_dict = {}
@@ -835,7 +938,6 @@ class AlertDataGenerator(object):
                     cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?)', values)
                     conn.commit()
 
-                dmag_arr_transpose = dmag_arr.transpose(2,1,0)
                 assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
 
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
