@@ -18,7 +18,7 @@ import argparse
 
 def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                 log_file_name, lock, stdout_lock, ct_lock,
-                ct_dict, write_every):
+                ct_dict, write_every, chunk_size, dmag_cutoff):
 
     db = StellarAlertDBObj(database='LSSTCATSIM',
                            host='fatboy.phys.washington.edu',
@@ -28,11 +28,11 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
     for i_htmid, htmid in enumerate(htmid_list):
         t_start = time.time()
         print('passing in %s' % str(htmid))
-        n_rows = alert_gen.alert_data_from_htmid(htmid, db, chunk_size=5000,
+        n_rows = alert_gen.alert_data_from_htmid(htmid, db, chunk_size=chunk_size,
                                                  write_every=write_every,
                                                  output_dir=out_dir,
                                                  output_prefix=out_prefix,
-                                                 dmag_cutoff=0.001,
+                                                 dmag_cutoff=dmag_cutoff,
                                                  photometry_class=AlertStellarVariabilityCatalog,
                                                  lock=lock,
                                                  stdout_lock=stdout_lock,
@@ -60,6 +60,8 @@ if __name__ == "__main__":
     parser.add_argument('--night0', type=int, default=30)
     parser.add_argument('--night1', type=int, default=61)
     parser.add_argument('--write_every', type=int, default=5000000)
+    parser.add_argument('--chunk_size', type=int ,default=10000)
+    parser.add_argument('--dmag_cutoff', type=float, default=0.001)
 
     args = parser.parse_args()
 
@@ -90,7 +92,7 @@ if __name__ == "__main__":
     gc.collect()
 
     alert_gen = AlertDataGenerator()
-    alert_gen.subdivide_obs(obs_list)
+    alert_gen.subdivide_obs(obs_list, htmid_level=6)
 
     htmid_list = []
     n_htmid_list = []
@@ -132,7 +134,8 @@ if __name__ == "__main__":
                           args = (alert_gen, htmid_list[i_p],
                                   args.out_dir, args.out_prefix,
                                   args.log_file, lock, stdout_lock,
-                                  ct_lock, ct_dict,args.write_every))
+                                  ct_lock, ct_dict,args.write_every,
+                                  args.chunk_size, args.dmag_cutoff))
 
         p.start()
         p_list.append(p)
