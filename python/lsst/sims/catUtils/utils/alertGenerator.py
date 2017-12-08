@@ -931,12 +931,6 @@ class AlertDataGenerator(object):
 
                 unq = photometry_catalog.column_by_name('uniqueId')
 
-                for i_filter in range(6):
-                    values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q], q_snr_dict[i_filter][i_q])
-                              for i_q in range(len(unq)))
-                    cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?)', values)
-                    conn.commit()
-
                 assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
 
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
@@ -967,6 +961,8 @@ class AlertDataGenerator(object):
                 if np.abs(dmag_arr).max() < dmag_cutoff:
                     continue
 
+                completely_valid = np.zeros(len(chunk), dtype=int)
+
                 ############################
                 # Process and output sources
                 #
@@ -983,6 +979,7 @@ class AlertDataGenerator(object):
                     valid_chip_name, valid_xpup, valid_ypup, chip_valid_obj = chip_name_dict[i_obs]
 
                     actually_valid_obj = np.intersect1d(photometrically_valid_obj, chip_valid_obj)
+                    completely_valid[actually_valid_obj] += 1
                     if len(actually_valid_obj) == 0:
                         continue
 
@@ -1013,6 +1010,17 @@ class AlertDataGenerator(object):
                             output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
                         n_rows_cached += length_of_chunk
+
+                completely_valid = np.where(completely_valid>0)
+                for i_filter in range(6):
+                    values = ((int(unq[completely_valid][i_q]),
+                               i_filter,
+                               q_f_dict[i_filter][completely_valid][i_q],
+                               q_snr_dict[i_filter][completely_valid][i_q])
+                              for i_q in range(len(completely_valid[0])))
+                    cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?)', values)
+                    conn.commit()
+
 
                 is_least = True
                 min_ct = -1
