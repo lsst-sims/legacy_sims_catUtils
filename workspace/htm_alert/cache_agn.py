@@ -33,6 +33,7 @@ if __name__ == "__main__":
 
     list_of_all_files = os.listdir(args.in_dir)
     t_start = time.time()
+    created_file_names = set()
     for i_file, file_name in enumerate(list_of_all_files):
         if file_name.startswith('agn') and file_name.endswith('lc.txt'):
             full_name = os.path.join(args.in_dir, file_name)
@@ -61,6 +62,11 @@ if __name__ == "__main__":
                 else:
                     valid = np.where(np.logical_and(lc_data['mjd']>mjd_min,
                                                     lc_data['mjd']<mjd_max))
+
+                if out_name not in created_file_names:
+                    if os.path.exists(out_name):
+                        raise RuntimeError('%s exists already' % out_name)
+                    created_file_names.add(out_name)
 
                 with h5py.File(out_name, 'a') as out_file:
                     out_file.create_dataset('%d_norm' % galid, data=normalizing_factors)
