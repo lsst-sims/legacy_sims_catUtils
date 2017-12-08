@@ -1021,7 +1021,6 @@ class AlertDataGenerator(object):
                     cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?)', values)
                     conn.commit()
 
-
                 is_least = True
                 min_ct = -1
                 if ct_lock is not None:
