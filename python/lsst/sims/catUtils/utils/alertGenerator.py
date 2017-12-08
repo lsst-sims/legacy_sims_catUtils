@@ -324,12 +324,6 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
             self.photParams = PhotometricParameters()
         if not hasattr(self, '_gamma'):
             self._gamma = None
-        if not hasattr(self, '_gamma_template'):
-            self._gamma_template = None
-
-        # taken from Table 2 of overview paper
-        # (might not be appropriate; is just a placeholder)
-        template_m5 = {'u':23.9, 'g':25.0, 'r':24.7, 'i':24.0, 'z':23.3, 'y':22.1}
 
         quiescent_flux = self._dummy_sed.fluxFromMag(quiescent_mag)
         flux = self._dummy_sed.fluxFromMag(mag)
@@ -342,18 +336,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         if self._gamma is None:
             self._gamma = gamma
 
-        snr_template, gamma_template = calcSNR_m5(quiescent_mag,
-                                                  self.lsstBandpassDict[self.obs_metadata.bandpass],
-                                                  template_m5[self.obs_metadata.bandpass],
-                                                  self.photParams, gamma=self._gamma_template)
-
-        if self._gamma_template is None:
-            self._gamma_template = gamma_template
-
-        sigma = np.sqrt((flux/snr_tot)**2 + (quiescent_flux/snr_template)**2)
-        snr = dflux/sigma
-
-        return np.array([flux, dflux, snr])
+        return np.array([flux, dflux, snr_tot])
 
 
 class AlertStellarVariabilityCatalog(_baseAlertCatalog,
@@ -793,8 +776,14 @@ class AlertDataGenerator(object):
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
 
+        photParams = PhotometricParameters()
+
         # from Table 2 of the overview paper
         obs_mag_cutoff = (23.68, 24.89, 24.43, 24.0, 24.45, 22.60)
+
+        gamma_template = {}
+        for i_filter in range(6):
+            gamma_template[i_filter] = None
 
         obs_valid_dex = self._htmid_dict[htmid]
         print('n valid obs %d' % len(obs_valid_dex))
@@ -879,7 +868,7 @@ class AlertDataGenerator(object):
             conn.commit()
 
             creation_cmd = '''CREATE TABLE quiescent_flux
-                          (uniqueId int, band int, flux float)'''
+                          (uniqueId int, band int, flux float, snr float)'''
 
             cursor.execute(creation_cmd)
             conn.commit()
@@ -914,6 +903,7 @@ class AlertDataGenerator(object):
 
                 q_f_dict = {}
                 q_m_dict = {}
+                q_snr_dict = {}
 
                 q_m_dict[0] = photometry_catalog.column_by_name('quiescent_lsst_u')
                 q_m_dict[1] = photometry_catalog.column_by_name('quiescent_lsst_g')
@@ -929,12 +919,22 @@ class AlertDataGenerator(object):
                 q_f_dict[4] = dummy_sed.fluxFromMag(q_m_dict[4])
                 q_f_dict[5] = dummy_sed.fluxFromMag(q_m_dict[5])
 
+                q_snr_dict = {}
+                for i_filter in range(6):
+
+                    snr_template, local_gamma = calcSNR_m5(q_m_dict[i_filter],
+                                                           self.bp_dict[mag_names[i_filter]],
+                                                           obs_mag_cutoff[mag_names[i_filter]],
+                                                           photParams, gamma=gamma_template[i_filter])
+                    q_snr_dict[i_filter] = snr_template
+                    gamma_template[i_filter] = local_gamma
+
                 unq = photometry_catalog.column_by_name('uniqueId')
 
                 for i_filter in range(6):
-                    values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q])
+                    values = ((int(unq[i_q]), i_filter, q_f_dict[i_filter][i_q], q_snr_dict[i_filter][i_q])
                               for i_q in range(len(unq)))
-                    cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?)', values)
+                    cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?)', values)
                     conn.commit()
 
                 assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
