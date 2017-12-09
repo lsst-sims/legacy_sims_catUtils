@@ -94,12 +94,6 @@ if __name__ == "__main__":
     alert_gen = AlertDataGenerator()
     alert_gen.subdivide_obs(obs_list, htmid_level=6)
 
-    htmid_list = []
-    n_htmid_list = []
-    for i_p in range(args.n_proc):
-        htmid_list.append([])
-        n_htmid_list.append(0)
-
     n_tot_obs=0
     for htmid in alert_gen.htmid_list:
         n_tot_obs += alert_gen.n_obs(htmid)
@@ -109,8 +103,20 @@ if __name__ == "__main__":
             out_file.write('htmid %d n_obs %d\n' % (htmid, alert_gen.n_obs(htmid)))
         out_file.write('n_htmid %d n_obs(total) %d\n' % (len(alert_gen.htmid_list), n_tot_obs))
 
+    htm_population = {}
+    with open('htm_population_lookup.txt', 'r') as in_file:
+        for line in in_file:
+            p = line.strip().split()
+            htm_population[int(p[0])] = int(p[1])
+
+    htmid_list = []
+    n_htmid_list = []
+    for i_p in range(args.n_proc):
+        htmid_list.append([])
+        n_htmid_list.append(0)
+
     for htmid in alert_gen.htmid_list:
-        n_obs = alert_gen.n_obs(htmid)
+        n_obs = alert_gen.n_obs(htmid)*htm_population[htmid]
         n_min = -1
         i_min = -1
         for i_htmid, n_htmid in enumerate(n_htmid_list):
