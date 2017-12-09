@@ -1101,17 +1101,23 @@ class AlertDataGenerator(object):
                 n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
                 output_data_cache = {}
 
-            print('that took %.2e hours; n_obj %d n_rows %d' %
-                 ((time.time()-t_start)/3600.0, n_obj, n_rows))
+            print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
+                 (htmid, (time.time()-t_start)/3600.0, n_obj, n_rows))
 
             if lock is not None:
                 lock.acquire()
-                print("INDEXING")
+                print("INDEXING %d" % htmid)
                 lock.release()
 
             cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
             cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
             conn.commit()
+            if self._stdout_lock is not None:
+                self._stdout_lock.acquire()
+                with open(log_file_name, 'a') as out_file:
+                    out_file.write('done with htmid %d -- %e %d' %
+                                  (htmid,(time.time()-t_start)/3600.0,n_obj))
+                self._stdout_lock.release()
 
         return n_rows
