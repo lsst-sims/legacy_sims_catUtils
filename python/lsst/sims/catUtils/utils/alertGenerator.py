@@ -979,7 +979,13 @@ class AlertDataGenerator(object):
                     valid_chip_name, valid_xpup, valid_ypup, chip_valid_obj = chip_name_dict[i_obs]
 
                     actually_valid_obj = np.intersect1d(photometrically_valid_obj, chip_valid_obj)
-                    completely_valid[actually_valid_obj] += 1
+                    try:
+                        completely_valid[actually_valid_obj] += 1
+                    except:
+                        print('failed')
+                        print(actually_valid_obj)
+                        print(completely_valid)
+                        raise
                     if len(actually_valid_obj) == 0:
                         continue
 
