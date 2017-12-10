@@ -1271,7 +1271,13 @@ class ParametrizedLightCurveMixin(Variability):
                     i_start = i_obj*n_t
                     obj_dex = use_this_lc_unq[i_obj]
                     for i_filter in range(6):
-                        d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
+                        if not isinstance(d_mag, numbers.Number):
+                            # in case you only passed in one expmjd value,
+                            # in which case self._calc_dflux will return a scalar
+                            d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
+                        else:
+                            assert n_t == 1
+                            d_mag_out[i_filter][obj_dex] = d_mag
 
             # t_assign += time.time()-t_before
 
