@@ -62,6 +62,7 @@ if __name__ == "__main__":
     parser.add_argument('--write_every', type=int, default=5000000)
     parser.add_argument('--chunk_size', type=int ,default=10000)
     parser.add_argument('--dmag_cutoff', type=float, default=0.001)
+    parser.add_arugment('--already_done', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -74,6 +75,18 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
+
+    already_done = set()
+    if args.already_done is not None:
+        with open(args.already_done, 'r') as in_file:
+            for line in in_file:
+                if 'INDEXING' in line:
+                    try:
+                        params = line.strip().split()
+                        htmid = int(params[1])
+                        already_done.add(htmid)
+                    except:
+                        pass
 
     opsim_db = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
                             'Development', 'garage', 'OpSimData',
@@ -116,6 +129,8 @@ if __name__ == "__main__":
         n_htmid_list.append(0)
 
     for htmid in alert_gen.htmid_list:
+        if htmid in already_done:
+            continue
         n_obs = alert_gen.n_obs(htmid)*htm_population[htmid]
         n_min = -1
         i_min = -1
