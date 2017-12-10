@@ -1205,10 +1205,12 @@ class ParametrizedLightCurveMixin(Variability):
         # print('applyParamLC %d obj; %d unique' % (n_obj, len(unq_lc_int)))
 
         if isinstance(expmjd, numbers.Number):
+            mjd_is_number = True
             n_t = 1
             d_mag_out = np.zeros((6, n_obj))
             lc_time = expmjd - params['t0'].astype(float)
         else:
+            mjd_is_number = False
             n_t = len(expmjd)
             d_mag_out = np.zeros((6, n_obj, n_t))
             t0_float = params['t0'].astype(float)
@@ -1232,7 +1234,7 @@ class ParametrizedLightCurveMixin(Variability):
                 if variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][lc_int] < 0.75*variability_cache['_PARAMETRIZED_LC_DMAG_CUTOFF']:
                     continue
             # t_before = time.time()
-            if n_t == 1:
+            if mjd_is_number:
                 use_this_lc = np.where(lc_int_arr == lc_int)[0]
                 not_none += len(use_this_lc)
             else:
@@ -1257,7 +1259,7 @@ class ParametrizedLightCurveMixin(Variability):
             # t_flux += time.time()-t_before
 
             # t_before = time.time()
-            if n_t == 1:
+            if mjd_is_number:
                 for i_filter in range(6):
                     d_mag_out[i_filter][use_this_lc] = d_mag
             else:
