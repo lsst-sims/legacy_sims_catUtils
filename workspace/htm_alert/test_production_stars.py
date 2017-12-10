@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument('--write_every', type=int, default=5000000)
     parser.add_argument('--chunk_size', type=int ,default=10000)
     parser.add_argument('--dmag_cutoff', type=float, default=0.001)
-    parser.add_arugment('--already_done', type=str, default=None)
+    parser.add_argument('--already_done', type=str, default=None)
 
     args = parser.parse_args()
 
