@@ -1192,6 +1192,10 @@ class ParametrizedLightCurveMixin(Variability):
 
         n_obj = self.num_variable_obj(params)
 
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
+
         # t_before_cast = time.time()
         lc_int_arr = -1*np.ones(len(params['lc']), dtype=int)
         for ii in range(len(params['lc'])):
