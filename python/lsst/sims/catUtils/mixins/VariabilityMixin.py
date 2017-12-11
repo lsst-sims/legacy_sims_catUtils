@@ -1322,18 +1322,18 @@ class ExtraGalacticVariabilityModels(Variability):
         sfy_arr = params['agn_sfy'].astype(float)
 
         for i_time, expmjd_val in enumerate(expmjd_arr):
-            for ix in valid_dexes[0]:
+            for i_obj in valid_dexes[0]:
                 toff = 58580.0
-                seed = seed_arr[ix]
-                tau = tau_arr[ix]
+                seed = seed_arr[i_obj]
+                tau = tau_arr[i_obj]
 
                 sfint = {}
-                sfint['u'] = sfu_arr[ix]
-                sfint['g'] = sfg_arr[ix]
-                sfint['r'] = sfr_arr[ix]
-                sfint['i'] = sfi_arr[ix]
-                sfint['z'] = sfz_arr[ix]
-                sfint['y'] = sfy_arr[ix]
+                sfint['u'] = sfu_arr[i_obj]
+                sfint['g'] = sfg_arr[i_obj]
+                sfint['r'] = sfr_arr[i_obj]
+                sfint['i'] = sfi_arr[i_obj]
+                sfint['z'] = sfz_arr[i_obj]
+                sfint['y'] = sfy_arr[i_obj]
 
                 start_date = toff
                 rng = np.random.RandomState(seed)
@@ -1364,13 +1364,13 @@ class ExtraGalacticVariabilityModels(Variability):
 
                 dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                 if isinstance(expmjd, numbers.Number):
-                    dMags[0][ix] = dm_val
+                    dMags[0][i_obj] = dm_val
                 else:
-                    dMags[0][ix][i_time] = dm_val
+                    dMags[0][i_obj][i_time] = dm_val
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
-            for ix in valid_dexes[0]:
-                dMags[i_filter+1][ix] = dMags[0][ix]*params['agn_sf%s' % filter_name][ix]/params['agn_sfu'][ix]
+            for i_obj in valid_dexes[0]:
+                dMags[i_filter+1][i_obj] = dMags[0][i_obj]*params['agn_sf%s' % filter_name][i_obj]/params['agn_sfu'][i_obj]
 
         return dMags
 
