@@ -1306,7 +1306,7 @@ class ExtraGalacticVariabilityModels(Variability):
 
         if isinstance(expmjd, numbers.Number):
             dMags = np.zeros((6, self.num_variable_obj(params)))
-            expmjd_arr = [expmjd]
+            expmjd_arr = np.array([expmjd])
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             expmjd_arr = expmjd
@@ -1321,52 +1321,64 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        for i_time, expmjd_val in enumerate(expmjd_arr):
-            for i_obj in valid_dexes[0]:
-                toff = 58580.0
-                seed = seed_arr[i_obj]
-                tau = tau_arr[i_obj]
+        start_date = 58580.0
+        endepoch = expmjd_arr.max() - start_date
 
-                sfint = {}
-                sfint['u'] = sfu_arr[i_obj]
-                sfint['g'] = sfg_arr[i_obj]
-                sfint['r'] = sfr_arr[i_obj]
-                sfint['i'] = sfi_arr[i_obj]
-                sfint['z'] = sfz_arr[i_obj]
-                sfint['y'] = sfy_arr[i_obj]
+        for i_obj in valid_dexes[0]:
 
-                start_date = toff
-                rng = np.random.RandomState(seed)
+            seed = seed_arr[i_obj]
+            tau = tau_arr[i_obj]
 
-                endepoch = expmjd_val - start_date
+            sfint = {}
+            sfint['u'] = sfu_arr[i_obj]
+            sfint['g'] = sfg_arr[i_obj]
+            sfint['r'] = sfr_arr[i_obj]
+            sfint['i'] = sfi_arr[i_obj]
+            sfint['z'] = sfz_arr[i_obj]
+            sfint['y'] = sfy_arr[i_obj]
 
-                if endepoch < 0:
-                    raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
-                                       "Not applying variability. "+
-                                       "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
-                                       "in applyAgn variability method")
+            rng = np.random.RandomState(seed)
 
-                dt = tau/100.
-                nbins = int(math.ceil(endepoch/dt))
+            if endepoch < 0:
+                raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
+                                   "Not applying variability. "+
+                                   "expmjd: %e should be > start_date: %e  " % (expmjd, start_date) +
+                                   "in applyAgn variability method")
 
-                x1 = (nbins-1)*dt
-                x2 = (nbins)*dt
+            dt = tau/100.
+            nbins = int(math.ceil(endepoch/dt))
 
-                dt = dt/tau
-                es = rng.normal(0., 1., nbins)*math.sqrt(dt)
+            x1 = (nbins-1)*dt
+            x2 = (nbins)*dt
 
-                dx2 = 0.0
-                for i in range(nbins):
-                    #The second term differs from Zeljko's equation by sqrt(2.)
-                    #because he assumes stdev = sfint/sqrt(2)
-                    dx1 = dx2
-                    dx2 = -dx1*dt + sfint['u']*es[i] + dx1
+            es = rng.normal(0., 1., nbins)*math.sqrt(dt)
 
-                dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
-                if isinstance(expmjd, numbers.Number):
-                    dMags[0][i_obj] = dm_val
-                else:
-                    dMags[0][i_obj][i_time] = dm_val
+            time_dexes = set(np.round((expmjd_arr-start_date)/dt).astype(int))
+            time_dex_map = {}
+            for t_dex in time_dexes:
+                map_dex = np.argmin(np.abs(expmjd_arr-start_date-t_dex*dt))
+                time_dex_map[t_dex] = map_dex
+
+            dx2 = 0.0
+            print(time_dexes)
+            print(nbins)
+            print(endepoch)
+            print(dt)
+            dt_over_tau = dt/tau
+            for i_time in range(nbins):
+                #The second term differs from Zeljko's equation by sqrt(2.)
+                #because he assumes stdev = sfint/sqrt(2)
+                dx1 = dx2
+                dx2 = -dx1*dt_over_tau + sfint['u']*es[i_time] + dx1
+
+                if i_time in time_dexes:
+                    print('i_time in time_dexes')
+                    dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                    if isinstance(expmjd, numbers.Number):
+                        dMags[0][i_obj] = dm_val
+                    else:
+                        i_time_out = time_dex_map[i_time]
+                        dMags[0][i_obj][i_time_out] = dm_val
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
