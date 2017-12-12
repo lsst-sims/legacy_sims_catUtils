@@ -56,6 +56,7 @@ class AvroAlertGenerator(object):
                                     ('ra', float), ('dec', float), ('band', int), ('TAI', float),
                                     ('quiescent_flux', float), ('quiescent_snr', float)])
 
+            t_start = time.time()
             for htmid in htmid_list:
                 for prefix in prefix_list:
                     db_name = os.path.join(data_dir, '%s_%d_sqlite.db' % (prefix, htmid))
@@ -124,8 +125,6 @@ class AvroAlertGenerator(object):
 
                         data_writer.append(avro_source)
                         ct_source += 1
-                        print('yay')
-                        exit()
-                    print('ct_source %d' % ct_source)
+                    print('ct_source %d time %.2e hrs' % (ct_source, (time.time()-t_start)/3600.0))
 
         print('wrote %d' % ct_source)
