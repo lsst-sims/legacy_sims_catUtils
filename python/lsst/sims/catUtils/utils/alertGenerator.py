@@ -951,7 +951,12 @@ class AlertDataGenerator(object):
 
                 unq = photometry_catalog.column_by_name('uniqueId')
 
-                assert dmag_arr_transpose.shape == (n_raw_obj, len(mag_names), len(expmjd_list))
+                try:
+                    assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
+                except AssertionError:
+                    print('dmag_arr_transpose_shape %s' % str(dmag_arr_transpose.shape))
+                    print('should be (%d, %d, %d)' % (len(chunk), len(mag_names), len(expmjd_list)))
+                    raise
 
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
                 # at some point in their history (note that delta_mag is defined with
@@ -960,7 +965,7 @@ class AlertDataGenerator(object):
                 # also demand that the magnitude at some point is less than obs_mag_cutoff
 
                 photometrically_valid_obj = []
-                for i_obj in range(n_raw_obj):
+                for i_obj in range(len(chunk)):
                     keep_it = False
                     valid_times = np.where(time_arr[i_obj]>0)
                     if len(valid_times[0]) == 0:
