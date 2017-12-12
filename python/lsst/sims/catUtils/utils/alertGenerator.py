@@ -375,25 +375,7 @@ class AlertDataGenerator(object):
             plm = ParametrizedLightCurveMixin()
             plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
-        self._desired_columns = []
-        self._desired_columns.append('simobjid')
-        self._desired_columns.append('variabilityParameters')
-        self._desired_columns.append('varParamStr')
-        self._desired_columns.append('raJ2000')
-        self._desired_columns.append('decJ2000')
-        self._desired_columns.append('properMotionRa')
-        self._desired_columns.append('properMotionDec')
-        self._desired_columns.append('parallax')
-        self._desired_columns.append('radialVelocity')
-        self._desired_columns.append('umag')
-        self._desired_columns.append('gmag')
-        self._desired_columns.append('rmag')
-        self._desired_columns.append('imag')
-        self._desired_columns.append('zmag')
-        self._desired_columns.append('ymag')
-        self._desired_columns.append('ebv')
-        self._desired_columns.append('redshift')
-        self._desired_columns.append('htmid')
+
 
     def subdivide_obs(self, obs_list, htmid_level=5):
         t_start = time.time()
@@ -756,6 +738,44 @@ class AlertDataGenerator(object):
 
         t_start = time.time()
 
+        desired_columns = []
+        desired_columns.append('simobjid')
+        desired_columns.append('variabilityParameters')
+        desired_columns.append('varParamStr')
+        desired_columns.append('raJ2000')
+        desired_columns.append('decJ2000')
+        desired_columns.append('properMotionRa')
+        desired_columns.append('properMotionDec')
+        desired_columns.append('parallax')
+        desired_columns.append('radialVelocity')
+        desired_columns.append('ebv')
+        desired_columns.append('redshift')
+        desired_columns.append('htmid')
+
+        is_stellar = False
+        for col in dbobj.columns:
+            if col[0] == 'lsst_u':
+                try:
+                    if col[1] == 'umag':
+                        is_stellar = True
+                        break
+                except:
+                    pass
+
+        if is_stellar:
+            desired_columns.append('umag')
+            desired_columns.append('gmag')
+            desired_columns.append('rmag')
+            desired_columns.append('imag')
+            desired_columns.append('zmag')
+            desired_columns.append('ymag')
+        else:
+            desired_columns.append('u_ab')
+            desired_columns.append('g_ab')
+            desired_columns.append('r_ab')
+            desired_columns.append('i_ab')
+            desired_columns.append('z_ab')
+            desired_columns.append('y_ab')
 
         if photometry_class is None:
             raise RuntimeError('Must specify photometry_class')
@@ -810,7 +830,7 @@ class AlertDataGenerator(object):
 
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
-        for col in self._desired_columns:
+        for col in desired_columns:
             if col in available_columns:
                 column_query.append(col)
 
