@@ -120,8 +120,6 @@ class AvroAlertGenerator(object):
                         avro_source['totFluxErr'] = full_noise[i_source]  # should this be quiescent SNR?
                         avro_source['diffFlux'] = diasource['dflux']
                         avro_source['diffFluxErr'] = diff_noise[i_source]
-                        avro_source['fpBkgd'] = self._rng.random_sample()
-                        avro_source['fpBkgdErr'] = self._rng.random_sample()
 
                         data_writer.append(avro_source)
                         ct_source += 1
