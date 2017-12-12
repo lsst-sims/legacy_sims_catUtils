@@ -1321,7 +1321,7 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        start_date = 58580.0
+        start_date = 59580.0
         endepoch = expmjd_arr.max() - start_date
 
         for i_obj in valid_dexes[0]:
@@ -1346,25 +1346,25 @@ class ExtraGalacticVariabilityModels(Variability):
                                    "in applyAgn variability method")
 
             dt = tau/100.
-            nbins = int(math.ceil(endepoch/dt))
+            nbins = int(math.ceil(endepoch/dt))+1
 
             x1 = (nbins-1)*dt
             x2 = (nbins)*dt
 
-            es = rng.normal(0., 1., nbins)*math.sqrt(dt)
-
-            time_dexes = set(np.round((expmjd_arr-start_date)/dt).astype(int))
+            time_dexes = np.round((expmjd_arr-start_date)/dt).astype(int)
             time_dex_map = {}
-            for t_dex in time_dexes:
-                map_dex = np.argmin(np.abs(expmjd_arr-start_date-t_dex*dt))
-                time_dex_map[t_dex] = map_dex
+            ct_dex = 0
+            for i_t_dex, t_dex in enumerate(time_dexes):
+                if t_dex in time_dex_map:
+                    time_dex_map[t_dex].append(i_t_dex)
+                else:
+                    time_dex_map[t_dex] = [i_t_dex]
+            time_dexes = set(time_dexes)
 
             dx2 = 0.0
-            print(time_dexes)
-            print(nbins)
-            print(endepoch)
-            print(dt)
+
             dt_over_tau = dt/tau
+            es = rng.normal(0., 1., nbins)*math.sqrt(dt_over_tau)
             for i_time in range(nbins):
                 #The second term differs from Zeljko's equation by sqrt(2.)
                 #because he assumes stdev = sfint/sqrt(2)
@@ -1372,13 +1372,12 @@ class ExtraGalacticVariabilityModels(Variability):
                 dx2 = -dx1*dt_over_tau + sfint['u']*es[i_time] + dx1
 
                 if i_time in time_dexes:
-                    print('i_time in time_dexes')
                     dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                     if isinstance(expmjd, numbers.Number):
                         dMags[0][i_obj] = dm_val
                     else:
-                        i_time_out = time_dex_map[i_time]
-                        dMags[0][i_obj][i_time_out] = dm_val
+                        for i_time_out in time_dex_map[i_time]:
+                            dMags[0][i_obj][i_time_out] = dm_val
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
