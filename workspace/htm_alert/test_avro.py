@@ -64,15 +64,9 @@ if __name__ == "__main__":
     avro_gen = AvroAlertGenerator()
     avro_gen.load_diasource_schema(diasource_schema)
 
-    obs_to_run = []
-    for obshistid in obshistid_to_htmid:
-        if 10688 in obshistid_to_htmid[obshistid]:
-            obs_to_run.append(obshistid)
-
     out_file_root = os.path.join('avro_out_dir', 'test_avro')
-    for obshistid in obs_to_run:
-        avro_gen.create_diasources(obshistid, data_dir,
-                                   sql_prefix_list,
-                                   obshistid_to_htmid[obshistid],
-                                   800, out_file_root)
+    avro_gen.create_diasources(obshistid_list[0], data_dir,
+                               sql_prefix_list,
+                               obshistid_to_htmid[obshistid_list[0]],
+                               750, out_file_root)
 
