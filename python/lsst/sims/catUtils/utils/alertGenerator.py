@@ -464,6 +464,9 @@ class AlertDataGenerator(object):
     def n_obs(self, htmid):
         return len(self._htmid_dict[htmid])
 
+    def obs_from_htmid(self, htmid):
+        return self._obs_list[self._htmid_dict[htmid]]
+
     def output_alert_data(self, conn, data_cache, log_file_name):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
