@@ -13,10 +13,10 @@ import os
 import numpy as np
 import time
 
-__all__ = ["AlertProcessor"]
+__all__ = ["AvroGenerator"]
 
 
-class AlertProcessor(object):
+class AvroGenerator(object):
 
     def __init__(self):
         self._diasource_schema = None
