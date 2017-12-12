@@ -1148,7 +1148,7 @@ class AlertDataGenerator(object):
             if self._stdout_lock is not None:
                 self._stdout_lock.acquire()
                 with open(log_file_name, 'a') as out_file:
-                    out_file.write('done with htmid %d -- %e %d' %
+                    out_file.write('done with htmid %d -- %e %d\n' %
                                   (htmid,(time.time()-t_start)/3600.0,n_obj))
                 self._stdout_lock.release()
 
