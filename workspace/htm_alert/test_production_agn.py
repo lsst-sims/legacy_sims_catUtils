@@ -165,4 +165,4 @@ if __name__ == "__main__":
         p.join()
 
     with open(args.log_file, 'a') as out_file:
-        out_file.write('all done')
+        out_file.write('all done\n')
