@@ -414,7 +414,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                        q_mag, 4)
 
         for val in obshistid_unqid_set:
-            assert val in obshistid_unqid_simulated_set
+            self.assertIn(val, obshistid_unqid_simulated_set)
 
         del alert_gen
         gc.collect()
