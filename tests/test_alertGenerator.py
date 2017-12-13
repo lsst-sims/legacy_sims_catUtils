@@ -376,6 +376,19 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 self.assertAlmostEqual(self.pmdec_truth[obj_dex], 0.001*alert_data['pmDec'][i_obj],4)
                 self.assertAlmostEqual(self.px_truth[obj_dex], 0.001*alert_data['parallax'][i_obj],4)
 
+                ra_truth, dec_truth = applyProperMotion(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex], self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex], self.vrad_truth[obj_dex],
+                                                        mjd=mjd_list[i_obj])
+                distance = angularSeparation(ra_truth, dec_truth,
+                                             alert_data['ra'][i_obj], alert_data['dec'][i_obj])
+
+                distance_arcsec = 3600.0*distance
+                msg = '\ntruth: %e %e\nalert: %e %e\n'% (ra_truth, dec_truth,
+                                                         alert_data['ra'][i_obj],
+                                                         alert_data['dec'][i_obj])
+
+                self.assertLess(distance_arcsec, 0.0005, msg=msg)
 
         del alert_gen
         gc.collect()

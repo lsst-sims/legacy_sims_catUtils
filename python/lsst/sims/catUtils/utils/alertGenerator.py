@@ -502,8 +502,8 @@ class AlertDataGenerator(object):
                       int(data_cache[cache_tag]['chipNum'][i_obj]),
                       data_cache[cache_tag]['dflux'][i_obj],
                       data_cache[cache_tag]['SNR'][i_obj],
-                      data_cache[cache_tag]['raICRS'][i_obj],
-                      data_cache[cache_tag]['decICRS'][i_obj])
+                      np.degrees(data_cache[cache_tag]['raICRS'][i_obj]),
+                      np.degrees(data_cache[cache_tag]['decICRS'][i_obj]))
                       for i_obj in range(n_obj))
             cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
         conn.commit()
