@@ -292,10 +292,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 n_total_observations += 1
                 if line[0] not in true_lc_dict:
-                    true_lc_dict[line[0]] = []
+                    true_lc_dict[line[0]] = {}
                     true_lc_obshistid_dict[line[0]] = []
 
-                true_lc_dict[line[0]].append(line[2])
+                true_lc_dict[line[0]][obshistid] = line[2]
                 true_lc_obshistid_dict[line[0]].append(obshistid)
 
                 if line[0] not in is_visible_dict:
@@ -311,8 +311,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         for obj_id in true_lc_dict:
             if not is_visible_dict[obj_id]:
                 continue
-            lc = np.array(true_lc_dict[obj_id])
-            dmag_max = np.max(np.abs(lc))
+
+            dmag_max = -1.0
+            for obshistid in true_lc_dict[obj_id]:
+                if np.abs(true_lc_dict[obj_id][obshistid]) > dmag_max:
+                    dmag_max = np.abs(true_lc_dict[obj_id][obshistid])
+
             if dmag_max>=dmag_cutoff:
                 objects_to_simulate.append(obj_id)
                 for obshistid in true_lc_obshistid_dict[obj_id]:
@@ -427,6 +431,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                               replace(':',''))
 
                 self.assertEqual(chipnum, alert_data['chipNum'][i_obj])
+
+                dmag_sim = -2.5*np.log10(1.0+alert_data['dflux'][i_obj]/alert_data['q_flux'][i_obj])
+                self.assertAlmostEqual(true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
+                                       dmag_sim, 3)
 
         for val in obshistid_unqid_set:
             self.assertIn(val, obshistid_unqid_simulated_set)
