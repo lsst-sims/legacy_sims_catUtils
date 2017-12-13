@@ -760,30 +760,24 @@ class AlertDataGenerator(object):
         desired_columns.append('redshift')
         desired_columns.append('htmid')
 
-        is_stellar = False
-        for col in dbobj.columns:
-            if col[0] == 'lsst_u':
-                try:
-                    if col[1] == 'umag':
-                        is_stellar = True
-                        break
-                except:
-                    pass
-
-        if is_stellar:
+        if 'umag' in dbobj.columnMap:
             desired_columns.append('umag')
             desired_columns.append('gmag')
             desired_columns.append('rmag')
             desired_columns.append('imag')
             desired_columns.append('zmag')
             desired_columns.append('ymag')
-        else:
+        elif 'u_ab' in dbobj.columnMap:
             desired_columns.append('u_ab')
             desired_columns.append('g_ab')
             desired_columns.append('r_ab')
             desired_columns.append('i_ab')
             desired_columns.append('z_ab')
             desired_columns.append('y_ab')
+        else:
+            raise RuntimeError('Not sure what quiescent '
+                               'LSST magnitudes are called '
+                               'in this CatalogDBObject')
 
         if photometry_class is None:
             raise RuntimeError('Must specify photometry_class')
