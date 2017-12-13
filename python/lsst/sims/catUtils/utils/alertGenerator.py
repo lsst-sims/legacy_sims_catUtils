@@ -11,6 +11,7 @@ from lsst.sims.utils import findHtmid, trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
 from lsst.sims.utils import sphericalFromCartesian
+from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
@@ -192,6 +193,10 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
+
+    default_columns = [('properMotionRa', 0.0, float),
+                       ('properMotionDec', 0.0, float),
+                       ('parallax', 0.0, float)]
 
     def iter_catalog_chunks(self, chunk_size=None, query_cache=None, column_cache=None):
         """
@@ -896,6 +901,13 @@ class AlertDataGenerator(object):
             cursor.execute(creation_cmd)
             conn.commit()
 
+            creation_cmd = '''CREATE TABLE baseline_astrometry
+                           (uniqueId int, ra real, dec real, pmRA real,
+                            pmDec real, parallax real, TAI real)'''
+
+            cursor.execute(creation_cmd)
+            conn.commit()
+
             for chunk in data_iter:
                 n_raw_obj = len(chunk)
                 i_chunk += 1
@@ -941,6 +953,13 @@ class AlertDataGenerator(object):
                 q_f_dict[3] = dummy_sed.fluxFromMag(q_m_dict[3])
                 q_f_dict[4] = dummy_sed.fluxFromMag(q_m_dict[4])
                 q_f_dict[5] = dummy_sed.fluxFromMag(q_m_dict[5])
+
+                q_pmra = 1000.0*arcsecFromRadians(photometry_catalog.column_by_name('properMotionRa'))
+                q_pmdec = 1000.0*arcsecFromRadians(photometry_catalog.column_by_name('properMotionDec'))
+                q_parallax = 1000.0*arcsecFromRadians(photometry_catalog.column_by_name('parallax'))
+                q_ra = np.degrees(photometry_catalog.column_by_name('raICRS'))
+                q_dec = np.degrees(photometry_catalog.column_by_name('decICRS'))
+                q_tai = photometry_catalog.obs_metadata.mjd.TAI
 
                 q_snr_dict = {}
                 for i_filter in range(6):
@@ -1056,6 +1075,17 @@ class AlertDataGenerator(object):
                     cursor.executemany('INSERT INTO quiescent_flux VALUES (?,?,?,?)', values)
                     conn.commit()
 
+                values = ((int(unq[completely_valid][i_q]),
+                           q_ra[completely_valid][i_q],
+                           q_dec[completely_valid][i_q],
+                           q_pmra[completely_valid][i_q],
+                           q_pmdec[completely_valid][i_q],
+                           q_parallax[completely_valid][i_q],
+                           q_tai)
+                          for i_q in range(len(completely_valid[0])))
+
+                cursor.executemany('INSERT INTO baseline_astrometry VALUES (?,?,?,?,?,?)', values)
+
                 is_least = True
                 min_ct = -1
                 if ct_lock is not None:
@@ -1147,6 +1177,7 @@ class AlertDataGenerator(object):
             cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
             cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
+            cursor.execute('CREATE INDEX unq ON baseline_astrometry (uniqueId)')
             conn.commit()
             if self._stdout_lock is not None:
                 self._stdout_lock.acquire()
