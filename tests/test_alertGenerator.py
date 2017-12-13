@@ -447,7 +447,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 self.assertAlmostEqual(snr/alert_data['q_snr'][i_obj], 1.0, 4)
 
-                tot_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj]+alert_data['dflux'][i_obj])
+                tot_mag = self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex] + \
+                          true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]]
 
                 snr,gamma = calcSNR_m5(tot_mag, bp_dict[mag_name], m5, photParams)
                 self.assertAlmostEqual(snr/alert_data['tot_snr'][i_obj], 1.0, 4)
