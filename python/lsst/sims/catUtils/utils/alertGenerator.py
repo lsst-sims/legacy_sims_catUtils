@@ -1078,7 +1078,7 @@ class AlertDataGenerator(object):
                            q_tai)
                           for i_q in range(len(completely_valid[0])))
 
-                cursor.executemany('INSERT INTO baseline_astrometry VALUES (?,?,?,?,?,?)', values)
+                cursor.executemany('INSERT INTO baseline_astrometry VALUES (?,?,?,?,?,?,?)', values)
 
                 is_least = True
                 min_ct = -1
