@@ -273,20 +273,30 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         # if their np.max(dMag) ever goes over dmag_cutoff; then we will know if
         # we are supposed to simulate them
         true_lc_dict = {}
+        true_lc_obshistid_dict = {}
         is_visible_dict = {}
         obs_dict = {}
+        max_obshistid = -1
+        n_total_observations = 0
         for obs in self.obs_list:
+
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
+            if obshistid>max_obshistid:
+                max_obshistid = obshistid
             cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
+
             for line in cat.iter_catalog():
                 if line[1] is None:
                     continue
 
+                n_total_observations += 1
                 if line[0] not in true_lc_dict:
                     true_lc_dict[line[0]] = []
+                    true_lc_obshistid_dict[line[0]] = []
 
                 true_lc_dict[line[0]].append(line[2])
+                true_lc_obshistid_dict[line[0]].append(obshistid)
 
                 if line[0] not in is_visible_dict:
                     is_visible_dict[line[0]] = False
@@ -294,7 +304,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 if line[2] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
                     is_visible_dict[line[0]] = True
 
+        obshistid_bits = int(np.ceil(np.log(max_obshistid)/np.log(2)))
+
         objects_to_simulate = []
+        obshistid_unqid_set = set()
         for obj_id in true_lc_dict:
             if not is_visible_dict[obj_id]:
                 continue
@@ -302,6 +315,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             dmag_max = np.max(np.abs(lc))
             if dmag_max>=dmag_cutoff:
                 objects_to_simulate.append(obj_id)
+                for obshistid in true_lc_obshistid_dict[obj_id]:
+                    obshistid_unqid_set.add((obj_id<<obshistid_bits) + obshistid)
 
         self.assertGreater(len(objects_to_simulate), 10)
 
@@ -357,6 +372,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         sqlite_file_list = os.listdir(self.output_dir)
 
         n_tot_simulated = 0
+        obshistid_unqid_simulated_set = set()
         for file_name in sqlite_file_list:
             if not file_name.endswith('db'):
                 continue
@@ -370,6 +386,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
             mjd_list = ModifiedJulianDate.get_list(TAI=alert_data['TAI'])
             for i_obj in range(len(alert_data)):
+                obshistid_unqid_simulated_set.add((alert_data['uniqueId'][i_obj]<<obshistid_bits) +
+                                                  alert_data['obshistId'][i_obj])
+
                 unq = alert_data['uniqueId'][i_obj]
                 obj_dex = (unq//1024)-1
                 self.assertAlmostEqual(self.pmra_truth[obj_dex], 0.001*alert_data['pmRA'][i_obj], 4)
@@ -390,9 +409,14 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 self.assertLess(distance_arcsec, 0.0005, msg=msg)
 
+        for val in obshistid_unqid_set:
+            assert val in obshistid_unqid_simulated_set
+
         del alert_gen
         gc.collect()
         self.assertGreater(n_tot_simulated, 10)
+        self.assertGreater(len(obshistid_unqid_simulated_set), 10)
+        self.assertLess(len(obshistid_unqid_simulated_set), n_total_observations)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
