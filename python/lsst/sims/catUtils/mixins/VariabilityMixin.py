@@ -1347,9 +1347,6 @@ class ExtraGalacticVariabilityModels(Variability):
             dt = tau/100.
             nbins = int(math.ceil(endepoch/dt))+1
 
-            x1 = (nbins-1)*dt
-            x2 = (nbins)*dt
-
             time_dexes = np.round((expmjd_arr-start_date)/dt).astype(int)
             time_dex_map = {}
             ct_dex = 0
@@ -1361,6 +1358,8 @@ class ExtraGalacticVariabilityModels(Variability):
             time_dexes = set(time_dexes)
 
             dx2 = 0.0
+            x1 = 0.0
+            x2 = 0.0
 
             dt_over_tau = dt/tau
             es = rng.normal(0., 1., nbins)*math.sqrt(dt_over_tau)
@@ -1369,13 +1368,17 @@ class ExtraGalacticVariabilityModels(Variability):
                 #because he assumes stdev = sfint/sqrt(2)
                 dx1 = dx2
                 dx2 = -dx1*dt_over_tau + sfint['u']*es[i_time] + dx1
+                x1 = x2
+                x2 += dt
 
                 if i_time in time_dexes:
-                    dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                     if isinstance(expmjd, numbers.Number):
+                        dm_val = ((expmjd-start_date)*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                         dMags[0][i_obj] = dm_val
                     else:
                         for i_time_out in time_dex_map[i_time]:
+                            local_end = expmjd_arr[i_time_out]-start_date
+                            dm_val = (local_end*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                             dMags[0][i_obj][i_time_out] = dm_val
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
