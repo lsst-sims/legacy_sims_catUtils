@@ -413,10 +413,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 self.assertLess(distance_arcsec, 0.0005, msg=msg)
 
-                q_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj])
-                self.assertAlmostEqual(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
-                                       q_mag, 4)
-
                 obs = obs_dict[alert_data['obshistId'][i_obj]]
 
                 chipname = chipNameFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
@@ -436,9 +432,23 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 self.assertAlmostEqual(true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
                                        dmag_sim, 3)
 
-                tot_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj]+alert_data['dflux'][i_obj])
+
                 mag_name= ('u','g','r','i','z','y')[alert_data['band'][i_obj]]
                 m5 = obs.m5[mag_name]
+
+                q_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj])
+                self.assertAlmostEqual(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
+                                       q_mag, 4)
+
+                snr,gamma = calcSNR_m5(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
+                                       bp_dict[mag_name],
+                                       self.obs_mag_cutoff[alert_data['band'][i_obj]],
+                                       photParams)
+
+                self.assertAlmostEqual(snr/alert_data['q_snr'][i_obj], 1.0, 4)
+
+                tot_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj]+alert_data['dflux'][i_obj])
+
                 snr,gamma = calcSNR_m5(tot_mag, bp_dict[mag_name], m5, photParams)
                 self.assertAlmostEqual(snr/alert_data['tot_snr'][i_obj], 1.0, 4)
 
