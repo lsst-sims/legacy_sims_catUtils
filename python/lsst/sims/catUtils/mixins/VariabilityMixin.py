@@ -1311,7 +1311,6 @@ class ExtraGalacticVariabilityModels(Variability):
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             expmjd_arr = expmjd
 
-        toff_arr = params['t0_mjd'].astype(float)
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
         sfu_arr = params['agn_sfu'].astype(float)
