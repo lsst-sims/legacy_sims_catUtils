@@ -428,6 +428,16 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 self.assertEqual(chipnum, alert_data['chipNum'][i_obj])
 
+                xpix, ypix = pixelCoordsFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                      pm_ra=self.pmra_truth[obj_dex],
+                                                      pm_dec=self.pmdec_truth[obj_dex],
+                                                      parallax=self.px_truth[obj_dex],
+                                                      v_rad=self.vrad_truth[obj_dex],
+                                                      obs_metadata=obs)
+
+                self.assertAlmostEqual(alert_data['xPix'][i_obj], xpix, 4)
+                self.assertAlmostEqual(alert_data['yPix'][i_obj], ypix, 4)
+
                 dmag_sim = -2.5*np.log10(1.0+alert_data['dflux'][i_obj]/alert_data['q_flux'][i_obj])
                 self.assertAlmostEqual(true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
                                        dmag_sim, 3)
