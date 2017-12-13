@@ -62,11 +62,11 @@ if __name__ == "__main__":
             obshistid_to_htmid[obshistid].append(htmid)
 
     avro_gen = AvroAlertGenerator()
-    avro_gen.load_diasource_schema(diasource_schema)
+    avro_gen.load_schema(schema_dir)
 
     out_file_root = os.path.join('avro_out_dir', 'test_avro')
-    avro_gen.create_diasources(obshistid_list[0], data_dir,
-                               sql_prefix_list,
-                               obshistid_to_htmid[obshistid_list[0]],
-                               750, out_file_root)
+    avro_gen.write_alerts(obshistid_list[0], data_dir,
+                          sql_prefix_list,
+                          obshistid_to_htmid[obshistid_list[0]],
+                          750, out_file_root)
 
