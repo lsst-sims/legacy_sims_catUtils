@@ -409,6 +409,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 self.assertLess(distance_arcsec, 0.0005, msg=msg)
 
+                q_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj])
+                self.assertAlmostEqual(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
+                                       q_mag, 4)
+
         for val in obshistid_unqid_set:
             assert val in obshistid_unqid_simulated_set
 
