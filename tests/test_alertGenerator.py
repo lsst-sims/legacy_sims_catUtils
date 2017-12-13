@@ -134,6 +134,14 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             pmdec = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
             vrad = rng.random_sample(n_stars)*600.0 - 300.0
 
+            subset = rng.randint(0,high=n_stars-1, size=3)
+            umag[subset] = 40.0
+            gmag[subset] = 40.0
+            rmag[subset] = 40.0
+            imag[subset] = 40.0
+            zmag[subset] = 40.0
+            ymag[subset] = 40.0
+
             cls.ra_truth[id_offset:id_offset+n_stars] = np.round(ra, decimals=6)
             cls.dec_truth[id_offset:id_offset+n_stars] = np.round(dec, decimals=6)
             u_truth[id_offset:id_offset+n_stars] = np.round(umag, decimals=4)
@@ -306,11 +314,11 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         obshistid_bits = int(np.ceil(np.log(max_obshistid)/np.log(2)))
 
+        skipped_due_to_mag = 0
+
         objects_to_simulate = []
         obshistid_unqid_set = set()
         for obj_id in true_lc_dict:
-            if not is_visible_dict[obj_id]:
-                continue
 
             dmag_max = -1.0
             for obshistid in true_lc_dict[obj_id]:
@@ -318,11 +326,16 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     dmag_max = np.abs(true_lc_dict[obj_id][obshistid])
 
             if dmag_max>=dmag_cutoff:
+                if not is_visible_dict[obj_id]:
+                    skipped_due_to_mag += 1
+                    continue
+
                 objects_to_simulate.append(obj_id)
                 for obshistid in true_lc_obshistid_dict[obj_id]:
                     obshistid_unqid_set.add((obj_id<<obshistid_bits) + obshistid)
 
         self.assertGreater(len(objects_to_simulate), 10)
+        self.assertGreater(skipped_due_to_mag, 0)
 
         log_file_name = tempfile.mktemp(dir=self.output_dir, suffix='log.txt')
         alert_gen = AlertDataGenerator(testing=True)
@@ -465,6 +478,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         for val in obshistid_unqid_set:
             self.assertIn(val, obshistid_unqid_simulated_set)
+        self.assertEqual(len(obshistid_unqid_set), len(obshistid_unqid_simulated_set))
 
         del alert_gen
         gc.collect()
