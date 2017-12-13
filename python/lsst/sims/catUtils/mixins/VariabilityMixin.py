@@ -1321,6 +1321,7 @@ class ExtraGalacticVariabilityModels(Variability):
         sfy_arr = params['agn_sfy'].astype(float)
 
         start_date = 59580.0
+        start_date = 48000.0
         endepoch = expmjd_arr.max() - start_date
 
         for i_obj in valid_dexes[0]:
