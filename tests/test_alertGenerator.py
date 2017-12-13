@@ -413,6 +413,21 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 self.assertAlmostEqual(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
                                        q_mag, 4)
 
+                obs = obs_dict[alert_data['obshistId'][i_obj]]
+
+                chipname = chipNameFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                 pm_ra=self.pmra_truth[obj_dex],
+                                                 pm_dec=self.pmdec_truth[obj_dex],
+                                                 parallax=self.px_truth[obj_dex],
+                                                 v_rad=self.vrad_truth[obj_dex],
+                                                 obs_metadata=obs)
+
+                chipnum = int(chipname.replace('R','').replace('S','').\
+                              replace(' ','').replace(';','').replace(',','').\
+                              replace(':',''))
+
+                self.assertEqual(chipnum, alert_data['chipNum'][i_obj])
+
         for val in obshistid_unqid_set:
             self.assertIn(val, obshistid_unqid_simulated_set)
 
