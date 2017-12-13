@@ -17,8 +17,8 @@ import argparse
 
 
 def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
-                log_file_name, lock, stdout_lock, ct_lock,
-                ct_dict, write_every, chunk_size, dmag_cutoff):
+                log_file_name, lock, stdout_lock,
+                write_every, chunk_size, dmag_cutoff):
 
     db = AgnAlertDBObj(database='LSSTCATSIM',
                        host='fatboy.phys.washington.edu',
@@ -36,8 +36,6 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  photometry_class=AlertAgnVariabilityCatalog,
                                                  lock=lock,
                                                  stdout_lock=stdout_lock,
-                                                 ct_lock=ct_lock,
-                                                 ct_dict=ct_dict,
                                                  log_file_name=log_file_name)
 
         lock.acquire()
@@ -144,18 +142,14 @@ if __name__ == "__main__":
     print('htmid_list %s' % str(htmid_list))
     lock = mproc.Lock()
     stdout_lock = mproc.Lock()
-    mgr = mproc.Manager()
-    ct_dict = mgr.dict()
-    ct_lock = mproc.Lock()
-    ct_dict['number_writing'] = 0
-    ct_dict['allowed_to_write'] = 5
+
     p_list = []
     for i_p in range(len(htmid_list)):
         p = mproc.Process(target=query_htmid,
                           args = (alert_gen, htmid_list[i_p],
                                   args.out_dir, args.out_prefix,
                                   args.log_file, lock, stdout_lock,
-                                  ct_lock, ct_dict,args.write_every,
+                                  args.write_every,
                                   args.chunk_size, args.dmag_cutoff))
 
         p.start()
