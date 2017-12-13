@@ -301,7 +301,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 if line[0] not in is_visible_dict:
                     is_visible_dict[line[0]] = False
 
-                if line[2] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
+                if line[3] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
                     is_visible_dict[line[0]] = True
 
         obshistid_bits = int(np.ceil(np.log(max_obshistid)/np.log(2)))
