@@ -287,7 +287,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         max_obshistid = -1
         n_total_observations = 0
         for obs in self.obs_list:
-
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
             if obshistid>max_obshistid:
@@ -480,11 +479,49 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             self.assertIn(val, obshistid_unqid_simulated_set)
         self.assertEqual(len(obshistid_unqid_set), len(obshistid_unqid_simulated_set))
 
+        astrometry_query = 'SELECT uniqueId, ra, dec, TAI '
+        astrometry_query += 'FROM baseline_astrometry'
+        astrometry_dtype = np.dtype([('uniqueId', int), ('ra', float), ('dec',float),
+                                     ('TAI', float)])
+
+        tai_list = []
+        for obs in self.obs_list:
+            tai_list.append(obs.mjd.TAI)
+        tai_list = np.array(tai_list)
+
+        n_tot_ast_simulated = 0
+        for file_name in sqlite_file_list:
+            if not file_name.endswith('db'):
+                continue
+            full_name = os.path.join(self.output_dir, file_name)
+            self.assertTrue(os.path.exists(full_name))
+            alert_db = DBObject(full_name, driver='sqlite')
+            astrometry_data = alert_db.execute_arbitrary(astrometry_query, dtype=astrometry_dtype)
+
+            if len(astrometry_data) == 0:
+                continue
+
+            mjd_list = ModifiedJulianDate.get_list(TAI=astrometry_data['TAI'])
+            for i_obj in range(len(astrometry_data)):
+                n_tot_ast_simulated += 1
+                obj_dex =(astrometry_data['uniqueId'][i_obj]//1024)-1
+                ra_truth, dec_truth = applyProperMotion(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex], self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex], self.vrad_truth[obj_dex],
+                                                        mjd=mjd_list[i_obj])
+
+                distance = angularSeparation(ra_truth, dec_truth,
+                                             astrometry_data['ra'][i_obj],
+                                             astrometry_data['dec'][i_obj])
+
+                self.assertLess(3600.0*distance, 0.0005)
+
         del alert_gen
         gc.collect()
         self.assertGreater(n_tot_simulated, 10)
         self.assertGreater(len(obshistid_unqid_simulated_set), 10)
         self.assertLess(len(obshistid_unqid_simulated_set), n_total_observations)
+        self.assertGreater(n_tot_ast_simulated, 0)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
