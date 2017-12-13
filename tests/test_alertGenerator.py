@@ -6,13 +6,13 @@ import sqlite3
 import shutil
 import numbers
 import gc
-import h5py
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.decorators import register_method
 from lsst.sims.catalogs.db import CatalogDBObject
+from lsst.sims.catalogs.db import DBObject
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
@@ -50,6 +50,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print('setting up %s' % sims_clean_up.targets)
+
+        # These represent the dimmest magnitudes at which objects
+        # are considered visible in each of the LSST filters
+        # (taken from Table 2 of the overview paper)
+        cls.obs_mag_cutoff = (23.68, 24.89, 24.43, 24.0, 24.45, 22.60)
+
         cls.opsim_db = os.path.join(getPackageDir('sims_data'),
                                     'OpSimData',
                                     'opsimblitz1_1133_sqlite.db')
@@ -199,6 +205,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
     def test_alert_generation(self):
 
+        dmag_cutoff = 0.005
+        mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+
         _max_var_param_str = self.max_str_len
 
         class StarAlertTestDBObj(StellarAlertDBObjMixin, CatalogDBObject):
@@ -242,7 +251,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
                                  Variability, InstanceCatalog):
-            column_outputs = ['uniqueId', 'chipName', 'dmagAlert']
+            column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert']
 
             @compound('delta_umag', 'delta_gmag', 'delta_rmag',
                       'delta_imag', 'delta_zmag', 'delta_ymag')
@@ -253,6 +262,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             def get_dmagAlert(self):
                 return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
 
+            @cached
+            def get_magAlert(self):
+                return self.column_by_name('%smag' % self.obs_metadata.bandpass) + \
+                       self.column_by_name('dmagAlert')
 
         star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
 
@@ -260,8 +273,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         # if their np.max(dMag) ever goes over dmag_cutoff; then we will know if
         # we are supposed to simulate them
         true_lc_dict = {}
+        is_visible_dict = {}
+        obs_dict = {}
         for obs in self.obs_list:
-
+            obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
             cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
             for line in cat.iter_catalog():
@@ -273,37 +288,43 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 true_lc_dict[line[0]].append(line[2])
 
-        dmag_cutoff = 0.005
+                if line[0] not in is_visible_dict:
+                    is_visible_dict[line[0]] = False
+
+                if line[2] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
+                    is_visible_dict[line[0]] = True
 
         objects_to_simulate = []
         for obj_id in true_lc_dict:
+            if not is_visible_dict[obj_id]:
+                continue
             lc = np.array(true_lc_dict[obj_id])
             dmag_max = np.max(np.abs(lc))
             if dmag_max>=dmag_cutoff:
                 objects_to_simulate.append(obj_id)
 
-        output_root = os.path.join(self.output_dir, 'alert_test')
-        alert_gen = AlertDataGenerator(n_proc_max=1,
-                                       testing=True)
+        self.assertGreater(len(objects_to_simulate), 10)
 
-        alert_gen.subdivide_obs(self.obs_list)
+        log_file_name = tempfile.mktemp(dir=self.output_dir, suffix='log.txt')
+        alert_gen = AlertDataGenerator(testing=True)
+
+        alert_gen.subdivide_obs(self.obs_list, htmid_level=6)
 
         for htmid in alert_gen.htmid_list:
             alert_gen.alert_data_from_htmid(htmid, star_db,
                                             photometry_class=TestAlertsVarCat,
-                                            output_prefix=output_root,
-                                            dmag_cutoff=dmag_cutoff)
+                                            output_prefix='alert_test',
+                                            output_dir=self.output_dir,
+                                            dmag_cutoff=dmag_cutoff,
+                                            log_file_name=log_file_name)
 
         dummy_sed = Sed()
-
-        template_m5_dict = {'u': 23.9, 'g': 25.0, 'r': 24.7, 'i': 24.0,
-                            'z': 23.3, 'y': 22.1}  # from Table 2 of the overview paper
 
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
         photParams = PhotometricParameters()
 
-        # First, verify that the contents of the hdf5 files are all correct
+        # First, verify that the contents of the sqlite files are all correct
 
         # While doing that, keep track of the uniqueId of every event that
         # is simulated for each obsHistID.  Afteward, we will verify that we
@@ -311,154 +332,54 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         all_simulated_events_dict = {}
         n_tot_simulated = 0
 
-        hdf_file_list = os.listdir(self.output_dir)
-        for file_name in hdf_file_list:
-            if not file_name.endswith('hdf5'):
+        alert_query = 'SELECT alert.uniqueId, alert.obshistId, meta.TAI, '
+        alert_query += 'meta.band, quiescent.flux, alert.dflux, '
+        alert_query += 'quiescent.snr, alert.snr, '
+        alert_query += 'alert.ra, alert.dec, alert.chipNum, '
+        alert_query += 'alert.xPix, alert.yPix, ast.pmRA, ast.pmDec, '
+        alert_query += 'ast.parallax '
+        alert_query += 'FROM alert_data AS alert '
+        alert_query += 'INNER JOIN metadata AS meta ON meta.obshistId=alert.obshistId '
+        alert_query += 'INNER JOIN quiescent_flux AS quiescent '
+        alert_query += 'ON quiescent.uniqueId=alert.uniqueId '
+        alert_query += 'AND quiescent.band=meta.band '
+        alert_query += 'INNER JOIN baseline_astrometry AS ast '
+        alert_query += 'ON ast.uniqueId=alert.uniqueId'
+
+        alert_dtype = np.dtype([('uniqueId', int), ('obshistId', int),
+                                ('TAI', float), ('band', int),
+                                ('q_flux', float), ('dflux', float),
+                                ('q_snr', float), ('tot_snr', float),
+                                ('ra', float), ('dec', float),
+                                ('chipNum', int), ('xPix', float), ('yPix', float),
+                                ('pmRA', float), ('pmDec', float), ('parallax', float)])
+
+        sqlite_file_list = os.listdir(self.output_dir)
+
+        n_tot_simulated = 0
+        for file_name in sqlite_file_list:
+            if not file_name.endswith('db'):
                 continue
             full_name = os.path.join(self.output_dir, file_name)
-            test_file = h5py.File(full_name, 'r')
-            if 'TAI' not in list(test_file.keys()):
+            self.assertTrue(os.path.exists(full_name))
+            alert_db = DBObject(full_name, driver='sqlite')
+            alert_data = alert_db.execute_arbitrary(alert_query, dtype=alert_dtype)
+            n_tot_simulated += len(alert_data)
+            if len(alert_data) == 0:
                 continue
-            mjd_list = ModifiedJulianDate.get_list(TAI=test_file['TAI'].value)
-            band_list = test_file['bandpass'].value
-            obshistID_list = test_file['obshistID'].value
-            for obshistID, mjd, bandpass in zip(obshistID_list, mjd_list, band_list):
-                if obshistID not in all_simulated_events_dict:
-                    all_simulated_events_dict[obshistID] = []
 
-                # get the current ObservationMetaData
-                for obs in self.obs_list:
-                    if obs.OpsimMetaData['obsHistID'] == obshistID:
-                        current_obs = obs
-                        break
+            mjd_list = ModifiedJulianDate.get_list(TAI=alert_data['TAI'])
+            for i_obj in range(len(alert_data)):
+                unq = alert_data['uniqueId'][i_obj]
+                obj_dex = (unq//1024)-1
+                self.assertAlmostEqual(self.pmra_truth[obj_dex], 0.001*alert_data['pmRA'][i_obj], 4)
+                self.assertAlmostEqual(self.pmdec_truth[obj_dex], 0.001*alert_data['pmDec'][i_obj],4)
+                self.assertAlmostEqual(self.px_truth[obj_dex], 0.001*alert_data['parallax'][i_obj],4)
 
-                self.assertLess(np.abs(current_obs.mjd.TAI-mjd.TAI), 1.0e-10)
-
-                ct_list = test_file['%d_map' % obshistID].value
-                self.assertGreater(len(ct_list), 0)
-                for batch_ct in ct_list:
-                    id_list = test_file['%d_%d_uniqueId' % (obshistID, batch_ct)].value
-                    for id_val in id_list:
-                        all_simulated_events_dict[obshistID].append(id_val)
-                    ra_list = test_file['%d_%d_raICRS' % (obshistID, batch_ct)].value
-                    dec_list = test_file['%d_%d_decICRS' % (obshistID, batch_ct)].value
-                    flux_list = test_file['%d_%d_flux' % (obshistID, batch_ct)].value
-                    dflux_list = test_file['%d_%d_dflux' % (obshistID, batch_ct)].value
-                    chipnum_list = test_file['%d_%d_chipNum' % (obshistID, batch_ct)].value
-                    xpix_list = test_file['%d_%d_xPix' % (obshistID, batch_ct)].value
-                    ypix_list = test_file['%d_%d_yPix' % (obshistID, batch_ct)].value
-                    snr_list = test_file['%d_%d_SNR' % (obshistID, batch_ct)].value
-                    self.assertGreater(len(id_list), 0)
-                    self.assertEqual(len(id_list), len(ra_list))
-                    self.assertEqual(len(id_list), len(dec_list))
-                    for i_obj in range(len(id_list)):
-                        n_tot_simulated += 1
-                        obj_dex = (id_list[i_obj]//1024)-1
-
-                        # verify that ICRS positions are correct to within 0.001 arcsec
-                        ra0 = self.ra_truth[obj_dex]
-                        dec0 = self.dec_truth[obj_dex]
-                        px = self.px_truth[obj_dex]
-                        pmra = self.pmra_truth[obj_dex]
-                        pmdec = self.pmdec_truth[obj_dex]
-                        vrad = self.vrad_truth[obj_dex]
-                        raICRS, decICRS = applyProperMotion(ra0, dec0,
-                                                            pmra,pmdec,px,
-                                                            vrad, mjd=mjd)
-
-                        dd = _angularSeparation(ra_list[i_obj], dec_list[i_obj],
-                                                np.radians(raICRS), np.radians(decICRS))
-
-                        dd_moved = angularSeparation(ra0, dec0, raICRS, decICRS)*3600.0
-
-                        msg = '\nPosition (hdf5): %e %e\n' % (ra_list[i_obj], dec_list[i_obj])
-                        msg += 'Position (truth): %e %e\n' % (np.radians(raICRS), np.radians(decICRS))
-                        msg += 'diff %e arcsec; moved %e arsec\n' % (arcsecFromRadians(dd), dd_moved)
-                        msg += 'pmra %e pmdec %e px %e vrad %e\n' % (pmra, pmdec, px, vrad)
-
-                        self.assertLess(arcsecFromRadians(dd), 0.001, msg=msg)
-
-                        # verify that flux calculations are correct
-                        amp = self.amp_truth[obj_dex]
-                        period = self.period_truth[obj_dex]
-                        mag0 = self.mag0_truth_dict[bandpass][obj_dex]
-                        dmag = amp*np.cos(period*mjd.TAI)
-                        flux = dummy_sed.fluxFromMag(mag0+dmag)
-                        dflux = flux - dummy_sed.fluxFromMag(mag0)
-                        msg = ('\nuniqueID %d TAI %.4f\ndFlux (hdf5): %e\ndFlux (truth): %e\ndmag (truth): %e\n' %
-                               (id_list[i_obj], mjd.TAI, dflux_list[i_obj], dflux, dmag))
-                        msg+="amp %e period %e\n" % (amp, period)
-                        msg+="obsHistID %d\n" % obshistID
-                        msg +="flux %.6f %.6f\n" % (flux, flux_list[i_obj])
-                        msg += "mag %e\n" % mag0
-
-                        self.assertAlmostEqual(dflux/dflux_list[i_obj], 1.0, 1, msg=msg)
-
-                        msg = ('\nuniqueID %d TAI %.4f\nFlux (hdf5): %e\nFlux (truth): %e\ndmag (truth): %e\n' %
-                               (id_list[i_obj], mjd.TAI, flux_list[i_obj], flux, dmag))
-                        msg+="amp %e period %e\n" % (amp, period)
-
-                        self.assertAlmostEqual(flux/flux_list[i_obj], 1.0, 5, msg=msg)
-
-                        # verify that chipNum and pixel positions are correct
-                        chipname = chipNameFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
-                                                         parallax=px, v_rad=vrad, obs_metadata=current_obs)
-
-                        chipnum = int(chipname.replace('R','').replace('S','').replace(':','').
-                                      replace(',','').replace(' ',''))
-                        self.assertEqual(chipnum, chipnum_list[i_obj])
-
-                        xpix, ypix = pixelCoordsFromRaDecLSST(ra0, dec0, pm_ra=pmra, pm_dec=pmdec,
-                                                              parallax=px, v_rad=vrad,
-                                                              obs_metadata=current_obs)
-
-                        msg = '\nPixel position (hdf5): %.6f %.6f\n' % (xpix_list[i_obj], ypix_list[i_obj])
-                        msg += 'Pixel position (true): %.6f %.6f\n' % (xpix, ypix)
-                        self.assertAlmostEqual(xpix, xpix_list[i_obj], 4, msg=msg)
-                        self.assertAlmostEqual(ypix, ypix_list[i_obj], 4, msg=msg)
-
-                        # verify that signal to noise calculation is correct
-                        bp = bp_dict[current_obs.bandpass]
-                        q_m5 = template_m5_dict[current_obs.bandpass]
-                        m5 = current_obs.m5[current_obs.bandpass]
-
-                        q_snr, gamma = calcSNR_m5(mag0, bp, q_m5, photParams)
-
-                        obs_snr, gamma = calcSNR_m5(dummy_sed.magFromFlux(flux), bp, m5, photParams)
-
-                        q_sigma = dummy_sed.fluxFromMag(mag0)/q_snr
-                        obs_sigma = flux/obs_snr
-
-                        sigma = np.sqrt(q_sigma**2 + obs_sigma**2)
-                        snr = dflux/sigma
-
-                        self.assertAlmostEqual(snr_list[i_obj]/snr, 1.0, 4)
-
-        # now verify that we simulated all of the events we were supposed to
-
-        for obs in self.obs_list:
-
-            obshistid = obs.OpsimMetaData['obsHistID']
-            cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
-            id_list = []
-            for line in cat.iter_catalog():
-                id_val = line[0]
-                chip_name = line[1]
-                dmag = line[2]
-                if chip_name is not None and id_val in objects_to_simulate:
-                    id_list.append(id_val)
-                    msg = '\nchipName: %s\n' % chip_name
-                    msg += 'dmag: %e\n' % dmag
-                    msg += 'obshistid: %d\n' % obshistid
-                    self.assertIn(id_val, all_simulated_events_dict[obshistid], msg=msg)
-
-            for id_val in all_simulated_events_dict[obshistid]:
-                self.assertIn(id_val, id_list)
 
         del alert_gen
-        del cat
         gc.collect()
-        self.assertGreater(n_tot_simulated, 0)
+        self.assertGreater(n_tot_simulated, 10)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
