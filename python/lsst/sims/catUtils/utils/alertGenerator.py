@@ -1169,9 +1169,9 @@ class AlertDataGenerator(object):
                 lock.release()
 
             cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
-            cursor.execute('CREATE INDEX unq ON quiescent_flux (uniqueId, band)')
+            cursor.execute('CREATE INDEX unq_flux ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
-            cursor.execute('CREATE INDEX unq ON baseline_astrometry (uniqueId)')
+            cursor.execute('CREATE INDEX unq_ast ON baseline_astrometry (uniqueId)')
             conn.commit()
             if self._stdout_lock is not None:
                 self._stdout_lock.acquire()
