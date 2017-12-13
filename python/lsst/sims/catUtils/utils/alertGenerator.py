@@ -719,9 +719,7 @@ class AlertDataGenerator(object):
                               photometry_class=None,
                               chunk_cutoff=-1,
                               lock=None,
-                              stdout_lock=None,
-                              ct_lock=None,
-                              ct_dict=None):
+                              stdout_lock=None):
 
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
@@ -741,8 +739,6 @@ class AlertDataGenerator(object):
 
         self._stdout_lock = stdout_lock
         this_pid = os.getpid()
-        if os.getpid() not in ct_dict.keys():
-            ct_dict[this_pid] = 0
 
         t_start = time.time()
 
@@ -1080,81 +1076,45 @@ class AlertDataGenerator(object):
 
                 cursor.executemany('INSERT INTO baseline_astrometry VALUES (?,?,?,?,?,?,?)', values)
 
-                is_least = True
-                min_ct = -1
-                if ct_lock is not None:
-                    ct_lock.acquire()
-                    for pid in ct_dict.keys():
-                        if pid == 'number_writing':
-                            continue
-                        if pid == 'allowed_to_write':
-                            continue
-                        if min_ct<0 or ct_dict[pid]<min_ct:
-                            min_ct = ct_dict[pid]
-                        if pid == this_pid:
-                           continue
-                        if ct_dict[pid] < ct_dict[this_pid]:
-                            is_least = False
-                            break
+                if n_rows_cached >= write_every:
+                    self._stdout_lock.acquire()
+                    with open(log_file_name,'a') as out_file:
+                        out_file.write('%d is writing \n' % os.getpid())
 
-                    ct_lock.release()
+                        print('%d is writing' % os.getpid())
+                        self._stdout_lock.release()
 
-                if True:
-                    #if lock is None or ct_dict['number_writing'] < ct_dict['allowed_to_write']:
-                    if n_rows_cached >= write_every:
+                    n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
+                    output_data_cache = {}
+                    n_rows_cached = 0
+
+                    if self._stdout_lock is not None:
                         self._stdout_lock.acquire()
+
+                    if n_rows>0:
                         with open(log_file_name,'a') as out_file:
-                            out_file.write('%d is writing %d -- %d (%d)\n' %
-                                           (os.getpid(),ct_dict[this_pid],min_ct,
-                                            ct_dict['number_writing']))
+                            elapsed = (time.time()-t_before_obj)/3600.0
+                            elapsed_per = elapsed/n_rows
+                            rows_per_chunk = float(n_rows)/float(i_chunk)
+                            total_projection = 1000.0*rows_per_chunk*elapsed_per
+                            out_file.write('\n    %d n_obj %d %d trimmed %d\n' %
+                                           (this_pid, n_obj, n_actual_obj, n_htmid_trim))
+                            out_file.write('    elapsed %.2e hrs per row %.2e total %2e\n' %
+                                            (elapsed, elapsed_per, total_projection))
+                            out_file.write('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
 
-                            print('%d is writing %d -- %d (%d)' %
-                                           (os.getpid(),ct_dict[this_pid],min_ct,
-                                            ct_dict['number_writing']))
-                            self._stdout_lock.release()
+                            out_file.write('%d is done writing\n' % os.getpid())
 
-                        ct_dict[this_pid] += 1
-                        ct_dict['number_writing'] += 1
-                        n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
-                        output_data_cache = {}
-                        n_rows_cached = 0
-
-                        if self._stdout_lock is not None:
-                            self._stdout_lock.acquire()
-
-                        if n_rows>0:
-                            with open(log_file_name,'a') as out_file:
-                                elapsed = (time.time()-t_before_obj)/3600.0
-                                elapsed_per = elapsed/n_rows
-                                rows_per_chunk = float(n_rows)/float(i_chunk)
-                                total_projection = 1000.0*rows_per_chunk*elapsed_per
-                                out_file.write('\n    %d n_obj %d %d trimmed %d\n' %
-                                               (this_pid, n_obj, n_actual_obj, n_htmid_trim))
-                                out_file.write('    elapsed %.2e hrs per row %.2e total %2e\n' %
-                                                (elapsed, elapsed_per, total_projection))
-                                out_file.write('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
-
-                                ct_dict['number_writing'] -= 1
-                                out_file.write('%d is done writing (%d)\n' %
-                                               (os.getpid(),ct_dict['number_writing']))
-
-                                print('\n    %d n_obj %d %d trimmed %d' %
-                                               (this_pid, n_obj, n_actual_obj, n_htmid_trim))
-                                print('    elapsed %.2e hrs per row %.2e total %2e' %
-                                                (elapsed, elapsed_per, total_projection))
-                                print('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
-                                print('%d is done writing (%d)' %
-                                               (os.getpid(),ct_dict['number_writing']))
+                            print('\n    %d n_obj %d %d trimmed %d' %
+                                           (this_pid, n_obj, n_actual_obj, n_htmid_trim))
+                            print('    elapsed %.2e hrs per row %.2e total %2e' %
+                                            (elapsed, elapsed_per, total_projection))
+                            print('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
+                            print('%d is done writing' % os.getpid())
 
 
-                        if self._stdout_lock is not None:
-                            self._stdout_lock.release()
-
-                #if ct_dict['number_writing'] == 0:
-                #    stdout_lock.acquire()
-                #    print('\nnothing writing %d is_least %s' % (this_pid, str(is_least)))
-                #    print(ct_dict)
-                #    stdout_lock.release()
+                    if self._stdout_lock is not None:
+                        self._stdout_lock.release()
 
             if len(output_data_cache)>0:
                 n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
