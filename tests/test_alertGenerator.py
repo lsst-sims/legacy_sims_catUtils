@@ -397,12 +397,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             self.assertTrue(os.path.exists(full_name))
             alert_db = DBObject(full_name, driver='sqlite')
             alert_data = alert_db.execute_arbitrary(alert_query, dtype=alert_dtype)
-            n_tot_simulated += len(alert_data)
             if len(alert_data) == 0:
                 continue
 
             mjd_list = ModifiedJulianDate.get_list(TAI=alert_data['TAI'])
             for i_obj in range(len(alert_data)):
+                n_tot_simulated += 1
                 obshistid_unqid_simulated_set.add((alert_data['uniqueId'][i_obj]<<obshistid_bits) +
                                                   alert_data['obshistId'][i_obj])
 
