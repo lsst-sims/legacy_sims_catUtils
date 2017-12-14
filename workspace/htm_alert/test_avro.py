@@ -68,5 +68,5 @@ if __name__ == "__main__":
     avro_gen.write_alerts(obshistid_list[0], data_dir,
                           sql_prefix_list,
                           obshistid_to_htmid[obshistid_list[0]],
-                          750, out_file_root)
+                          out_file_root)
 
