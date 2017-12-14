@@ -549,7 +549,7 @@ class AlertDataGenerator(object):
         """
         return self._obs_list[self._htmid_dict[htmid]]
 
-    def output_alert_data(self, conn, data_cache, log_file_name):
+    def _output_alert_data(self, conn, data_cache, log_file_name):
         """
         Cache will be keyed first on the obsHistID, then all of the columns
         """
@@ -1161,7 +1161,7 @@ class AlertDataGenerator(object):
 
                     self.release_lock()
 
-                    n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
+                    n_rows += self._output_alert_data(conn, output_data_cache, log_file_name)
                     output_data_cache = {}
                     n_rows_cached = 0
 
@@ -1191,7 +1191,7 @@ class AlertDataGenerator(object):
                         self.release_lock()
 
             if len(output_data_cache)>0:
-                n_rows += self.output_alert_data(conn, output_data_cache, log_file_name)
+                n_rows += self._output_alert_data(conn, output_data_cache, log_file_name)
                 output_data_cache = {}
 
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
