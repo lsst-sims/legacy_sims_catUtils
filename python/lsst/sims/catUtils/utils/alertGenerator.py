@@ -549,7 +549,7 @@ class AlertDataGenerator(object):
         """
         return self._obs_list[self._htmid_dict[htmid]]
 
-    def _output_alert_data(self, conn, data_cache, log_file_name):
+    def _output_alert_data(self, conn, data_cache):
         """
         Write a cache of alert data to the sqlite file currently open.
 
@@ -564,10 +564,11 @@ class AlertDataGenerator(object):
         the sqlite file.  The values of this second layer of dict are
         numpy arrays.
 
-        log_file_name is the name of the file where progress is being
-        logged.
+        Returns
+        -------
+        The number of rows written to the sqlite file
         """
-        t_start = time.time()
+
         cursor = conn.cursor()
         n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
 
@@ -594,31 +595,6 @@ class AlertDataGenerator(object):
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
         conn.commit()
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
-        #print('    n_written %d time write %e hrs per %e' % (n_written, elapsed, elapsed/n_written))
-
-        chunk_lengths = np.sort(chunk_lengths)
-
-        self.acquire_lock()
-        elapsed = (time.time()-t_start)/3600.0
-        min_chunk = chunk_lengths.min()
-        max_chunk = chunk_lengths.max()
-        n_chunks = len(chunk_lengths)
-        first_q = chunk_lengths[n_chunks//4]
-        third_q = chunk_lengths[(n_chunks*3)//4]
-        second_q = chunk_lengths[n_chunks//2]
-        with open(log_file_name, 'a') as out_file:
-            out_file.write('\n    %d chunk stats %d %d %d %d %d\n' % (os.getpid(), min_chunk,
-                           first_q, second_q, third_q, max_chunk))
-            out_file.write('    %d chunks\n' % len(chunk_lengths))
-            out_file.write('    wrote %d rows in %.2e hrs; per %.2e\n' %
-                           (n_written, elapsed, elapsed/n_written))
-
-            print('\n    %d chunk stats %d %d %d %d %d' % (os.getpid(), min_chunk,
-                           first_q, second_q, third_q, max_chunk))
-            print('    %d chunks' % len(chunk_lengths))
-            print('    wrote %d rows in %.2e hrs; per %.2e' %
-                               (n_written, elapsed, elapsed/n_written))
-        self.release_lock()
 
         return n_written
 
@@ -1175,7 +1151,7 @@ class AlertDataGenerator(object):
 
                     self.release_lock()
 
-                    n_rows += self._output_alert_data(conn, output_data_cache, log_file_name)
+                    n_rows += self._output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
                     n_rows_cached = 0
 
@@ -1205,7 +1181,7 @@ class AlertDataGenerator(object):
                         self.release_lock()
 
             if len(output_data_cache)>0:
-                n_rows += self._output_alert_data(conn, output_data_cache, log_file_name)
+                n_rows += self._output_alert_data(conn, output_data_cache)
                 output_data_cache = {}
 
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
