@@ -5,6 +5,7 @@ import tempfile
 import lsst.utils.tests
 import numpy as np
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.utils import (testStarsDBObj, testGalaxyDiskDBObj,
                                       testGalaxyBulgeDBObj, testGalaxyAgnDBObj)
@@ -66,6 +67,7 @@ class PhoSimVariabilityTest(unittest.TestCase):
     def setUpClass(cls):
         cls.dbName = tempfile.mktemp(dir=ROOT, prefix='PhoSimVariabilityDatabase-', suffix='.db')
         cls.obs_metadata = makePhoSimTestDB(size=10, filename=cls.dbName)
+        cls.obs_metadata.mjd = ModifiedJulianDate(TAI=60000.0)
 
         cls.bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=cls.dbName)
         cls.diskDB = testGalaxyDiskDBObj(driver='sqlite', database=cls.dbName)
