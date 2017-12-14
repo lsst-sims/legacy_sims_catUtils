@@ -40,7 +40,7 @@ __all__ = ["AlertDataGenerator",
 class StellarAlertDBObjMixin(object):
     """
     Mimics StarObj class, except it allows you to directly query
-    all objects whose htmids are between two values.
+    all objects in a trixel specified by an htmid.
     """
     def query_columns_htmid(self, colnames=None, chunk_size=None,
                             obs_metadata=None, constraint=None,
@@ -76,17 +76,16 @@ class StellarAlertDBObjMixin(object):
               then result is an iterator over lists of the given size.
         """
 
-
-        # sqlalchemy does not like np.int64
+        # find the minimum and maximum htmid
+        # (level=21 since that is what is implemented
+        # on fatboy) that we are asking for
+        #
+        # Note that sqlalchemy does not like np.int64
         # as a data type
         current_level = levelFromHtmid(htmid)
         n_bits_off = 2*(21-current_level)
         htmid_min = int(htmid << n_bits_off)
         htmid_max = int((htmid+1) << n_bits_off)
-
-        #print('htmid range')
-        #print(htmid_min,type(htmid_min))
-        #print(htmid_max, type(htmid_max))
 
         query = self._get_column_query(colnames)
 
@@ -119,6 +118,10 @@ class StellarAlertDBObj(StellarAlertDBObjMixin, StarObj):
     pass
 
 class AgnAlertDBObj(GalaxyAgnObj):
+    """
+    Mimics GalaxyAgnObj class, except it allows you to directly query
+    all objects in a trixel specified by an htmid.
+    """
 
     columns = [('htmid', 0, np.int64),
                ('galtileid', None, np.int64),
@@ -147,6 +150,36 @@ class AgnAlertDBObj(GalaxyAgnObj):
     def query_columns_htmid(self, colnames=None, chunk_size=None,
                             obs_metadata=None, constraint=None,
                             limit=None, htmid=None):
+        """Execute a query from the primary catsim database
+
+        Execute a query, taking advantage of the spherical geometry library and
+        htmid indexes on all catalog tables in the UW catsim database
+
+        **Parameters**
+
+            * colnames : list or None
+              a list of valid column names, corresponding to entries in the
+              `columns` class attribute.  If not specified, all columns are
+              queried.
+            * chunk_size : int (optional)
+              if specified, then return an iterator object to query the database,
+              each time returning the next `chunk_size` elements.  If not
+              specified, all matching results will be returned.
+            * obs_metadata : object (optional)
+              This will be ignored
+            * constraint : str (optional)
+              a string which is interpreted as SQL and used as a predicate on the query
+            * limit : int (optional)
+              limits the number of rows returned by the query
+            * htmid is the htmid to be queried
+
+        **Returns**
+
+            * result : list or iterator
+              If chunk_size is not specified, then result is a list of all
+              items which match the specified query.  If chunk_size is specified,
+              then result is an iterator over lists of the given size.
+        """
 
         trixel = trixelFromHtmid(htmid)
         ra_0, dec_0 = trixel.get_center()
@@ -161,7 +194,12 @@ class AgnAlertDBObj(GalaxyAgnObj):
                                   limit=limit)
 
     def _final_pass(self, results):
-        """Modify the results of raJ2000 and decJ2000 to be in radians
+        """Modify the results of raJ2000 and decJ2000 to be in radians.
+
+        Also filter the results so that any objects outside of the
+        trixel specified in query_columns_htmid are returned with
+        htmid=0.
+
         **Parameters**
 
             * results : Structured array of results from query
@@ -308,7 +346,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         return magnitudes
 
     @compound('mag', 'dmag', 'quiescent_mag')
-    def get_avroPhotometry(self):
+    def get_alertPhotometry(self):
         mag = self.column_by_name('lsst_%s' % self.obs_metadata.bandpass)
         quiescent_mag = self.column_by_name('quiescent_lsst_%s' % self.obs_metadata.bandpass)
         dmag = mag - quiescent_mag
@@ -316,7 +354,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         return np.array([mag, dmag, quiescent_mag])
 
     @compound('flux', 'dflux', 'SNR')
-    def get_avroFlux(self):
+    def get_alertFlux(self):
         quiescent_mag = self.column_by_name('quiescent_mag')
         mag = self.column_by_name('mag')
         if not hasattr(self, '_dummy_sed'):
