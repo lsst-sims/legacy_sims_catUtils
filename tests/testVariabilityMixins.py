@@ -694,14 +694,25 @@ class VariabilityTest(unittest.TestCase):
             os.unlink(cat_name)
 
     def testAgn(self):
+        """
+        Just verify that the catalog generation code runs in this case
+        """
 
         cat_name = os.path.join(self.scratch_dir, 'agnTestCatalog.dat')
         makeAgnTable(database=self.variability_db)
         myDB = CatalogDBObject.from_objid('agnTest', database=self.variability_db)
-        myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
+        obs = ObservationMetaData(pointingRA=self.obs_metadata.pointingRA,
+                                  pointingDec=self.obs_metadata.pointingDec,
+                                  boundType=self.obs_metadata.boundType,
+                                  boundLength=self.obs_metadata.boundLength,
+                                  mjd=60000.0)
+        myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=obs)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        self.verify_catalogs(cat_name)
+        with open(cat_name,'r') as input_file:
+            lines = input_file.readlines()
+            self.assertGreater(len(lines), 10)
+
         if os.path.exists(cat_name):
             os.unlink(cat_name)
 
