@@ -162,7 +162,8 @@ class AvroAlertGenerator(object):
         return diaobject_dict
 
 
-    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_dir, out_prefix):
+    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_dir, out_prefix,
+                     lock=None, log_file_name=None):
 
         dmag_cutoff = 0.005
 
@@ -196,7 +197,6 @@ class AvroAlertGenerator(object):
             for htmid in htmid_list:
                 for prefix in prefix_list:
                     db_name = os.path.join(data_dir, '%s_%d_sqlite.db' % (prefix, htmid))
-                    print('processing %s' % db_name)
                     if not os.path.exists(db_name):
                         warnings.warn('%s does not exist' % db_name)
                         continue
@@ -213,7 +213,6 @@ class AvroAlertGenerator(object):
 
                     dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
                     valid_alerts = np.where(np.abs(dmag)>=dmag_cutoff)
-                    print('num alerts %d num valid %d'% (len(diasource_data), len(valid_alerts[0])))
                     diasource_data = diasource_data[valid_alerts]
                     avro_diasource_list = self._create_sources(obshistid, diasource_data)
 
@@ -230,6 +229,20 @@ class AvroAlertGenerator(object):
                         avro_alert['diaObject'] = diaobject
 
                         data_writer.append(avro_alert)
-                    print('ct_source %d time %.2e hrs' % (alert_ct, (time.time()-t_start)/3600.0))
 
-        print('wrote %d' % alert_ct)
+        if lock is not None:
+            lock.acquire()
+
+        elapsed = (time.time()-t_start)/3600.0
+
+        msg = 'finished obshistid %d; %d alerts in %.2e hrs' % (obshistid, alert_ct, elapsed)
+
+        print(msg)
+
+        if log_file_name is not None:
+            with open(log_file_name, 'a') as out_file:
+                out_file.write(msg)
+                out_file.write('\n')
+
+        if lock is not None:
+            lock.release()
