@@ -64,8 +64,8 @@ if __name__ == "__main__":
     avro_gen = AvroAlertGenerator()
     avro_gen.load_schema(schema_dir)
 
-    avro_gen.write_alerts(obshistid_list[0], data_dir,
+    avro_gen.write_alerts(11045, data_dir,
                           sql_prefix_list,
                           obshistid_to_htmid[obshistid_list[0]],
-                          out_dir, 'test_avro')
+                          out_dir, 'test_avro', 0.005)
 
