@@ -466,14 +466,11 @@ class AlertDataGenerator(object):
         list of all of the ObservationMetaData that intersect
         the trixel specified by htmid.
         """
-        t_start = time.time()
         self._trixel_dict = getAllTrixels(htmid_level)
         valid_htmid = []
         for htmid in self._trixel_dict:
             if levelFromHtmid(htmid) == htmid_level:
                 valid_htmid.append(htmid)
-
-        #print("made trixel dict")
 
         obs_list = np.array(obs_list)
         self._obs_list = obs_list
@@ -491,19 +488,17 @@ class AlertDataGenerator(object):
         obs_ra_list = np.array(obs_ra_list)
         obs_dec_list = np.array(obs_dec_list)
         halfspace_list = np.array(halfspace_list)
-        #print("made ra and dec lists")
+
         self._htmid_dict = {}
         self._htmid_list = []
         n_obs_list = []
-        already_assigned = set()
-        n_already_assigned = 0
-        query_radius = 1.75
+        fov_radius = 1.75
         for i_htmid, htmid in enumerate(valid_htmid):
             trixel = self._trixel_dict[htmid]
             ra_c, dec_c = trixel.get_center()
             radius = trixel.get_radius()
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
-            valid_obs = np.where(obs_distance<radius+query_radius)
+            valid_obs = np.where(obs_distance<radius+fov_radius)
             if len(valid_obs[0])>0:
                 final_obs_list = []
                 for obs_dex in valid_obs[0]:
@@ -511,19 +506,13 @@ class AlertDataGenerator(object):
                     obs = obs_list[obs_dex]
                     if hs.contains_trixel(trixel) != 'outside':
                         final_obs_list.append(obs_dex)
-                        if obs_dex in already_assigned:
-                            n_already_assigned += 1
-                        if obs_dex not in already_assigned:
-                            already_assigned.add(obs_dex)
+
                 if len(final_obs_list) == 0:
                     continue
 
                 self._htmid_dict[htmid] = np.array(final_obs_list)
                 self._htmid_list.append(htmid)
                 n_obs_list.append(len(final_obs_list))
-            elapsed = time.time()-t_start
-            if(i_htmid%1000==0):
-                print('    %d took %e; total %e' % (i_htmid+1, elapsed, len(valid_htmid)*elapsed/(i_htmid+1)))
 
         n_obs_list = np.array(n_obs_list)
         self._htmid_list = np.array(self._htmid_list)
@@ -539,7 +528,6 @@ class AlertDataGenerator(object):
                n_obs_list[len(n_obs_list)//2],
                n_obs_list[3*len(n_obs_list)//4],
                n_obs_list[-1]))
-        print('n already %d' % n_already_assigned)
 
     @property
     def htmid_list(self):
