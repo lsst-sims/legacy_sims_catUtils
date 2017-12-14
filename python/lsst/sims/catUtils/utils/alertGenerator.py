@@ -520,14 +520,6 @@ class AlertDataGenerator(object):
         self._htmid_list = self._htmid_list[sorted_dex]
         print('done subdividing obs list -- %d htmid' %
               len(self._htmid_list))
-        #print('min nobs %d median %d max %d' % (n_obs_list.min(), np.median(n_obs_list), n_obs_list.max()))
-        n_obs_list = np.sort(n_obs_list)
-        print("%d %d %d %d %d" %
-              (n_obs_list[0],
-               n_obs_list[len(n_obs_list)//4],
-               n_obs_list[len(n_obs_list)//2],
-               n_obs_list[3*len(n_obs_list)//4],
-               n_obs_list[-1]))
 
     @property
     def htmid_list(self):
