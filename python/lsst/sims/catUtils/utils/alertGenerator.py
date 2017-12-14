@@ -410,7 +410,6 @@ class AlertDataGenerator(object):
     def __init__(self,
                  testing=False):
 
-        self._flag_val = -999.0
         self._variability_cache = create_variability_cache()
         self._stdout_lock = None
         if not testing:
@@ -419,10 +418,18 @@ class AlertDataGenerator(object):
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
     def acquire_lock(self):
+        """
+        If running with multiprocessing, acquire
+        the lock.
+        """
         if self._stdout_lock is not None:
             self._stdout_lock.acquire()
 
     def release_lock(self):
+        """
+        If running with multiprocessing, release
+        the lock.
+        """
         if self._stdout_lock is not None:
             self._stdout_lock.release()
 
