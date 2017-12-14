@@ -551,7 +551,21 @@ class AlertDataGenerator(object):
 
     def _output_alert_data(self, conn, data_cache, log_file_name):
         """
-        Cache will be keyed first on the obsHistID, then all of the columns
+        Write a cache of alert data to the sqlite file currently open.
+
+        Parameters
+        ----------
+        conn is the connection to the sqlite file (already open)
+
+        data_cache is a dict containing all of the data to be written.
+        It will keyed on a string like 'i_j' where i is the obshistID
+        of an OpSim pointing and j is an arbitrary integer.  That key
+        will lead to another dict keyed on the columns being output to
+        the sqlite file.  The values of this second layer of dict are
+        numpy arrays.
+
+        log_file_name is the name of the file where progress is being
+        logged.
         """
         t_start = time.time()
         cursor = conn.cursor()
