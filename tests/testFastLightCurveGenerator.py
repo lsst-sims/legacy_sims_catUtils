@@ -16,6 +16,7 @@ from lsst.sims.catUtils.utils import AgnLightCurveGenerator
 from lsst.sims.catUtils.utils import FastAgnLightCurveGenerator
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+from lsst.sims.utils import ModifiedJulianDate
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -276,12 +277,22 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
 
         slow_lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = slow_lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         slow_lc, slow_truth = slow_lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(slow_lc), 2)  # make sure we got some light curves
 
         fast_lc_gen = FastAgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = fast_lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         fast_lc, fast_truth = fast_lc_gen.light_curves_from_pointings(pointings)
 
         self.assertEqual(len(slow_lc), len(fast_lc))
