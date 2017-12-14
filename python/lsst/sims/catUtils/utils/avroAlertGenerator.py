@@ -163,11 +163,13 @@ class AvroAlertGenerator(object):
 
 
     def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_dir, out_prefix,
-                     lock=None, log_file_name=None):
+                     dmag_cutoff, lock=None, log_file_name=None):
 
-        dmag_cutoff = 0.005
+        out_name = os.path.join(out_dir,'%s_%d.avro' % (out_prefix, obshistid))
+        if os.path.exists(out_name):
+            os.unlink(out_name)
 
-        with DataFileWriter(open(os.path.join(out_dir, "%s_%d.avro" % (out_prefix, obshistid)), "wb"),
+        with DataFileWriter(open(out_name, "wb"),
                             DatumWriter(), self._alert_schema) as data_writer:
 
             diasource_query = 'SELECT alert.uniqueId, alert.xPix, alert.yPix, '
