@@ -524,8 +524,8 @@ class AlertDataGenerator(object):
     @property
     def htmid_list(self):
         """
-        A list of the unique htmid's corresponding to the fields
-        of view that need to be queried to generate the alert data
+        A list of the unique htmids corresponding to the trixels
+        that need to be queried to generate the alert data
         """
         return self._htmid_list
 
