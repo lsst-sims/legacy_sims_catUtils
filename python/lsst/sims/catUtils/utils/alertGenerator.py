@@ -2,15 +2,13 @@ import numpy as np
 import os
 import re
 import sqlite3
-import multiprocessing as mproc
 from collections import OrderedDict
 import time
 import gc
 from lsst.utils import getPackageDir
-from lsst.sims.utils import findHtmid, trixelFromHtmid, getAllTrixels
+from lsst.sims.utils import trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
-from lsst.sims.utils import sphericalFromCartesian
 from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
@@ -28,7 +26,7 @@ from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
 from lsst.sims.catUtils.baseCatalogModels import StarObj, GalaxyAgnObj
-from sqlalchemy.sql import select, column, func, text
+from sqlalchemy.sql import select, func, text
 from lsst.sims.catalogs.db import ChunkIterator
 
 __all__ = ["AlertDataGenerator",
