@@ -530,9 +530,23 @@ class AlertDataGenerator(object):
         return self._htmid_list
 
     def n_obs(self, htmid):
+        """
+        Return the number of observations that intersect
+        the trixel specified by htmid.
+
+        Must run subdivide_obs in order for this method to
+        work.
+        """
         return len(self._htmid_dict[htmid])
 
     def obs_from_htmid(self, htmid):
+        """
+        Return a numpy array containing all of the ObservationMetaData
+        that interasect the trixel specified by htmid.
+
+        Must run subdivide_obs in order for this method to
+        work.
+        """
         return self._obs_list[self._htmid_dict[htmid]]
 
     def output_alert_data(self, conn, data_cache, log_file_name):
