@@ -162,8 +162,7 @@ class AvroAlertGenerator(object):
         return diaobject_dict
 
 
-    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, n_obshistid,
-                     out_file_root):
+    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_file_root):
 
         dmag_cutoff = 0.005
 
