@@ -162,11 +162,11 @@ class AvroAlertGenerator(object):
         return diaobject_dict
 
 
-    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_file_root):
+    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_dir, out_prefix):
 
         dmag_cutoff = 0.005
 
-        with DataFileWriter(open("%s_%d.avro" % (out_file_root, obshistid), "wb"),
+        with DataFileWriter(open(os.path.join(out_dir, "%s_%d.avro" % (out_prefix, obshistid)), "wb"),
                             DatumWriter(), self._alert_schema) as data_writer:
 
             diasource_query = 'SELECT alert.uniqueId, alert.xPix, alert.yPix, '
