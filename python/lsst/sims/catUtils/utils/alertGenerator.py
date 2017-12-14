@@ -433,7 +433,39 @@ class AlertDataGenerator(object):
         if self._stdout_lock is not None:
             self._stdout_lock.release()
 
-    def subdivide_obs(self, obs_list, htmid_level=5):
+    def subdivide_obs(self, obs_list, htmid_level=6):
+        """
+        Take a list of ObservationMetaData and subdivide
+        them according to which trixels (see htmModule.py
+        in sims_utils) they intersect.
+
+        Parameters
+        ----------
+        obs_list is a list of ObservationMetaData
+
+        htmid_level is an int denoting the level of
+        the HTM mesh you want to use to tile the sky
+        (higher htmid_level corresponds to a finer
+        tiling).
+
+        Returns
+        -------
+        Nothing.
+
+        After running this method, this AlertGenerator
+        will contain the following data.
+
+        - a list of the htmid of every trixel intersected
+        by the fields of view specified in obs_list.  This
+        list is accessible from the property
+        AlertGenerator.htmid_list
+
+        - a dict mapping each htmid to the ObservationMetaData
+        from obs_list that intersect it.  The method
+        AlertGenerator.obs_from_htmid(htmid) will return a
+        list of all of the ObservationMetaData that intersect
+        the trixel specified by htmid.
+        """
         t_start = time.time()
         self._trixel_dict = getAllTrixels(htmid_level)
         valid_htmid = []
