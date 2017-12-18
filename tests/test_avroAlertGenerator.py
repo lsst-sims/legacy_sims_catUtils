@@ -368,6 +368,7 @@ class AvroAlertTestCase(unittest.TestCase):
         dummy_sed = Sed()
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
         photParams = PhotometricParameters()
+        diasourceId_set = set()
         for avro_file_name in list_of_avro_files:
             if avro_file_name.endswith('log.txt'):
                 continue
@@ -422,6 +423,9 @@ class AvroAlertTestCase(unittest.TestCase):
                     true_ccdid = (chipnum*10**7)+obshistid
                     self.assertEqual(true_ccdid, diaSource['ccdVisitId'])
                     self.assertEqual(uniqueId, diaSource['diaObjectId'])
+
+                    self.assertNotIn(diaSource['diaSourceId'], diasourceId_set)
+                    diasourceId_set.add(diaSource['diaSourceId'])
 
                     diaObject = alert['diaObject']
                     obj_dex = (uniqueId//1024) - 1
