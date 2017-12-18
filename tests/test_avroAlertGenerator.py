@@ -414,6 +414,13 @@ class AvroAlertTestCase(unittest.TestCase):
 
                     self.assertAlmostEqual(diaSource['totFluxErr']/true_tot_err, 1.0, 6)
                     self.assertAlmostEqual(diaSource['diffFluxErr']/true_diff_err, 1.0, 6)
+
+                    chipnum = int(true_alert['chipName'].replace('R','').replace('S','').\
+                                  replace(',','').replace(':','').replace(' ',''))
+
+                    true_ccdid = (chipnum*10**7)+obshistid
+                    self.assertEqual(true_ccdid, diaSource['ccdVisitId'])
+
         self.assertEqual(alert_ct, len(true_alert_dict))
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
