@@ -286,64 +286,36 @@ class AvroAlertTestCase(unittest.TestCase):
 
         star_db = StarAlertTestDBObj_avro(database=self.star_db_name, driver='sqlite')
 
-        # assemble the true light curves for each object; we need to figure out
-        # if their np.max(dMag) ever goes over dmag_cutoff; then we will know if
-        # we are supposed to simulate them
-        true_lc_dict = {}
-        true_lc_obshistid_dict = {}
-        is_visible_dict = {}
+        # assemble a dict of all of the alerts that need to be generated
+
+        obshistid_list = []
+        for obs in self.obs_list:
+            obshistid_list.append(obs.OpsimMetaData['obsHistID'])
+        obshistid_max = max(obshistid_list)
+        obshistid_bits = int(np.ceil(np.log(obshistid_max)/np.log(2.0)))
+
+        true_alert_dict = {}
         obs_dict = {}
-        max_obshistid = -1
-        n_total_observations = 0
         for obs in self.obs_list:
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
-            if obshistid>max_obshistid:
-                max_obshistid = obshistid
             cat = TestAlertsTruthCat_avro(star_db, obs_metadata=obs)
 
             for line in cat.iter_catalog():
                 if line[1] is None:
                     continue
 
-                n_total_observations += 1
-                if line[0] not in true_lc_dict:
-                    true_lc_dict[line[0]] = {}
-                    true_lc_obshistid_dict[line[0]] = []
+                dmag = line[2]
+                mag = line[3]
+                if np.abs(dmag)>dmag_cutoff and mag<=self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
+                    alertId = (line[0]<<obshistid_bits) + obshistid
+                    assert alertId not in true_alert_dict
+                    true_alert_dict[alertId] = {}
+                    true_alert_dict[alertId]['chipName'] = line[1]
+                    true_alert_dict[alertId]['dmag'] = dmag
+                    true_alert_dict[alertId]['mag'] = mag
 
-                true_lc_dict[line[0]][obshistid] = line[2]
-                true_lc_obshistid_dict[line[0]].append(obshistid)
-
-                if line[0] not in is_visible_dict:
-                    is_visible_dict[line[0]] = False
-
-                if line[3] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
-                    is_visible_dict[line[0]] = True
-
-        obshistid_bits = int(np.ceil(np.log(max_obshistid)/np.log(2)))
-
-        skipped_due_to_mag = 0
-
-        objects_to_simulate = []
-        obshistid_unqid_set = set()
-        for obj_id in true_lc_dict:
-
-            dmag_max = -1.0
-            for obshistid in true_lc_dict[obj_id]:
-                if np.abs(true_lc_dict[obj_id][obshistid]) > dmag_max:
-                    dmag_max = np.abs(true_lc_dict[obj_id][obshistid])
-
-            if dmag_max>=dmag_cutoff:
-                if not is_visible_dict[obj_id]:
-                    skipped_due_to_mag += 1
-                    continue
-
-                objects_to_simulate.append(obj_id)
-                for obshistid in true_lc_obshistid_dict[obj_id]:
-                    obshistid_unqid_set.add((obj_id<<obshistid_bits) + obshistid)
-
-        self.assertGreater(len(objects_to_simulate), 10)
-        self.assertGreater(skipped_due_to_mag, 0)
+        self.assertGreater(len(true_alert_dict), 10)
 
         log_file_name = tempfile.mktemp(dir=self.alert_data_output_dir, suffix='log.txt')
         alert_gen = AlertDataGenerator(testing=True)
@@ -357,10 +329,6 @@ class AvroAlertTestCase(unittest.TestCase):
                                             output_dir=self.alert_data_output_dir,
                                             dmag_cutoff=dmag_cutoff,
                                             log_file_name=log_file_name)
-
-        obshistid_list = []
-        for obs in self.obs_list:
-            obshistid_list.append(obs.OpsimMetaData['obsHistID'])
 
         obshistid_to_htmid = {}
         for htmid in alert_gen.htmid_list:
