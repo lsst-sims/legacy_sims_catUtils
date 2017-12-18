@@ -269,7 +269,7 @@ class AvroAlertTestCase(unittest.TestCase):
         class TestAlertsTruthCat_avro(TestAlertsVarCatMixin_avro, CameraCoordsLSST, AstrometryStars,
                                       Variability, InstanceCatalog):
             column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert',
-                              'raICRS', 'decICRS']
+                              'raICRS', 'decICRS', 'xPix', 'yPix']
 
             @compound('delta_umag', 'delta_gmag', 'delta_rmag',
                       'delta_imag', 'delta_zmag', 'delta_ymag')
@@ -301,6 +301,7 @@ class AvroAlertTestCase(unittest.TestCase):
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
             cat = TestAlertsTruthCat_avro(star_db, obs_metadata=obs)
+            cat.camera = lsst_camera()
 
             for line in cat.iter_catalog():
                 if line[1] is None:
@@ -317,6 +318,8 @@ class AvroAlertTestCase(unittest.TestCase):
                     true_alert_dict[alertId]['mag'] = mag
                     true_alert_dict[alertId]['ra'] = np.degrees(line[4])
                     true_alert_dict[alertId]['decl'] = np.degrees(line[5])
+                    true_alert_dict[alertId]['xPix'] = line[6]
+                    true_alert_dict[alertId]['yPix'] = line[7]
 
         self.assertGreater(len(true_alert_dict), 10)
 
@@ -377,6 +380,8 @@ class AvroAlertTestCase(unittest.TestCase):
                     diaSource = alert['diaSource']
                     self.assertAlmostEqual(diaSource['ra'], true_alert['ra'], 10)
                     self.assertAlmostEqual(diaSource['decl'], true_alert['decl'], 10)
+                    self.assertAlmostEqual(diaSource['x'], true_alert['xPix'], 3)
+                    self.assertAlmostEqual(diaSource['y'], true_alert['yPix'], 3)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
