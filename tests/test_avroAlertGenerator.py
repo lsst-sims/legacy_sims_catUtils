@@ -363,6 +363,10 @@ class AvroAlertTestCase(unittest.TestCase):
             with DataFileReader(open(full_name,'rb'), DatumReader()) as data_reader:
                 for alert in data_reader:
                     alert_ct += 1
+                    obshistid = alert['alertId']>>20
+                    uniqueId = alert['diaObject']['diaObjectId']
+                    true_alert_id = (uniqueId<<obshistid_bits) + obshistid
+                    self.assertIn(true_alert_id, true_alert_dict)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
