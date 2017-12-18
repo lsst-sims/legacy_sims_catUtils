@@ -28,7 +28,8 @@ from lsst.sims.catUtils.utils import AlertDataGenerator
 from lsst.sims.catUtils.utils import AvroAlertGenerator
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
 from lsst.sims.utils import findHtmid
-from lsst.sims.photUtils import Sed
+from lsst.sims.photUtils import Sed, calcSNR_m5, BandpassDict
+from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.catUtils.mixins import CameraCoordsLSST
@@ -364,6 +365,8 @@ class AvroAlertTestCase(unittest.TestCase):
         self.assertGreater(len(list_of_avro_files), 2)
         alert_ct = 0
         dummy_sed = Sed()
+        bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
+        photParams = PhotometricParameters()
         for avro_file_name in list_of_avro_files:
             if avro_file_name.endswith('log.txt'):
                 continue
@@ -389,12 +392,28 @@ class AvroAlertTestCase(unittest.TestCase):
 
                     true_tot_flux = dummy_sed.fluxFromMag(true_alert['mag'])
                     true_q_mag = true_alert['mag'] - true_alert['dmag']
-                    true_quiescent_flux = dummy_sed.fluxFromMag(true_q_mag)
-                    true_dflux = true_tot_flux - true_quiescent_flux
+                    true_q_flux = dummy_sed.fluxFromMag(true_q_mag)
+                    true_dflux = true_tot_flux - true_q_flux
                     self.assertAlmostEqual(diaSource['psFlux']/true_dflux, 1.0, 6)
                     self.assertAlmostEqual(diaSource['totFlux']/true_tot_flux, 1.0, 6)
                     self.assertAlmostEqual(diaSource['diffFlux']/true_dflux, 1.0, 6)
 
+                    true_tot_snr, gamma = calcSNR_m5(true_alert['mag'], bp_dict[obs.bandpass],
+                                                     obs.m5[obs.bandpass], photParams)
+
+                    true_q_snr, gamma = calcSNR_m5(true_q_mag, bp_dict[obs.bandpass],
+                                                   self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]],
+                                                   photParams)
+
+                    true_tot_err = true_tot_flux/true_tot_snr
+                    true_q_err = true_q_flux/true_q_snr
+                    true_diff_err =np.sqrt(true_tot_err**2 + true_q_err**2)
+
+                    self.assertAlmostEqual(diaSource['snr']/np.abs(true_dflux/true_diff_err),
+                                           1.0, 6)
+
+                    self.assertAlmostEqual(diaSource['totFluxErr']/true_tot_err, 1.0, 6)
+                    self.assertAlmostEqual(diaSource['diffFluxErr']/true_diff_err, 1.0, 6)
         self.assertEqual(alert_ct, len(true_alert_dict))
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
