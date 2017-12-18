@@ -113,11 +113,13 @@ if __name__ == "__main__":
             out_file.write('htmid %d n_obs %d\n' % (htmid, alert_gen.n_obs(htmid)))
         out_file.write('n_htmid %d n_obs(total) %d\n' % (len(alert_gen.htmid_list), n_tot_obs))
 
+    """
     htm_population = {}
     with open('htm_population_lookup.txt', 'r') as in_file:
         for line in in_file:
             p = line.strip().split()
             htm_population[int(p[0])] = int(p[1])
+    """
 
     htmid_list = []
     n_htmid_list = []
@@ -128,7 +130,7 @@ if __name__ == "__main__":
     for htmid in alert_gen.htmid_list:
         if htmid in already_done:
             continue
-        n_obs = alert_gen.n_obs(htmid)*htm_population[htmid]
+        n_obs = alert_gen.n_obs(htmid)  #*htm_population[htmid]
         n_min = -1
         i_min = -1
         for i_htmid, n_htmid in enumerate(n_htmid_list):
