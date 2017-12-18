@@ -420,6 +420,13 @@ class AvroAlertTestCase(unittest.TestCase):
 
                     true_ccdid = (chipnum*10**7)+obshistid
                     self.assertEqual(true_ccdid, diaSource['ccdVisitId'])
+                    self.assertEqual(uniqueId, diaSource['diaObjectId'])
+
+                    diaObject = alert['diaObject']
+                    obj_dex = (uniqueId//1024) - 1
+                    self.assertAlmostEqual(0.001*diaObject['pmRa']/self.pmra_truth[obj_dex], 1.0, 5)
+                    self.assertAlmostEqual(0.001*diaObject['pmDecl']/self.pmdec_truth[obj_dex], 1.0, 5)
+                    self.assertAlmostEqual(0.001*diaObject['parallax']/self.px_truth[obj_dex], 1.0, 5)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
