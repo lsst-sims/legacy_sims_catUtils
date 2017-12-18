@@ -370,6 +370,7 @@ class AvroAlertTestCase(unittest.TestCase):
                 for alert in data_reader:
                     alert_ct += 1
                     obshistid = alert['alertId']>>20
+                    obs = obs_dict[obshistid]
                     uniqueId = alert['diaObject']['diaObjectId']
                     true_alert_id = (uniqueId<<obshistid_bits) + obshistid
                     self.assertIn(true_alert_id, true_alert_dict)
@@ -382,6 +383,7 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(diaSource['decl'], true_alert['decl'], 10)
                     self.assertAlmostEqual(diaSource['x'], true_alert['xPix'], 3)
                     self.assertAlmostEqual(diaSource['y'], true_alert['yPix'], 3)
+                    self.assertAlmostEqual(diaSource['midPointTai'], obs.mjd.TAI, 4)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
