@@ -1,8 +1,8 @@
 _avro_is_installed = True
 try:
     import avro.schema
-    from avro.io import DatumWriter
-    from avro.datafile import DataFileWriter
+    from avro.io import DatumReader
+    from avro.datafile import DataFileReader
 except ImportError:
     _avro_is_installed = False
     pass
@@ -353,8 +353,18 @@ class AvroAlertTestCase(unittest.TestCase):
                                   dmag_cutoff, lock=None,
                                   log_file_name=log_file_name)
 
-        list_of_files = os.listdir(self.avro_out_dir)
-        self.assertGreater(len(list_of_files), 2)
+        list_of_avro_files = os.listdir(self.avro_out_dir)
+        self.assertGreater(len(list_of_avro_files), 2)
+        alert_ct = 0
+        for avro_file_name in list_of_avro_files:
+            if avro_file_name.endswith('log.txt'):
+                continue
+            full_name = os.path.join(self.avro_out_dir, avro_file_name)
+            with DataFileReader(open(full_name,'rb'), DatumReader()) as data_reader:
+                for alert in data_reader:
+                    alert_ct += 1
+
+        self.assertEqual(alert_ct, len(true_alert_dict))
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
