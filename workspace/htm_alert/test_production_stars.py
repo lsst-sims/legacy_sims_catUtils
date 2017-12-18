@@ -138,6 +138,7 @@ if __name__ == "__main__":
         htmid_list[i_min].append(htmid)
         n_htmid_list[i_min] += n_obs
 
+    t_start = time.time()
     print('htmid_list %s' % str(htmid_list))
     lock = mproc.Lock()
     p_list = []
@@ -156,4 +157,6 @@ if __name__ == "__main__":
         p.join()
 
     with open(args.log_file, 'a') as out_file:
-        out_file.write('all done')
+        elapsed = (time.time()-t_start)/3600.0
+        out_file.write('all done -- %.2e hours\n' % elapsed)
+        out_file.write('night0 = %d; night1 = %d\n' % (args.night0, args.night1))
