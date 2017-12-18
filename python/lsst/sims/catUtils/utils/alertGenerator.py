@@ -406,9 +406,129 @@ class AlertAgnVariabilityCatalog(_baseAlertCatalog,
 
 
 class AlertDataGenerator(object):
+    """
+    This class will read in astrophysical sources and variability
+    models from CatSim, observe them with a simulated OpSim
+    cadence, and write a series of sqlite files containing all
+    of the simulated observations that could trigger an alert.
+
+    In order to make this calculation as efficient as possible,
+    the class works by partitioning the sky according to the
+    Hierarchical Triangular Mesh (HTM) of
+
+    Kunszt P., Szalay A., Thakar A. (2006) in "Mining The Sky",
+    Banday A, Zaroubi S, Bartelmann M. eds.
+    ESO Astrophysics Symposia
+    https://www.researchgate.net/publication/226072008_The_Hierarchical_Triangular_Mesh
+
+    Szalay A. et al. (2007)
+    "Indexing the Sphere with the Hierarchical Triangular Mesh"
+    arXiv:cs/0701164
+
+    and simulating all of the observations in a given trixel (the
+    elementary unit of the HTM) at once.  Accordintly, the outputs
+    produced by this class are files named like
+
+    prefix_NNNN_sqlite.db
+
+    where prefix is specified by theuser and NNNN is the htmid, the
+    unique identifying integer, corresponding to each simulated trixel.
+
+    The proper way to run this class is to instantiate it, run
+    subdivide_obs on a list of ObservationMetaData corresponding
+    to the OpSim pointings to be simulated, and then running
+    alert_data_from_htmid on each of the htmid in the class property
+    htmid_list.  This last step can easily be parallelized using python's
+    multiprocessing module, with each process handling a different htmid.
+
+    The sqlite files produced by alert_data_from_htmid will each contain
+    three tables.  They are as follows.  Columns are listed below the
+    tables.
+
+    alert_data
+    ----------
+        uniqueId -- int -- a unique identifier for each astrophysical object
+
+        obshistId -- int -- a unique identifier for each OpSim pointing
+
+        xPix -- float -- the x pixel coordinate of the source on the focal
+        plane
+
+        yPix -- float -- the y pixel coordinate of the source on the focal
+        plane
+
+        dflux -- float -- the difference in flux between the source's current
+        flux and its quiescent flux (the source's quiescent flux can be found
+        in the quiescent_flux table).  This is in units of Janskies.
+
+        snr -- float -- the signal to noise of the current detection of the
+        source (not the signal to noise of the source's detection in a simulated
+        difference image).
+
+        ra -- float -- the current RA of the source in degrees
+
+        dec -- float -- the current Declination of the source in degrees.
+
+        The alert_data table is indexed on uniqueId and obshistId.
+
+    metadata
+    --------
+        obshistId -- int --- a unique identifier for each OpSim pointing
+
+        TAI -- float -- the International Atomic Time of the observation
+        as an MJD (in days)
+
+        band -- int -- denotes the filter used for the observation
+        (0=u, 1=g, 2=r, etc.)
+
+        The metadata table is indexed on obshistId
+
+    quiescent_flux
+    --------------
+        uniqueId -- int -- a unique identifier for each astrophysical source
+
+        band -- int -- an integer denoting each LSST filter (0=u, 1=g, 2=r, etc.)
+
+        flux -- float -- the flux of the source through the filter specified by
+        band (in units of Janskies)
+
+        snr -- float -- the signal to noise ratio of the source in the given
+        band with m5 taken from Table 2 of the overview paper (arXiv:0805.2366)
+
+        The quiescent_flux table is indexed on uniqueId and band
+
+    baseline_astrometry
+    -------------------
+        uniqueId -- int -- a unique identifier for each astrophysical source
+
+        TAI -- float -- the International Atomic Time of the baseline astrometric
+        measurements below as a MJD (in days)
+
+        ra -- float -- the RA of the source at TAI in degrees
+
+        dec -- float -- the Declination of the source at TAI in degrees
+
+        pmRA -- float -- the RA proper motion of the source in milliarcseconds/year
+
+        pmDec -- float -- the Declination proper motion of the source in
+        milliarcseconds/year
+
+        parallax -- float -- the parallax of the source in milliarcseconds
+
+        The baseline_astrometry table is indexed on uniqueId
+
+    """
 
     def __init__(self,
                  testing=False):
+        """
+        Parameters
+        ----------
+        testing as a boolean that should only be True when running the unit tests.
+        If True, it prevents the AlertDataGenerator from pre-caching variability
+        models, which aids performance, but uses more memory than we want to use
+        in a unit test.
+        """
 
         self._variability_cache = create_variability_cache()
         self._stdout_lock = None
