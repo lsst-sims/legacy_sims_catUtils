@@ -718,9 +718,9 @@ class AlertDataGenerator(object):
 
         return n_written
 
-    def filter_on_chip_name_then_photometry(self, chunk, column_query,
-                                            obs_valid_dex, expmjd_list,
-                                            photometry_catalog):
+    def _filter_on_chip_name_then_photometry(self, chunk, column_query,
+                                             obs_valid_dex, expmjd_list,
+                                             photometry_catalog):
         if 'properMotionRa'in column_query:
             pmra = chunk['properMotionRa']
             pmdec = chunk['properMotionDec']
@@ -799,10 +799,10 @@ class AlertDataGenerator(object):
 
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
-    def filter_on_photometry_then_chip_name(self, chunk, column_query,
-                                            obs_valid_dex, expmjd_list,
-                                            photometry_catalog,
-                                            dmag_cutoff):
+    def _filter_on_photometry_then_chip_name(self, chunk, column_query,
+                                             obs_valid_dex, expmjd_list,
+                                             photometry_catalog,
+                                             dmag_cutoff):
 
 
         photometry_catalog._set_current_chunk(chunk)
@@ -1106,11 +1106,11 @@ class AlertDataGenerator(object):
                 (chip_name_dict,
                  dmag_arr,
                  dmag_arr_transpose,
-                 time_arr) = self.filter_on_photometry_then_chip_name(chunk, column_query,
-                                                                      obs_valid_dex,
-                                                                      expmjd_list,
-                                                                      photometry_catalog,
-                                                                      dmag_cutoff)
+                 time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
+                                                                       obs_valid_dex,
+                                                                       expmjd_list,
+                                                                       photometry_catalog,
+                                                                       dmag_cutoff)
 
                 q_f_dict = {}
                 q_m_dict = {}
