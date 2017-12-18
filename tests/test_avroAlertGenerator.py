@@ -28,6 +28,7 @@ from lsst.sims.catUtils.utils import AlertDataGenerator
 from lsst.sims.catUtils.utils import AvroAlertGenerator
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
 from lsst.sims.utils import findHtmid
+from lsst.sims.utils import applyProperMotion, ModifiedJulianDate
 from lsst.sims.photUtils import Sed, calcSNR_m5, BandpassDict
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.coordUtils import lsst_camera
@@ -427,6 +428,17 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(0.001*diaObject['pmRa']/self.pmra_truth[obj_dex], 1.0, 5)
                     self.assertAlmostEqual(0.001*diaObject['pmDecl']/self.pmdec_truth[obj_dex], 1.0, 5)
                     self.assertAlmostEqual(0.001*diaObject['parallax']/self.px_truth[obj_dex], 1.0, 5)
+
+                    true_ra_base, true_dec_base = applyProperMotion(self.ra_truth[obj_dex],
+                                                                    self.dec_truth[obj_dex],
+                                                                    self.pmra_truth[obj_dex],
+                                                                    self.pmdec_truth[obj_dex],
+                                                                    self.px_truth[obj_dex],
+                                                                    self.vrad_truth[obj_dex],
+                                                                    mjd=ModifiedJulianDate(TAI=diaObject['radecTai']))
+
+                    self.assertAlmostEqual(true_ra_base, diaObject['ra'], 7)
+                    self.assertAlmostEqual(true_dec_base,diaObject['decl'],7)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
