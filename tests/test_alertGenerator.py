@@ -211,7 +211,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             chipNameFromPupilCoordsLSST.__delattr__(attr)
         gc.collect()
 
-    def test_alert_generation(self):
+    def test_alert_data_generation(self):
 
         dmag_cutoff = 0.005
         mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
