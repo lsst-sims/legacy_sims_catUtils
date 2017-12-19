@@ -49,6 +49,11 @@ def load_single_avsc(file_path, names):
 
 
 class AvroAlertGenerator(object):
+    """
+    This class reads in the sqlite files created by the AlertDataGenerator
+    and converts them into avro files separated by obsHistID (the unique
+    integer identifying each pointing in an OpSim run).
+    """
 
     def __init__(self):
         self._diasource_schema = None
@@ -57,6 +62,11 @@ class AvroAlertGenerator(object):
         self._n_bit_shift = 10
 
     def load_schema(self, schema_dir):
+        """
+        Load the schema for the avro files.  Currently, these are in
+
+        https://github.com/lsst-dm/sample-avro-alert/tree/master/schema
+        """
         file_names = [os.path.join(schema_dir, 'diasource.avsc'),
                       os.path.join(schema_dir, 'diaobject.avsc'),
                       os.path.join(schema_dir, 'ssobject.avsc'),
@@ -66,6 +76,23 @@ class AvroAlertGenerator(object):
         self._alert_schema = combine_schemas(file_names)
 
     def _create_sources(self, obshistid, diasource_data):
+        """
+        Create a list of diaSources that adhere to the corresponding
+        avro schema.
+
+        Parameters
+        ----------
+        obshistid is an integer corresponding to the OpSim pointing
+        being simulated
+
+        diasource_data is numpy recarray containing all of the data
+        for the diaSources being formatted
+
+        Returns
+        -------
+        A list of dicts, each of which is ready to be written as
+        an avro-formatted diaSource.
+        """
 
         bp_name_dict = {0: 'u', 1: 'g', 2: 'r', 3: 'i', 4: 'z', 5: 'y'}
 
@@ -125,6 +152,21 @@ class AvroAlertGenerator(object):
         return avro_diasource_list
 
     def _create_objects(self, diaobject_data):
+        """
+        Create a dict of diaObjects formatted according to the
+        appropriate avro schema
+
+        Parameters
+        ----------
+        diaobject_data is a numpy recarray containing all of the
+        data needed for the diaObject
+
+        Returns
+        -------
+        A dict keyed on uniqueId (the CatSim unique identifier for each
+        astrophysical source).  Each value is a properly formatted
+        diaObject corresponding to its key.
+        """
         diaobject_dict = {}
         for i_object in range(len(diaobject_data)):
             diaobject = diaobject_data[i_object]
@@ -162,8 +204,42 @@ class AvroAlertGenerator(object):
         return diaobject_dict
 
 
-    def write_alerts(self, obshistid, data_dir, prefix_list, htmid_list, out_dir, out_prefix,
+    def write_alerts(self, obshistid, data_dir, prefix_list,
+                     htmid_list, out_dir, out_prefix,
                      dmag_cutoff, lock=None, log_file_name=None):
+        """
+        Write the alerts for an obsHistId to a properly formatted avro file.
+
+        Parameters
+        ----------
+        obshistid is the integer uniquely identifying the OpSim pointing
+        being simulated
+
+        data_dir is the directory containing the sqlite files created by
+        the AlertDataGenerator
+
+        prefix_list is a list of prefixes for those sqlite files.
+
+        htmid_list is the list of htmids identifying the trixels that overlap
+        this obshistid's field of view. For each htmid in htmid_list and each
+        prefix in prefix_list, this method will process the files
+            data_dir/prefix_htmid_sqlite.db
+        searching for alerts that correspond to this obshistid
+
+        out_dir is the directory to which the avro files should be written
+
+        out_prefix is the prefix of the avro file names
+
+        dmag_cutoff is the minimum delta magnitude needed to trigger an alert
+
+        lock is an optional multiprocessing.Lock() for use when running many
+        instances of this method. It prevents multiple processes from writing to
+        the logfile or stdout at once.
+
+        log_file_name is the name of an optional text file to which progress is
+        written.
+        """
+
 
         out_name = os.path.join(out_dir,'%s_%d.avro' % (out_prefix, obshistid))
         if os.path.exists(out_name):
