@@ -20,10 +20,13 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                 log_file_name, lock,
                 write_every, chunk_size, dmag_cutoff):
 
-    db = StellarAlertDBObj(database='LSSTCATSIM',
-                           host='fatboy.phys.washington.edu',
-                           port=1433, driver='mssql+pymssql',
-                           cache_connection=False)
+    try:
+        db = StellarAlertDBObj(database='LSSTCATSIM',
+                               host='fatboy.phys.washington.edu',
+                               port=1433, driver='mssql+pymssql',
+                               cache_connection=False)
+    except RuntimeError:
+        db = StellarAlertDBObj()
 
     for i_htmid, htmid in enumerate(htmid_list):
         t_start = time.time()
@@ -50,16 +53,33 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--n_proc', type=int, default=1)
-    parser.add_argument('--out_dir', type=str, default=None)
-    parser.add_argument('--out_prefix', type=str, default='stellar')
-    parser.add_argument('--log_file', type=str, default=None)
-    parser.add_argument('--night0', type=int, default=30)
-    parser.add_argument('--night1', type=int, default=61)
-    parser.add_argument('--write_every', type=int, default=5000000)
-    parser.add_argument('--chunk_size', type=int ,default=10000)
-    parser.add_argument('--dmag_cutoff', type=float, default=0.001)
-    parser.add_argument('--already_done', type=str, default=None)
+    parser.add_argument('--n_proc', type=int, default=1,
+                        help='Number of independent process to run')
+    parser.add_argument('--out_dir', type=str, default=None,
+                        help='Directory in which to write output')
+    parser.add_argument('--out_prefix', type=str, default='stellar',
+                        help='Prefix for output sqlite files')
+    parser.add_argument('--log_file', type=str, default=None,
+                        help='Name of file to write progress to')
+    parser.add_argument('--night0', type=int, default=30,
+                        help='First night of the survey to '
+                        'simulate (default=30)')
+    parser.add_argument('--night1', type=int, default=61,
+                        help='Last night of the survey to '
+                        'simulate (default=61)')
+    parser.add_argument('--write_every', type=int, default=5000000,
+                        help='Write output to sqlite files every write_every rows '
+                        '(default = 5e6)')
+    parser.add_argument('--chunk_size', type=int ,default=10000,
+                        help='Number of rows to bring down from the remote '
+                        'database at a time (default=10,000)')
+    parser.add_argument('--dmag_cutoff', type=float, default=0.001,
+                        help='Minimum delta magnitude to trigger an alert '
+                        '(default = 0.001))
+    parser.add_argument('--opsim_db', type=str,
+                        default=os.path.join('/local', 'lsst', 'danielsf',
+                                             'OpSimData', 'minion_1016_sqlite.db'),
+                        help='Path to OpSim database used for survey cadence')
 
     args = parser.parse_args()
 
@@ -73,34 +93,15 @@ if __name__ == "__main__":
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
 
-    already_done = set()
-    if args.already_done is not None:
-        with open(args.already_done, 'r') as in_file:
-            for line in in_file:
-                if 'INDEXING' in line:
-                    try:
-                        params = line.strip().split()
-                        htmid = int(params[1])
-                        already_done.add(htmid)
-                    except:
-                        pass
-
-    opsim_db = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
-                            'Development', 'garage', 'OpSimData',
-                            'minion_1016_sqlite.db')
-
-    if not os.path.exists(opsim_db):
-        opsim_db = os.path.join('/local', 'lsst', 'danielsf', 'OpSimData',
-                                'minion_1016_sqlite.db')
-
-    obs_gen = ObservationMetaDataGenerator(opsim_db, driver='sqlite')
-
+    # get the list of ObservationMetaData to simulate
+    obs_gen = ObservationMetaDataGenerator(args.opsim_db, driver='sqlite')
     obs_list = obs_gen.getObservationMetaData(night=(args.night0,args.night1))
 
     del obs_gen
     sims_clean_up()
     gc.collect()
 
+    # get the list of trixel htmids to simulate
     alert_gen = AlertDataGenerator()
     alert_gen.subdivide_obs(obs_list, htmid_level=6)
 
@@ -113,14 +114,8 @@ if __name__ == "__main__":
             out_file.write('htmid %d n_obs %d\n' % (htmid, alert_gen.n_obs(htmid)))
         out_file.write('n_htmid %d n_obs(total) %d\n' % (len(alert_gen.htmid_list), n_tot_obs))
 
-    """
-    htm_population = {}
-    with open('htm_population_lookup.txt', 'r') as in_file:
-        for line in in_file:
-            p = line.strip().split()
-            htm_population[int(p[0])] = int(p[1])
-    """
-
+    # subdivide the trixels into n_proc lists, trying to make sure
+    # each process has an equal number of observations to simulate
     htmid_list = []
     n_htmid_list = []
     for i_p in range(args.n_proc):
@@ -130,7 +125,7 @@ if __name__ == "__main__":
     for htmid in alert_gen.htmid_list:
         if htmid in already_done:
             continue
-        n_obs = alert_gen.n_obs(htmid)  #*htm_population[htmid]
+        n_obs = alert_gen.n_obs(htmid)
         n_min = -1
         i_min = -1
         for i_htmid, n_htmid in enumerate(n_htmid_list):
@@ -140,6 +135,7 @@ if __name__ == "__main__":
         htmid_list[i_min].append(htmid)
         n_htmid_list[i_min] += n_obs
 
+    # start the independent processes
     t_start = time.time()
     print('htmid_list %s' % str(htmid_list))
     lock = mproc.Lock()
