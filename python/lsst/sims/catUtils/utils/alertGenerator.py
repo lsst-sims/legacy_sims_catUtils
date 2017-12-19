@@ -537,6 +537,21 @@ class AlertDataGenerator(object):
             plm.load_parametrized_light_curves(variability_cache = self._variability_cache)
         self.bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
+        # This is a file that lists the maximum amplitude of variability
+        # for each of the Kepler-derived light curve models.  It will be
+        # used by the stellar variability model to figure out which
+        # stars can be skipped because they will never vary above
+        # the alert-triggering threshold.
+        self._dmag_lookup_file = os.path.join(getPackageDir('sims_data'),
+                                             'catUtilsData',
+                                             'kplr_dmag_171204.txt')
+
+        if not os.path.exists(self._dmag_lookup_file) and not testing:
+            script_name = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
+                                       'get_kepler_dmag.sh')
+            raise RuntimeError('\n%s does not exist; run the script\n\n%s\n\n' %
+                               script_name)
+
     def acquire_lock(self):
         """
         If running with multiprocessing, acquire
@@ -1056,12 +1071,11 @@ class AlertDataGenerator(object):
         if '_PARAMETRIZED_LC_DMAG_LOOKUP' not in self._variability_cache:
             self._variability_cache['_PARAMETRIZED_LC_DMAG_CUTOFF'] = dmag_cutoff
             self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'] = {}
-            dmag_lookup_file = os.path.join(getPackageDir('sims_data'),
-                                            'catUtilsData',
-                                            'kplr_dmag_171204.txt')
 
-            with open(dmag_lookup_file, 'r') as in_file:
+            with open(self._dmag_lookup_file, 'r') as in_file:
                 for line in in_file:
+                    if line[0] == '#:
+                        continue
                     params = line.split()
                     self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][int(params[0])] = float(params[1])
 
