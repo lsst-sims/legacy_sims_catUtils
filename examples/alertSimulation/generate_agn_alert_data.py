@@ -57,7 +57,7 @@ if __name__ == "__main__":
                         help='Number of independent process to run')
     parser.add_argument('--out_dir', type=str, default=None,
                         help='Directory in which to write output')
-    parser.add_argument('--out_prefix', type=str, default='stellar',
+    parser.add_argument('--out_prefix', type=str, default='agn',
                         help='Prefix for output sqlite files')
     parser.add_argument('--log_file', type=str, default=None,
                         help='Name of file to write progress to')
