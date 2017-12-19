@@ -258,7 +258,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         """
 
         if query_cache is None:
-            # Call the originalversion of iter_catalog defined in the
+            # Call the original version of iter_catalog defined in the
             # InstanceCatalog class.  This version of iter_catalog includes
             # the call to self.db_obj.query_columns, which the user would have
             # used to generate query_cache.
@@ -787,10 +787,6 @@ class AlertDataGenerator(object):
             px = None
             vrad = None
 
-        #for ii in range(6):
-        #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
-        #exit()
-
         ###################################################################
         # Figure out which sources actually land on an LSST detector during
         # the observations in question
@@ -943,10 +939,6 @@ class AlertDataGenerator(object):
             pmdec = None
             px = None
             vrad = None
-
-        #for ii in range(6):
-        #    print('dmag %d: %e %e %e' % (ii,dmag_arr[ii].min(),np.median(dmag_arr[ii]),dmag_arr[ii].max()))
-        #exit()
 
         ###################################################################
         # Figure out which sources actually land on an LSST detector during
@@ -1119,8 +1111,6 @@ class AlertDataGenerator(object):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-        #print('htmid %d' % (htmid))
-
         dummy_sed = Sed()
 
         # a dummy call to make sure that the initialization
@@ -1160,8 +1150,6 @@ class AlertDataGenerator(object):
         cat_list = cat_list[sorted_dex]
         obs_valid_dex = obs_valid_dex[sorted_dex]
 
-        #print('built list')
-
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
         for col in desired_columns:
@@ -1174,8 +1162,6 @@ class AlertDataGenerator(object):
                                               htmid=htmid,
                                               chunk_size=chunk_size)
 
-        #print("time for photometry catalog")
-
         photometry_catalog = photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
                                               column_outputs=['lsst_u',
                                                               'lsst_g',
@@ -1184,7 +1170,6 @@ class AlertDataGenerator(object):
                                                               'lsst_z',
                                                               'lsst_y'])
 
-        #print('chunking')
         i_chunk = 0
         t_chipName = 0.0
         t_before_obj = time.time()
