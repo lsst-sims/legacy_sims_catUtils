@@ -523,7 +523,7 @@ class photometryUnitTest(unittest.TestCase):
                               ('cartoon_i', float), ('cartoon_z', float)])
 
         test_cat = cartoonStarsIZ(self.star, obs_metadata=obs_metadata_pointed)
-        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+        with lsst.utils.tests.getTempFilePath('.txt') as testCatName:
             test_cat.write_catalog(testCatName)
             testData = np.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
         self.assertGreater(len(testData), 0)
