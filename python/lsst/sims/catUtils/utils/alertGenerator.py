@@ -1015,6 +1015,48 @@ class AlertDataGenerator(object):
                               chunk_cutoff=-1,
                               lock=None):
 
+        """
+        Generate an sqlite file with all of the alert data for a given
+        trixel.
+
+        Parameters
+        ----------
+        htmid is an integer denoting the trixel from self.htmid_list that should
+        be simulated
+
+        dbobj is a CatalogDBObject connecting to the data underlying the simulation
+
+        dmag_cutoff indicates the minimum change magnitude needed to trigger a
+        simulated alert
+
+        chunk_size denotes the number of objects to query from the database and
+        process at one time
+
+        write_every indicates how often to write to the sqlite file (i.e. the
+        code will pause the simulation process and write to the sqlite file
+        when it has accumulated this many valid observations)
+
+        output_dir is the directory in which to create the sqlite file
+
+        output_prefix is the prefix of the sqlite file's name
+
+        log_file_name is the name of a text file where progress will be written
+
+        photometry_class is a InstanceCatalog class (not an instantiation) that
+        contains the methods for calculating the photometry associated with the
+        simulated alerts (see AlertStellarVariabilityCatalog and
+        AlertAgnVariabilityCatalog in this module)
+
+        chunk_cutoff is an optional int; stop the simulation after this many
+        chunks have been processed.  This is for testing purposes.
+        If chunk_cutoff == -1, the code will process all of the astrophysical
+        objects in the trixel.
+
+        lock is a multiprocessing.Lock() for use if running multiple
+        instances of alert_data_from_htmid.  This will prevent multiple processes
+        from writing to the log file or stdout simultaneously.
+        """
+
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
             raise RuntimeError('must specify log_file_name')
