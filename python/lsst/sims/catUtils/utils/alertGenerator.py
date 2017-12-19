@@ -721,6 +721,61 @@ class AlertDataGenerator(object):
     def _filter_on_chip_name_then_photometry(self, chunk, column_query,
                                              obs_valid_dex, expmjd_list,
                                              photometry_catalog):
+        """
+        Determine which simulated observations are actually worth storing
+        by first figuring out which land on an LSST detector and then
+        figuring out which satisfy the photometric thresholds for
+        observability and alert-worthiness.
+
+        Parameters
+        ----------
+        chunk is the output yielded from a CatSim ChunkIterator.  It is
+        a numpy recarray representing one chunk_size query from the
+        underlying simulations database
+
+        column_query is a list of the columns that were queried from
+        the database
+
+        obs_valid_dex is a list of integers corresponding to indexes in
+        self._obs_list of the ObservationMetaData that are actually valid
+        for the trixel currently being simulated
+
+        expmjd_list is a numpy array of the TAI dates of ObservtionMetaData
+        represented by obs_valid_dex
+
+        photometry_catalog is an instantiation of the InstanceCatalog class
+        being used to calculate magnitudes for these variable sources.
+
+        Outputs
+        -------
+        chip_name_dict is a dict keyed on i_obs (which is the index of
+        an ObservationMetaData's position in obs_valid_dex, NOT its
+        position in self._obs_list).  The values of chip_name_dict are
+        tuples containing:
+            - a list of the names of the detectors that objects from chunk
+              landed on (including Nones for those objects that did not land
+              on any detector)
+
+             - a list of the xPupil coords for every object in chunk
+
+             - a list of the yPupil coords for every object in chunk
+
+             - a list of the indexes in chunk of those objects which actually
+               landed on a detector
+
+        dmag_arr is a numpy array of the delta_magnitudes of every object
+        in chunk.  dmag_arr[11][3][4] is the delta_magnitude of chunk[4]
+        in the 3rd band (i.e. the i band) at TAI = expmjd[11].
+
+        dmag_arr_transpose is dmag_arr with the time and object columns
+        transposed so that dmag_arr_transpose[4][3][11] == dmag_arr[11][3][4].
+
+        time_arr is an array of integers with shape == (len(chunk), len(obs_valid_dex)).
+        A -1 in time_arr means that that combination of object and observation did
+        not yield a valid observation.  A +1 means that the object and observation
+        combination are valid.
+        """
+
         if 'properMotionRa'in column_query:
             pmra = chunk['properMotionRa']
             pmdec = chunk['properMotionDec']
@@ -803,7 +858,60 @@ class AlertDataGenerator(object):
                                              obs_valid_dex, expmjd_list,
                                              photometry_catalog,
                                              dmag_cutoff):
+        """
+        Determine which simulated observations are actually worth storing
+        by first figuring out which observations of which objects are
+        photoemtrically detectable and alert-worthy, then determining
+        which of those actually fall on an LSST detector.
 
+        Parameters
+        ----------
+        chunk is the output yielded from a CatSim ChunkIterator.  It is
+        a numpy recarray representing one chunk_size query from the
+        underlying simulations database
+
+        column_query is a list of the columns that were queried from
+        the database
+
+        obs_valid_dex is a list of integers corresponding to indexes in
+        self._obs_list of the ObservationMetaData that are actually valid
+        for the trixel currently being simulated
+
+        expmjd_list is a numpy array of the TAI dates of ObservtionMetaData
+        represented by obs_valid_dex
+
+        photometry_catalog is an instantiation of the InstanceCatalog class
+        being used to calculate magnitudes for these variable sources.
+
+        Outputs
+        -------
+        chip_name_dict is a dict keyed on i_obs (which is the index of
+        an ObservationMetaData's position in obs_valid_dex, NOT its
+        position in self._obs_list).  The values of chip_name_dict are
+        tuples containing:
+            - a list of the names of the detectors that objects from chunk
+              landed on (including Nones for those objects that did not land
+              on any detector)
+
+             - a list of the xPupil coords for every object in chunk
+
+             - a list of the yPupil coords for every object in chunk
+
+             - a list of the indexes in chunk of those objects which actually
+               landed on a detector
+
+        dmag_arr is a numpy array of the delta_magnitudes of every object
+        in chunk.  dmag_arr[11][3][4] is the delta_magnitude of chunk[4]
+        in the 3rd band (i.e. the i band) at TAI = expmjd[11].
+
+        dmag_arr_transpose is dmag_arr with the time and object columns
+        transposed so that dmag_arr_transpose[4][3][11] == dmag_arr[11][3][4].
+
+        time_arr is an array of integers with shape == (len(chunk), len(obs_valid_dex)).
+        A -1 in time_arr means that that combination of object and observation did
+        not yield a valid observation.  A +1 means that the object and observation
+        combination are valid.
+        """
 
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
