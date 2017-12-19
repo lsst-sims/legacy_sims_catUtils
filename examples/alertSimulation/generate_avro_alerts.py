@@ -28,15 +28,31 @@ def process_obshistid(obshistid_list, in_dir, sql_prefix_list,
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n_proc', type=int, default=1)
-    parser.add_argument('--log_file', type=str, default=None)
-    parser.add_argument('--night0', type=int, default=15)
-    parser.add_argument('--night1', type=int, default=15)
-    parser.add_argument('--in_dir', type=str, default=None)
-    parser.add_argument('--out_dir', type=str, default=None)
-    parser.add_argument('--out_prefix', type=str, default=None)
-    parser.add_argument('--dmag_cutoff', type=float, default=0.005)
-    parser.add_argument('--schema_dir', type=str, default=None)
+    parser.add_argument('--n_proc', type=int, default=1,
+                        help='Number of independent processes to start')
+    parser.add_argument('--log_file', type=str, default=None,
+                        help='Name of file to write progress to')
+    parser.add_argument('--night0', type=int, default=30,
+                        help='First night of survey to simulate (default=30)')
+    parser.add_argument('--night1', type=int, default=61,
+                        help='Last night of survey to simulate (default=61)')
+    parser.add_argument('--in_dir', type=str, default=None,
+                        help='Directory containing sqlite files created '
+                        'by AlertDataGenerator')
+    parser.add_argument('--out_dir', type=str, default=None,
+                        help='Directory in which to write avro files')
+    parser.add_argument('--out_prefix', type=str, default=None,
+                        help='Prefix of avro file names')
+    parser.add_argument('--dmag_cutoff', type=float, default=0.005,
+                        help='Minimum delta magnitude to trigger an alert '
+                        '(default=0.005)')
+    parser.add_argument('--schema_dir', type=str, default=None,
+                        help='Directory containing avro schemas')
+    parser.add_argument('--opsim_db', type=str,
+                        default=os.path.join('/local', 'lsst', 'danielsf',
+                                             'OpSimData', 'minion_1016_sqlite.db'),
+                        help='Path to OpSim database used for survey cadence')
+
 
     args = parser.parse_args()
 
@@ -60,17 +76,9 @@ if __name__ == "__main__":
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
 
-    opsim_db = os.path.join('/Users', 'danielsf', 'physics', 'lsst_150412',
-                            'Development', 'garage', 'OpSimData',
-                            'minion_1016_sqlite.db')
-
-    if not os.path.exists(opsim_db):
-        opsim_db = os.path.join('/local', 'lsst', 'danielsf', 'OpSimData',
-                                'minion_1016_sqlite.db')
-
     t_start = time.time()
-    obs_gen = ObservationMetaDataGenerator(opsim_db, driver='sqlite')
-
+    # get list of ObservationMetaData to simulate
+    obs_gen = ObservationMetaDataGenerator(args.opsim_db, driver='sqlite')
     obs_list = obs_gen.getObservationMetaData(night=15)
 
     del obs_gen
@@ -78,9 +86,16 @@ if __name__ == "__main__":
 
     print('%d obs' % len(obs_list))
 
+    # use AlertDataGenerator to separate the ObservationMetaData
+    # by htmid
     alert_gen = AlertDataGenerator()
     alert_gen.subdivide_obs(obs_list, htmid_level=6)
 
+    # Create a dict that maps an obsHistID to the list of htmids
+    # of the trixels overlapping that observation
+    #
+    # Also separate list of obsHistIDs into n_proc
+    # lists of roubly balanced loads.
     obshistid_to_htmid = {}
     obshistid_list = []
     for i_proc in range(args.n_proc):
@@ -101,8 +116,10 @@ if __name__ == "__main__":
 
             obshistid_to_htmid[obshistid].append(htmid)
 
+    # make sure to process both stellar and agn alert data
     sql_prefix_list = ['stellar', 'agn']
 
+    # start independent processes
     if args.n_proc == 1:
         process_obshistid(obshistid_list[0], args.in_dir,
                           sql_prefix_list,
