@@ -26,7 +26,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                port=1433, driver='mssql+pymssql',
                                cache_connection=False)
     except RuntimeError:
-        db = StellarAlertDBObj()
+        db = StellarAlertDBObj(cache_connection=False)
 
     for i_htmid, htmid in enumerate(htmid_list):
         t_start = time.time()
