@@ -126,8 +126,6 @@ if __name__ == "__main__":
         n_htmid_list.append(0)
 
     for htmid in alert_gen.htmid_list:
-        if htmid in already_done:
-            continue
         n_obs = alert_gen.n_obs(htmid)
         n_min = -1
         i_min = -1
