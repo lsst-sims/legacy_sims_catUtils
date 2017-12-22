@@ -1074,7 +1074,7 @@ class AlertDataGenerator(object):
 
             with open(self._dmag_lookup_file, 'r') as in_file:
                 for line in in_file:
-                    if line[0] == '#:
+                    if line[0] == '#':
                         continue
                     params = line.split()
                     self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][int(params[0])] = float(params[1])
