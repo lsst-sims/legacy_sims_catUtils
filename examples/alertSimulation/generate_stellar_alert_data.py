@@ -75,7 +75,7 @@ if __name__ == "__main__":
                         'database at a time (default=10,000)')
     parser.add_argument('--dmag_cutoff', type=float, default=0.001,
                         help='Minimum delta magnitude to trigger an alert '
-                        '(default = 0.001))
+                        '(default = 0.001)')
     parser.add_argument('--opsim_db', type=str,
                         default=os.path.join('/local', 'lsst', 'danielsf',
                                              'OpSimData', 'minion_1016_sqlite.db'),
