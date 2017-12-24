@@ -100,30 +100,9 @@ if __name__ == "__main__":
             out_file.write('htmid %d n_obs %d\n' % (htmid, alert_gen.n_obs(htmid)))
         out_file.write('n_htmid %d n_obs(total) %d\n' % (len(alert_gen.htmid_list), n_tot_obs))
 
-    # subdivide the trixels into n_proc lists, trying to make sure
-    # each process has an equal number of observations to simulate
-    htmid_list = []
-    n_htmid_list = []
-    for i_p in range(args.n_proc):
-        htmid_list.append([])
-        n_htmid_list.append(0)
-
-    for htmid in alert_gen.htmid_list:
-        n_obs = alert_gen.n_obs(htmid)
-        n_min = -1
-        i_min = -1
-        for i_htmid, n_htmid in enumerate(n_htmid_list):
-            if i_min<0 or n_htmid<n_min:
-                n_min = n_htmid
-                i_min = i_htmid
-        htmid_list[i_min].append(htmid)
-        n_htmid_list[i_min] += n_obs
-
     # start the independent processes
     t_start = time.time()
-    print('htmid_list %s' % str(htmid_list))
     lock = mproc.Lock()
-    p_list = []
 
     query_htmid(alert_gen, 10698, args.out_dir, args.out_prefix,
                 args.log_file, lock, 1000000, 5000,
