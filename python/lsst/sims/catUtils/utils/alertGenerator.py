@@ -1203,6 +1203,8 @@ class AlertDataGenerator(object):
                             chipNum int, dflux float, snr float, ra float, dec float)'''
 
             cursor = conn.cursor()
+            cursor.execute('PRAGMA journal_mode=WAL;')
+            conn.commit()
             cursor.execute(creation_cmd)
             conn.commit()
 
