@@ -104,7 +104,7 @@ if __name__ == "__main__":
     t_start = time.time()
     lock = mproc.Lock()
 
-    query_htmid(alert_gen, [10698], args.out_dir, args.out_prefix,
+    query_htmid(alert_gen, [10732], args.out_dir, args.out_prefix,
                 args.log_file, lock, 1000000, 5000,
                 0.005)
 
