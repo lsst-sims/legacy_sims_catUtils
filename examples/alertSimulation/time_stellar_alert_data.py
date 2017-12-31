@@ -59,6 +59,8 @@ if __name__ == "__main__":
                         help='Prefix for output sqlite files')
     parser.add_argument('--log_file', type=str, default=None,
                         help='Name of file to write progress to')
+    parser.add_argument('--chunk_size', type=int, default=5000,
+                        help='Size of chunk read from database')
 
     parser.add_argument('--opsim_db', type=str,
                         default=os.path.join('/local', 'lsst', 'danielsf',
@@ -105,7 +107,7 @@ if __name__ == "__main__":
     lock = mproc.Lock()
 
     query_htmid(alert_gen, [10732], args.out_dir, args.out_prefix,
-                args.log_file, lock, 1000000, 5000,
+                args.log_file, lock, 1000000, args.chunk_size,
                 0.005)
 
     with open(args.log_file, 'a') as out_file:
