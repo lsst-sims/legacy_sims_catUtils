@@ -1525,7 +1525,7 @@ class AlertDataGenerator(object):
             values = ((int(unq), int(self._unique_id_map[unq]))
                       for unq in self._unique_id_map)
             cursor.executemany('INSERT INTO unique_id_map VALUES(?,?)',values)
-            cursor.execute('CREATE INDEX unq_local ON unique_id_map (uniqueId)')
+            cursor.execute('CREATE INDEX unq_local ON unique_id_map (uniqueId, localId)')
             conn.commit()
 
             self.acquire_lock()
