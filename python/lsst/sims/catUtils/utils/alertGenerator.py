@@ -225,7 +225,7 @@ class AgnAlertDBObj(GalaxyAgnObj):
 class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog):
 
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
-                      'flux', 'SNR', 'dflux',
+                      'flux', 'SNR', 'dflux', 'dSNR',
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
@@ -353,7 +353,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
         return np.array([mag, dmag, quiescent_mag])
 
-    @compound('flux', 'dflux', 'SNR')
+    @compound('flux', 'dflux', 'SNR', 'dSNR')
     def get_alertFlux(self):
         quiescent_mag = self.column_by_name('quiescent_mag')
         mag = self.column_by_name('mag')
@@ -365,6 +365,8 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
             self.photParams = PhotometricParameters()
         if not hasattr(self, '_gamma'):
             self._gamma = None
+        if not hasattr(self, '_gamma_quiescent'):
+            self._gamma_quiescent = None
 
         quiescent_flux = self._dummy_sed.fluxFromMag(quiescent_mag)
         flux = self._dummy_sed.fluxFromMag(mag)
@@ -377,7 +379,24 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         if self._gamma is None:
             self._gamma = gamma
 
-        return np.array([flux, dflux, snr_tot])
+        template_m5_dict = {'u':23.68, 'g':24.89, 'r':24.43, 'i':24.0, 'z':24.45, 'y':22.60}
+
+        snr_quiescent, gamma_quiescent = calcSNR_m5(quiescent_mag,
+                                                    self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                                    template_m5_dict[self.obs_metadata.bandpass],
+                                                    self.photParams,
+                                                    gamma=self._gamma_quiescent)
+
+        if self._gamma_quiescent is None:
+            self._gamma_quiescent = gamma_quiescent
+
+        tot_sigma = flux/snr_tot
+        template_sigma = quiescent_flux/snr_quiescent
+        diff_sigma = np.sqrt(tot_sigma**2+template_sigma**2)
+        snr_diff = dflux/diff_sigma
+        assert diff_sigma.min()>0.0
+
+        return np.array([flux, dflux, snr_tot, snr_diff])
 
 
 class AlertStellarVariabilityCatalog(_baseAlertCatalog,
@@ -714,7 +733,7 @@ class AlertDataGenerator(object):
             n_obj = len(data_cache[cache_tag]['uniqueId'])
             chunk_lengths[i_cache_tag] = n_obj
 
-            actual_alerts = np.where(data_cache[cache_tag]['SNR']>=5.0)
+            actual_alerts = np.where(data_cache[cache_tag]['dSNR']>=5.0)
 
             if len(actual_alerts[0])>0:
                 values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
@@ -729,7 +748,7 @@ class AlertDataGenerator(object):
                           for i_obj in actual_alerts[0])
                 cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
 
-            quiescent_obs = np.where(data_cache[cache_tag]['SNR']<5.0)
+            quiescent_obs = np.where(data_cache[cache_tag]['dSNR']<5.0)
             if len(quiescent_obs[0])>0:
                 values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
                            obsHistID,
@@ -1404,7 +1423,7 @@ class AlertDataGenerator(object):
                         output_data_cache[cache_tag] = {}
 
                         for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
-                                         'chipNum', 'xPix', 'yPix'):
+                                         'chipNum', 'xPix', 'yPix', 'dSNR'):
 
                             output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
