@@ -731,6 +731,16 @@ class AlertDataGenerator(object):
 
         chunk_lengths = np.zeros(len(data_cache))
 
+        t_start = time.time()
+        for cache_tag in data_cache:
+            unq_list = np.unique(data_cache[cache_tag]['uniqueId'])
+            for unq in unq_list:
+                if unq not in self._unique_id_map:
+                    self._unique_id_map[unq] = self._local_id
+                    self._local_id += 1
+        elapsed = (time.time()-t_start)
+        print('\n\nunq_map took %.2e hrs\n\n' % elapsed)
+
         for i_cache_tag, cache_tag in enumerate(data_cache):
             obsHistID = int(cache_tag.split('_')[0])
             n_obj = len(data_cache[cache_tag]['uniqueId'])
@@ -739,7 +749,7 @@ class AlertDataGenerator(object):
             actual_alerts = np.where(data_cache[cache_tag]['dAbsMag']>=dmag_cutoff)
 
             if len(actual_alerts[0])>0:
-                values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
+                values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
                            data_cache[cache_tag]['xPix'][i_obj],
                            data_cache[cache_tag]['yPix'][i_obj],
@@ -753,7 +763,7 @@ class AlertDataGenerator(object):
 
             quiescent_obs = np.where(data_cache[cache_tag]['dAbsMag']<dmag_cutoff)
             if len(quiescent_obs[0])>0:
-                values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
+                values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
                            data_cache[cache_tag]['dflux'][i_obj],
                            data_cache[cache_tag]['SNR'][i_obj])
@@ -1231,10 +1241,12 @@ class AlertDataGenerator(object):
         n_time_last = 0
         n_rows = 0
 
+        self._unique_id_map = {}
+        self._local_id = 1
         db_name = os.path.join(output_dir, '%s_%d_sqlite.db' % (output_prefix, htmid))
         with sqlite3.connect(db_name, isolation_level='EXCLUSIVE') as conn:
             creation_cmd = '''CREATE TABLE alert_data
-                           (uniqueId int, obshistId int, xPix float, yPix float,
+                           (localId int, obshistId int, xPix float, yPix float,
                             chipNum int, dflux float, snr float, ra float, dec float)'''
 
             cursor = conn.cursor()
@@ -1244,7 +1256,7 @@ class AlertDataGenerator(object):
             conn.commit()
 
             creation_cmd = '''CREATE TABLE quiescent_obs
-                           (uniqueId int, obshistId int, dflux float, snr float)'''
+                           (localId int, obshistId int, dflux float, snr float)'''
             cursor.execute(creation_cmd)
             conn.commit()
 
@@ -1502,11 +1514,18 @@ class AlertDataGenerator(object):
             print("INDEXING %d" % htmid)
             self.release_lock()
 
-            cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
+            cursor.execute('CREATE INDEX unq_obs ON alert_data (localId, obshistId)')
             cursor.execute('CREATE INDEX unq_flux ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
             cursor.execute('CREATE INDEX unq_ast ON baseline_astrometry (uniqueId)')
-            cursor.execute('CREATE INDEX unq_obs_quiescent ON quiescent_obs (uniqueId, obshistId)')
+            cursor.execute('CREATE INDEX unq_obs_quiescent ON quiescent_obs (localId, obshistId)')
+            conn.commit()
+
+            cursor.execute('CREATE TABLE unique_id_map (uniqueId int, local_id int)')
+            values = (int(unq), int(self._unique_id_map[unq])
+                      for unq in self._unique_id_map)
+            cursor.executemany('INSERT INTO unique_id_map VALUES(?,?)',values)
+            cursor.execute('CREATE INDEX unq_local ON unique_id_map (uniqueId)')
             conn.commit()
 
             self.acquire_lock()
