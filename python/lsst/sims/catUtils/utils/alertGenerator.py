@@ -1521,7 +1521,7 @@ class AlertDataGenerator(object):
             cursor.execute('CREATE INDEX unq_obs_quiescent ON quiescent_obs (localId, obshistId)')
             conn.commit()
 
-            cursor.execute('CREATE TABLE unique_id_map (uniqueId int, local_id int)')
+            cursor.execute('CREATE TABLE unique_id_map (localId int, uniqueId int)')
             values = ((int(unq), int(self._unique_id_map[unq]))
                       for unq in self._unique_id_map)
             cursor.executemany('INSERT INTO unique_id_map VALUES(?,?)',values)
