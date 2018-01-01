@@ -727,7 +727,7 @@ class AlertDataGenerator(object):
         """
 
         cursor = conn.cursor()
-        n_rows_0 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
+        n_rows_0 = cursor.execute('SELECT COUNT(localId) FROM alert_data').fetchall()
 
         chunk_lengths = np.zeros(len(data_cache))
 
@@ -772,7 +772,7 @@ class AlertDataGenerator(object):
 
         conn.commit()
 
-        n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
+        n_rows_1 = cursor.execute('SELECT COUNT(localId) FROM alert_data').fetchall()
         conn.commit()
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
 
