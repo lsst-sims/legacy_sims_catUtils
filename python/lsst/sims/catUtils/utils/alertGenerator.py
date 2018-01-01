@@ -225,7 +225,7 @@ class AgnAlertDBObj(GalaxyAgnObj):
 class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog):
 
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
-                      'flux', 'SNR', 'dflux', 'dSNR',
+                      'flux', 'SNR', 'dflux', 'dSNR', 'dAbsMag',
                       'chipNum', 'xPix', 'yPix']
 
     default_formats = {'f':'%.4g'}
@@ -353,7 +353,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
         return np.array([mag, dmag, quiescent_mag])
 
-    @compound('flux', 'dflux', 'SNR', 'dSNR')
+    @compound('flux', 'dflux', 'SNR', 'dSNR', 'dAbsMag')
     def get_alertFlux(self):
         quiescent_mag = self.column_by_name('quiescent_mag')
         mag = self.column_by_name('mag')
@@ -397,7 +397,9 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         if len(diff_sigma)>0:
             assert diff_sigma.min()>0.0
 
-        return np.array([flux, dflux, snr_tot, snr_diff])
+        dAbsMag = 2.5*np.log10(1.0+np.abs(dflux/flux))
+
+        return np.array([flux, dflux, snr_tot, snr_diff, dAbsMag])
 
 
 class AlertStellarVariabilityCatalog(_baseAlertCatalog,
@@ -704,7 +706,7 @@ class AlertDataGenerator(object):
         """
         return self._obs_list[self._htmid_dict[htmid]]
 
-    def _output_alert_data(self, conn, data_cache):
+    def _output_alert_data(self, conn, data_cache, dmag_cutoff):
         """
         Write a cache of alert data to the sqlite file currently open.
 
@@ -734,7 +736,7 @@ class AlertDataGenerator(object):
             n_obj = len(data_cache[cache_tag]['uniqueId'])
             chunk_lengths[i_cache_tag] = n_obj
 
-            actual_alerts = np.where(data_cache[cache_tag]['dSNR']>=5.0)
+            actual_alerts = np.where(data_cache[cache_tag]['dAbsMag']>=dmag_cutoff)
 
             if len(actual_alerts[0])>0:
                 values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
@@ -749,7 +751,7 @@ class AlertDataGenerator(object):
                           for i_obj in actual_alerts[0])
                 cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
 
-            quiescent_obs = np.where(data_cache[cache_tag]['dSNR']<5.0)
+            quiescent_obs = np.where(data_cache[cache_tag]['dAbsMag']<dmag_cutoff)
             if len(quiescent_obs[0])>0:
                 values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
                            obsHistID,
@@ -1424,7 +1426,7 @@ class AlertDataGenerator(object):
                         output_data_cache[cache_tag] = {}
 
                         for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
-                                         'chipNum', 'xPix', 'yPix', 'dSNR'):
+                                         'chipNum', 'xPix', 'yPix', 'dSNR', 'dAbsMag'):
 
                             output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
