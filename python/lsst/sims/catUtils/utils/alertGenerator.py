@@ -394,7 +394,8 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         template_sigma = quiescent_flux/snr_quiescent
         diff_sigma = np.sqrt(tot_sigma**2+template_sigma**2)
         snr_diff = dflux/diff_sigma
-        assert diff_sigma.min()>0.0
+        if len(diff_sigma)>0:
+            assert diff_sigma.min()>0.0
 
         return np.array([flux, dflux, snr_tot, snr_diff])
 
