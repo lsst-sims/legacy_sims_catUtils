@@ -714,17 +714,30 @@ class AlertDataGenerator(object):
             n_obj = len(data_cache[cache_tag]['uniqueId'])
             chunk_lengths[i_cache_tag] = n_obj
 
-            values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
-                      obsHistID,
-                      data_cache[cache_tag]['xPix'][i_obj],
-                      data_cache[cache_tag]['yPix'][i_obj],
-                      int(data_cache[cache_tag]['chipNum'][i_obj]),
-                      data_cache[cache_tag]['dflux'][i_obj],
-                      data_cache[cache_tag]['SNR'][i_obj],
-                      np.degrees(data_cache[cache_tag]['raICRS'][i_obj]),
-                      np.degrees(data_cache[cache_tag]['decICRS'][i_obj]))
-                      for i_obj in range(n_obj))
-            cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+            actual_alerts = np.where(data_cache[cache_tag]['SNR']>=5.0)
+
+            if len(actual_alerts[0])>0:
+                values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
+                           obsHistID,
+                           data_cache[cache_tag]['xPix'][i_obj],
+                           data_cache[cache_tag]['yPix'][i_obj],
+                           int(data_cache[cache_tag]['chipNum'][i_obj]),
+                           data_cache[cache_tag]['dflux'][i_obj],
+                           data_cache[cache_tag]['SNR'][i_obj],
+                           np.degrees(data_cache[cache_tag]['raICRS'][i_obj]),
+                           np.degrees(data_cache[cache_tag]['decICRS'][i_obj]))
+                          for i_obj in actual_alerts[0])
+                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+
+            quiescent_obs = np.where(data_cache[cache_tag]['SNR']<5.0)
+            if len(quiescent_obs[0])>0:
+                values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
+                           obsHistID,
+                           data_cache[cache_tag]['dflux'][i_obj],
+                           data_cache[cache_tag]['SNR'][i_obj])
+                          for i_obj in quiescent_obs[0])
+                cursor.executemany('INSERT INTO quiescent_obs VALUES (?,?,?,?)', values)
+
         conn.commit()
 
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
@@ -1208,6 +1221,11 @@ class AlertDataGenerator(object):
             cursor.execute(creation_cmd)
             conn.commit()
 
+            creation_cmd = '''CREATE TABLE quiescent_obs
+                           (uniqueId int, obshistId int, dflux float, snr float)'''
+            cursor.execute(creation_cmd)
+            conn.commit()
+
             creation_cmd = '''CREATE TABLE metadata
                            (obshistId int, TAI float, band int)'''
             cursor.execute(creation_cmd)
@@ -1466,6 +1484,7 @@ class AlertDataGenerator(object):
             cursor.execute('CREATE INDEX unq_flux ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
             cursor.execute('CREATE INDEX unq_ast ON baseline_astrometry (uniqueId)')
+            cursor.execute('CREATE INDEX unq_obs_quiescent ON quiescent_obs (uniqueId, obshistId)')
             conn.commit()
 
             self.acquire_lock()
