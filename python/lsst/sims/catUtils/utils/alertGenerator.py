@@ -1462,7 +1462,7 @@ class AlertDataGenerator(object):
 
                     self.release_lock()
 
-                    n_rows += self._output_alert_data(conn, output_data_cache)
+                    n_rows += self._output_alert_data(conn, output_data_cache, dmag_cutoff)
                     output_data_cache = {}
                     n_rows_cached = 0
 
@@ -1492,7 +1492,7 @@ class AlertDataGenerator(object):
                         self.release_lock()
 
             if len(output_data_cache)>0:
-                n_rows += self._output_alert_data(conn, output_data_cache)
+                n_rows += self._output_alert_data(conn, output_data_cache, dmag_cutoff)
                 output_data_cache = {}
 
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
