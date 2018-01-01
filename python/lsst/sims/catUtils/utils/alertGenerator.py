@@ -738,7 +738,7 @@ class AlertDataGenerator(object):
                 if unq not in self._unique_id_map:
                     self._unique_id_map[unq] = self._local_id
                     self._local_id += 1
-        elapsed = (time.time()-t_start)
+        elapsed = (time.time()-t_start)/3600.0
         print('\n\nunq_map took %.2e hrs\n\n' % elapsed)
 
         for i_cache_tag, cache_tag in enumerate(data_cache):
