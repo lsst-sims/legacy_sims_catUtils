@@ -748,27 +748,61 @@ class AlertDataGenerator(object):
 
             actual_alerts = np.where(data_cache[cache_tag]['dAbsMag']>=dmag_cutoff)
 
+            active_cache = data_cache[cache_tag]
+
+            xPix_unit = (np.floor(np.log10(active_cache['xPix']))-self._sig_figs).astype(int)
+            xPix_unit = np.where(np.logical_not(np.isnan(xPix_unit)), xPix_unit, -999).astype(int)
+            xPix_val = np.round(active_cache['xPix']/np.power(10.0, xPix_unit)).astype(int)
+            xPix_val = np.where(xPix_unit>-998, xPix_val, 0).astype(int)
+
+            yPix_unit = (np.floor(np.log10(active_cache['yPix']))-self._sig_figs).astype(int)
+            yPix_unit = np.where(np.logical_not(np.isnan(yPix_unit)), yPix_unit, -999).astype(int)
+            yPix_val = np.round(active_cache['yPix']/np.power(10.0, yPix_unit)).astype(int)
+            yPix_val = np.where(yPix_unit>-998, yPix_val, 0).astype(int)
+
+            dflux_unit = (np.floor(np.log10(active_cache['dflux']))-self._sig_figs).astype(int)
+            dflux_unit = np.where(np.logical_not(np.isnan(dflux_unit)), dflux_unit, -999).astype(int)
+            dflux_val = np.round(active_cache['dflux']/np.power(10.0, dflux_unit)).astype(int)
+            dflux_val = np.where(dflux_unit>-998, dflux_val, 0).astype(int)
+
+            snr_unit = (np.floor(np.log10(active_cache['SNR']))-self._sig_figs).astype(int)
+            snr_unit = np.where(np.logical_not(np.isnan(snr_unit)), snr_unit, -999).astype(int)
+            snr_val = np.round(active_cache['SNR']/np.power(10.0, snr_unit)).astype(int)
+            snr_val = np.where(snr_unit>-998, snr_val, 0).astype(int)
+
+            ra_deg = np.degrees(active_cache['raICRS'])
+            ra_unit = (np.floor(np.log10(ra_deg))-self._sig_figs).astype(int)
+            ra_unit = np.where(np.logical_not(np.isnan(ra_unit)), ra_unit, -999).astype(int)
+            ra_val = np.round(ra_deg/np.power(10.0, ra_unit)).astype(int)
+            ra_val = np.where(ra_unit>-998, ra_val, 0).astype(int)
+
+            dec_deg = np.degrees(active_cache['decICRS'])
+            dec_unit = (np.floor(np.log10(dec_deg))-self._sig_figs).astype(int)
+            dec_unit = np.where(np.logical_not(np.isnan(dec_unit)), dec_unit, -999).astype(int)
+            dec_val = np.round(dec_deg/np.power(10.0, dec_unit)).astype(int)
+            dec_val = np.where(dec_unit>-998, dec_val, 0).astype(int)
+
             if len(actual_alerts[0])>0:
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
-                           data_cache[cache_tag]['xPix'][i_obj],
-                           data_cache[cache_tag]['yPix'][i_obj],
+                           xPix_unit[i_obj], xPix_val[i_obj],
+                           yPix_unit[i_obj], yPix_val[i_obj],
                            int(data_cache[cache_tag]['chipNum'][i_obj]),
-                           data_cache[cache_tag]['dflux'][i_obj],
-                           data_cache[cache_tag]['SNR'][i_obj],
-                           np.degrees(data_cache[cache_tag]['raICRS'][i_obj]),
-                           np.degrees(data_cache[cache_tag]['decICRS'][i_obj]))
+                           dflux_unit[i_obj], dflux_val[i_obj],
+                           snr_unit[i_obj], snr_val[i_obj],
+                           ra_unit[i_obj], ra_val[i_obj],
+                           dec_unit[i_obj], dec_val[i_obj])
                           for i_obj in actual_alerts[0])
-                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', values)
 
             quiescent_obs = np.where(data_cache[cache_tag]['dAbsMag']<dmag_cutoff)
             if len(quiescent_obs[0])>0:
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
-                           data_cache[cache_tag]['dflux'][i_obj],
-                           int(np.round(data_cache[cache_tag]['SNR'][i_obj]/0.1)))
+                           dflux_unit[i_obj], dflux_val[i_obj],
+                           snr_unit[i_obj], snr_val[i_obj])
                           for i_obj in quiescent_obs[0])
-                cursor.executemany('INSERT INTO quiescent_obs VALUES (?,?,?,?)', values)
+                cursor.executemany('INSERT INTO quiescent_obs VALUES (?,?,?,?,?,?)', values)
 
         conn.commit()
 
@@ -1109,6 +1143,8 @@ class AlertDataGenerator(object):
         from writing to the log file or stdout simultaneously.
         """
 
+        self._sig_figs = 3
+
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
             raise RuntimeError('must specify log_file_name')
@@ -1246,8 +1282,14 @@ class AlertDataGenerator(object):
         db_name = os.path.join(output_dir, '%s_%d_sqlite.db' % (output_prefix, htmid))
         with sqlite3.connect(db_name, isolation_level='EXCLUSIVE') as conn:
             creation_cmd = '''CREATE TABLE alert_data
-                           (localId int, obshistId int, xPix float, yPix float,
-                            chipNum int, dflux float, snr float, ra float, dec float)'''
+                           (localId int, obshistId int,
+                            xPix_unit int, xPix_val int,
+                            yPix_unit int, yPix_val int,
+                            chipNum int,
+                            dflux_unit int, dflux_val int,
+                            snr_unit int, snr_val int,
+                            ra_unit int, ra_val int,
+                            dec_unit int, dec_val int)'''
 
             cursor = conn.cursor()
             cursor.execute('PRAGMA journal_mode=WAL;')
@@ -1256,7 +1298,9 @@ class AlertDataGenerator(object):
             conn.commit()
 
             creation_cmd = '''CREATE TABLE quiescent_obs
-                           (localId int, obshistId int, dflux float, snr_01 int)'''
+                           (localId int, obshistId int,
+                            dflux_unit int, dflux_val int,
+                            snr_unit int, snr_val int)'''
             cursor.execute(creation_cmd)
             conn.commit()
 
