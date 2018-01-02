@@ -740,7 +740,10 @@ class AlertDataGenerator(object):
                     self._unique_id_map[unq] = self._local_id
                     self._local_id += 1
         elapsed = (time.time()-t_start)/3600.0
-        print('\n\nunq_map took %.2e hrs\n\n' % elapsed)
+
+        if not hasattr(self, '_dflux_max'):
+            self._dflux_max = -1
+            self._flux_sigma_max = -1
 
         for i_cache_tag, cache_tag in enumerate(data_cache):
             obsHistID = int(cache_tag.split('_')[0])
@@ -764,12 +767,16 @@ class AlertDataGenerator(object):
             dflux_val = np.where(dflux_unit>-998, dflux_val, 0).astype(int)
             dflux_sign = np.where(active_cache['dflux']>0.0, 1, -1).astype(int)
 
-
             flux_sigma_unit = (np.floor(np.log10(flux_sigma))-3).astype(int)
             flux_sigma_unit = np.where(np.logical_not(np.isnan(flux_sigma_unit)),
                                        flux_sigma_unit, -999).astype(int)
             flux_sigma_val = np.round(flux_sigma/np.power(10.0, flux_sigma_unit)).astype(int)
             flux_sigma_val = np.where(flux_sigma_unit>-998, flux_sigma_val, 0).astype(int)
+
+            if flux_sigma_val.max()>self._flux_sigma_max:
+                self._flux_sigma_max = flux_sigma_val.max()
+            if dflux_val.max()>self._dflux_max:
+                self._dflux_max = dflux_val.max()
 
             ra_dec_unit = 1.0e-7  # in degrees
             ra_deg = np.degrees(active_cache['raICRS'])
@@ -802,6 +809,9 @@ class AlertDataGenerator(object):
         n_rows_1 = cursor.execute('SELECT COUNT(localId) FROM alert_data').fetchall()
         conn.commit()
         n_written = (n_rows_1[0][0]-n_rows_0[0][0])
+
+        print('\n\ndflux %d flux_sigma %d\n\n' %
+        (self._dflux_max, self._flux_sigma_max))
 
         return n_written
 
