@@ -764,10 +764,12 @@ class AlertDataGenerator(object):
             dflux_val = np.where(dflux_unit>-998, dflux_val, 0).astype(int)
             dflux_sign = np.where(active_cache['dflux']>0.0, 1, -1).astype(int)
 
-            snr_unit = (np.floor(np.log10(active_cache['SNR']))-self._sig_figs).astype(int)
-            snr_unit = np.where(np.logical_not(np.isnan(snr_unit)), snr_unit, -999).astype(int)
-            snr_val = np.round(active_cache['SNR']/np.power(10.0, snr_unit)).astype(int)
-            snr_val = np.where(snr_unit>-998, snr_val, 0).astype(int)
+
+            flux_sigma_unit = (np.floor(np.log10(flux_sigma))-3).astype(int)
+            flux_sigma_unit = np.where(np.logical_not(np.isnan(flux_sigma_unit)),
+                                       flux_sigma_unit, -999).astype(int)
+            flux_sigma_val = np.round(flux_sigma/np.power(10.0, flux_sigma_unit)).astype(int)
+            flux_sigma_val = np.where(flux_sigma_unit>-998, flux_sigma_val, 0).astype(int)
 
             ra_dec_unit = 1.0e-7  # in degrees
             ra_deg = np.degrees(active_cache['raICRS'])
@@ -781,7 +783,7 @@ class AlertDataGenerator(object):
                            int(xPix_val[i_obj]), int(yPix_val[i_obj]),
                            int(data_cache[cache_tag]['chipNum'][i_obj]),
                            int(dflux_unit[i_obj]), int(dflux_val[i_obj]), int(dflux_sign[i_obj]),
-                           int(snr_unit[i_obj]), int(snr_val[i_obj]),
+                           int(flux_sigma_unit[i_obj]), int(flux_sigma_val[i_obj]),
                            int(ra_val[i_obj]), int(dec_val[i_obj]))
                           for i_obj in actual_alerts[0])
                 cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', values)
@@ -791,7 +793,7 @@ class AlertDataGenerator(object):
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
                            int(dflux_unit[i_obj]), int(dflux_val[i_obj]), int(dflux_sign[i_obj]),
-                           int(snr_unit[i_obj]), int(snr_val[i_obj]))
+                           int(flux_sigma_unit[i_obj]), int(flux_sigma_val[i_obj]))
                           for i_obj in quiescent_obs[0])
                 cursor.executemany('INSERT INTO quiescent_obs VALUES (?,?,?,?,?,?,?)', values)
 
@@ -1277,7 +1279,7 @@ class AlertDataGenerator(object):
                             xPix_val int, yPix_val int,
                             chipNum int,
                             dflux_unit int, dflux_val int, dflux_sign int,
-                            snr_unit int, snr_val int,
+                            flux_sigma_unit int, flux_sigma_val int,
                             ra_val int, dec_val int)'''
 
             cursor = conn.cursor()
@@ -1289,7 +1291,7 @@ class AlertDataGenerator(object):
             creation_cmd = '''CREATE TABLE quiescent_obs
                            (localId int, obshistId int,
                             dflux_unit int, dflux_val int, dflux_sign int,
-                            snr_unit int, snr_val int)'''
+                            flux_sigma_unit int, flux_sigma_val int)'''
             cursor.execute(creation_cmd)
             conn.commit()
 
