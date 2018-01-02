@@ -760,8 +760,8 @@ class AlertDataGenerator(object):
             yPix_val = np.round(active_cache['yPix']/pix_unit).astype(int)
 
             dflux_abs = np.abs(active_cache['dflux'])
-            dflux_sigma = active_cache['fluxSigma']
-            dflux_unit = np.floor(np.log10(dflux_sigma)).astype(int)-1
+            flux_sigma = active_cache['fluxSigma']
+            dflux_unit = np.floor(np.log10(flux_sigma)).astype(int)-1
             dflux_unit = np.where(np.logical_not(np.isnan(dflux_unit)), dflux_unit, -999).astype(int)
             dflux_val = np.round(dflux_abs/np.power(10.0, dflux_unit)).astype(int)
             dflux_val = np.where(dflux_unit>-998, dflux_val, 0).astype(int)
