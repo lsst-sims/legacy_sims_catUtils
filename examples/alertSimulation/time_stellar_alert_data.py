@@ -4,6 +4,7 @@ from lsst.sims.catUtils.utils import AlertDataGenerator
 import os
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+from lsst.sims.utils import levelFromHtmid
 
 from lsst.sims.catUtils.utils import StellarAlertDBObj
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
@@ -61,6 +62,8 @@ if __name__ == "__main__":
                         help='Name of file to write progress to')
     parser.add_argument('--chunk_size', type=int, default=5000,
                         help='Size of chunk read from database')
+    parser.add_argument('--htmid', type=int, default=10732,
+                        help='Trixel to simulate')
 
     parser.add_argument('--opsim_db', type=str,
                         default=os.path.join('/local', 'lsst', 'danielsf',
@@ -75,6 +78,8 @@ if __name__ == "__main__":
         raise RuntimeError('must specify log file')
     if os.path.exists(args.log_file):
         raise RuntimeError('%s already exists' % args.log_file)
+
+    assert levelFromHtmid(args.htmid) == 6
 
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
@@ -106,7 +111,7 @@ if __name__ == "__main__":
     t_start = time.time()
     lock = mproc.Lock()
 
-    query_htmid(alert_gen, [10732], args.out_dir, args.out_prefix,
+    query_htmid(alert_gen, [args.htmid], args.out_dir, args.out_prefix,
                 args.log_file, lock, 1000000, args.chunk_size,
                 0.005)
 
