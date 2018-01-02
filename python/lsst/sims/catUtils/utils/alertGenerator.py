@@ -751,15 +751,10 @@ class AlertDataGenerator(object):
 
             active_cache = data_cache[cache_tag]
 
-            xPix_unit = (np.floor(np.log10(active_cache['xPix']))-self._sig_figs).astype(int)
-            xPix_unit = np.where(np.logical_not(np.isnan(xPix_unit)), xPix_unit, -999).astype(int)
-            xPix_val = np.round(active_cache['xPix']/np.power(10.0, xPix_unit)).astype(int)
-            xPix_val = np.where(xPix_unit>-998, xPix_val, 0).astype(int)
+            pix_unit = 0.001
 
-            yPix_unit = (np.floor(np.log10(active_cache['yPix']))-self._sig_figs).astype(int)
-            yPix_unit = np.where(np.logical_not(np.isnan(yPix_unit)), yPix_unit, -999).astype(int)
-            yPix_val = np.round(active_cache['yPix']/np.power(10.0, yPix_unit)).astype(int)
-            yPix_val = np.where(yPix_unit>-998, yPix_val, 0).astype(int)
+            xPix_val = np.round(active_cache['xPix']/pix_unit).astype(int)
+            yPix_val = np.round(active_cache['yPix']/pix_unit).astype(int)
 
             dflux_abs = np.abs(active_cache['dflux'])
             dflux_sigma = active_cache['fluxSigma']
@@ -783,14 +778,13 @@ class AlertDataGenerator(object):
             if len(actual_alerts[0])>0:
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
-                           int(xPix_unit[i_obj]), int(xPix_val[i_obj]),
-                           int(yPix_unit[i_obj]), int(yPix_val[i_obj]),
+                           int(xPix_val[i_obj]), int(yPix_val[i_obj]),
                            int(data_cache[cache_tag]['chipNum'][i_obj]),
                            int(dflux_unit[i_obj]), int(dflux_val[i_obj]), int(dflux_sign[i_obj]),
                            int(snr_unit[i_obj]), int(snr_val[i_obj]),
                            int(ra_val[i_obj]), int(dec_val[i_obj]))
                           for i_obj in actual_alerts[0])
-                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', values)
+                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', values)
 
             quiescent_obs = np.where(data_cache[cache_tag]['dAbsMag']<dmag_cutoff)
             if len(quiescent_obs[0])>0:
@@ -1280,8 +1274,7 @@ class AlertDataGenerator(object):
         with sqlite3.connect(db_name, isolation_level='EXCLUSIVE') as conn:
             creation_cmd = '''CREATE TABLE alert_data
                            (localId int, obshistId int,
-                            xPix_unit int, xPix_val int,
-                            yPix_unit int, yPix_val int,
+                            xPix_val int, yPix_val int,
                             chipNum int,
                             dflux_unit int, dflux_val int, dflux_sign int,
                             snr_unit int, snr_val int,
