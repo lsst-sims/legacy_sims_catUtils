@@ -1136,8 +1136,6 @@ class AlertDataGenerator(object):
         from writing to the log file or stdout simultaneously.
         """
 
-        self._sig_figs = 3
-
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
             raise RuntimeError('must specify log_file_name')
