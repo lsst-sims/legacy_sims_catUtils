@@ -1518,7 +1518,7 @@ class AlertDataGenerator(object):
             cursor.execute('CREATE INDEX unq_flux ON quiescent_flux (uniqueId, band)')
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
             cursor.execute('CREATE INDEX unq_ast ON baseline_astrometry (uniqueId)')
-            #cursor.execute('CREATE INDEX unq_obs_quiescent ON quiescent_obs (localId, obshistId)')
+            cursor.execute('CREATE INDEX unq_obs_quiescent ON quiescent_obs (localId, obshistId)')
             conn.commit()
 
             cursor.execute('CREATE TABLE unique_id_map (uniqueId int, localId int)')
