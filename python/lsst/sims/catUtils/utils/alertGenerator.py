@@ -785,13 +785,13 @@ class AlertDataGenerator(object):
             if len(actual_alerts[0])>0:
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
-                           xPix_unit[i_obj], xPix_val[i_obj],
-                           yPix_unit[i_obj], yPix_val[i_obj],
+                           int(xPix_unit[i_obj]), int(xPix_val[i_obj]),
+                           int(yPix_unit[i_obj]), int(yPix_val[i_obj]),
                            int(data_cache[cache_tag]['chipNum'][i_obj]),
-                           dflux_unit[i_obj], dflux_val[i_obj],
-                           snr_unit[i_obj], snr_val[i_obj],
-                           ra_unit[i_obj], ra_val[i_obj],
-                           dec_unit[i_obj], dec_val[i_obj])
+                           int(dflux_unit[i_obj]), int(dflux_val[i_obj]),
+                           int(snr_unit[i_obj]), int(snr_val[i_obj]),
+                           int(ra_unit[i_obj]), int(ra_val[i_obj]),
+                           int(dec_unit[i_obj]), int(dec_val[i_obj]))
                           for i_obj in actual_alerts[0])
                 cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', values)
 
@@ -799,8 +799,8 @@ class AlertDataGenerator(object):
             if len(quiescent_obs[0])>0:
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
-                           dflux_unit[i_obj], dflux_val[i_obj],
-                           snr_unit[i_obj], snr_val[i_obj])
+                           int(dflux_unit[i_obj]), int(dflux_val[i_obj]),
+                           int(snr_unit[i_obj]), int(snr_val[i_obj]))
                           for i_obj in quiescent_obs[0])
                 cursor.executemany('INSERT INTO quiescent_obs VALUES (?,?,?,?,?,?)', values)
 
