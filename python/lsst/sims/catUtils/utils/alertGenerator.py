@@ -772,17 +772,11 @@ class AlertDataGenerator(object):
             snr_val = np.round(active_cache['SNR']/np.power(10.0, snr_unit)).astype(int)
             snr_val = np.where(snr_unit>-998, snr_val, 0).astype(int)
 
+            ra_dec_unit = 1.0e-7  # in degrees
             ra_deg = np.degrees(active_cache['raICRS'])
-            ra_unit = (np.floor(np.log10(ra_deg))-self._sig_figs).astype(int)
-            ra_unit = np.where(np.logical_not(np.isnan(ra_unit)), ra_unit, -999).astype(int)
-            ra_val = np.round(ra_deg/np.power(10.0, ra_unit)).astype(int)
-            ra_val = np.where(ra_unit>-998, ra_val, 0).astype(int)
-
+            ra_val = np.round(ra_deg/ra_dec_unit).astype(int)
             dec_deg = np.degrees(active_cache['decICRS'])
-            dec_unit = (np.floor(np.log10(dec_deg))-self._sig_figs).astype(int)
-            dec_unit = np.where(np.logical_not(np.isnan(dec_unit)), dec_unit, -999).astype(int)
-            dec_val = np.round(dec_deg/np.power(10.0, dec_unit)).astype(int)
-            dec_val = np.where(dec_unit>-998, dec_val, 0).astype(int)
+            dec_val = np.round(dec_deg/ra_dec_unit).astype(int)
 
             if len(actual_alerts[0])>0:
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
@@ -792,10 +786,9 @@ class AlertDataGenerator(object):
                            int(data_cache[cache_tag]['chipNum'][i_obj]),
                            int(dflux_unit[i_obj]), int(dflux_val[i_obj]), int(dflux_sign[i_obj]),
                            int(snr_unit[i_obj]), int(snr_val[i_obj]),
-                           int(ra_unit[i_obj]), int(ra_val[i_obj]),
-                           int(dec_unit[i_obj]), int(dec_val[i_obj]))
+                           int(ra_val[i_obj]), int(dec_val[i_obj]))
                           for i_obj in actual_alerts[0])
-                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', values)
+                cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', values)
 
             quiescent_obs = np.where(data_cache[cache_tag]['dAbsMag']<dmag_cutoff)
             if len(quiescent_obs[0])>0:
@@ -1290,8 +1283,7 @@ class AlertDataGenerator(object):
                             chipNum int,
                             dflux_unit int, dflux_val int, dflux_sign int,
                             snr_unit int, snr_val int,
-                            ra_unit int, ra_val int,
-                            dec_unit int, dec_val int)'''
+                            ra_val int, dec_val int)'''
 
             cursor = conn.cursor()
             cursor.execute('PRAGMA journal_mode=WAL;')
