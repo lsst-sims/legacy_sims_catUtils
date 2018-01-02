@@ -766,7 +766,7 @@ class AlertDataGenerator(object):
                 values = ((self._unique_id_map[data_cache[cache_tag]['uniqueId'][i_obj]],
                            obsHistID,
                            data_cache[cache_tag]['dflux'][i_obj],
-                           data_cache[cache_tag]['SNR'][i_obj])
+                           int(np.round(data_cache[cache_tag]['SNR'][i_obj]/0.1)))
                           for i_obj in quiescent_obs[0])
                 cursor.executemany('INSERT INTO quiescent_obs VALUES (?,?,?,?)', values)
 
@@ -1256,7 +1256,7 @@ class AlertDataGenerator(object):
             conn.commit()
 
             creation_cmd = '''CREATE TABLE quiescent_obs
-                           (localId int, obshistId int, dflux float, snr float)'''
+                           (localId int, obshistId int, dflux float, snr_01 int)'''
             cursor.execute(creation_cmd)
             conn.commit()
 
