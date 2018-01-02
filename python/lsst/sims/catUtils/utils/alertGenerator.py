@@ -226,7 +226,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux', 'dSNR', 'dAbsMag',
-                      'chipNum', 'xPix', 'yPix']
+                      'chipNum', 'xPix', 'yPix', 'fluxSigma']
 
     default_formats = {'f':'%.4g'}
 
@@ -353,7 +353,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
         return np.array([mag, dmag, quiescent_mag])
 
-    @compound('flux', 'dflux', 'SNR', 'dSNR', 'dAbsMag')
+    @compound('flux', 'dflux', 'SNR', 'dSNR', 'dAbsMag', 'fluxSigma')
     def get_alertFlux(self):
         quiescent_mag = self.column_by_name('quiescent_mag')
         mag = self.column_by_name('mag')
@@ -398,8 +398,9 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
             assert diff_sigma.min()>0.0
 
         dAbsMag = 2.5*np.log10(1.0+np.abs(dflux/flux))
+        flux_sigma = flux/snr_tot
 
-        return np.array([flux, dflux, snr_tot, snr_diff, dAbsMag])
+        return np.array([flux, dflux, snr_tot, snr_diff, dAbsMag, flux_sigma])
 
 
 class AlertStellarVariabilityCatalog(_baseAlertCatalog,
@@ -761,7 +762,8 @@ class AlertDataGenerator(object):
             yPix_val = np.where(yPix_unit>-998, yPix_val, 0).astype(int)
 
             dflux_abs = np.abs(active_cache['dflux'])
-            dflux_unit = (np.floor(np.log10(dflux_abs))-self._sig_figs).astype(int)
+            dflux_sigma = active_cache['fluxSigma']
+            dflux_unit = np.floor(np.log10(dflux_sigma)).astype(int)-1
             dflux_unit = np.where(np.logical_not(np.isnan(dflux_unit)), dflux_unit, -999).astype(int)
             dflux_val = np.round(dflux_abs/np.power(10.0, dflux_unit)).astype(int)
             dflux_val = np.where(dflux_unit>-998, dflux_val, 0).astype(int)
@@ -1476,7 +1478,7 @@ class AlertDataGenerator(object):
                         output_data_cache[cache_tag] = {}
 
                         for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
-                                         'chipNum', 'xPix', 'yPix', 'dSNR', 'dAbsMag'):
+                                         'chipNum', 'xPix', 'yPix', 'dSNR', 'dAbsMag', 'fluxSigma'):
 
                             output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
