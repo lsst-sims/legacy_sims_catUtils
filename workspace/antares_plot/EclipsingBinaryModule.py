@@ -107,11 +107,13 @@ class EclipsingBinaryAlertDataGenerator(AlertDataGenerator):
                     self._eb_id_set.add(int(params[0]))
 
         t_before = time.time()
+        ct_not_eb = 0
         for i_star in range(len(chunk)):
             param_dict = json.loads(chunk['varParamStr'][i_star])
             kep_id = param_dict['p']['lc']
             if kep_id not in self._eb_id_set:
                 chunk['varParamStr'][i_star] = 'None'
+                ct_not_eb += 1
         t_get_eb = time.time()-t_before
 
         photometry_catalog._set_current_chunk(chunk)
@@ -200,5 +202,6 @@ class EclipsingBinaryAlertDataGenerator(AlertDataGenerator):
         # only calculate photometry for objects that actually land
         # on LSST detectors
 
-        print('t_filter %.2e t_eb %.2e' % (time.time()-t_start_filter, t_get_eb))
+        print('t_filter %.2e t_eb %.2e ct %.2e eb %.2e' %
+        (time.time()-t_start_filter, t_get_eb, len(chunk), len(chunk)-ct_not_eb))
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
