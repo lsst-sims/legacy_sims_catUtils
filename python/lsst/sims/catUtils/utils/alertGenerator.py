@@ -1014,7 +1014,7 @@ class AlertDataGenerator(object):
         dmag_arr_transpose = dmag_arr.transpose(2,1,0)
 
         n_raw_obj = len(chunk)
-        photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
+        master_photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
         for i_obj in range(n_raw_obj):
             keep_it = False
             for i_filter in range(6):
@@ -1022,9 +1022,9 @@ class AlertDataGenerator(object):
                    keep_it = True
                    break
             if keep_it:
-                photometrically_valid[i_obj] = 1
+                master_photometrically_valid[i_obj] = 1
 
-        photometrically_valid = np.where(photometrically_valid>=0)
+        master_photometrically_valid = np.where(master_photometrically_valid>=0)
 
         ###################################################################
         # Figure out which sources actually land on an LSST detector during
@@ -1045,12 +1045,12 @@ class AlertDataGenerator(object):
             yPup_list = np.zeros(n_raw_obj, dtype=float)
             chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
 
-            ra_dec_radius = angularSeparation(chunk['raJ2000'][photometrically_valid],
-                                              chunk['decJ2000'][photometrically_valid],
+            ra_dec_radius = angularSeparation(chunk['raJ2000'][master_photometrically_valid],
+                                              chunk['decJ2000'][master_photometrically_valid],
                                               obs.pointingRA, obs.pointingDec)
 
             crude_radial_cut = np.where(ra_dec_radius<1.8)
-            photometrically_valid = photometrically_valid[0][crude_radial_cut]
+            photometrically_valid = master_photometrically_valid[0][crude_radial_cut]
 
             if len(photometrically_valid)>0:
 
