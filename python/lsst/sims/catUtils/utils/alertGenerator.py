@@ -1022,6 +1022,7 @@ class AlertDataGenerator(object):
                               chunk_cutoff=-1,
                               constraint=None,
                               limit=None,
+                              frac=None,
                               lock=None):
 
         """
@@ -1065,6 +1066,10 @@ class AlertDataGenerator(object):
         instances of alert_data_from_htmid.  This will prevent multiple processes
         from writing to the log file or stdout simultaneously.
         """
+
+        if frac is not None:
+            if not hasattr(self, '_rng'):
+                self._rng = np.random.RandomState(htmid)
 
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
@@ -1240,8 +1245,16 @@ class AlertDataGenerator(object):
             conn.commit()
 
             for chunk in data_iter:
-                n_raw_obj = len(chunk)
+                n_raw_obj_old = len(chunk)
                 i_chunk += 1
+                if frac is not None:
+                    draw = self._rng.random_sample(len(chunk))
+                    valid_draw = np.where(draw<=frac)
+                    chunk = chunk[valid_draw]
+                n_raw_obj = len(chunk)
+                if n_raw_obj == 0:
+                    continue
+                print('    doing a chunk %d -> %d' % (n_raw_obj_old, n_raw_obj))
 
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
