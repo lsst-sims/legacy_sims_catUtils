@@ -23,8 +23,13 @@ class OBAFGKObj(StellarAlertDBObjMixin, StarBase):
                ('sedFilename', 'sedfilename', str, 40)]
 
 from lsst.sims.catUtils.utils import AlertDataGenerator
+from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.utils import _pupilCoordsFromRaDec
+from lsst.utils import getPackageDir
 import json
 import time
+import os
+import numpy as np
 
 class EclipsingBinaryAlertDataGenerator(AlertDataGenerator):
 
