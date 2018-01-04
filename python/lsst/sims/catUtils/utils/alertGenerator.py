@@ -224,7 +224,7 @@ class AgnAlertDBObj(GalaxyAgnObj):
 
 class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog):
 
-    column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
+    column_outputs = ['uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
@@ -1067,6 +1067,14 @@ class AlertDataGenerator(object):
         from writing to the log file or stdout simultaneously.
         """
 
+        #SQL is not case sensitive but python is:
+        if 'htmID' in dbobj.columnMap:
+            htmidName = 'htmID'
+        elif 'htmid' in dbobj.columnMap:
+            htmidName = 'htmid'
+        else:
+            htmidName = 'htmId'
+
         if frac is not None:
             if not hasattr(self, '_rng'):
                 self._rng = np.random.RandomState(htmid)
@@ -1103,7 +1111,7 @@ class AlertDataGenerator(object):
         desired_columns.append('radialVelocity')
         desired_columns.append('ebv')
         desired_columns.append('redshift')
-        desired_columns.append('htmid')
+        desired_columns.append(htmidName)
 
         if 'umag' in dbobj.columnMap:
             desired_columns.append('umag')
@@ -1158,7 +1166,7 @@ class AlertDataGenerator(object):
         mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
         for obs_dex in obs_valid_dex:
             obs = self._obs_list[obs_dex]
-            cat = photometry_class(dbobj, obs_metadata=obs)
+            cat = photometry_class(dbobj, obs_metadata=obs, column_outputs=[htmidName])
             cat.lsstBandpassDict =  self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
@@ -1191,7 +1199,8 @@ class AlertDataGenerator(object):
                                                               'lsst_r',
                                                               'lsst_i',
                                                               'lsst_z',
-                                                              'lsst_y'])
+                                                              'lsst_y',
+                                                              htmidName])
 
         i_chunk = 0
         t_chipName = 0.0
@@ -1262,7 +1271,7 @@ class AlertDataGenerator(object):
                 n_time_last = 0
                 # filter the chunk so that we are only considering sources that are in
                 # the trixel being considered
-                reduced_htmid = chunk['htmid'] >> n_bits_off
+                reduced_htmid = chunk[htmidName] >> n_bits_off
 
                 valid_htmid = np.where(reduced_htmid == htmid)
                 if len(valid_htmid[0]) == 0:
