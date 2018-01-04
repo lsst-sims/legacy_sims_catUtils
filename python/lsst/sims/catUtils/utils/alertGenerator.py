@@ -1026,17 +1026,6 @@ class AlertDataGenerator(object):
 
         photometrically_valid = np.where(photometrically_valid>=0)
 
-        if 'properMotionRa'in column_query:
-            pmra = chunk['properMotionRa'][photometrically_valid]
-            pmdec = chunk['properMotionDec'][photometrically_valid]
-            px = chunk['parallax'][photometrically_valid]
-            vrad = chunk['radialVelocity'][photometrically_valid]
-        else:
-            pmra = None
-            pmdec = None
-            px = None
-            vrad = None
-
         ###################################################################
         # Figure out which sources actually land on an LSST detector during
         # the observations in question
@@ -1056,7 +1045,26 @@ class AlertDataGenerator(object):
             yPup_list = np.zeros(n_raw_obj, dtype=float)
             chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
 
-            if len(photometrically_valid[0])>0:
+            ra_dec_radius = angularSeparation(chunk['raJ2000'][photometrically_valid],
+                                              chunk['decJ2000'][photometrically_valid],
+                                              obs.pointingRA, obs.pointingDec)
+
+            crude_radial_cut = np.where(ra_dec_radius<1.8)
+            photometrically_valid = photometrically_valid[0][crude_radial_cut]
+
+            if len(photometrically_valid)>0:
+
+                if 'properMotionRa'in column_query:
+                    pmra = chunk['properMotionRa'][photometrically_valid]
+                    pmdec = chunk['properMotionDec'][photometrically_valid]
+                    px = chunk['parallax'][photometrically_valid]
+                    vrad = chunk['radialVelocity'][photometrically_valid]
+                else:
+                    pmra = None
+                    pmdec = None
+                    px = None
+                    vrad = None
+
                 xPup_list_val, yPup_list_val = _pupilCoordsFromRaDec(chunk['raJ2000'][photometrically_valid],
                                                                      chunk['decJ2000'][photometrically_valid],
                                                                      pm_ra=pmra, pm_dec=pmdec,
