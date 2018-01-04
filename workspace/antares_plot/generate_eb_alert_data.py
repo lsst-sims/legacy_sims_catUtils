@@ -94,7 +94,17 @@ if __name__ == "__main__":
 
     # get the list of ObservationMetaData to simulate
     obs_gen = ObservationMetaDataGenerator(args.opsim_db, driver='sqlite')
-    obs_list = obs_gen.getObservationMetaData(night=(args.night0,args.night1))
+    g_obs_list = obs_gen.getObservationMetaData(night=(args.night0,args.night1),
+                                                telescopeFilter='g')
+
+    i_obs_list = obs_gen.getObservationMetaData(night=(args.night0,args.night1),
+                                                telescopeFilter='i')
+
+    obs_list = []
+    for obs in g_obs_list:
+        obs_list.append(obs)
+    for obs in i_obs_list:
+        obs_list.append(obs)
 
     del obs_gen
     sims_clean_up()
