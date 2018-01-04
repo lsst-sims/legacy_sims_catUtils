@@ -1038,6 +1038,8 @@ class AlertDataGenerator(object):
         time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
                                         dtype=int)
 
+        n_cut = 0
+        n_could_be = 0
         for i_obs, obs_dex in enumerate(obs_valid_dex):
             obs = self._obs_list[obs_dex]
             chip_name_list = np.array([None]*n_raw_obj)
@@ -1051,6 +1053,8 @@ class AlertDataGenerator(object):
 
             crude_radial_cut = np.where(ra_dec_radius<1.8)
             photometrically_valid = master_photometrically_valid[0][crude_radial_cut]
+            n_cut += len(master_photometrically_valid[0])-len(photometrically_valid)
+            n_could_be += len(master_photometrically_valid[0])
 
             if len(photometrically_valid)>0:
 
@@ -1099,7 +1103,7 @@ class AlertDataGenerator(object):
 
         # only calculate photometry for objects that actually land
         # on LSST detectors
-
+        print("    n_cut %d of %d" % (n_cut,n_could_be))
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
 
