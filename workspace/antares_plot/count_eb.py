@@ -1,5 +1,6 @@
 from lsst.sims.catUtils.baseCatalogModels import StarBase
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
+from lsst.utils import getPackageDir
 import json
 import os
 
@@ -24,8 +25,8 @@ class OBAFGKObj(StellarAlertDBObjMixin, StarBase):
                ('variabilityParameters', 'varParamStr', str, 256),
                ('sedFilename', 'sedfilename', str, 40)]
 
-eb_cat = os.path.join('/Users', 'danielsf', 'physics', 'lsst_160212',
-                      'Development', 'CatSimLC', 'data',
+eb_cat = os.path.join(getPackageDir('sims_catUtils'),
+                      'workspace', 'antares_plot', 'data',
                       'villanova_eb_catalog.txt')
 
 if not os.path.exists(eb_cat):
