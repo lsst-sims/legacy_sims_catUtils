@@ -9,6 +9,7 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
+from lsst.sims.utils import _angularSeparation
 from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
@@ -1047,11 +1048,11 @@ class AlertDataGenerator(object):
             yPup_list = np.zeros(n_raw_obj, dtype=float)
             chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
 
-            ra_dec_radius = angularSeparation(chunk['raJ2000'][master_photometrically_valid],
-                                              chunk['decJ2000'][master_photometrically_valid],
-                                              obs.pointingRA, obs.pointingDec)
+            ra_dec_radius = _angularSeparation(chunk['raJ2000'][master_photometrically_valid],
+                                               chunk['decJ2000'][master_photometrically_valid],
+                                               obs._pointingRA, obs._pointingDec)
 
-            crude_radial_cut = np.where(ra_dec_radius<1.8)
+            crude_radial_cut = np.where(ra_dec_radius<np.radians(1.8))
             photometrically_valid = master_photometrically_valid[0][crude_radial_cut]
             n_cut += len(master_photometrically_valid[0])-len(photometrically_valid)
             n_could_be += len(master_photometrically_valid[0])
