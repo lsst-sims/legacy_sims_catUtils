@@ -1005,7 +1005,7 @@ class AlertDataGenerator(object):
         not yield a valid observation.  A +1 means that the object and observation
         combination are valid.
         """
-
+        t_start_filter = time.time()
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                        variability_cache=self._variability_cache,
@@ -1015,6 +1015,9 @@ class AlertDataGenerator(object):
 
         n_raw_obj = len(chunk)
         photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
+
+        # spock -- can this be done faster?
+        t_before = time.time()
         for i_obj in range(n_raw_obj):
             keep_it = False
             for i_filter in range(6):
@@ -1023,6 +1026,7 @@ class AlertDataGenerator(object):
                    break
             if keep_it:
                 photometrically_valid[i_obj] = 1
+        self._t_phot += time.time()-t_before
 
         photometrically_valid = np.where(photometrically_valid>=0)
 
@@ -1069,9 +1073,12 @@ class AlertDataGenerator(object):
                 chip_name_list[photometrically_valid] = chipNameFromPupilCoordsLSST(xPup_list_val,
                                                                                     yPup_list_val)
 
+                #spock -- try to do this with ints and np.where
+                t_before = time.time()
                 for i_chip, name in enumerate(chip_name_list):
                     if name is not None:
                         chip_int_arr[i_chip] = 1
+                self._t_chip += time.time()-t_before
 
             valid_obj = np.where(chip_int_arr>0)
             time_arr_transpose[i_obs][valid_obj] = 1
@@ -1091,6 +1098,10 @@ class AlertDataGenerator(object):
 
         # only calculate photometry for objects that actually land
         # on LSST detectors
+
+        self._t_filter += time.time()-t_start_filter
+        print('\nt_filter %.2e phot %.2e chip %.2e\n' %
+        (self._t_filter,self._t_phot,self._t_chip))
 
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
@@ -1145,6 +1156,10 @@ class AlertDataGenerator(object):
         instances of alert_data_from_htmid.  This will prevent multiple processes
         from writing to the log file or stdout simultaneously.
         """
+
+        self._t_filter = 0.0
+        self._t_phot = 0.0
+        self._t_chip = 0.0
 
         htmid_level = levelFromHtmid(htmid)
         if log_file_name is None:
