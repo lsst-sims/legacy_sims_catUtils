@@ -1052,7 +1052,7 @@ class AlertDataGenerator(object):
                                                chunk['decJ2000'][master_photometrically_valid],
                                                obs._pointingRA, obs._pointingDec)
 
-            crude_radial_cut = np.where(ra_dec_radius<np.radians(2.0))
+            crude_radial_cut = np.where(ra_dec_radius<np.radians(3.0))
             photometrically_valid = master_photometrically_valid[0][crude_radial_cut]
             n_cut += len(master_photometrically_valid[0])-len(photometrically_valid)
             n_could_be += len(master_photometrically_valid[0])
