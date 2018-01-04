@@ -9,7 +9,6 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
-from lsst.sims.utils import _angularSeparation
 from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
@@ -1015,7 +1014,7 @@ class AlertDataGenerator(object):
         dmag_arr_transpose = dmag_arr.transpose(2,1,0)
 
         n_raw_obj = len(chunk)
-        master_photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
+        photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
         for i_obj in range(n_raw_obj):
             keep_it = False
             for i_filter in range(6):
@@ -1023,9 +1022,20 @@ class AlertDataGenerator(object):
                    keep_it = True
                    break
             if keep_it:
-                master_photometrically_valid[i_obj] = 1
+                photometrically_valid[i_obj] = 1
 
-        master_photometrically_valid = np.where(master_photometrically_valid>=0)
+        photometrically_valid = np.where(photometrically_valid>=0)
+
+        if 'properMotionRa'in column_query:
+            pmra = chunk['properMotionRa'][photometrically_valid]
+            pmdec = chunk['properMotionDec'][photometrically_valid]
+            px = chunk['parallax'][photometrically_valid]
+            vrad = chunk['radialVelocity'][photometrically_valid]
+        else:
+            pmra = None
+            pmdec = None
+            px = None
+            vrad = None
 
         ###################################################################
         # Figure out which sources actually land on an LSST detector during
@@ -1039,8 +1049,6 @@ class AlertDataGenerator(object):
         time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
                                         dtype=int)
 
-        n_cut = 0
-        n_could_be = 0
         for i_obs, obs_dex in enumerate(obs_valid_dex):
             obs = self._obs_list[obs_dex]
             chip_name_list = np.array([None]*n_raw_obj)
@@ -1048,28 +1056,7 @@ class AlertDataGenerator(object):
             yPup_list = np.zeros(n_raw_obj, dtype=float)
             chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
 
-            ra_dec_radius = _angularSeparation(chunk['raJ2000'][master_photometrically_valid],
-                                               chunk['decJ2000'][master_photometrically_valid],
-                                               obs._pointingRA, obs._pointingDec)
-
-            crude_radial_cut = np.where(ra_dec_radius<np.radians(3.0))
-            photometrically_valid = master_photometrically_valid[0][crude_radial_cut]
-            n_cut += len(master_photometrically_valid[0])-len(photometrically_valid)
-            n_could_be += len(master_photometrically_valid[0])
-
-            if len(photometrically_valid)>0:
-
-                if 'properMotionRa'in column_query:
-                    pmra = chunk['properMotionRa'][photometrically_valid]
-                    pmdec = chunk['properMotionDec'][photometrically_valid]
-                    px = chunk['parallax'][photometrically_valid]
-                    vrad = chunk['radialVelocity'][photometrically_valid]
-                else:
-                    pmra = None
-                    pmdec = None
-                    px = None
-                    vrad = None
-
+            if len(photometrically_valid[0])>0:
                 xPup_list_val, yPup_list_val = _pupilCoordsFromRaDec(chunk['raJ2000'][photometrically_valid],
                                                                      chunk['decJ2000'][photometrically_valid],
                                                                      pm_ra=pmra, pm_dec=pmdec,
@@ -1104,7 +1091,7 @@ class AlertDataGenerator(object):
 
         # only calculate photometry for objects that actually land
         # on LSST detectors
-        print("    n_cut %d of %d" % (n_cut,n_could_be))
+
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
 
