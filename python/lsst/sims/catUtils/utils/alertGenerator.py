@@ -1472,10 +1472,10 @@ class AlertDataGenerator(object):
                 n_rows += self._output_alert_data(conn, output_data_cache)
                 output_data_cache = {}
 
+            self.acquire_lock()
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
                  (htmid, (time.time()-t_start)/3600.0, n_obj, n_rows))
 
-            self.acquire_lock()
             print("INDEXING %d" % htmid)
             self.release_lock()
 
