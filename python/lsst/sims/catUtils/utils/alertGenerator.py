@@ -1493,8 +1493,9 @@ class AlertDataGenerator(object):
             cursor.execute('CREATE INDEX obs ON metadata (obshistid)')
             cursor.execute('CREATE INDEX unq_ast ON baseline_astrometry (uniqueId)')
             conn.commit()
-            n_obj_end = cursor.execute('SELECT COUNT(uniqueId) '
-                                        'FROM alert_data GROUP BY uniqueId').fetchall()[0][0]
+            n_obj_end = len(cursor.execute('SELECT uniqueId '
+                                           'FROM alert_data '
+                                           'GROUP BY uniqueId').fetchall())
 
             self.acquire_lock()
             print('%d has %d objects' % (htmid, n_obj_end))
