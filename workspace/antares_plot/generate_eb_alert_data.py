@@ -37,7 +37,9 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  dmag_cutoff=dmag_cutoff,
                                                  photometry_class=AlertStellarVariabilityCatalog,
                                                  lock=lock,
-                                                 log_file_name=log_file_name)
+                                                 log_file_name=log_file_name,
+                                                 constraint='imag<24.0',
+                                                 limit=100000)
 
         lock.acquire()
         with open(log_file_name, 'a') as out_file:

@@ -1020,6 +1020,8 @@ class AlertDataGenerator(object):
                               log_file_name=None,
                               photometry_class=None,
                               chunk_cutoff=-1,
+                              constraint=None,
+                              limit=None,
                               lock=None):
 
         """
@@ -1174,7 +1176,9 @@ class AlertDataGenerator(object):
 
         data_iter = dbobj.query_columns_htmid(colnames=column_query,
                                               htmid=htmid,
-                                              chunk_size=chunk_size)
+                                              chunk_size=chunk_size,
+                                              constraint=constraint,
+                                              limit=limit)
 
         photometry_catalog = photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
                                               column_outputs=['lsst_u',
