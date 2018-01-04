@@ -146,7 +146,6 @@ if __name__ == "__main__":
 
     # start the independent processes
     t_start = time.time()
-    print('htmid_list %s' % str(htmid_list))
     lock = mproc.Lock()
     p_list = []
     for i_p in range(len(htmid_list)):
