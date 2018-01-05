@@ -1,4 +1,5 @@
 import numpy as np
+from lsst.sims.coordUtils import Sed
 
 def entropy(flux, sigma_flux):
     """
@@ -45,3 +46,11 @@ def hlratio(flux):
     mean_above = np.mean(flux[above]-mean_flux)
     mean_below = np.mean(mean_flux-flux[below])
     return mean_above/mean_below
+
+def quartile_range(flux):
+    """
+    difference in magnitudes between the 25th and 75th percentile
+    """
+    dummy_sed = Sed()
+    mag = np.sort(dummy_sed.magFromFlux(flux))
+    return mag[len(mag)//4]-mag[3*len(mag)//4]
