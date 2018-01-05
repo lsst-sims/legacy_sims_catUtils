@@ -31,3 +31,17 @@ def entropy(flux, sigma_flux):
         p_x_int = (0.5*(p_x[1:]+p_x[:-1])*(t_arg[1:]-t_arg[:-1])).sum()
         ee -= p_x_int
     return(ee)
+
+def hlratio(flux):
+    """
+    Ratio of mean amplitude of points above the mean to mean amplitude of points
+    below the mean.
+    (Not sure if I should be taking those two sub-means; the description of the
+    quantity in the ANTARES paper is vague)
+    """
+    mean_flux = np.mean(flux)
+    above = np.where(flux>mean_flux)
+    below = np.where(flux<mean_flux)
+    mean_above = np.mean(flux[above]-mean_flux)
+    mean_below = np.mean(mean_flux-flux[below])
+    return mean_above/mean_below
