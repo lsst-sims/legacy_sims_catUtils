@@ -54,3 +54,10 @@ def quartile_range(flux):
     dummy_sed = Sed()
     mag = np.sort(dummy_sed.magFromFlux(flux))
     return mag[len(mag)//4]-mag[3*len(mag)//4]
+
+def skewness_and_kurtosis(flux):
+    mean_flux = np.mean(flux)
+    mean_stdev = np.std(flux)
+    skew = np.sum((flux-mean_flux)**3)/(len(flux)*mean_stdev**3)
+    kurt = np.sum((flux-mean_flux)**4)/(len(flux)*mean_stdev**4)
+    return skew, kurt
