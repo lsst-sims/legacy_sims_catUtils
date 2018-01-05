@@ -57,10 +57,10 @@ def quartile_range(flux):
 
 def skewness_and_kurtosis(flux):
     mean_flux = np.mean(flux)
-    mean_stdev = np.std(flux)
-    skew = np.sum((flux-mean_flux)**3)/(len(flux)*mean_stdev**3)
-    kurt = np.sum((flux-mean_flux)**4)/(len(flux)*mean_stdev**4)
-    return skew, kurt
+    stdev_flux = np.std(flux)
+    skew = np.sum((flux-mean_flux)**3)/(len(flux)*stdev_flux**3)
+    kurt = np.sum((flux-mean_flux)**4)/(len(flux)*stdev_flux**4)
+    return skew, kurt, stdev_flux/mean_flux
 
 def median_absolute_deviation(flux):
     return np.median(np.abs(flux-np.median(flux)))
