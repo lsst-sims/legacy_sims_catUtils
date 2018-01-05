@@ -76,3 +76,16 @@ def stetson_k(flux, sigma_flux):
 
     k = (np.abs(delta).sum()/n_flux)/np.sqrt((delta**2).sum()/n_flux)
     return k
+
+def von_neumann_ratio(flux):
+    """
+    As per von Neumann 1941
+    'Distribution of theRatio of the Mean Square Successive
+    Difference to the Variance'
+    Annals of Mathematical Statistics 12, 367
+    """
+    mean_flux = np.mean(flux)
+    n_flux = len(flux)
+    var_flux = np.sum((flux-mean_flux)**2)/n_flux
+    delsq = np.sum((flux[1:]-flux[:-1])**2)/(n_flux-1.0)
+    return delsq/var_flux
