@@ -1,5 +1,6 @@
 import numpy as np
 from lsst.sims.coordUtils import Sed
+import gatspy
 
 def entropy(flux, sigma_flux):
     """
@@ -89,3 +90,30 @@ def von_neumann_ratio(flux):
     var_flux = np.sum((flux-mean_flux)**2)/n_flux
     delsq = np.sum((flux[1:]-flux[:-1])**2)/(n_flux-1.0)
     return delsq/var_flux
+
+def periodic_features(time, flux, sigma_flux):
+
+    dt = np.diff(time).min()
+    p_min = 0.1*dt
+    p_max = time.max()-time.min()
+    period_arr = np.array([ii*dt for ii in range(1,int(np.round(p_max/dt)))])
+
+    ls = gatspy.periodic.LombScargleFast().fit(time,flux,sigma_flux)
+    ls_p = ls.periodogram(periods=period_arr)
+
+    best_dex = np.argmax(ls_p)
+    best_period = period_arr[best_dex]
+    best_power = ls_p[best_dex]
+
+    mean_power = np.mean(ls_p)
+    stdev_power = np.std(ls_p)
+    d_from_mean = np.abs(ls_p-mean_power/stdev_power)
+    dex_below_mean_p_1 = np.where(d_from_mean<1.0)[0]
+    dex_before = dex_below_mean_p_1[np.where(dex_below_mean_p_1<best_dex)]
+    d0 = dex_before.max()
+    dex_after = dex_below_mean_p_1[np.where(dex_below_mean_p_1>best_dex)]
+    d1 = dex_after.min()
+    period_uncertainty = 0.5*(period_arr[d1]-period_arr[d0])
+
+    median_power = np.median(ls_p)
+    snr = (best_power-median_power)/stdev_power
