@@ -64,3 +64,15 @@ def skewness_and_kurtosis(flux):
 
 def median_absolute_deviation(flux):
     return np.median(np.abs(flux-np.median(flux)))
+
+def stetson_k(flux, sigma_flux):
+
+    wgt = 1.0/sigma_flux
+    wgt_sum = wgt.sum()
+    mean = (wgt*flux).sum()/wgt_sum
+    delta = (flux-mean)/sigma_flux
+    n_flux = len(flux)
+    delta *= np.sqrt(n_flux/(n_flux-1.0))
+
+    k = (np.abs(delta).sum()/n_flux)/np.sqrt((delta**2).sum()/n_flux)
+    return k
