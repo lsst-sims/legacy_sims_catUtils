@@ -61,3 +61,6 @@ def skewness_and_kurtosis(flux):
     skew = np.sum((flux-mean_flux)**3)/(len(flux)*mean_stdev**3)
     kurt = np.sum((flux-mean_flux)**4)/(len(flux)*mean_stdev**4)
     return skew, kurt
+
+def median_absolute_deviation(flux):
+    return np.median(np.abs(flux-np.median(flux)))
