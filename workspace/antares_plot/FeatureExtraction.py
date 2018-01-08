@@ -2,6 +2,10 @@ import numpy as np
 from lsst.sims.coordUtils import Sed
 import gatspy
 
+__all__ = ["entropy", "hlratio", "quartile_range", "skewness_and_kurtosis",
+           "median_absolute_deviation", "stetson_k", "von_neumann_ratio",
+           "periodic_features"]
+
 def entropy(flux, sigma_flux):
     """
     Equations 10 and 11 of Mislis et al. 2016 (MNRAS 455, 626)
