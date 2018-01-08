@@ -92,11 +92,18 @@ def von_neumann_ratio(flux):
     return delsq/var_flux
 
 def periodic_features(time, flux, sigma_flux):
+    """
+    Returns
+    period_uncertainty
+    period
+    period_SNR
+    False Alarm Probability
+    """
 
-    dt = np.diff(time).min()
-    p_min = 0.2*dt
-    p_max = time.max()-time.min()
-    period_arr = np.array([ii*dt for ii in range(1,int(np.round(p_max/dt)))])
+    p_min = 0.1  # minimum period of 0.1 days
+    p_max = 3.0*366.0
+    d_p = 0.01
+    period_arr = np.arange(p_min, p_max, d_p)
 
     ls = gatspy.periodic.LombScargleFast().fit(time,flux,sigma_flux)
     ls_p = ls.periodogram(periods=period_arr)
@@ -117,3 +124,46 @@ def periodic_features(time, flux, sigma_flux):
 
     median_power = np.median(ls_p)
     snr = (best_power-median_power)/stdev_power
+
+    omega_arg = 2.0*np.pi*time/best_period
+    cos_fn = np.cos(omega_arg)
+    sin_fn = np.sin(omega_arg)
+    sig2 = sigma_flux**2
+    bb = np.array([(flux*cos_fn/sig2).sum(),
+                   (flux*sin_fn/sig2).sum(),
+                   (flux/sig2).sum()])
+
+    cc = (cos_fn**2/sig2).sum()
+    cs = (cos_fn*sin_fn/sig2).sum()
+    c = (cos_fn/sig2).sum()
+    s = (sin_fn/sig2).sum()
+    mm = np.array([[cc, cs, c],
+                   [cs, ss, s],
+                   [c, s, (1.0/sig2).sum()]])
+
+    coeffs = np.linalg.solve(mm, bb)
+    fit_flux = coeffs[0]*cos_fn + coeffs[1]*sin_fn + coeffs[2]
+    fit_chisq = ((fit_flux-flux)**2/sig2).sum()
+
+    wgt = 1.0/sigma2
+    wgt_sum = wgt.sum()
+    wgt_flux_sum = (flux*wgt).sum()
+    wgt_flux_mean = wgt_flux_sum/wgt
+    mean_chisq = ((wgt_flux_mean-flux)**2/sig2).sum()
+
+    zz = 0.5*(mean_chisq-fit_chisq)   # eqn 1 of Baluev (2008) MNRAS 385, 1279
+
+    # see paragraph under equation 10 of Baluev (2008)
+    DD = np.mean(time**2) - np.mean(time)**2
+    Teff = np.sqrt(4.0*np.pi*DD)
+    fmax = 1.0/period_arr.min()
+    W = fmax*Teff
+
+    if W > 2.0:
+        ln_pmax = -W*np.exp(-1.0*zz)*np.sqrt(zz)
+        pmax = np.exp(ln_pmax)
+        fap = 1.0-pmax
+    else:
+        fap = W*np.exp(-1.0*zz)*np.sqrt(zz)
+
+    return period_uncertainty, best_period, snr, fap
