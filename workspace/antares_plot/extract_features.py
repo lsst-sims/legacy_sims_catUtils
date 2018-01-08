@@ -104,7 +104,7 @@ if __name__ == "__main__":
                         period_snr = i_period_snr
                         fap = i_fap
 
-                    out_file.write('%e %e %e %e %e %e %e %e %e %e '%
+                    out_file.write('%e %e %e %e %e %e %e %e %e %e ' %
                                    (g_k, g_eta, g_w, g_hlr, g_kurt, g_entropy,
                                     g_mad, g_stdevmean, g_quart, g_skew))
                     out_file.write('%e %e %e %e %e %e %e %e %e %e '%
