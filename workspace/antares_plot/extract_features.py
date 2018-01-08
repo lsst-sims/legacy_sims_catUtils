@@ -82,8 +82,8 @@ if __name__ == "__main__":
                     i_k = FeatureExtraction.stetson_k(i_flux, i_sig)
                     g_eta = FeatureExtraction.von_neumann_ratio(g_flux)
                     i_eta = FeatureExtraction.von_neumann_ratio(i_flux)
-                    g_w = scipy.stats.shapiro(g_flux)
-                    i_w = scipy.stats.shapiro(i_flux)
+                    g_w, g_p_val = scipy.stats.shapiro(g_flux)
+                    i_w, i_p_val = scipy.stats.shapiro(i_flux)
                     (g_period_sigma,
                      g_period,
                      g_period_snr,
