@@ -150,7 +150,7 @@ def periodic_features(time, flux, sigma_flux):
     wgt = 1.0/sigma2
     wgt_sum = wgt.sum()
     wgt_flux_sum = (flux*wgt).sum()
-    wgt_flux_mean = wgt_flux_sum/wgt
+    wgt_flux_mean = wgt_flux_sum/wgt_sum
     mean_chisq = ((wgt_flux_mean-flux)**2/sig2).sum()
 
     zz = 0.5*(mean_chisq-fit_chisq)   # eqn 1 of Baluev (2008) MNRAS 385, 1279
