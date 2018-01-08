@@ -151,7 +151,7 @@ def periodic_features(time, flux, sigma_flux):
     fit_flux = coeffs[0]*cos_fn + coeffs[1]*sin_fn + coeffs[2]
     fit_chisq = ((fit_flux-flux)**2/sig2).sum()
 
-    wgt = 1.0/sigma2
+    wgt = 1.0/sig2
     wgt_sum = wgt.sum()
     wgt_flux_sum = (flux*wgt).sum()
     wgt_flux_mean = wgt_flux_sum/wgt_sum
