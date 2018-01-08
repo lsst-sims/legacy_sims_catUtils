@@ -94,7 +94,7 @@ def von_neumann_ratio(flux):
 def periodic_features(time, flux, sigma_flux):
 
     dt = np.diff(time).min()
-    p_min = 0.1*dt
+    p_min = 0.2*dt
     p_max = time.max()-time.min()
     period_arr = np.array([ii*dt for ii in range(1,int(np.round(p_max/dt)))])
 
