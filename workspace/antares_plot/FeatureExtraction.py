@@ -115,7 +115,7 @@ def periodic_features(time, flux, sigma_flux):
 
     mean_power = np.mean(ls_p)
     stdev_power = np.std(ls_p)
-    d_from_mean = np.abs(ls_p-mean_power/stdev_power)
+    d_from_mean = (ls_p-mean_power)/stdev_power
     dex_below_mean_p_1 = np.where(d_from_mean<1.0)[0]
     dex_before = dex_below_mean_p_1[np.where(dex_below_mean_p_1<best_dex)]
     d0 = dex_before.max()
