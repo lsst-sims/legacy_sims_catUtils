@@ -30,6 +30,7 @@ def entropy(flux, sigma_flux):
         p_x = 0.5*(1.0 +
                    2.0*np.interp(t_arg, entropy._t, entropy._exptsq)/np.sqrt(np.pi))
 
+        p_x = np.log10(p_x)/np.log10(2.0)
         p_x_int = (0.5*(p_x[1:]+p_x[:-1])*(t_arg[1:]-t_arg[:-1])).sum()
         ee -= p_x_int
     return(ee)
