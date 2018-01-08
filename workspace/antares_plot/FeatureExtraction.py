@@ -135,6 +135,7 @@ def periodic_features(time, flux, sigma_flux):
                    (flux/sig2).sum()])
 
     cc = (cos_fn**2/sig2).sum()
+    ss = (sin_fn**2/sig2).sum()
     cs = (cos_fn*sin_fn/sig2).sum()
     c = (cos_fn/sig2).sum()
     s = (sin_fn/sig2).sum()
