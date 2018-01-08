@@ -1,5 +1,5 @@
 import numpy as np
-from lsst.sims.coordUtils import Sed
+from lsst.sims.photUtils import Sed
 import gatspy
 
 __all__ = ["entropy", "hlratio", "quartile_range", "skewness_and_kurtosis",
