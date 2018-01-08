@@ -109,9 +109,12 @@ def periodic_features(time, flux, sigma_flux):
     p_max = 3.0*366.0
     d_p = 0.01
     period_arr = np.arange(p_min, p_max, d_p)
+    f0 =  1.0/p_max
+    f1 = 1.0/p_min
+    d_f = 0.001
 
     ls = gatspy.periodic.LombScargleFast().fit(time,flux,sigma_flux)
-    ls_p = ls.periodogram(periods=period_arr)
+    ls_p = ls.score_frequency_grid(f0, d_f, int(np.round((f1-f0)/d_f)))
 
     best_dex = np.argmax(ls_p)
     best_period = period_arr[best_dex]
