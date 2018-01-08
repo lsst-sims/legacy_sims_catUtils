@@ -2,17 +2,19 @@ import argparse
 import os
 import scipy
 import sqlite3
+import numpy as np
 import time
 
-from FeatureExtraction import *
+import FeatureExtraction
 
 def get_lc(cursor, band, unq):
     lc_cmd = 'SELECT m.TAI, q.flux, a.dflux, a.SNR '
     lc_cmd += 'FROM alert_data AS a '
-    lc_cmd += 'INNER JOIN metadata as m ON a.obshistId=m.obshistId '
-    lc_cmd += 'INNER JOIN quiescent_obs ON q.uniqueId=a.uniqueId '
-    lc_cmd += 'WHERE a.uniqueId=%d AND band=%d' % (unq, band)
-    lc_data = cursor.execute(g_lc_cmd).fetchall()
+    lc_cmd += 'INNER JOIN metadata AS m ON a.obshistId=m.obshistId '
+    lc_cmd += 'INNER JOIN quiescent_flux AS q ON q.uniqueId=a.uniqueId '
+    lc_cmd +=  'AND q.band=m.band '
+    lc_cmd += 'WHERE a.uniqueId=%d AND m.band=%d' % (unq, band)
+    lc_data = cursor.execute(lc_cmd).fetchall()
     time_arr = np.zeros(len(lc_data), dtype=float)
     flux_arr = np.zeros(len(lc_data), dtype=float)
     sig_arr = np.zeros(len(lc_data), dtype=float)
@@ -47,7 +49,7 @@ if __name__ == "__main__":
 
     obj_ct = 0
     t_start = time.time()
-    with open(args.out_name, 'w') as out_file:
+    with open(args.out_file, 'w') as out_file:
         for file_name in list_of_files:
             if not file_name.endswith('sqlite.db'):
                 continue
@@ -57,13 +59,13 @@ if __name__ == "__main__":
             assert os.path.exists(full_name)
             with sqlite3.connect(full_name) as connection:
                 cursor = connection.cursor()
-                unique_id_cmd = 'SELECT uniqueId FROM quiescent_obs WHERE band=1'
+                unique_id_cmd = 'SELECT uniqueId FROM quiescent_flux WHERE band=1'
                 unq_list = cursor.execute(unique_id_cmd).fetchall()
                 for unq_val in unq_list:
                     obj_ct += 1
                     unq = unq_val[0]
                     g_time, g_flux, g_sig = get_lc(cursor, 1, unq)
-                    r_time, r_flux, r_sig = get_lc(cursor, 3, unq)
+                    i_time, i_flux, i_sig = get_lc(cursor, 3, unq)
                     g_entropy = FeatureExtraction.entropy(g_flux, g_sig)
                     i_entropy = FeatureExtraction.entropy(i_flux, i_sig)
                     g_hlr = FeatureExtraction.hlratio(g_flux)
@@ -77,7 +79,7 @@ if __name__ == "__main__":
                     g_mad = FeatureExtraction.median_absolute_deviation(g_flux)
                     i_mad = FeatureExtraction.median_absolute_deviation(i_flux)
                     g_k = FeatureExtraction.stetson_k(g_flux, g_sig)
-                    i_k = FeatureExtraction.stestson_k(i_flux, i_sig)
+                    i_k = FeatureExtraction.stetson_k(i_flux, i_sig)
                     g_eta = FeatureExtraction.von_neumann_ratio(g_flux)
                     i_eta = FeatureExtraction.von_neumann_ratio(i_flux)
                     g_w = scipy.stats.shapiro(g_flux)
