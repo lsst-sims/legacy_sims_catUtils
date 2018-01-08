@@ -122,9 +122,15 @@ def periodic_features(time, flux, sigma_flux):
     d_from_mean = (ls_p-mean_power)/stdev_power
     dex_below_mean_p_1 = np.where(d_from_mean<1.0)[0]
     dex_before = dex_below_mean_p_1[np.where(dex_below_mean_p_1<best_dex)]
-    d0 = dex_before.max()
+    if len(dex_before)>0:
+        d0 = dex_before.max()
+    else:
+        d0 = 0
     dex_after = dex_below_mean_p_1[np.where(dex_below_mean_p_1>best_dex)]
-    d1 = dex_after.min()
+    if len(dex_after)>0:
+        d1 = dex_after.min()
+    else:
+        d1 = len(period_arr)-1
     period_uncertainty = 0.5*(period_arr[d1]-period_arr[d0])
 
     median_power = np.median(ls_p)
