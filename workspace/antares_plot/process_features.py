@@ -3,6 +3,8 @@ from MulticoreTSNE import MulticoreTSNE as TSNE
 
 if __name__ == "__main__":
 
+    rng = np.random.RandomState(2433)
+
     n_features = 24
     feature_files = ['eb_features_180108.txt', 'rrly_features_180108.txt']
     dtype_list = []
@@ -16,6 +18,9 @@ if __name__ == "__main__":
     data_labels = None
     for i_file, file_name in enumerate(feature_files):
         local_data = np.genfromtxt(file_name, dtype=dtype)
+        chosen_dexes = randint(0,high=len(local_data)-1,size=5000)
+        chosen_dexes = np.unique(chosen_dexes)
+        local_data = local_data[chosen_dexes]
         if data is None:
             data = local_data
             data_labels = np.array([i_file]*len(data))
