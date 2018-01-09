@@ -61,7 +61,7 @@ if __name__ == "__main__":
             assert not np.isinf(tsne_features[i_s][i_f])
     print(tsne_features.shape)
 
-    tsne_model = TSNE(n_jobs=10, perplexity=200.0)
+    tsne_model = TSNE(n_jobs=10, perplexity=200.0, random_state=732)
     tsne_result = tsne_model.fit_transform(tsne_features)
     print(tsne_result.shape)
 
