@@ -55,7 +55,7 @@ if __name__ == "__main__":
     tsne_result = tsne_model.fit_transform(tsne_features)
     print(tsne_result.shape)
     
-    for i_file, file_name in feature_files:
+    for i_file, file_name in enumerate(feature_files):
         out_name =file_name.split('.')[0] + '_tsne_features.txt'
         with open(out_name, 'w') as out_file:
             valid = np.where(data_labels == i_file)
