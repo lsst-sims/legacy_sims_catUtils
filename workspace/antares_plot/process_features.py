@@ -49,7 +49,7 @@ if __name__ == "__main__":
     sorted_dex = np.argsort(-1.0*np.abs(e_val))
     for i_s in range(len(samples)):
         for i_f in range(n_features//2):
-            e_v_dex = sorted_dex[0][i_f]
+            e_v_dex = sorted_dex[i_f]
             tsne_features[i_s][i_f] = np.dot(samples[i_s], e_vec_t[e_v_dex])
     print(tsne_features.shape)
     
