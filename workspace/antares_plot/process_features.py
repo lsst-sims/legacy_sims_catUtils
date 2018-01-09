@@ -46,9 +46,11 @@ if __name__ == "__main__":
     e_vec_t = e_vec.transpose()
     samples = features.transpose()
     tsne_features = np.zeros((len(samples),n_features//2), dtype=float)
+    sorted_dex = np.argsort(-1.0*np.abs(e_val))
     for i_s in range(len(samples)):
         for i_f in range(n_features//2):
-            tsne_features[i_s][i_f] = np.dot(samples[i_s], e_vec_t[i_f])
+            e_v_dex = sorted_dex[0][i_f]
+            tsne_features[i_s][i_f] = np.dot(samples[i_s], e_vec_t[e_v_dex])
     print(tsne_features.shape)
     
     tsne_model = TSNE(n_jobs=10)
