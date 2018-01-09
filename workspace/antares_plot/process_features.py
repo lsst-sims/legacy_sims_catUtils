@@ -45,7 +45,7 @@ if __name__ == "__main__":
             tsne_features[i_s][i_f] = np.dot(samples[i_s], e_vec_t[i_f])
     print(tsne_features.shape)
     
-    tsne_model = TSNE(n_jobs=2)
+    tsne_model = TSNE(n_jobs=10)
     tsne_result = tsne_model.fit_transform(tsne_features)
     print(tsne_result.shape)
     
