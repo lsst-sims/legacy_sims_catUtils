@@ -66,6 +66,8 @@ if __name__ == "__main__":
                     unq = unq_val[0]
                     g_time, g_flux, g_sig = get_lc(cursor, 1, unq)
                     i_time, i_flux, i_sig = get_lc(cursor, 3, unq)
+                    if len(g_flux)<3 or len(i_flux)<3:
+                        continue
                     g_entropy = FeatureExtraction.entropy(g_flux, g_sig)
                     i_entropy = FeatureExtraction.entropy(i_flux, i_sig)
                     g_hlr = FeatureExtraction.hlratio(g_flux)
