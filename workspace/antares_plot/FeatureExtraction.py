@@ -146,7 +146,9 @@ def periodic_features(time, flux, sigma_flux):
         d1 = dex_after.min()
     else:
         d1 = len(period_arr)-1
-    period_uncertainty = 0.5*(period_arr[d1]-period_arr[d0])
+
+    # reverse order because period_arr comes from freq_arr
+    period_uncertainty = 0.5*(period_arr[d0]-period_arr[d1])
 
     median_power = np.median(ls_p)
     snr = (best_power-median_power)/stdev_power
