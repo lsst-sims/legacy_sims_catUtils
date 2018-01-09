@@ -115,6 +115,17 @@ if __name__ == "__main__":
                         period_snr = i_period_snr
                         fap = i_fap
 
+                    feature_vec = np.array([g_k, g_eta, g_w, g_hlr, g_kurt, g_entropy,
+                                            g_mad, g_stdevmean, g_quart, g_skew,
+                                            i_k, i_eta, i_w, i_hlr, i_kurt, i_entropy,
+                                            i_mad, i_stdevmean, i_quart, i_skew,
+                                            period, period_sigma, period_snr, fap])
+
+                    if len(np.where(np.isnan(feature_vec))[0]) != 0
+                        continue
+                    if len(np.where(np.isinf(feature_vec))[0]) != 0:
+                        continue
+
                     out_file.write('%e %e %e %e %e %e %e %e %e %e ' %
                                    (g_k, g_eta, g_w, g_hlr, g_kurt, g_entropy,
                                     g_mad, g_stdevmean, g_quart, g_skew))
