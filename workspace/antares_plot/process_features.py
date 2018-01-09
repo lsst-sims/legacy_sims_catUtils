@@ -45,9 +45,9 @@ if __name__ == "__main__":
     #print((e_vec[:,2]**2).sum())
     e_vec_t = e_vec.transpose()
     samples = features.transpose()
-    tsne_features = np.zeros((len(samples),n_features), dtype=float)
+    tsne_features = np.zeros((len(samples),n_features//2), dtype=float)
     for i_s in range(len(samples)):
-        for i_f in range(n_features):
+        for i_f in range(n_features//2):
             tsne_features[i_s][i_f] = np.dot(samples[i_s], e_vec_t[i_f])
     print(tsne_features.shape)
     
