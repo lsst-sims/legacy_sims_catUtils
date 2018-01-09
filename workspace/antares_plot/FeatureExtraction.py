@@ -152,6 +152,10 @@ def periodic_features(time, flux, sigma_flux):
 
     median_power = np.median(ls_p)
     snr = (best_power-median_power)/stdev_power
+    if np.isnan(snr):
+        msg = ('\nSNR is nan\nbest_power %e\nmedian_power %e\nstdev_power %e' %
+               (best_power,median_power,stdev_power))
+        raise RuntimeError(msg)
 
     omega_arg = 2.0*np.pi*time/best_period
     cos_fn = np.cos(omega_arg)
