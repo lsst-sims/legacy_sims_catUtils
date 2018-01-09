@@ -121,7 +121,7 @@ if __name__ == "__main__":
                                             i_mad, i_stdevmean, i_quart, i_skew,
                                             period, period_sigma, period_snr, fap])
 
-                    if len(np.where(np.isnan(feature_vec))[0]) != 0
+                    if len(np.where(np.isnan(feature_vec))[0]) != 0:
                         continue
                     if len(np.where(np.isinf(feature_vec))[0]) != 0:
                         continue
