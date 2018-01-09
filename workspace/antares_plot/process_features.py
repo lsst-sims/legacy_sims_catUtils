@@ -28,7 +28,7 @@ if __name__ == "__main__":
     raw_features[n_features-3] = np.abs(raw_features[n_features-3])
     valid = np.where(np.logical_not(np.isnan(raw_features[n_features-2])))
     features = np.zeros((n_features, len(valid[0])), dtype=float)
-    data_labels = data_lables[valid]
+    data_labels = data_labels[valid]
     for ii in range(n_features):
         features[ii] = raw_features[ii][valid]
 
