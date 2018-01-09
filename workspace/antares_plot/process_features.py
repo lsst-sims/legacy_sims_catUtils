@@ -52,7 +52,7 @@ if __name__ == "__main__":
     print(tsne_features.shape)
     
     tsne_model = TSNE(n_jobs=10)
-    tsne_result = tsne_model.fit_transform(tsne_features)
+    tsne_result = tsne_model.fit_transform(tsne_features, perplexity=200.0)
     print(tsne_result.shape)
     
     for i_file, file_name in enumerate(feature_files):
