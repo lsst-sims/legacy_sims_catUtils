@@ -34,7 +34,12 @@ if __name__ == "__main__":
 
     assert len(data_labels) == len(features[0])
     mean_features = np.array([np.mean(features[ii]) for ii in range(n_features)])
-    
+
+    for i_f in range(n_features):
+        features[i_f] -= mean_features[i_f]
+
+    mean_features = np.array([np.mean(features[ii]) for ii in range(n_features)])
+
     covar = np.array([[np.mean((features[ii]-mean_features[ii])*(features[jj]-mean_features[jj]))
                        for ii in range(n_features)] for jj in range(n_features)])
     #print(covar.shape)
