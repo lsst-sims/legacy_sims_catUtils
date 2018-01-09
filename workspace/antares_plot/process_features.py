@@ -10,7 +10,7 @@ if __name__ == "__main__":
         dtype_list.append(('f%d' % ii,float))
     dtype_list.append(('n_g', int))
     dtype_list.append(('n_i', int))
-    
+
     dtype = np.dtype(dtype_list)
     data = None
     data_labels = None
@@ -60,11 +60,11 @@ if __name__ == "__main__":
             assert not np.isnan(tsne_features[i_s][i_f])
             assert not np.isinf(tsne_features[i_s][i_f])
     print(tsne_features.shape)
-    
+
     tsne_model = TSNE(n_jobs=10, perplexity=200.0)
     tsne_result = tsne_model.fit_transform(tsne_features)
     print(tsne_result.shape)
-    
+
     for i_file, file_name in enumerate(feature_files):
         out_name =file_name.split('.')[0] + '_tsne_features.txt'
         with open(out_name, 'w') as out_file:
