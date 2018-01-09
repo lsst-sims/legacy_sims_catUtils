@@ -51,6 +51,9 @@ if __name__ == "__main__":
         for i_f in range(n_features//2):
             e_v_dex = sorted_dex[i_f]
             tsne_features[i_s][i_f] = np.dot(samples[i_s], e_vec_t[e_v_dex])
+            tsne_features[i_s][i_f] /= np.sqrt(np.abs(e_val[e_v_dex]))
+            assert not np.isnan(tsne_features[i_s][i_f])
+            assert not np.isinf(tsne_features[i_s][i_f])
     print(tsne_features.shape)
     
     tsne_model = TSNE(n_jobs=10)
