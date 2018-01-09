@@ -21,7 +21,7 @@ if __name__ == "__main__":
             data_labels = np.array([i_file]*len(data))
         else:
             data = np.append(data, local_data, axis=0)
-            data_labels = np.append(data_labes, np.array([i_file]*len(local_data)))
+            data_labels = np.append(data_labels, np.array([i_file]*len(local_data)))
 
     raw_features = np.array([data['f%d' % ii] for ii in range(n_features)])
     assert len(data_labels) == len(raw_features[0])
