@@ -86,14 +86,22 @@ if __name__ == "__main__":
                     i_eta = FeatureExtraction.von_neumann_ratio(i_flux)
                     g_w, g_p_val = scipy.stats.shapiro(g_flux)
                     i_w, i_p_val = scipy.stats.shapiro(i_flux)
-                    (g_period_sigma,
-                     g_period,
-                     g_period_snr,
-                     g_fap) = FeatureExtraction.periodic_features(g_time, g_flux, g_sig)
-                    (i_period_sigma,
-                     i_period,
-                     i_period_snr,
-                     i_fap) = FeatureExtraction.periodic_features(i_time, i_flux, i_sig)
+
+                    try:
+                        (g_period_sigma,
+                         g_period,
+                         g_period_snr,
+                         g_fap) = FeatureExtraction.periodic_features(g_time,
+                                                                      g_flux,
+                                                                      g_sig)
+                        (i_period_sigma,
+                         i_period,
+                         i_period_snr,
+                         i_fap) = FeatureExtraction.periodic_features(i_time,
+                                                                      i_flux,
+                                                                      i_sig)
+                    except np.linalg.linalg.LinAlgError:
+                        continue
 
                     if g_period_sigma < i_period_sigma:
                         period = g_period
