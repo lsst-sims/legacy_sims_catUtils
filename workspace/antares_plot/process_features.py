@@ -18,7 +18,7 @@ if __name__ == "__main__":
     data_labels = None
     for i_file, file_name in enumerate(feature_files):
         local_data = np.genfromtxt(file_name, dtype=dtype)
-        chosen_dexes = randint(0,high=len(local_data)-1,size=5000)
+        chosen_dexes = rng.randint(0,high=len(local_data)-1,size=5000)
         chosen_dexes = np.unique(chosen_dexes)
         local_data = local_data[chosen_dexes]
         if data is None:
