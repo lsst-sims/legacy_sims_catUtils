@@ -13,20 +13,26 @@ if __name__ == "__main__":
     
     dtype = np.dtype(dtype_list)
     data = None
-    for file_name in feature_files:
+    data_labels = None
+    for i_file, file_name in enumerate(feature_files):
         local_data = np.genfromtxt(file_name, dtype=dtype)
         if data is None:
             data = local_data
+            data_labels = np.array([i_file]*len(data))
         else:
             data = np.append(data, local_data, axis=0)
+            data_labels = np.append(data_labes, np.array([i_file]*len(local_data)))
 
     raw_features = np.array([data['f%d' % ii] for ii in range(n_features)])
+    assert len(data_labels) == len(raw_features[0])
     raw_features[n_features-3] = np.abs(raw_features[n_features-3])
     valid = np.where(np.logical_not(np.isnan(raw_features[n_features-2])))
     features = np.zeros((n_features, len(valid[0])), dtype=float)
+    data_labels = data_lables[valid]
     for ii in range(n_features):
         features[ii] = raw_features[ii][valid]
 
+    assert len(data_labels) == len(features[0])
     mean_features = np.array([np.mean(features[ii]) for ii in range(n_features)])
     
     covar = np.array([[np.mean((features[ii]-mean_features[ii])*(features[jj]-mean_features[jj]))
@@ -49,3 +55,10 @@ if __name__ == "__main__":
     tsne_result = tsne_model.fit_transform(tsne_features)
     print(tsne_result.shape)
     
+    for i_file, file_name in feature_files:
+        out_name =file_name.split('.')[0] + '_tsne_features.txt'
+        with open(out_name, 'w') as out_file:
+            valid = np.where(data_labels == i_file)
+            tsne_valid = tsne_result[valid]
+            for i_obj in range(len(tsne_valid)):
+                out_file.write('%e %e\n' % (tsne_valid[i_obj][0], tsne_valid[i_obj][1]))
