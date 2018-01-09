@@ -122,7 +122,3 @@ if __name__ == "__main__":
                                     i_mad, i_stdevmean, i_quart, i_skew))
                     out_file.write('%e %e %e %e %d %d\n'%
                                    (period, period_sigma, period_snr, fap, len(g_time), len(i_time)))
-
-                    if obj_ct %10 == 0:
-                        elapsed = (time.time()-t_start)/3600.0
-                        print('%d in %.2e; per %.2e (hrs)' % (obj_ct, elapsed, elapsed/obj_ct))
