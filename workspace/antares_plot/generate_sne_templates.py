@@ -94,7 +94,6 @@ if __name__ == "__main__":
     print(mjd_min,mjd_max)
     t_start = time.time()
     raw_ct = 0
-    float_ct = 0
     p_list = []
     for chunk in data_iter:
         raw_ct += len(chunk)
