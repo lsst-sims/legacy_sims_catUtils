@@ -8,6 +8,8 @@ from lsst.sims.photUtils import Sed
 
 import time
 
+import multiprocessing as mproc
+
 def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
     for i_sn in range(len(chunk)):
         sn = SNObject()
@@ -49,6 +51,10 @@ def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
 
 if __name__ == "__main__":
 
+    n_proc = 2
+    mgr = mproc.Manager()
+    output_dict = mgr.dict()
+
     rng = np.random.RandomState(812432)
 
     mjd_min = 59580.0-365.25
@@ -63,7 +69,7 @@ if __name__ == "__main__":
     query = 'SELECT galid, redshift, g_ab, i_ab FROM galaxy ORDER BY galid'
     dtype = np.dtype([('galid', int), ('z', float), ('gmag', float), ('imag', float)])
     data_iter = db.get_arbitrary_chunk_iterator(query, dtype=dtype,
-                                                chunk_size=100000)
+                                                chunk_size=1000)
 
     cosmo = CosmologyObject()
     snu = SNUniverse()
@@ -73,10 +79,10 @@ if __name__ == "__main__":
     print('hundredyear %e' % hundredyear)
     print(-hundredyear/2.0+61406.25,hundredyear/2.0+61406.25)
     print(mjd_min,mjd_max)
-    output_dict = {}
     t_start = time.time()
     running_ct = 0
     float_ct = 0
+    p_list = []
     for chunk in data_iter:
 
         snu.numobjs = len(chunk)
@@ -87,11 +93,21 @@ if __name__ == "__main__":
 
         valid = np.where(np.logical_and(t0>mjd_min, t0+100.0<mjd_max))
         chunk = chunk[valid]
+        print('chunk len %d' % len(chunk))
 
         x1 = rng.normal(0.0,1.0, size=len(chunk))
         cc = rng.normal(0.0, 0.1, size=len(chunk))
         mu = cosmo.distanceModulus(redshift=chunk['z'])
         bessell_mag = rng.normal(-19.3, 0.3, size=len(chunk)) + mu
-        get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict)
+
+        p = mproc.Process(target=get_sne_from_chunk,
+                          args=(chunk, cc, t0, x1, bessell_mag, output_dict))
+        p.start()
+        p_list.append(p)
+        if len(p_list) >= n_proc:
+            for p in p_list:
+                p.join()
+            p_list = []
+            print('after batch len %d' % (len(output_dict)/3))
 
 
