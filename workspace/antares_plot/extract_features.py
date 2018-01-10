@@ -36,6 +36,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', type=str, default=None)
     parser.add_argument('--prefix', type=str, default=None)
     parser.add_argument('--out_file', type=str, default=None)
+    parser.add_argument('--limit', type=int, default=None)
 
     args = parser.parse_args()
     if args.data_dir is None:
@@ -51,6 +52,8 @@ if __name__ == "__main__":
     t_start = time.time()
     with open(args.out_file, 'w') as out_file:
         for file_name in list_of_files:
+            if args.limit is not None and obj_ct>=args.limit:
+                break
             if not file_name.endswith('sqlite.db'):
                 continue
             if not file_name.startswith(args.prefix):
@@ -63,7 +66,6 @@ if __name__ == "__main__":
                 unique_id_cmd = 'SELECT uniqueId FROM quiescent_flux WHERE band=1'
                 unq_list = cursor.execute(unique_id_cmd).fetchall()
                 for unq_val in unq_list:
-                    obj_ct += 1
                     unq = unq_val[0]
                     g_time, g_flux, g_sig = get_lc(cursor, 1, unq)
                     i_time, i_flux, i_sig = get_lc(cursor, 3, unq)
@@ -134,3 +136,7 @@ if __name__ == "__main__":
                                     i_mad, i_stdevmean, i_quart, i_skew))
                     out_file.write('%e %e %e %e %d %d\n'%
                                    (period, period_sigma, period_snr, fap, len(g_time), len(i_time)))
+
+                    obj_ct += 1
+                    if args.limit is not None and obj_ct>=args.limit:
+                        break
