@@ -33,6 +33,7 @@ if __name__ == "__main__":
         local_data = np.genfromtxt(file_name, dtype=dtype)
         if args.n is not None and len(local_data)>args.n:
             local_data = rng.choice(local_data, size=args.n, replace=False)
+            print('len local %d' % len(local_data))
 
         if data is None:
             data = local_data
