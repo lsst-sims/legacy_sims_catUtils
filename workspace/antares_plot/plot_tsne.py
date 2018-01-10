@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plot_contour(x,y,colors):
-    counts, xbins, ybins = np.histogram2d(x, y, bins=100)
+    counts, xbins, ybins = np.histogram2d(x, y, bins=50)
 
     flat_counts = counts.flatten()
     valid = np.where(flat_counts>0.0)
@@ -43,12 +43,14 @@ if __name__ == "__main__":
 
     dtype = np.dtype([('x', float), ('y', float)])
 
-    rrly_data = np.genfromtxt('rrly_features_180108_tsne_features_100k.txt', dtype=dtype)
-    eb_data = np.genfromtxt('eb_features_180109_tsne_features_100k.txt', dtype=dtype)
+    rrly_data = np.genfromtxt('rrly_features_180108_tsne_features_30k.txt', dtype=dtype)
+    eb_data = np.genfromtxt('eb_features_180109_tsne_features_30k.txt', dtype=dtype)
+    mlt_data = np.genfromtxt('mlt_features_180110_tsne_features_30k.txt', dtype=dtype)
 
     plt.figsize = (30,30)
 
     plot_contour(rrly_data['x'], rrly_data['y'], colors='r')
     plot_contour(eb_data['x'], eb_data['y'], colors='b')
+    plot_contour(mlt_data['x'], mlt_data['y'], colors='g')
 
-    plt.savefig('test_tsne_100k.png')
+    plt.savefig('test_tsne_30k.png')
