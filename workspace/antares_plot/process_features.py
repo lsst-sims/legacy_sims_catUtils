@@ -18,7 +18,8 @@ if __name__ == "__main__":
     rng = np.random.RandomState(2433)
 
     n_features = 24
-    feature_files = ['eb_features_180109.txt', 'rrly_features_180108.txt']
+    feature_files = ['eb_features_180109.txt', 'rrly_features_180108.txt',
+                     'mlt_features_180110.txt']
     dtype_list = []
     for ii in range(n_features):
         dtype_list.append(('f%d' % ii,float))
