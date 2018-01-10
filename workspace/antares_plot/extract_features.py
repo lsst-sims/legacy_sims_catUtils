@@ -60,7 +60,8 @@ if __name__ == "__main__":
                 continue
             full_name = os.path.join(args.data_dir, file_name)
             assert os.path.exists(full_name)
-            print('connecting to %s' % file_name)
+            elapsed = (time.time()-t_start)/3600.0
+            print('connecting to %s -- obj %d elapsed %.2e hrs' % (file_name, obj_ct, elapsed))
             with sqlite3.connect(full_name) as connection:
                 cursor = connection.cursor()
                 unique_id_cmd = 'SELECT uniqueId FROM quiescent_flux WHERE band=1'
