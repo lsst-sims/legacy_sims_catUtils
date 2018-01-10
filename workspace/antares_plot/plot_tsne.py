@@ -25,10 +25,13 @@ def plot_contour(x,y,colors):
 
     print(tot_sum,sorted_counts[-1],two_sig_val,one_sig_val)
 
-    plt.contour(counts.transpose(),[two_sig_val, one_sig_val],
+    plt.contour(counts.transpose(),[three_sig_val],
                 extent=[xbins.min(), xbins.max(), ybins.min(), ybins.max()],
                 colors=colors)
 
+    plt.contourf(counts.transpose(), [one_sig_val, sorted_counts.max()],
+                 extent=[xbins.min(), xbins.max(), ybins.min(), ybins.max()],
+                 colors=colors, alpha=0.5)
 
 if __name__ == "__main__":
 
