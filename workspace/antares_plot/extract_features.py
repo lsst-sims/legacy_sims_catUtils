@@ -104,7 +104,7 @@ if __name__ == "__main__":
                         print(g_flux)
                         print(g_flux.max()-g_flux.min())
                         print(i_flux)
-                        print(i_flux.max()-i_flux_min())
+                        print(i_flux.max()-i_flux.min())
                         raise
 
                     try:
