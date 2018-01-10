@@ -8,7 +8,7 @@ import warnings
 
 import FeatureExtraction
 
-warnings.fitlerwarnings('error',category=warnings.UserWarning)
+warnings.filterwarnings('error',category=warnings.UserWarning)
 
 def get_lc(cursor, band, unq):
     lc_cmd = 'SELECT m.TAI, q.flux, a.dflux, a.SNR '
