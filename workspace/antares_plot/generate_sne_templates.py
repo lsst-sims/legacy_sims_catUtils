@@ -35,6 +35,9 @@ if __name__ == "__main__":
     print(-hundredyear/2.0+61406.25,hundredyear/2.0+61406.25)
     print(mjd_min,mjd_max)
     output_dict = {}
+    t_start = time.time()
+    running_ct = 0
+    float_ct = 0
     for chunk in data_iter:
 
         snu.numobjs = len(chunk)
@@ -52,15 +55,15 @@ if __name__ == "__main__":
         bessell_mag = rng.normal(-19.3, 0.3, size=len(chunk)) + mu
 
         for i_sn in range(len(chunk)):
+            running_ct += 1
             sn = SNObject()
             sn.set(x1=x1[i_sn], c=cc[i_sn], t0=t0[i_sn], z=chunk['z'][i_sn])
             sn.set_MWebv(0.0)
             sn.source.set_peakmag(bessell_mag[i_sn], band='bessellb', magsys='ab')
 
-            time_arr = np.arange(t0[i_sn]-200.0, t0[i_sn]+200.0, 0.25)
+            time_arr = np.arange(t0[i_sn]-200.0, t0[i_sn]+200.0, 1.0)
             gmag = np.zeros(len(time_arr), dtype=float)
             imag= np.zeros(len(time_arr), dtype=float)
-            t_start = time.time()
             for i_t, tt in enumerate(time_arr):
                 vv = sn.catsimManyBandMags(tt,bp_dict)
                 gmag[i_t] = vv[1]
@@ -79,9 +82,17 @@ if __name__ == "__main__":
             gmag = gmag[valid]
             imag = imag[valid]
 
-            with open('junk.txt', 'w') as out_file:
-                for tt, gg, ii in zip(time_arr, gmag, imag):
-                    out_file.write('%e %e %e\n' % (tt,gg,ii))
+            is_bad = np.where(np.logical_or(np.isnan(gmag),
+                              np.logical_or(np.isinf(gmag),
+                              np.logical_or(np.isnan(imag), np.isinf(imag)))))
 
-            if len(valid[0])>0:
-                exit()
+            if len(time_arr)>0 and len(is_bad[0])==0:
+                id_val = chunk['galid'][i_sn]
+                output_dict['t_%d' % id_val] = time_arr
+                output_dict['g_%d' % id_val] = gmag
+                output_dict['i_%d' % id_val] = imag
+                float_ct += 3*len(time_arr)
+
+            if running_ct%100 == 0:
+                elapsed = (time.time()-t_start)/3600.0
+                print('did %d in %.2e hrs -- floats %d' % (running_ct,elapsed,float_ct))
