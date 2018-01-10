@@ -99,8 +99,19 @@ if __name__ == "__main__":
                     i_eta = FeatureExtraction.von_neumann_ratio(i_flux)
                     try:
                         g_w, g_p_val = scipy.stats.shapiro(g_flux)
+
+                    except UserWarning:
+                        print('\n\ng failed\n')
+                        print(g_flux)
+                        print(g_flux.max()-g_flux.min())
+                        print(i_flux)
+                        print(i_flux.max()-i_flux.min())
+                        raise
+
+                    try:
                         i_w, i_p_val = scipy.stats.shapiro(i_flux)
                     except UserWarning:
+                        print('\n\ni failed\n')
                         print(g_flux)
                         print(g_flux.max()-g_flux.min())
                         print(i_flux)
