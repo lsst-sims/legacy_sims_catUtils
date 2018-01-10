@@ -4,8 +4,11 @@ import scipy
 import sqlite3
 import numpy as np
 import time
+import warnings
 
 import FeatureExtraction
+
+warnings.fitlerwarnings('error',category=warnings.UserWarning)
 
 def get_lc(cursor, band, unq):
     lc_cmd = 'SELECT m.TAI, q.flux, a.dflux, a.SNR '
