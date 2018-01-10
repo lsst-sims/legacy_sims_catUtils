@@ -93,10 +93,11 @@ if __name__ == "__main__":
     print(-hundredyear/2.0+61406.25,hundredyear/2.0+61406.25)
     print(mjd_min,mjd_max)
     t_start = time.time()
-    running_ct = 0
+    raw_ct = 0
     float_ct = 0
     p_list = []
     for chunk in data_iter:
+        raw_ct += len(chunk)
 
         snu.numobjs = len(chunk)
         snu.badvalues =-999.0
@@ -106,7 +107,6 @@ if __name__ == "__main__":
 
         valid = np.where(np.logical_and(t0>mjd_min, t0+100.0<mjd_max))
         chunk = chunk[valid]
-        print('chunk len %d' % len(chunk))
 
         x1 = rng.normal(0.0,1.0, size=len(chunk))
         cc = rng.normal(0.0, 0.1, size=len(chunk))
@@ -123,7 +123,8 @@ if __name__ == "__main__":
             p_list = []
             elapsed = (time.time()-t_start)/3600.0
             with open(log_name, 'a') as out_file:
-                out_file.write('after batch len %d -- elapsed %.2e hrs\n' % (len(output_dict)/4, elapsed))
+                out_file.write('after batch len %d -- processed %.2e -- elapsed %.2e hrs\n' %
+                               (len(output_dict)/4, raw_ct, elapsed))
 
     with open(out_file_name, 'wb') as file_handle:
         np.savez(file_handle, **output_dict)
