@@ -4,11 +4,8 @@ import scipy
 import sqlite3
 import numpy as np
 import time
-import warnings
 
 import FeatureExtraction
-
-warnings.filterwarnings('error',category=UserWarning)
 
 def get_lc(cursor, band, unq):
     lc_cmd = 'SELECT m.TAI, q.flux, a.dflux, a.SNR '
@@ -97,30 +94,8 @@ if __name__ == "__main__":
                     i_k = FeatureExtraction.stetson_k(i_flux, i_sig)
                     g_eta = FeatureExtraction.von_neumann_ratio(g_flux)
                     i_eta = FeatureExtraction.von_neumann_ratio(i_flux)
-                    try:
-                        g_w, g_p_val = scipy.stats.shapiro(g_flux)
-
-                    except UserWarning:
-                        print('\n\ng failed\n')
-                        print(dmag_g,dmag_i)
-                        print(g_flux)
-                        print(g_flux.max()-g_flux.min())
-                        print(i_flux)
-                        print(i_flux.max()-i_flux.min())
-                        print('\n\n')
-                        #raise
-
-                    try:
-                        i_w, i_p_val = scipy.stats.shapiro(i_flux)
-                    except UserWarning:
-                        print('\n\ni failed')
-                        print(dmag_g,dmag_i)
-                        print(g_flux)
-                        print(g_flux.max()-g_flux.min())
-                        print(i_flux)
-                        print(i_flux.max()-i_flux.min())
-                        print('\n\n')
-                        #raise
+                    g_w, g_p_val = scipy.stats.shapiro(g_flux)
+                    i_w, i_p_val = scipy.stats.shapiro(i_flux)
 
                     try:
                         (g_period_sigma,
