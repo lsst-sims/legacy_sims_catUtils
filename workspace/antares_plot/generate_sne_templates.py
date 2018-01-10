@@ -10,6 +10,7 @@ import time
 import warnings
 
 import multiprocessing as mproc
+import os
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
 
@@ -55,9 +56,15 @@ def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
 
 if __name__ == "__main__":
 
-    out_file_name = 'sne_one_year_templates.npz'
+    out_file_dir = '/astro/store/pogo4/danielsf'
+    assert os.isdir(out_file_dir)
 
-    n_proc = 2
+    out_file_name = os.path.join(out_file_dir, 'sne_one_year_templates.npz')
+    log_name = 'sne_template_log.txt'
+    if os.path.exists(log_name):
+        os.unlink(log_name)
+
+    n_proc = 20
     mgr = mproc.Manager()
     output_dict = mgr.dict()
 
@@ -75,7 +82,7 @@ if __name__ == "__main__":
     query = 'SELECT galid, redshift, g_ab, i_ab FROM galaxy ORDER BY galid'
     dtype = np.dtype([('galid', int), ('z', float), ('gmag', float), ('imag', float)])
     data_iter = db.get_arbitrary_chunk_iterator(query, dtype=dtype,
-                                                chunk_size=1000)
+                                                chunk_size=100000)
 
     cosmo = CosmologyObject()
     snu = SNUniverse()
@@ -114,8 +121,9 @@ if __name__ == "__main__":
             for p in p_list:
                 p.join()
             p_list = []
-            print('after batch len %d' % (len(output_dict)/4))
-            break
+            elapsed = (time.time()-t_start)/3600.0
+            with open(log_name, 'a') as out_file:
+                out_file.write('after batch len %d -- elapsed %.2e hrs\n' % (len(output_dict)/4, elapsed))
 
     with open(out_file_name, 'wb') as file_handle:
         np.savez(file_handle, **output_dict)
