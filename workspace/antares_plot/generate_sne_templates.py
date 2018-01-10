@@ -7,8 +7,11 @@ from lsst.sims.photUtils import BandpassDict
 from lsst.sims.photUtils import Sed
 
 import time
+import warnings
 
 import multiprocessing as mproc
+
+warnings.filterwarnings('ignore', category=RuntimeWarning)
 
 def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
     for i_sn in range(len(chunk)):
