@@ -102,21 +102,25 @@ if __name__ == "__main__":
 
                     except UserWarning:
                         print('\n\ng failed\n')
+                        print(dmag_g,dmag_i)
                         print(g_flux)
                         print(g_flux.max()-g_flux.min())
                         print(i_flux)
                         print(i_flux.max()-i_flux.min())
-                        raise
+                        print('\n\n')
+                        #raise
 
                     try:
                         i_w, i_p_val = scipy.stats.shapiro(i_flux)
                     except UserWarning:
-                        print('\n\ni failed\n')
+                        print('\n\ni failed')
+                        print(dmag_g,dmag_i)
                         print(g_flux)
                         print(g_flux.max()-g_flux.min())
                         print(i_flux)
                         print(i_flux.max()-i_flux.min())
-                        raise
+                        print('\n\n')
+                        #raise
 
                     try:
                         (g_period_sigma,
