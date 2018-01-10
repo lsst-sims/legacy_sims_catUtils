@@ -23,7 +23,13 @@ def plot_contour(x,y,colors):
     two_sig_val = sorted_counts[two_sig_dex]
     three_sig_val = sorted_counts[three_sig_dex]
 
+    one_sig_entries = np.where(flat_counts>=one_sig_val)
+    one_sig_sum = flat_counts[one_sig_entries].sum()
+    three_sig_entries = np.where(flat_counts>=three_sig_val)
+    three_sig_sum = flat_counts[three_sig_entries].sum()
+
     print(tot_sum,sorted_counts[-1],two_sig_val,one_sig_val)
+    print(one_sig_sum/tot_sum,three_sig_sum/tot_sum)
 
     plt.contour(counts.transpose(),[three_sig_val],
                 extent=[xbins.min(), xbins.max(), ybins.min(), ybins.max()],
