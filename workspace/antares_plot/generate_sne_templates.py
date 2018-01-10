@@ -50,9 +50,12 @@ def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
             output_dict['t_%d' % id_val] = time_arr
             output_dict['g_%d' % id_val] = gmag
             output_dict['i_%d' % id_val] = imag
+            output_dict['t0_%d' % id_val] = t0[i_sn]
 
 
 if __name__ == "__main__":
+
+    out_file_name = 'sne_one_year_templates.npz'
 
     n_proc = 2
     mgr = mproc.Manager()
@@ -111,6 +114,9 @@ if __name__ == "__main__":
             for p in p_list:
                 p.join()
             p_list = []
-            print('after batch len %d' % (len(output_dict)/3))
+            print('after batch len %d' % (len(output_dict)/4))
+            break
 
+    with open(out_file_name, 'wb') as file_handle:
+        np.savez(file_handle, **output_dict)
 
