@@ -79,6 +79,7 @@ if __name__ == "__main__":
             assert not np.isnan(tsne_features[i_s][i_f])
             assert not np.isinf(tsne_features[i_s][i_f])
     print(tsne_features.shape)
+    print(len(samples))
 
     tsne_model = TSNE(n_jobs=20, perplexity=200.0, random_state=732,
                       learning_rate=1000.0)
