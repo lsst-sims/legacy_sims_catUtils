@@ -46,6 +46,7 @@ if __name__ == "__main__":
     assert len(data_labels) == len(raw_features[0])
     raw_features[n_features-3] = np.abs(raw_features[n_features-3])
     valid = np.where(np.logical_not(np.isnan(raw_features[n_features-2])))
+    print('len valid %d' % len(valid[0]))
     features = np.zeros((n_features, len(valid[0])), dtype=float)
     data_labels = data_labels[valid]
     for ii in range(n_features):
