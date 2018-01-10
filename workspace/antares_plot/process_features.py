@@ -1,7 +1,18 @@
 import numpy as np
 from MulticoreTSNE import MulticoreTSNE as TSNE
 
+import argparse
+
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--n', type=int, default=None,
+                        help='Number of objects to keep from each population')
+
+    args = parser.parse_args()
+
+    if args.n is not None:
+        assert 1000*(args.n//1000) == args.n
 
     rng = np.random.RandomState(2433)
 
@@ -18,9 +29,9 @@ if __name__ == "__main__":
     data_labels = None
     for i_file, file_name in enumerate(feature_files):
         local_data = np.genfromtxt(file_name, dtype=dtype)
-        #chosen_dexes = rng.randint(0,high=len(local_data)-1,size=10000)
-        #chosen_dexes = np.unique(chosen_dexes)
-        #local_data = local_data[chosen_dexes]
+        if args.n is not None and len(local_data)>args.n:
+            local_data = rng.choice(local_data, size=args.n, replace=False)
+
         if data is None:
             data = local_data
             data_labels = np.array([i_file]*len(data))
@@ -71,8 +82,13 @@ if __name__ == "__main__":
     tsne_result = tsne_model.fit_transform(tsne_features)
     print(tsne_result.shape)
 
+    if args.n is not None:
+        suffix = '_%dk.txt' % (args.n//1000)
+    else:
+        suffix = '.txt'
+
     for i_file, file_name in enumerate(feature_files):
-        out_name =file_name.split('.')[0] + '_tsne_features.txt'
+        out_name =file_name.split('.')[0] + '_tsne_features%s' % suffix
         with open(out_name, 'w') as out_file:
             valid = np.where(data_labels == i_file)
             tsne_valid = tsne_result[valid]
