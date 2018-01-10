@@ -57,7 +57,7 @@ def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
 if __name__ == "__main__":
 
     out_file_dir = '/astro/store/pogo4/danielsf'
-    assert os.isdir(out_file_dir)
+    assert os.path.isdir(out_file_dir)
 
     out_file_name = os.path.join(out_file_dir, 'sne_one_year_templates.npz')
     log_name = 'sne_template_log.txt'
