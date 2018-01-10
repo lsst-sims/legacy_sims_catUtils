@@ -70,9 +70,11 @@ if __name__ == "__main__":
                     unq = unq_val[0]
                     g_time, g_flux, g_sig = get_lc(cursor, 1, unq)
                     i_time, i_flux, i_sig = get_lc(cursor, 3, unq)
-                    if g_flux.max()-g_flux.min()<1.0e-30:
+                    dmag_g = 2.5*np.log10(1.0-g_flux.max()/g_flux.min())
+                    if dmag_g<0.005:
                         continue
-                    if i_flux.max()-i_flux.min()<1.0e-30:
+                    dmag_i = 2.5*np.log10(1.0-i_flux.max()/i_flux.min())
+                    if dmag_i<0.005:
                         continue
                     if len(g_flux)<3 or len(i_flux)<3:
                         continue
