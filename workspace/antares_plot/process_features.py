@@ -2,9 +2,10 @@ import numpy as np
 from MulticoreTSNE import MulticoreTSNE as TSNE
 
 import argparse
+import time
 
 if __name__ == "__main__":
-
+    t_start = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--n', type=int, default=None,
                         help='Number of objects to keep from each population')
@@ -94,3 +95,5 @@ if __name__ == "__main__":
             tsne_valid = tsne_result[valid]
             for i_obj in range(len(tsne_valid)):
                 out_file.write('%e %e\n' % (tsne_valid[i_obj][0], tsne_valid[i_obj][1]))
+
+    print('that took %.2e hours' % ((time.time()-t_start)/3600.0))
