@@ -552,22 +552,6 @@ class AlertDataGenerator(object):
             raise RuntimeError('\n%s does not exist; run the script\n\n%s\n\n' %
                                script_name)
 
-    def acquire_lock(self):
-        """
-        If running with multiprocessing, acquire
-        the lock.
-        """
-        if self._stdout_lock is not None:
-            self._stdout_lock.acquire()
-
-    def release_lock(self):
-        """
-        If running with multiprocessing, release
-        the lock.
-        """
-        if self._stdout_lock is not None:
-            self._stdout_lock.release()
-
     def subdivide_obs(self, obs_list, htmid_level=6):
         """
         Take a list of ObservationMetaData and subdivide
@@ -1094,7 +1078,6 @@ class AlertDataGenerator(object):
                     params = line.split()
                     self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][int(params[0])] = float(params[1])
 
-        self._stdout_lock = lock
         this_pid = os.getpid()
 
         t_start = time.time()
@@ -1440,20 +1423,16 @@ class AlertDataGenerator(object):
                 cursor.executemany('INSERT INTO baseline_astrometry VALUES (?,?,?,?,?,?,?)', values)
 
                 if n_rows_cached >= write_every:
-                    self.acquire_lock()
                     with open(log_file_name,'a') as out_file:
                         out_file.write('%d is writing \n' % os.getpid())
 
                         print('%d is writing' % os.getpid())
-
-                    self.release_lock()
 
                     n_rows += self._output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
                     n_rows_cached = 0
 
                     if n_rows>0:
-                        self.acquire_lock()
                         with open(log_file_name,'a') as out_file:
                             elapsed = (time.time()-t_before_obj)/3600.0
                             elapsed_per = elapsed/n_rows
@@ -1475,18 +1454,14 @@ class AlertDataGenerator(object):
                             print('%d is done writing' % os.getpid())
 
 
-                        self.release_lock()
-
             if len(output_data_cache)>0:
                 n_rows += self._output_alert_data(conn, output_data_cache)
                 output_data_cache = {}
 
-            self.acquire_lock()
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
                  (htmid, (time.time()-t_start)/3600.0, n_obj, n_rows))
 
             print("INDEXING %d" % htmid)
-            self.release_lock()
 
             cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
             cursor.execute('CREATE INDEX unq_flux ON quiescent_flux (uniqueId, band)')
@@ -1497,11 +1472,9 @@ class AlertDataGenerator(object):
                                            'FROM alert_data '
                                            'GROUP BY uniqueId').fetchall())
 
-            self.acquire_lock()
             print('%d has %d objects' % (htmid, n_obj_end))
             with open(log_file_name, 'a') as out_file:
                 out_file.write('done with htmid %d -- %e %d\n' %
                               (htmid,(time.time()-t_start)/3600.0,n_obj_end))
-            self.release_lock()
 
         return n_rows
