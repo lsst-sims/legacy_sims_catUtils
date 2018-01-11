@@ -39,7 +39,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  photometry_class=AlertAgnVariabilityCatalog,
                                                  lock=lock,
                                                  log_file_name=log_file_name,
-                                                 frac=0.0001)
+                                                 frac=0.01)
 
         lock.acquire()
         with open(log_file_name, 'a') as out_file:
