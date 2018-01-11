@@ -1263,7 +1263,7 @@ class AlertDataGenerator(object):
                 n_raw_obj = len(chunk)
                 if n_raw_obj == 0:
                     continue
-                print('    doing a chunk %d -> %d' % (n_raw_obj_old, n_raw_obj))
+                #print('    doing a chunk %d -> %d' % (n_raw_obj_old, n_raw_obj))
 
                 if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
                     break
