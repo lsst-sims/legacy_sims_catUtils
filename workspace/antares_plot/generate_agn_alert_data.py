@@ -41,14 +41,11 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  log_file_name=log_file_name,
                                                  frac=0.01)
 
-        lock.acquire()
         with open(log_file_name, 'a') as out_file:
             elapsed = (time.time()-t_start)/3600.0
             out_file.write('htmid %d nobs %d n_rows %d time %.2e hrs; per_row %.2e -- n_htmid %d of %d\n' %
                            (htmid, alert_gen.n_obs(htmid), n_rows, elapsed,
                             elapsed/(n_rows+1), i_htmid, len(htmid_list)))
-
-        lock.release()
 
 if __name__ == "__main__":
 
