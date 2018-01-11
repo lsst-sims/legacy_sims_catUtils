@@ -47,7 +47,7 @@ def get_sne_from_chunk(chunk, cc, t0, x1, bessell_mag, output_dict):
                           np.logical_or(np.isnan(imag), np.isinf(imag)))))
 
         if len(time_arr)>0 and len(is_bad[0])==0:
-            id_val = chunk['galid'][i_sn]
+            id_val = chunk['id'][i_sn]
             output_dict['t_%d' % id_val] = time_arr
             output_dict['g_%d' % id_val] = gmag
             output_dict['i_%d' % id_val] = imag
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     db = DBObject(database='LSSTCATSIM', host='fatboy.phys.washington.edu',
                   port=1433, driver='mssql+pymssql')
 
-    query = 'SELECT galid, redshift, g_ab, i_ab FROM galaxy ORDER BY galid'
-    dtype = np.dtype([('galid', int), ('z', float), ('gmag', float), ('imag', float)])
+    query = 'SELECT id, redshift, g_ab, i_ab FROM galaxy ORDER BY id'
+    dtype = np.dtype([('id', int), ('z', float), ('gmag', float), ('imag', float)])
     data_iter = db.get_arbitrary_chunk_iterator(query, dtype=dtype,
                                                 chunk_size=100000)
 
