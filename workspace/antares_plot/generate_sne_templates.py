@@ -125,6 +125,9 @@ if __name__ == "__main__":
                 out_file.write('after batch len %d -- processed %.2e -- elapsed %.2e hrs\n' %
                                (len(output_dict)/4, raw_ct, elapsed))
 
+    for p in p_list:
+        p.join()
+
     with open(out_file_name, 'wb') as file_handle:
         np.savez(file_handle, **output_dict)
 
