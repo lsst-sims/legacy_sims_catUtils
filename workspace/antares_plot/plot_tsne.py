@@ -43,9 +43,9 @@ if __name__ == "__main__":
 
     dtype = np.dtype([('x', float), ('y', float)])
 
-    rrly_data = np.genfromtxt('rrly_features_180108_tsne_features_30k.txt', dtype=dtype)
-    eb_data = np.genfromtxt('eb_features_180109_tsne_features_30k.txt', dtype=dtype)
-    mlt_data = np.genfromtxt('mlt_features_180110_tsne_features_30k.txt', dtype=dtype)
+    rrly_data = np.genfromtxt('rrly_features_180108_tsne_features_100k.txt', dtype=dtype)
+    eb_data = np.genfromtxt('eb_features_180109_tsne_features_100k.txt', dtype=dtype)
+    mlt_data = np.genfromtxt('mlt_features_180110_tsne_features_100k.txt', dtype=dtype)
 
     plt.figsize = (30,30)
 
@@ -53,4 +53,4 @@ if __name__ == "__main__":
     plot_contour(eb_data['x'], eb_data['y'], colors='b')
     plot_contour(mlt_data['x'], mlt_data['y'], colors='g')
 
-    plt.savefig('test_tsne_30k.png')
+    plt.savefig('test_tsne_100k.png')
