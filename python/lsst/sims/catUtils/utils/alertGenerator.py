@@ -1127,7 +1127,6 @@ class AlertDataGenerator(object):
 
                 q_f_dict = {}
                 q_m_dict = {}
-                q_snr_dict = {}
 
                 q_m_dict[0] = photometry_catalog.column_by_name('quiescent_lsst_u')
                 q_m_dict[1] = photometry_catalog.column_by_name('quiescent_lsst_g')
