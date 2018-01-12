@@ -826,7 +826,6 @@ class AlertDataGenerator(object):
         # Figure out which sources actually land on an LSST detector during
         # the observations in question
         #
-        t_before_chip_name = time.time()
         chip_name_dict = {}
 
         # time_arr will keep track of which objects appear in which observations;
@@ -868,8 +867,6 @@ class AlertDataGenerator(object):
 
         time_arr = time_arr_transpose.transpose()
         assert len(chip_name_dict) == len(obs_valid_dex)
-
-        t_before_phot = time.time()
 
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
@@ -943,7 +940,8 @@ class AlertDataGenerator(object):
         self._stdout_lock = lock
         this_pid = os.getpid()
 
-        t_start = time.time()
+        t_start = time.time()  # so that we can get a sense of how long the full
+                               # simulation will take
 
         desired_columns = []
         desired_columns.append('simobjid')
@@ -1046,8 +1044,6 @@ class AlertDataGenerator(object):
                                                               'lsst_y'])
 
         i_chunk = 0
-        t_chipName = 0.0
-        t_before_obj = time.time()
 
         output_data_cache = {}
         n_rows_cached = 0
@@ -1056,6 +1052,10 @@ class AlertDataGenerator(object):
         n_actual_obj = 0
         n_time_last = 0
         n_rows = 0
+
+        t_before_obj = time.time()  # so that we can get a sense of how long the
+                                    # "iterating over astrophysical objects" part
+                                    # of the simulation will take
 
         db_name = os.path.join(output_dir, '%s_%d_sqlite.db' % (output_prefix, htmid))
         with sqlite3.connect(db_name, isolation_level='EXCLUSIVE') as conn:
@@ -1206,7 +1206,6 @@ class AlertDataGenerator(object):
                 ############################
                 # Process and output sources
                 #
-                t_before_out = time.time()
                 for i_obs, obs_dex in enumerate(obs_valid_dex):
                     obs = self._obs_list[obs_dex]
                     obshistid = obs.OpsimMetaData['obsHistID']
