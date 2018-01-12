@@ -143,7 +143,7 @@ class AvroAlertGenerator(object):
             avro_diasource['x_y_Cov'] = x_y_cov
 
             avro_diasource['totFlux'] = diasource['quiescent_flux'] + diasource['dflux']
-            avro_diasource['totFluxErr'] = full_noise[i_source]  # should this be quiescent SNR?
+            avro_diasource['totFluxErr'] = full_noise[i_source]
             avro_diasource['diffFlux'] = diasource['dflux']
             avro_diasource['diffFluxErr'] = diff_noise[i_source]
 
