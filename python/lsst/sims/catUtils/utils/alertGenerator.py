@@ -1173,6 +1173,14 @@ class AlertDataGenerator(object):
                 # respect to the quiescent magnitude)
                 #
                 # also demand that the magnitude at some point is less than obs_mag_cutoff
+                #
+                # This is different from the dmag>dmag_cutoff check done in
+                #
+                # self._filter_on_photometry_then_chip_name()
+                #
+                # Now we have information about which observations actually detected
+                # each object (in self._filter_on_photometry_then_chip_name(),
+                # we assumed that every object was detected at every time step).
 
                 photometrically_valid_obj = []
                 for i_obj in range(len(chunk)):
