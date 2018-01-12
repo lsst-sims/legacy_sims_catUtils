@@ -38,6 +38,7 @@ __all__ = ["AlertDataGenerator",
            "AgnAlertDBObj",
            "StellarAlertDBObjMixin"]
 
+
 class StellarAlertDBObjMixin(object):
     """
     Mimics StarObj class, except it allows you to directly query
