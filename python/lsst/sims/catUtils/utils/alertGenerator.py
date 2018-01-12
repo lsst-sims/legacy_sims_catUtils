@@ -788,6 +788,9 @@ class AlertDataGenerator(object):
         combination are valid.
         """
 
+        ######################################################
+        # Calculate the delta_magnitude for all of the sources
+        #
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                        variability_cache=self._variability_cache,
@@ -866,13 +869,7 @@ class AlertDataGenerator(object):
         time_arr = time_arr_transpose.transpose()
         assert len(chip_name_dict) == len(obs_valid_dex)
 
-        ######################################################
-        # Calculate the delta_magnitude for all of the sources
-        #
         t_before_phot = time.time()
-
-        # only calculate photometry for objects that actually land
-        # on LSST detectors
 
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
