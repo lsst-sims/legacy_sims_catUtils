@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # of the trixels overlapping that observation
     #
     # Also separate list of obsHistIDs into n_proc
-    # lists of roubly balanced loads.
+    # lists of roughly balanced loads.
     obshistid_to_htmid = {}
     obshistid_list = []
     for i_proc in range(args.n_proc):
