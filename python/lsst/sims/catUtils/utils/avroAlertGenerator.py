@@ -111,17 +111,16 @@ class AvroAlertGenerator(object):
 
             avro_diasource = {}
             avro_diasource['diaSourceId'] = np.long((diasource['uniqueId'] << self._n_bit_shift) +
-                                                 self._diasource_ct[diasource['uniqueId']])
+                                                    self._diasource_ct[diasource['uniqueId']])
             self._diasource_ct[diasource['uniqueId']] += 1
-            avro_diasource['ccdVisitId'] = np.long((diasource['chipNum'] *10**7) + obshistid)
+            avro_diasource['ccdVisitId'] = np.long((diasource['chipNum']*10**7) + obshistid)
             avro_diasource['diaObjectId'] = np.long(diasource['uniqueId'])
 
             avro_diasource['midPointTai'] = diasource['TAI']
-            avro_diasource['filterName'] =bp_name_dict[diasource['band']]
+            avro_diasource['filterName'] = bp_name_dict[diasource['band']]
             avro_diasource['ra'] = diasource['ra']
             avro_diasource['decl'] = diasource['dec']
-            avro_diasource['flags'] = self._rng.randint(10,1000)
-
+            avro_diasource['flags'] = self._rng.randint(10, 1000)
 
             avro_diasource['x'] = diasource['xPix']
             avro_diasource['y'] = diasource['yPix']
@@ -172,7 +171,7 @@ class AvroAlertGenerator(object):
             diaobject = diaobject_data[i_object]
 
             avro_diaobject = {}
-            avro_diaobject['flags'] = np.long(self._rng.randint(10,1000))
+            avro_diaobject['flags'] = np.long(self._rng.randint(10, 1000))
             avro_diaobject['diaObjectId'] = np.long(diaobject['uniqueId'])
             avro_diaobject['ra'] = diaobject['ra']
             avro_diaobject['decl'] = diaobject['dec']
@@ -189,9 +188,11 @@ class AvroAlertGenerator(object):
             avro_diaobject['pmDecl'] = diaobject['pmDec']
             avro_diaobject['parallax'] = diaobject['parallax']
             pm_parallax_cov = {}
+
             for field in ('pmRaSigma', 'pmDeclSigma', 'parallaxSigma', 'pmRa_pmDecl_Cov',
                           'pmRa_parallax_Cov', 'pmDecl_parallax_Cov'):
-                 pm_parallax_cov[field] = 0.0
+                pm_parallax_cov[field] = 0.0
+
             avro_diaobject['pm_parallax_Cov'] = pm_parallax_cov
 
             avro_diaobject['pmParallaxLnL'] = self._rng.random_sample()
@@ -200,7 +201,6 @@ class AvroAlertGenerator(object):
 
             diaobject_dict[diaobject['uniqueId']] = avro_diaobject
         return diaobject_dict
-
 
     def write_alerts(self, obshistid, data_dir, prefix_list,
                      htmid_list, out_dir, out_prefix,
@@ -238,8 +238,7 @@ class AvroAlertGenerator(object):
         written.
         """
 
-
-        out_name = os.path.join(out_dir,'%s_%d.avro' % (out_prefix, obshistid))
+        out_name = os.path.join(out_dir, '%s_%d.avro' % (out_prefix, obshistid))
         if os.path.exists(out_name):
             os.unlink(out_name)
 
@@ -288,7 +287,7 @@ class AvroAlertGenerator(object):
                                                               dtype=diasource_dtype)
 
                     dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
-                    valid_alerts = np.where(np.abs(dmag)>=dmag_cutoff)
+                    valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
                     diasource_data = diasource_data[valid_alerts]
                     avro_diasource_list = self._create_sources(obshistid, diasource_data)
 
@@ -299,7 +298,7 @@ class AvroAlertGenerator(object):
                         diasource = avro_diasource_list[i_source]
 
                         avro_alert = {}
-                        avro_alert['alertId'] = np.long((obshistid<<20) + alert_ct)
+                        avro_alert['alertId'] = np.long((obshistid << 20) + alert_ct)
                         avro_alert['l1dbId'] = np.long(unq)
                         avro_alert['diaSource'] = diasource
                         avro_alert['diaObject'] = diaobject
