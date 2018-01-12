@@ -1241,10 +1241,10 @@ class AlertDataGenerator(object):
                     local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_obj]),
                                                                       ('y_pupil', valid_ypup[actually_valid_obj])])
 
-                    i_star = 0
                     cat = cat_list[i_obs]
                     i_valid_chunk = 0
-                    for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources], column_cache=local_column_cache):
+                    for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources],
+                                                                          column_cache=local_column_cache):
                         i_valid_chunk += 1
                         assert i_valid_chunk == 1
                         n_time_last += len(valid_chunk[0])
@@ -1259,7 +1259,7 @@ class AlertDataGenerator(object):
 
                         n_rows_cached += length_of_chunk
 
-                completely_valid = np.where(completely_valid>0)
+                completely_valid = np.where(completely_valid > 0)
                 for i_filter in range(6):
                     values = ((int(unq[completely_valid][i_q]),
                                i_filter,
@@ -1282,7 +1282,7 @@ class AlertDataGenerator(object):
 
                 if n_rows_cached >= write_every:
                     self.acquire_lock()
-                    with open(log_file_name,'a') as out_file:
+                    with open(log_file_name, 'a') as out_file:
                         out_file.write('%d is writing \n' % os.getpid())
 
                         print('%d is writing' % os.getpid())
@@ -1293,9 +1293,9 @@ class AlertDataGenerator(object):
                     output_data_cache = {}
                     n_rows_cached = 0
 
-                    if n_rows>0:
+                    if n_rows > 0:
                         self.acquire_lock()
-                        with open(log_file_name,'a') as out_file:
+                        with open(log_file_name, 'a') as out_file:
                             elapsed = (time.time()-t_before_obj)/3600.0
                             elapsed_per = elapsed/n_rows
                             rows_per_chunk = float(n_rows)/float(i_chunk)
@@ -1303,27 +1303,26 @@ class AlertDataGenerator(object):
                             out_file.write('\n    %d n_obj %d %d trimmed %d\n' %
                                            (this_pid, n_obj, n_actual_obj, n_htmid_trim))
                             out_file.write('    elapsed %.2e hrs per row %.2e total %2e\n' %
-                                            (elapsed, elapsed_per, total_projection))
-                            out_file.write('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
+                                           (elapsed, elapsed_per, total_projection))
+                            out_file.write('    n_time_last %d; rows %d\n' % (n_time_last, n_rows))
 
                             out_file.write('%d is done writing\n' % os.getpid())
 
                             print('\n    %d n_obj %d %d trimmed %d' %
-                                           (this_pid, n_obj, n_actual_obj, n_htmid_trim))
+                                  (this_pid, n_obj, n_actual_obj, n_htmid_trim))
                             print('    elapsed %.2e hrs per row %.2e total %2e' %
-                                            (elapsed, elapsed_per, total_projection))
-                            print('    n_time_last %d; rows %d\n' % (n_time_last,n_rows))
+                                  (elapsed, elapsed_per, total_projection))
+                            print('    n_time_last %d; rows %d\n' % (n_time_last, n_rows))
                             print('%d is done writing' % os.getpid())
-
 
                         self.release_lock()
 
-            if len(output_data_cache)>0:
+            if len(output_data_cache) > 0:
                 n_rows += self._output_alert_data(conn, output_data_cache)
                 output_data_cache = {}
 
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
-                 (htmid, (time.time()-t_start)/3600.0, n_obj, n_rows))
+                  (htmid, (time.time()-t_start)/3600.0, n_obj, n_rows))
 
             self.acquire_lock()
             print("INDEXING %d" % htmid)
@@ -1338,7 +1337,7 @@ class AlertDataGenerator(object):
             self.acquire_lock()
             with open(log_file_name, 'a') as out_file:
                 out_file.write('done with htmid %d -- %e %d\n' %
-                              (htmid,(time.time()-t_start)/3600.0,n_obj))
+                               (htmid, (time.time()-t_start)/3600.0, n_obj))
             self.release_lock()
 
         return n_rows
