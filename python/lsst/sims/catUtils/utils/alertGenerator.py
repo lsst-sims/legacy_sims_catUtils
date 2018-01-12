@@ -796,20 +796,20 @@ class AlertDataGenerator(object):
                                                        variability_cache=self._variability_cache,
                                                        expmjd=expmjd_list,).transpose((2,0,1))
 
-        dmag_arr_transpose = dmag_arr.transpose(2,1,0)
+        dmag_arr_transpose = dmag_arr.transpose(2, 1, 0)
 
         n_raw_obj = len(chunk)
         photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
         for i_obj in range(n_raw_obj):
             keep_it = False
             for i_filter in range(6):
-               if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
-                   keep_it = True
-                   break
+                if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
+                    keep_it = True
+                    break
             if keep_it:
                 photometrically_valid[i_obj] = 1
 
-        photometrically_valid = np.where(photometrically_valid>=0)
+        photometrically_valid = np.where(photometrically_valid >= 0)
 
         if 'properMotionRa'in column_query:
             pmra = chunk['properMotionRa'][photometrically_valid]
