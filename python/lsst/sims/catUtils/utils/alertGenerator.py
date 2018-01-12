@@ -577,7 +577,7 @@ class AlertDataGenerator(object):
         htmid_level is an int denoting the level of
         the HTM mesh you want to use to tile the sky
         (higher htmid_level corresponds to a finer
-        tiling).
+        tiling).  Default = 6
 
         Returns
         -------
