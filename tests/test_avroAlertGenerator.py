@@ -249,8 +249,6 @@ class AvroAlertTestCase(unittest.TestCase):
         conn.commit()
         conn.close()
 
-        cls.alert_data_output_dir = tempfile.mkdtemp(dir=ROOT, prefix='avro_gen_output')
-        cls.avro_out_dir = tempfile.mkdtemp(dir=ROOT, prefix='avroTestOut')
         cls.mag0_truth_dict = {}
         cls.mag0_truth_dict[0] = u_truth
         cls.mag0_truth_dict[1] = g_truth
@@ -261,7 +259,6 @@ class AvroAlertTestCase(unittest.TestCase):
         assert max_str_len < 500  # make sure varParamStr fits in the space alotted to it
                                   # in StarAlertTestDBObj_avro
 
-
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
@@ -270,20 +267,25 @@ class AvroAlertTestCase(unittest.TestCase):
         if os.path.exists(cls.input_dir):
             shutil.rmtree(cls.input_dir)
 
-        for file_name in os.listdir(cls.alert_data_output_dir):
-            os.unlink(os.path.join(cls.alert_data_output_dir, file_name))
-        shutil.rmtree(cls.alert_data_output_dir)
-
-        for file_name in os.listdir(cls.avro_out_dir):
-            os.unlink(os.path.join(cls.avro_out_dir, file_name))
-        shutil.rmtree(cls.avro_out_dir)
-
         if hasattr(lsst_camera, '_lsst_camera'):
             del lsst_camera._lsst_camera
         attr_list = list(chipNameFromPupilCoordsLSST.__dict__.keys())
         for attr in attr_list:
             chipNameFromPupilCoordsLSST.__delattr__(attr)
         gc.collect()
+
+    def setUp(self):
+        self.alert_data_output_dir = tempfile.mkdtemp(dir=ROOT, prefix='avro_gen_output')
+        self.avro_out_dir = tempfile.mkdtemp(dir=ROOT, prefix='avroTestOut')
+
+    def tearDown(self):
+        for file_name in os.listdir(self.alert_data_output_dir):
+            os.unlink(os.path.join(self.alert_data_output_dir, file_name))
+        shutil.rmtree(self.alert_data_output_dir)
+
+        for file_name in os.listdir(self.avro_out_dir):
+            os.unlink(os.path.join(self.avro_out_dir, file_name))
+        shutil.rmtree(self.avro_out_dir)
 
     def test_avro_alert_generation(self):
         dmag_cutoff = 0.005
