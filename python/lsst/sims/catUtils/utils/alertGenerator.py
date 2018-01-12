@@ -269,8 +269,13 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
                               if col in transform_keys else
                               self.column_by_name(col)
                               for col in self.iter_column_names()]
+
                 if not hasattr(self, '_chunkColMap_output'):
-                    self._chunkColMap_output = dict([(col, i) for i, col in enumerate(self.iter_column_names())])
+
+                    self._chunkColMap_output = dict([(col, i)
+                                                     for i, col in
+                                                     enumerate(self.iter_column_names())])
+
                 yield chunk_cols, self._chunkColMap_output
 
         self._column_cache = {}
@@ -299,26 +304,24 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
-        xPup = self.column_by_name('x_pupil')
-        yPup = self.column_by_name('y_pupil')
-        chipName = self.column_by_name('chipName')
-        xpix, ypix = pixelCoordsFromPupilCoords(xPup, yPup, chipName=chipName,
+        xpup = self.column_by_name('x_pupil')
+        ypup = self.column_by_name('y_pupil')
+        chip_name = self.column_by_name('chipName')
+        xpix, ypix = pixelCoordsFromPupilCoords(xpup, ypup, chipName=chip_name,
                                                 camera=lsst_camera(),
                                                 includeDistortion=True)
         return np.array([xpix, ypix])
-
 
     @compound('delta_umag', 'delta_gmag', 'delta_rmag',
               'delta_imag', 'delta_zmag', 'delta_ymag')
     def get_deltaMagAvro(self):
         ra = self.column_by_name('raJ2000')
-        if len(ra)==0:
-            return np.array([[],[],[],[],[],[]])
+        if len(ra) == 0:
+            return np.array([[], [], [], [], [], []])
 
         raise RuntimeError("Should not have gotten this far in delta mag getter")
 
-
-    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y')
     def get_lsst_magnitudes(self):
         """
         getter for LSST stellar magnitudes
@@ -398,7 +401,6 @@ class AlertAgnVariabilityCatalog(_baseAlertCatalog,
         return np.array([self.column_by_name('u_ab'), self.column_by_name('g_ab'),
                          self.column_by_name('r_ab'), self.column_by_name('i_ab'),
                          self.column_by_name('z_ab'), self.column_by_name('y_ab')])
-
 
 
 class AlertDataGenerator(object):
@@ -539,8 +541,8 @@ class AlertDataGenerator(object):
         # stars can be skipped because they will never vary above
         # the alert-triggering threshold.
         self._dmag_lookup_file = os.path.join(getPackageDir('sims_data'),
-                                             'catUtilsData',
-                                             'kplr_dmag_171204.txt')
+                                              'catUtilsData',
+                                              'kplr_dmag_171204.txt')
 
         if not os.path.exists(self._dmag_lookup_file) and not testing:
             script_name = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
@@ -629,8 +631,8 @@ class AlertDataGenerator(object):
             ra_c, dec_c = trixel.get_center()
             radius = trixel.get_radius()
             obs_distance = angularSeparation(ra_c, dec_c, obs_ra_list, obs_dec_list)
-            valid_obs = np.where(obs_distance<radius+fov_radius)
-            if len(valid_obs[0])>0:
+            valid_obs = np.where(obs_distance < radius + fov_radius)
+            if len(valid_obs[0]) > 0:
                 final_obs_list = []
                 for obs_dex in valid_obs[0]:
                     hs = halfspace_list[obs_dex]
@@ -794,7 +796,7 @@ class AlertDataGenerator(object):
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                        variability_cache=self._variability_cache,
-                                                       expmjd=expmjd_list).transpose((2,0,1))
+                                                       expmjd=expmjd_list).transpose((2, 0, 1))
 
         dmag_arr_transpose = dmag_arr.transpose(2, 1, 0)
 
