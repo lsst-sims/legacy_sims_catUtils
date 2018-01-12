@@ -465,7 +465,7 @@ class AlertDataGenerator(object):
 
         dec -- float -- the current Declination of the source in degrees.
 
-        The alert_data table is indexed on uniqueId and obshistId.
+        The alert_data table has a mult-column index on uniqueId and obshistId.
 
     metadata
     --------
@@ -491,7 +491,7 @@ class AlertDataGenerator(object):
         snr -- float -- the signal to noise ratio of the source in the given
         band with m5 taken from Table 2 of the overview paper (arXiv:0805.2366)
 
-        The quiescent_flux table is indexed on uniqueId and band
+        The quiescent_flux table has a multi-column index on uniqueId and band.
 
     baseline_astrometry
     -------------------
