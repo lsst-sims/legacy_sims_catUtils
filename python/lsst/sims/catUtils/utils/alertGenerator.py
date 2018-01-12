@@ -870,7 +870,6 @@ class AlertDataGenerator(object):
 
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
-
     def alert_data_from_htmid(self, htmid, dbobj,
                               dmag_cutoff=0.005,
                               chunk_size=1000, write_every=10000,
