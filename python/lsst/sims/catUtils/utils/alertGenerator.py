@@ -989,7 +989,7 @@ class AlertDataGenerator(object):
         # a dummy call to make sure that the initialization
         # is done before we attempt to parallelize calls
         # to chipNameFromRaDecLSST
-        dummy_name = chipNameFromPupilCoordsLSST(0.0, 0.0)
+        chipNameFromPupilCoordsLSST(0.0, 0.0)
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
 
