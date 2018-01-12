@@ -1007,11 +1007,12 @@ class AlertDataGenerator(object):
 
         cat_list = []
         expmjd_list = []
-        mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2,
+                           'i': 3, 'z': 4, 'y': 5}
         for obs_dex in obs_valid_dex:
             obs = self._obs_list[obs_dex]
             cat = photometry_class(dbobj, obs_metadata=obs)
-            cat.lsstBandpassDict =  self.bp_dict
+            cat.lsstBandpassDict = self.bp_dict
             cat_list.append(cat)
             expmjd_list.append(obs.mjd.TAI)
 
@@ -1078,7 +1079,8 @@ class AlertDataGenerator(object):
                 obs = self._obs_list[obs_dex]
                 cmd = '''INSERT INTO metadata
                       VALUES(%d, %.5f, %d)''' % (obs.OpsimMetaData['obsHistID'],
-                      obs.mjd.TAI, mag_name_to_int[obs.bandpass])
+                                                 obs.mjd.TAI,
+                                                 mag_name_to_int[obs.bandpass])
 
                 cursor.execute(cmd)
             conn.commit()
@@ -1100,7 +1102,7 @@ class AlertDataGenerator(object):
                 n_raw_obj = len(chunk)
                 i_chunk += 1
 
-                if chunk_cutoff>0 and i_chunk>=chunk_cutoff:
+                if chunk_cutoff > 0 and i_chunk >= chunk_cutoff:
                     break
 
                 n_time_last = 0
@@ -1184,11 +1186,11 @@ class AlertDataGenerator(object):
                 photometrically_valid_obj = []
                 for i_obj in range(len(chunk)):
                     keep_it = False
-                    valid_times = np.where(time_arr[i_obj]>0)
+                    valid_times = np.where(time_arr[i_obj] > 0)
                     if len(valid_times[0]) == 0:
                         continue
                     for i_filter in range(len(mag_names)):
-                        if np.abs(dmag_arr_transpose[i_obj][i_filter][valid_times]).max()>dmag_cutoff:
+                        if np.abs(dmag_arr_transpose[i_obj][i_filter][valid_times]).max() > dmag_cutoff:
                             dmag_min = dmag_arr_transpose[i_obj][i_filter][valid_times].min()
                             if q_m_dict[i_filter][i_obj] + dmag_min <= obs_mag_cutoff[i_filter]:
                                 keep_it = True
