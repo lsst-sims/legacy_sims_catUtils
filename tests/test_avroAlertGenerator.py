@@ -48,6 +48,65 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
+class StarAlertTestDBObj_avro(StellarAlertDBObjMixin, CatalogDBObject):
+    objid = 'star_alert'
+    tableid = 'stars'
+    idColKey = 'simobjid'
+    raColName = 'ra'
+    decColName = 'dec'
+    objectTypeId = 0
+    columns = [('raJ2000', 'ra*0.01745329252'),
+               ('decJ2000', 'dec*0.01745329252'),
+               ('parallax', 'px*0.01745329252/3600.0'),
+               ('properMotionRa', 'pmra*0.01745329252/3600.0'),
+               ('properMotionDec', 'pmdec*0.01745329252/3600.0'),
+               ('radialVelocity', 'vrad'),
+               ('variabilityParameters', 'varParamStr', str, 500)]
+
+
+class TestAlertsVarCatMixin_avro(object):
+
+    @register_method('avro_test')
+    def applyAlertTest(self, valid_dexes, params, expmjd, variability_cache=None):
+        if len(params) == 0:
+            return np.array([[], [], [], [], [], []])
+
+        if isinstance(expmjd, numbers.Number):
+            dMags_out = np.zeros((6, self.num_variable_obj(params)))
+        else:
+            dMags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+
+        for i_star in range(self.num_variable_obj(params)):
+            if params['amp'][i_star] is not None:
+                dmags = params['amp'][i_star]*np.cos(params['per'][i_star]*expmjd)
+                for i_filter in range(6):
+                    dMags_out[i_filter][i_star] = dmags
+
+        return dMags_out
+
+class TestAlertsVarCat_avro(TestAlertsVarCatMixin_avro, AlertStellarVariabilityCatalog):
+    pass
+
+class TestAlertsTruthCat_avro(TestAlertsVarCatMixin_avro, CameraCoordsLSST, AstrometryStars,
+                              Variability, InstanceCatalog):
+    column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert',
+                      'raICRS', 'decICRS', 'xPix', 'yPix']
+
+    @compound('delta_umag', 'delta_gmag', 'delta_rmag',
+              'delta_imag', 'delta_zmag', 'delta_ymag')
+    def get_TruthVariability(self):
+        return self.applyVariability(self.column_by_name('varParamStr'))
+
+    @cached
+    def get_dmagAlert(self):
+        return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
+
+    @cached
+    def get_magAlert(self):
+        return self.column_by_name('%smag' % self.obs_metadata.bandpass) + \
+               self.column_by_name('dmagAlert')
+
+
 @unittest.skipIf(not _avro_is_installed, 'avro is not installed on this system')
 class AvroAlertTestCase(unittest.TestCase):
 
@@ -163,7 +222,7 @@ class AvroAlertTestCase(unittest.TestCase):
             cls.amp_truth[id_offset:id_offset+n_stars] = np.round(var_amp, decimals=4)
             cls.period_truth[id_offset:id_offset+n_stars] = np.round(var_period, decimals=4)
 
-            cls.max_str_len = -1
+            max_str_len = -1
 
             for i_star in range(n_stars):
                 if var_amp[i_star] >=-0.1:
@@ -172,8 +231,8 @@ class AvroAlertTestCase(unittest.TestCase):
                 else:
                     varParamStr = 'None'
 
-                if len(varParamStr) > cls.max_str_len:
-                    cls.max_str_len = len(varParamStr)
+                if len(varParamStr) > max_str_len:
+                    max_str_len = len(varParamStr)
 
                 htmid = findHtmid(ra[i_star], dec[i_star], 21)
 
@@ -199,6 +258,8 @@ class AvroAlertTestCase(unittest.TestCase):
         cls.mag0_truth_dict[3] = i_truth
         cls.mag0_truth_dict[4] = z_truth
         cls.mag0_truth_dict[5] = y_truth
+        assert max_str_len < 500  # make sure varParamStr fits in the space alotted to it
+                                  # in StarAlertTestDBObj_avro
 
 
     @classmethod
@@ -227,66 +288,6 @@ class AvroAlertTestCase(unittest.TestCase):
     def test_avro_alert_generation(self):
         dmag_cutoff = 0.005
         mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
-
-        _max_var_param_str = self.max_str_len
-
-        class StarAlertTestDBObj_avro(StellarAlertDBObjMixin, CatalogDBObject):
-            objid = 'star_alert'
-            tableid = 'stars'
-            idColKey = 'simobjid'
-            raColName = 'ra'
-            decColName = 'dec'
-            objectTypeId = 0
-            columns = [('raJ2000', 'ra*0.01745329252'),
-                       ('decJ2000', 'dec*0.01745329252'),
-                       ('parallax', 'px*0.01745329252/3600.0'),
-                       ('properMotionRa', 'pmra*0.01745329252/3600.0'),
-                       ('properMotionDec', 'pmdec*0.01745329252/3600.0'),
-                       ('radialVelocity', 'vrad'),
-                       ('variabilityParameters', 'varParamStr', str, _max_var_param_str)]
-
-
-        class TestAlertsVarCatMixin_avro(object):
-
-            @register_method('avro_test')
-            def applyAlertTest(self, valid_dexes, params, expmjd, variability_cache=None):
-                if len(params) == 0:
-                    return np.array([[], [], [], [], [], []])
-
-                if isinstance(expmjd, numbers.Number):
-                    dMags_out = np.zeros((6, self.num_variable_obj(params)))
-                else:
-                    dMags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
-
-                for i_star in range(self.num_variable_obj(params)):
-                    if params['amp'][i_star] is not None:
-                        dmags = params['amp'][i_star]*np.cos(params['per'][i_star]*expmjd)
-                        for i_filter in range(6):
-                            dMags_out[i_filter][i_star] = dmags
-
-                return dMags_out
-
-        class TestAlertsVarCat_avro(TestAlertsVarCatMixin_avro, AlertStellarVariabilityCatalog):
-            pass
-
-        class TestAlertsTruthCat_avro(TestAlertsVarCatMixin_avro, CameraCoordsLSST, AstrometryStars,
-                                      Variability, InstanceCatalog):
-            column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert',
-                              'raICRS', 'decICRS', 'xPix', 'yPix']
-
-            @compound('delta_umag', 'delta_gmag', 'delta_rmag',
-                      'delta_imag', 'delta_zmag', 'delta_ymag')
-            def get_TruthVariability(self):
-                return self.applyVariability(self.column_by_name('varParamStr'))
-
-            @cached
-            def get_dmagAlert(self):
-                return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
-
-            @cached
-            def get_magAlert(self):
-                return self.column_by_name('%smag' % self.obs_metadata.bandpass) + \
-                       self.column_by_name('dmagAlert')
 
         star_db = StarAlertTestDBObj_avro(database=self.star_db_name, driver='sqlite')
 
