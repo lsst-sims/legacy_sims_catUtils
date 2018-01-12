@@ -12,7 +12,6 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.decorators import register_method
 from lsst.sims.catalogs.db import CatalogDBObject
-from lsst.sims.catalogs.db import DBObject
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
@@ -33,7 +32,6 @@ from lsst.sims.catUtils.utils import AvroAlertGenerator
 
 _avro_is_installed = True
 try:
-    import avro.schema
     from avro.io import DatumReader
     from avro.datafile import DataFileReader
 except ImportError:
