@@ -1,6 +1,7 @@
 import numpy as np
 from MulticoreTSNE import MulticoreTSNE as TSNE
 
+import os
 import argparse
 import time
 
@@ -10,16 +11,28 @@ if __name__ == "__main__":
     parser.add_argument('--n', type=int, default=None,
                         help='Number of objects to keep from each population')
 
+    parser.add_argument('--dir', type=str, default=None,
+                        help='Dir containing data files')
+
+    parser.add_argument('--files', type=str, default=None,
+                        nargs='+', help='files within dir to read')
+
     args = parser.parse_args()
 
     if args.n is not None:
         assert 1000*(args.n//1000) == args.n
 
+    if args.dir is None or args.files is None:
+        raise RuntimeError('must specify dir and files')
+
+    feature_files = []
+    for file_name in args.files:
+        feature_files.append(os.path.join(args.dir, file_name))
+
     rng = np.random.RandomState(2433)
 
     n_features = 24
-    feature_files = ['eb_features_180109.txt', 'rrly_features_180108.txt',
-                     'mlt_features_180110.txt']
+
     dtype_list = []
     for ii in range(n_features):
         dtype_list.append(('f%d' % ii,float))
@@ -30,6 +43,7 @@ if __name__ == "__main__":
     data = None
     data_labels = None
     for i_file, file_name in enumerate(feature_files):
+        print("reading %s" % file_name)
         local_data = np.genfromtxt(file_name, dtype=dtype)
         if args.n is not None and len(local_data)>args.n:
             local_data = rng.choice(local_data, size=args.n, replace=False)
