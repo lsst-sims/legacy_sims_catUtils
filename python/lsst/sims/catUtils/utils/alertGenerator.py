@@ -455,7 +455,7 @@ class AlertDataGenerator(object):
 
         dflux -- float -- the difference in flux between the source's current
         flux and its quiescent flux (the source's quiescent flux can be found
-        in the quiescent_flux table).  This is in units of Janskies.
+        in the quiescent_flux table).  This is in units of Janskys.
 
         snr -- float -- the signal to noise of the current detection of the
         source (not the signal to noise of the source's detection in a simulated
@@ -486,7 +486,7 @@ class AlertDataGenerator(object):
         band -- int -- an integer denoting each LSST filter (0=u, 1=g, 2=r, etc.)
 
         flux -- float -- the flux of the source through the filter specified by
-        band (in units of Janskies)
+        band (in units of Janskys)
 
         snr -- float -- the signal to noise ratio of the source in the given
         band with m5 taken from Table 2 of the overview paper (arXiv:0805.2366)
