@@ -88,22 +88,22 @@ class StellarAlertDBObjMixin(object):
 
         query = self._get_column_query(colnames)
 
-        #add spatial constraints to query.
+        # add spatial constraints to query.
 
-        #Hint sql engine to seek on htmid
+        # Hint sql engine to seek on htmid
         if not self.tableid.endswith('forceseek'):
             query = query.with_hint(self.table, ' WITH(FORCESEEK)', 'mssql')
 
-        #SQL is not case sensitive but python is:
+        # SQL is not case sensitive but python is:
         if 'htmID' in self.columnMap:
-            htmidName = 'htmID'
+            htmid_name = 'htmID'
         elif 'htmid' in self.columnMap:
-            htmidName = 'htmid'
+            htmid_name = 'htmid'
         else:
-            htmidName = 'htmId'
+            htmid_name = 'htmId'
 
-        #Range join on htmid ranges
-        query = query.filter(self.table.c[htmidName].between(htmid_min, htmid_max))
+        # Range join on htmid ranges
+        query = query.filter(self.table.c[htmid_name].between(htmid_min, htmid_max))
 
         if constraint is not None:
             query = query.filter(text(constraint))
