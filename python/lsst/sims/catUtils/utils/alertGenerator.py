@@ -794,7 +794,7 @@ class AlertDataGenerator(object):
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                        variability_cache=self._variability_cache,
-                                                       expmjd=expmjd_list,).transpose((2,0,1))
+                                                       expmjd=expmjd_list).transpose((2,0,1))
 
         dmag_arr_transpose = dmag_arr.transpose(2, 1, 0)
 
