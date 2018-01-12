@@ -706,12 +706,12 @@ class AlertDataGenerator(object):
         chunk_lengths = np.zeros(len(data_cache))
 
         for i_cache_tag, cache_tag in enumerate(data_cache):
-            obsHistID = int(cache_tag.split('_')[0])
+            obshistid = int(cache_tag.split('_')[0])
             n_obj = len(data_cache[cache_tag]['uniqueId'])
             chunk_lengths[i_cache_tag] = n_obj
 
             values = ((int(data_cache[cache_tag]['uniqueId'][i_obj]),
-                      obsHistID,
+                      obshistid,
                       data_cache[cache_tag]['xPix'][i_obj],
                       data_cache[cache_tag]['yPix'][i_obj],
                       int(data_cache[cache_tag]['chipNum'][i_obj]),
