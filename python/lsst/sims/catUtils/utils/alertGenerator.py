@@ -673,7 +673,7 @@ class AlertDataGenerator(object):
     def obs_from_htmid(self, htmid):
         """
         Return a numpy array containing all of the ObservationMetaData
-        that interasect the trixel specified by htmid.
+        that intersect the trixel specified by htmid.
 
         Must run subdivide_obs in order for this method to
         work.
