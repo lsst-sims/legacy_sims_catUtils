@@ -20,11 +20,10 @@ from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import AlertDataGenerator
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
 
-from lsst.sims.utils import applyProperMotion, ObservationMetaData
-from lsst.sims.utils import radiansFromArcsec, arcsecFromRadians
+from lsst.sims.utils import applyProperMotion
 from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.utils import findHtmid
-from lsst.sims.utils import _angularSeparation, angularSeparation
+from lsst.sims.utils import angularSeparation
 from lsst.sims.photUtils import Sed
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
@@ -63,7 +62,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         rng = np.random.RandomState(8123)
 
         obs_gen = ObservationMetaDataGenerator(database=cls.opsim_db)
-        cls.obs_list = obs_gen.getObservationMetaData(night=(0,2))
+        cls.obs_list = obs_gen.getObservationMetaData(night=(0, 2))
         cls.obs_list = rng.choice(cls.obs_list, 10, replace=False)
         fieldid_list = []
         for obs in cls.obs_list:
@@ -74,7 +73,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         assert len(np.unique(fieldid_list)) < len(fieldid_list)
 
         cls.input_dir = tempfile.mkdtemp(prefix='alertDataGen',
-                                        dir=ROOT)
+                                         dir=ROOT)
 
         cls.star_db_name = tempfile.mktemp(prefix='alertDataGen_star_db',
                                            dir=cls.input_dir,
@@ -119,7 +118,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             var_period = rng.random_sample(n_stars)*0.25
             var_amp = rng.random_sample(n_stars)*1.0 + 0.01
 
-            subset = rng.randint(0,high=len(var_amp)-1, size=3)
+            subset = rng.randint(0, high=len(var_amp)-1, size=3)
             var_amp[subset[:2]] = 0.0
             var_amp[subset[-1]] = -1.0
 
@@ -129,12 +128,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             imag = rng.random_sample(n_stars)*5.0 + 15.0
             zmag = rng.random_sample(n_stars)*5.0 + 15.0
             ymag = rng.random_sample(n_stars)*5.0 + 15.0
-            px = rng.random_sample(n_stars)*0.1 # say it is arcsec
-            pmra = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
-            pmdec = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
+            px = rng.random_sample(n_stars)*0.1  # say it is arcsec
+            pmra = rng.random_sample(n_stars)*50.0+100.0  # say it is arcsec/yr
+            pmdec = rng.random_sample(n_stars)*50.0+100.0  # say it is arcsec/yr
             vrad = rng.random_sample(n_stars)*600.0 - 300.0
 
-            subset = rng.randint(0,high=n_stars-1, size=3)
+            subset = rng.randint(0, high=n_stars-1, size=3)
             umag[subset] = 40.0
             gmag[subset] = 40.0
             rmag[subset] = 40.0
@@ -160,7 +159,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             cls.max_str_len = -1
 
             for i_star in range(n_stars):
-                if var_amp[i_star] >=-0.1:
+                if var_amp[i_star] >= -0.1:
                     varParamStr = ('{"m":"alert_test", "p":{"amp":%.4f, "per": %.4f}}'
                                    % (var_amp[i_star], var_period[i_star]))
                 else:
@@ -193,7 +192,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         cls.mag0_truth_dict[4] = z_truth
         cls.mag0_truth_dict[5] = y_truth
 
-
     @classmethod
     def tearDownClass(cls):
         sims_clean_up()
@@ -214,7 +212,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
     def test_alert_data_generation(self):
 
         dmag_cutoff = 0.005
-        mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z' : 4, 'y': 5}
 
         _max_var_param_str = self.max_str_len
 
@@ -232,7 +230,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                        ('properMotionDec', 'pmdec*0.01745329252/3600.0'),
                        ('radialVelocity', 'vrad'),
                        ('variabilityParameters', 'varParamStr', str, _max_var_param_str)]
-
 
         class TestAlertsVarCatMixin(object):
 
@@ -289,7 +286,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         for obs in self.obs_list:
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
-            if obshistid>max_obshistid:
+            if obshistid > max_obshistid:
                 max_obshistid = obshistid
             cat = TestAlertsTruthCat(star_db, obs_metadata=obs)
 
