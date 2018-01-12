@@ -736,7 +736,7 @@ class AlertDataGenerator(object):
         """
         Determine which simulated observations are actually worth storing
         by first figuring out which observations of which objects are
-        photoemtrically detectable and alert-worthy, then determining
+        photometrically detectable and alert-worthy, then determining
         which of those actually fall on an LSST detector.
 
         Parameters
