@@ -836,33 +836,33 @@ class AlertDataGenerator(object):
         for i_obs, obs_dex in enumerate(obs_valid_dex):
             obs = self._obs_list[obs_dex]
             chip_name_list = np.array([None]*n_raw_obj)
-            xPup_list = np.zeros(n_raw_obj, dtype=float)
-            yPup_list = np.zeros(n_raw_obj, dtype=float)
+            xpup_list = np.zeros(n_raw_obj, dtype=float)
+            ypup_list = np.zeros(n_raw_obj, dtype=float)
             chip_int_arr = -1*np.ones(len(chip_name_list), dtype=int)
 
-            if len(photometrically_valid[0])>0:
-                xPup_list_val, yPup_list_val = _pupilCoordsFromRaDec(chunk['raJ2000'][photometrically_valid],
+            if len(photometrically_valid[0]) > 0:
+                xpup_list_val, ypup_list_val = _pupilCoordsFromRaDec(chunk['raJ2000'][photometrically_valid],
                                                                      chunk['decJ2000'][photometrically_valid],
                                                                      pm_ra=pmra, pm_dec=pmdec,
                                                                      parallax=px, v_rad=vrad,
                                                                      obs_metadata=obs)
 
-                xPup_list[photometrically_valid] = xPup_list_val
-                yPup_list[photometrically_valid] = yPup_list_val
+                xpup_list[photometrically_valid] = xpup_list_val
+                ypup_list[photometrically_valid] = ypup_list_val
 
-                chip_name_list[photometrically_valid] = chipNameFromPupilCoordsLSST(xPup_list_val,
-                                                                                    yPup_list_val)
+                chip_name_list[photometrically_valid] = chipNameFromPupilCoordsLSST(xpup_list_val,
+                                                                                    ypup_list_val)
 
                 for i_chip, name in enumerate(chip_name_list):
                     if name is not None:
                         chip_int_arr[i_chip] = 1
 
-            valid_obj = np.where(chip_int_arr>0)
+            valid_obj = np.where(chip_int_arr > 0)
             time_arr_transpose[i_obs][valid_obj] = 1
 
             chip_name_dict[i_obs] = (chip_name_list,
-                                     xPup_list,
-                                     yPup_list,
+                                     xpup_list,
+                                     ypup_list,
                                      valid_obj)
 
         time_arr = time_arr_transpose.transpose()
