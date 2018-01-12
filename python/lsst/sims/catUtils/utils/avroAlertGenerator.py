@@ -1,5 +1,5 @@
-# This script will provide classes to process the hdf5 files produced
-# by the AlertDataGenerator and write them as json objects
+# This script will provide classes to process the sqlite files produced
+# by the AlertDataGenerator and write them as avro files
 
 try:
     import avro.schema
