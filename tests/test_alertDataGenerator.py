@@ -242,17 +242,17 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                     return np.array([[], [], [], [], [], []])
 
                 if isinstance(expmjd, numbers.Number):
-                    dMags_out = np.zeros((6, self.num_variable_obj(params)))
+                    dmags_out = np.zeros((6, self.num_variable_obj(params)))
                 else:
-                    dMags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+                    dmags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
 
                 for i_star in range(self.num_variable_obj(params)):
                     if params['amp'][i_star] is not None:
                         dmags = params['amp'][i_star]*np.cos(params['per'][i_star]*expmjd)
                         for i_filter in range(6):
-                            dMags_out[i_filter][i_star] = dmags
+                            dmags_out[i_filter][i_star] = dmags
 
-                return dMags_out
+                return dmags_out
 
         class TestAlertsVarCat(TestAlertsVarCatMixin, AlertStellarVariabilityCatalog):
             pass
@@ -324,14 +324,14 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 if np.abs(true_lc_dict[obj_id][obshistid]) > dmag_max:
                     dmag_max = np.abs(true_lc_dict[obj_id][obshistid])
 
-            if dmag_max>=dmag_cutoff:
+            if dmag_max >= dmag_cutoff:
                 if not is_visible_dict[obj_id]:
                     skipped_due_to_mag += 1
                     continue
 
                 objects_to_simulate.append(obj_id)
                 for obshistid in true_lc_obshistid_dict[obj_id]:
-                    obshistid_unqid_set.add((obj_id<<obshistid_bits) + obshistid)
+                    obshistid_unqid_set.add((obj_id << obshistid_bits) + obshistid)
 
         self.assertGreater(len(objects_to_simulate), 10)
         self.assertGreater(skipped_due_to_mag, 0)
@@ -353,14 +353,10 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
-        photParams = PhotometricParameters()
+        phot_params = PhotometricParameters()
 
         # First, verify that the contents of the sqlite files are all correct
 
-        # While doing that, keep track of the uniqueId of every event that
-        # is simulated for each obsHistID.  Afteward, we will verify that we
-        # got all of the objects that satisfy dmag_cutoff
-        all_simulated_events_dict = {}
         n_tot_simulated = 0
 
         alert_query = 'SELECT alert.uniqueId, alert.obshistId, meta.TAI, '
@@ -402,14 +398,14 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             mjd_list = ModifiedJulianDate.get_list(TAI=alert_data['TAI'])
             for i_obj in range(len(alert_data)):
                 n_tot_simulated += 1
-                obshistid_unqid_simulated_set.add((alert_data['uniqueId'][i_obj]<<obshistid_bits) +
+                obshistid_unqid_simulated_set.add((alert_data['uniqueId'][i_obj] << obshistid_bits) +
                                                   alert_data['obshistId'][i_obj])
 
                 unq = alert_data['uniqueId'][i_obj]
                 obj_dex = (unq//1024)-1
                 self.assertAlmostEqual(self.pmra_truth[obj_dex], 0.001*alert_data['pmRA'][i_obj], 4)
-                self.assertAlmostEqual(self.pmdec_truth[obj_dex], 0.001*alert_data['pmDec'][i_obj],4)
-                self.assertAlmostEqual(self.px_truth[obj_dex], 0.001*alert_data['parallax'][i_obj],4)
+                self.assertAlmostEqual(self.pmdec_truth[obj_dex], 0.001*alert_data['pmDec'][i_obj], 4)
+                self.assertAlmostEqual(self.px_truth[obj_dex], 0.001*alert_data['parallax'][i_obj], 4)
 
                 ra_truth, dec_truth = applyProperMotion(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
                                                         self.pmra_truth[obj_dex], self.pmdec_truth[obj_dex],
@@ -419,9 +415,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                              alert_data['ra'][i_obj], alert_data['dec'][i_obj])
 
                 distance_arcsec = 3600.0*distance
-                msg = '\ntruth: %e %e\nalert: %e %e\n'% (ra_truth, dec_truth,
-                                                         alert_data['ra'][i_obj],
-                                                         alert_data['dec'][i_obj])
+                msg = '\ntruth: %e %e\nalert: %e %e\n' % (ra_truth, dec_truth,
+                                                          alert_data['ra'][i_obj],
+                                                          alert_data['dec'][i_obj])
 
                 self.assertLess(distance_arcsec, 0.0005, msg=msg)
 
@@ -434,9 +430,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                                  v_rad=self.vrad_truth[obj_dex],
                                                  obs_metadata=obs)
 
-                chipnum = int(chipname.replace('R','').replace('S','').\
-                              replace(' ','').replace(';','').replace(',','').\
-                              replace(':',''))
+                chipnum = int(chipname.replace('R', '').replace('S', '').
+                              replace(' ', '').replace(';', '').replace(',', '').
+                              replace(':', ''))
 
                 self.assertEqual(chipnum, alert_data['chipNum'][i_obj])
 
@@ -454,25 +450,25 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 self.assertAlmostEqual(true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
                                        dmag_sim, 3)
 
-
-                mag_name= ('u','g','r','i','z','y')[alert_data['band'][i_obj]]
+                mag_name = ('u', 'g', 'r', 'i', 'z', 'y')[alert_data['band'][i_obj]]
                 m5 = obs.m5[mag_name]
 
                 q_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj])
                 self.assertAlmostEqual(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
                                        q_mag, 4)
 
-                snr,gamma = calcSNR_m5(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
-                                       bp_dict[mag_name],
-                                       self.obs_mag_cutoff[alert_data['band'][i_obj]],
-                                       photParams)
+                snr, gamma = calcSNR_m5(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
+                                        bp_dict[mag_name],
+                                        self.obs_mag_cutoff[alert_data['band'][i_obj]],
+                                        phot_params)
 
                 self.assertAlmostEqual(snr/alert_data['q_snr'][i_obj], 1.0, 4)
 
                 tot_mag = self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex] + \
                           true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]]
 
-                snr,gamma = calcSNR_m5(tot_mag, bp_dict[mag_name], m5, photParams)
+                snr, gamma = calcSNR_m5(tot_mag, bp_dict[mag_name],
+                                        m5, phot_params)
                 self.assertAlmostEqual(snr/alert_data['tot_snr'][i_obj], 1.0, 4)
 
         for val in obshistid_unqid_set:
@@ -481,7 +477,9 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         astrometry_query = 'SELECT uniqueId, ra, dec, TAI '
         astrometry_query += 'FROM baseline_astrometry'
-        astrometry_dtype = np.dtype([('uniqueId', int), ('ra', float), ('dec',float),
+        astrometry_dtype = np.dtype([('uniqueId', int),
+                                     ('ra', float),
+                                     ('dec', float),
                                      ('TAI', float)])
 
         tai_list = []
@@ -504,7 +502,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             mjd_list = ModifiedJulianDate.get_list(TAI=astrometry_data['TAI'])
             for i_obj in range(len(astrometry_data)):
                 n_tot_ast_simulated += 1
-                obj_dex =(astrometry_data['uniqueId'][i_obj]//1024)-1
+                obj_dex = (astrometry_data['uniqueId'][i_obj]//1024) - 1
                 ra_truth, dec_truth = applyProperMotion(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
                                                         self.pmra_truth[obj_dex], self.pmdec_truth[obj_dex],
                                                         self.px_truth[obj_dex], self.vrad_truth[obj_dex],
