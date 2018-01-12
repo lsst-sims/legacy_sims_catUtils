@@ -43,7 +43,7 @@ class StellarAlertDBObjMixin(object):
     all objects in a trixel specified by an htmid.
     """
     def query_columns_htmid(self, colnames=None, chunk_size=None,
-                            obs_metadata=None, constraint=None,
+                            constraint=None,
                             limit=None, htmid=None):
         """Execute a query from the primary catsim database
 
@@ -60,8 +60,6 @@ class StellarAlertDBObjMixin(object):
               if specified, then return an iterator object to query the database,
               each time returning the next `chunk_size` elements.  If not
               specified, all matching results will be returned.
-            * obs_metadata : object (optional)
-              This will be ignored
             * constraint : str (optional)
               a string which is interpreted as SQL and used as a predicate on the query
             * limit : int (optional)
@@ -148,7 +146,7 @@ class AgnAlertDBObj(GalaxyAgnObj):
 
 
     def query_columns_htmid(self, colnames=None, chunk_size=None,
-                            obs_metadata=None, constraint=None,
+                            constraint=None,
                             limit=None, htmid=None):
         """Execute a query from the primary catsim database
 
@@ -165,8 +163,6 @@ class AgnAlertDBObj(GalaxyAgnObj):
               if specified, then return an iterator object to query the database,
               each time returning the next `chunk_size` elements.  If not
               specified, all matching results will be returned.
-            * obs_metadata : object (optional)
-              This will be ignored
             * constraint : str (optional)
               a string which is interpreted as SQL and used as a predicate on the query
             * limit : int (optional)
