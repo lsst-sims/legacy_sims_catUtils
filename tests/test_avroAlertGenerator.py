@@ -1,12 +1,3 @@
-_avro_is_installed = True
-try:
-    import avro.schema
-    from avro.io import DatumReader
-    from avro.datafile import DataFileReader
-except ImportError:
-    _avro_is_installed = False
-    pass
-
 import unittest
 import os
 import tempfile
@@ -24,8 +15,6 @@ from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
-from lsst.sims.catUtils.utils import AlertDataGenerator
-from lsst.sims.catUtils.utils import AvroAlertGenerator
 from lsst.sims.catUtils.utils import StellarAlertDBObjMixin
 from lsst.sims.utils import findHtmid
 from lsst.sims.utils import applyProperMotion, ModifiedJulianDate
@@ -39,7 +28,18 @@ from lsst.sims.catUtils.mixins import Variability
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound, cached
 
+from lsst.sims.catUtils.utils import AlertDataGenerator
 from lsst.sims.catUtils.utils import AvroAlertGenerator
+
+_avro_is_installed = True
+try:
+    import avro.schema
+    from avro.io import DatumReader
+    from avro.datafile import DataFileReader
+except ImportError:
+    _avro_is_installed = False
+    pass
+
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -84,8 +84,10 @@ class TestAlertsVarCatMixin_avro(object):
 
         return dMags_out
 
+
 class TestAlertsVarCat_avro(TestAlertsVarCatMixin_avro, AlertStellarVariabilityCatalog):
     pass
+
 
 class TestAlertsTruthCat_avro(TestAlertsVarCatMixin_avro, CameraCoordsLSST, AstrometryStars,
                               Variability, InstanceCatalog):
@@ -128,7 +130,7 @@ class AvroAlertTestCase(unittest.TestCase):
         rng = np.random.RandomState(8123)
 
         obs_gen = ObservationMetaDataGenerator(database=cls.opsim_db)
-        cls.obs_list = obs_gen.getObservationMetaData(night=(0,2))
+        cls.obs_list = obs_gen.getObservationMetaData(night=(0, 2))
         cls.obs_list = rng.choice(cls.obs_list, 10, replace=False)
         fieldid_list = []
         for obs in cls.obs_list:
@@ -139,7 +141,7 @@ class AvroAlertTestCase(unittest.TestCase):
         assert len(np.unique(fieldid_list)) < len(fieldid_list)
 
         cls.input_dir = tempfile.mkdtemp(prefix='avroAlertGen',
-                                        dir=ROOT)
+                                         dir=ROOT)
 
         cls.star_db_name = tempfile.mktemp(prefix='avroAlertGen_star_db',
                                            dir=cls.input_dir,
@@ -184,7 +186,7 @@ class AvroAlertTestCase(unittest.TestCase):
             var_period = rng.random_sample(n_stars)*0.25
             var_amp = rng.random_sample(n_stars)*1.0 + 0.01
 
-            subset = rng.randint(0,high=len(var_amp)-1, size=3)
+            subset = rng.randint(0, high=len(var_amp)-1, size=3)
             var_amp[subset[:2]] = 0.0
             var_amp[subset[-1]] = -1.0
 
@@ -194,12 +196,12 @@ class AvroAlertTestCase(unittest.TestCase):
             imag = rng.random_sample(n_stars)*5.0 + 15.0
             zmag = rng.random_sample(n_stars)*5.0 + 15.0
             ymag = rng.random_sample(n_stars)*5.0 + 15.0
-            px = rng.random_sample(n_stars)*0.1 # say it is arcsec
-            pmra = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
-            pmdec = rng.random_sample(n_stars)*50.0+100.0 # say it is arcsec/yr
+            px = rng.random_sample(n_stars)*0.1  # say it is arcsec
+            pmra = rng.random_sample(n_stars)*50.0+100.0  # say it is arcsec/yr
+            pmdec = rng.random_sample(n_stars)*50.0+100.0  # say it is arcsec/yr
             vrad = rng.random_sample(n_stars)*600.0 - 300.0
 
-            subset = rng.randint(0,high=n_stars-1, size=3)
+            subset = rng.randint(0, high=n_stars-1, size=3)
             umag[subset] = 40.0
             gmag[subset] = 40.0
             rmag[subset] = 40.0
@@ -225,7 +227,7 @@ class AvroAlertTestCase(unittest.TestCase):
             max_str_len = -1
 
             for i_star in range(n_stars):
-                if var_amp[i_star] >=-0.1:
+                if var_amp[i_star] >= -0.1:
                     varParamStr = ('{"m":"avro_test", "p":{"amp":%.4f, "per": %.4f}}'
                                    % (var_amp[i_star], var_period[i_star]))
                 else:
@@ -289,7 +291,7 @@ class AvroAlertTestCase(unittest.TestCase):
 
     def test_avro_alert_generation(self):
         dmag_cutoff = 0.005
-        mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
 
         star_db = StarAlertTestDBObj_avro(database=self.star_db_name, driver='sqlite')
 
@@ -315,9 +317,11 @@ class AvroAlertTestCase(unittest.TestCase):
 
                 dmag = line[2]
                 mag = line[3]
-                if np.abs(dmag)>dmag_cutoff and mag<=self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
-                    alertId = (line[0]<<obshistid_bits) + obshistid
-                    assert alertId not in true_alert_dict
+                if (np.abs(dmag) > dmag_cutoff and
+                    mag <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]):
+
+                    alertId = (line[0] << obshistid_bits) + obshistid
+                    self.assertNotIn(alertId, true_alert_dict)
                     true_alert_dict[alertId] = {}
                     true_alert_dict[alertId]['chipName'] = line[1]
                     true_alert_dict[alertId]['dmag'] = dmag
@@ -376,13 +380,13 @@ class AvroAlertTestCase(unittest.TestCase):
             if avro_file_name.endswith('log.txt'):
                 continue
             full_name = os.path.join(self.avro_out_dir, avro_file_name)
-            with DataFileReader(open(full_name,'rb'), DatumReader()) as data_reader:
+            with DataFileReader(open(full_name, 'rb'), DatumReader()) as data_reader:
                 for alert in data_reader:
                     alert_ct += 1
-                    obshistid = alert['alertId']>>20
+                    obshistid = alert['alertId'] >> 20
                     obs = obs_dict[obshistid]
                     uniqueId = alert['diaObject']['diaObjectId']
-                    true_alert_id = (uniqueId<<obshistid_bits) + obshistid
+                    true_alert_id = (uniqueId << obshistid_bits) + obshistid
                     self.assertIn(true_alert_id, true_alert_dict)
                     self.assertEqual(alert['l1dbId'], uniqueId)
 
@@ -412,7 +416,7 @@ class AvroAlertTestCase(unittest.TestCase):
 
                     true_tot_err = true_tot_flux/true_tot_snr
                     true_q_err = true_q_flux/true_q_snr
-                    true_diff_err =np.sqrt(true_tot_err**2 + true_q_err**2)
+                    true_diff_err = np.sqrt(true_tot_err**2 + true_q_err**2)
 
                     self.assertAlmostEqual(diaSource['snr']/np.abs(true_dflux/true_diff_err),
                                            1.0, 6)
@@ -420,8 +424,8 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(diaSource['totFluxErr']/true_tot_err, 1.0, 6)
                     self.assertAlmostEqual(diaSource['diffFluxErr']/true_diff_err, 1.0, 6)
 
-                    chipnum = int(true_alert['chipName'].replace('R','').replace('S','').\
-                                  replace(',','').replace(':','').replace(' ',''))
+                    chipnum = int(true_alert['chipName'].replace('R', '').replace('S', '').
+                                  replace(',', '').replace(':', '').replace(' ', ''))
 
                     true_ccdid = (chipnum*10**7)+obshistid
                     self.assertEqual(true_ccdid, diaSource['ccdVisitId'])
@@ -436,16 +440,17 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(0.001*diaObject['pmDecl']/self.pmdec_truth[obj_dex], 1.0, 5)
                     self.assertAlmostEqual(0.001*diaObject['parallax']/self.px_truth[obj_dex], 1.0, 5)
 
-                    true_ra_base, true_dec_base = applyProperMotion(self.ra_truth[obj_dex],
-                                                                    self.dec_truth[obj_dex],
-                                                                    self.pmra_truth[obj_dex],
-                                                                    self.pmdec_truth[obj_dex],
-                                                                    self.px_truth[obj_dex],
-                                                                    self.vrad_truth[obj_dex],
-                                                                    mjd=ModifiedJulianDate(TAI=diaObject['radecTai']))
+                    (true_ra_base,
+                     true_dec_base) = applyProperMotion(self.ra_truth[obj_dex],
+                                                        self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex],
+                                                        self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex],
+                                                        self.vrad_truth[obj_dex],
+                                                        mjd=ModifiedJulianDate(TAI=diaObject['radecTai']))
 
                     self.assertAlmostEqual(true_ra_base, diaObject['ra'], 7)
-                    self.assertAlmostEqual(true_dec_base,diaObject['decl'],7)
+                    self.assertAlmostEqual(true_dec_base, diaObject['decl'], 7)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
@@ -456,7 +461,7 @@ class AvroAlertTestCase(unittest.TestCase):
         """
         dmag_cutoff_sqlite = 0.005
         dmag_cutoff_avro = 0.2
-        mag_name_to_int = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
 
         star_db = StarAlertTestDBObj_avro(database=self.star_db_name, driver='sqlite')
 
@@ -483,9 +488,11 @@ class AvroAlertTestCase(unittest.TestCase):
 
                 dmag = line[2]
                 mag = line[3]
-                if np.abs(dmag)>dmag_cutoff_avro and mag<=self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
-                    alertId = (line[0]<<obshistid_bits) + obshistid
-                    assert alertId not in true_alert_dict
+                if (np.abs(dmag) > dmag_cutoff_avro and
+                    mag <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]):
+
+                    alertId = (line[0] << obshistid_bits) + obshistid
+                    self.assertNotIn(alertId, true_alert_dict)
                     true_alert_dict[alertId] = {}
                     true_alert_dict[alertId]['chipName'] = line[1]
                     true_alert_dict[alertId]['dmag'] = dmag
@@ -494,7 +501,7 @@ class AvroAlertTestCase(unittest.TestCase):
                     true_alert_dict[alertId]['decl'] = np.degrees(line[5])
                     true_alert_dict[alertId]['xPix'] = line[6]
                     true_alert_dict[alertId]['yPix'] = line[7]
-                elif np.abs(dmag)>dmag_cutoff_sqlite:
+                elif np.abs(dmag) > dmag_cutoff_sqlite:
                     ignored_sqlite += 1
 
         self.assertGreater(len(true_alert_dict), 10)
@@ -550,13 +557,13 @@ class AvroAlertTestCase(unittest.TestCase):
             if avro_file_name.endswith('log.txt'):
                 continue
             full_name = os.path.join(self.avro_out_dir, avro_file_name)
-            with DataFileReader(open(full_name,'rb'), DatumReader()) as data_reader:
+            with DataFileReader(open(full_name, 'rb'), DatumReader()) as data_reader:
                 for alert in data_reader:
                     alert_ct += 1
-                    obshistid = alert['alertId']>>20
+                    obshistid = alert['alertId'] >> 20
                     obs = obs_dict[obshistid]
                     uniqueId = alert['diaObject']['diaObjectId']
-                    true_alert_id = (uniqueId<<obshistid_bits) + obshistid
+                    true_alert_id = (uniqueId << obshistid_bits) + obshistid
                     self.assertIn(true_alert_id, true_alert_dict)
                     self.assertEqual(alert['l1dbId'], uniqueId)
 
@@ -586,7 +593,7 @@ class AvroAlertTestCase(unittest.TestCase):
 
                     true_tot_err = true_tot_flux/true_tot_snr
                     true_q_err = true_q_flux/true_q_snr
-                    true_diff_err =np.sqrt(true_tot_err**2 + true_q_err**2)
+                    true_diff_err = np.sqrt(true_tot_err**2 + true_q_err**2)
 
                     self.assertAlmostEqual(diaSource['snr']/np.abs(true_dflux/true_diff_err),
                                            1.0, 6)
@@ -594,8 +601,8 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(diaSource['totFluxErr']/true_tot_err, 1.0, 6)
                     self.assertAlmostEqual(diaSource['diffFluxErr']/true_diff_err, 1.0, 6)
 
-                    chipnum = int(true_alert['chipName'].replace('R','').replace('S','').\
-                                  replace(',','').replace(':','').replace(' ',''))
+                    chipnum = int(true_alert['chipName'].replace('R', '').replace('S', '').
+                                  replace(',', '').replace(':', '').replace(' ', ''))
 
                     true_ccdid = (chipnum*10**7)+obshistid
                     self.assertEqual(true_ccdid, diaSource['ccdVisitId'])
@@ -610,19 +617,19 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(0.001*diaObject['pmDecl']/self.pmdec_truth[obj_dex], 1.0, 5)
                     self.assertAlmostEqual(0.001*diaObject['parallax']/self.px_truth[obj_dex], 1.0, 5)
 
-                    true_ra_base, true_dec_base = applyProperMotion(self.ra_truth[obj_dex],
-                                                                    self.dec_truth[obj_dex],
-                                                                    self.pmra_truth[obj_dex],
-                                                                    self.pmdec_truth[obj_dex],
-                                                                    self.px_truth[obj_dex],
-                                                                    self.vrad_truth[obj_dex],
-                                                                    mjd=ModifiedJulianDate(TAI=diaObject['radecTai']))
+                    (true_ra_base,
+                     true_dec_base) = applyProperMotion(self.ra_truth[obj_dex],
+                                                        self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex],
+                                                        self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex],
+                                                        self.vrad_truth[obj_dex],
+                                                        mjd=ModifiedJulianDate(TAI=diaObject['radecTai']))
 
                     self.assertAlmostEqual(true_ra_base, diaObject['ra'], 7)
-                    self.assertAlmostEqual(true_dec_base,diaObject['decl'],7)
+                    self.assertAlmostEqual(true_dec_base, diaObject['decl'], 7)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
-
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
@@ -632,4 +639,3 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-
