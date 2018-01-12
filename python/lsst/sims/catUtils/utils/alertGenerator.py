@@ -357,8 +357,8 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
             self._dummy_sed = Sed()
         if not hasattr(self, 'lsstBandpassDict'):
             self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        if not hasattr(self, 'photParams'):
-            self.photParams = PhotometricParameters()
+        if not hasattr(self, 'phot_params'):
+            self.phot_params = PhotometricParameters()
         if not hasattr(self, '_gamma'):
             self._gamma = None
 
@@ -368,7 +368,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
         snr_tot, gamma = calcSNR_m5(mag, self.lsstBandpassDict[self.obs_metadata.bandpass],
                                     self.obs_metadata.m5[self.obs_metadata.bandpass],
-                                    self.photParams, gamma=self._gamma)
+                                    self.phot_params, gamma=self._gamma)
 
         if self._gamma is None:
             self._gamma = gamma
@@ -993,7 +993,7 @@ class AlertDataGenerator(object):
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
 
-        photParams = PhotometricParameters()
+        phot_params = PhotometricParameters()
 
         # from Table 2 of the overview paper
         obs_mag_cutoff = (23.68, 24.89, 24.43, 24.0, 24.45, 22.60)
@@ -1156,7 +1156,7 @@ class AlertDataGenerator(object):
                     snr_template, local_gamma = calcSNR_m5(q_m_dict[i_filter],
                                                            self.bp_dict[mag_names[i_filter]],
                                                            obs_mag_cutoff[i_filter],
-                                                           photParams, gamma=gamma_template[i_filter])
+                                                           phot_params, gamma=gamma_template[i_filter])
                     q_snr_dict[i_filter] = snr_template
                     gamma_template[i_filter] = local_gamma
 
