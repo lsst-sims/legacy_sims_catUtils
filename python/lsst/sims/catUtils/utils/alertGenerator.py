@@ -438,7 +438,7 @@ class AlertDataGenerator(object):
     multiprocessing module, with each process handling a different htmid.
 
     The sqlite files produced by alert_data_from_htmid will each contain
-    three tables.  They are as follows.  Columns are listed below the
+    four tables.  They are as follows.  Columns are listed below the
     tables.
 
     alert_data
