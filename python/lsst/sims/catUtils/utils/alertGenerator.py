@@ -113,8 +113,10 @@ class StellarAlertDBObjMixin(object):
 
         return ChunkIterator(self, query, chunk_size)
 
+
 class StellarAlertDBObj(StellarAlertDBObjMixin, StarObj):
     pass
+
 
 class AgnAlertDBObj(GalaxyAgnObj):
     """
@@ -144,7 +146,6 @@ class AgnAlertDBObj(GalaxyAgnObj):
                ('lsst_i', 'i_ab'),
                ('lsst_z', 'z_ab'),
                ('lsst_y', 'y_ab')]
-
 
     def query_columns_htmid(self, colnames=None, chunk_size=None,
                             constraint=None,
@@ -225,7 +226,7 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
                       'flux', 'SNR', 'dflux',
                       'chipNum', 'xPix', 'yPix']
 
-    default_formats = {'f':'%.4g'}
+    default_formats = {'f': '%.4g'}
 
     default_columns = [('properMotionRa', 0.0, float),
                        ('properMotionDec', 0.0, float),
