@@ -20,7 +20,7 @@ __all__ = ["AvroAlertGenerator"]
 
 ################
 # The methods
-# combine_schemasand load_single_avsc
+# combine_schemas and load_single_avsc
 # are copied from Maria Patterson's
 # validateAvroNestedSchema.py script in
 # https://github.com:lsst-dim/sample-avro-alert
