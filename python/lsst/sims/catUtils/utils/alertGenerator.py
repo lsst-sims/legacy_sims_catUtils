@@ -6,6 +6,7 @@ from collections import OrderedDict
 import time
 import gc
 from lsst.utils import getPackageDir
+from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
 from lsst.sims.utils import angularSeparation, ObservationMetaData
