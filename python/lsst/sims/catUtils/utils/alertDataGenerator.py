@@ -543,15 +543,19 @@ class AlertDataGenerator(object):
         # used by the stellar variability model to figure out which
         # stars can be skipped because they will never vary above
         # the alert-triggering threshold.
+        self._dmag_lookup_file_exists = True
         self._dmag_lookup_file = os.path.join(getPackageDir('sims_data'),
                                               'catUtilsData',
                                               'kplr_dmag_171204.txt')
 
-        if not os.path.exists(self._dmag_lookup_file) and not testing:
-            script_name = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
-                                       'get_kepler_dmag.sh')
-            raise RuntimeError('\n%s does not exist; run the script\n\n%s\n\n' %
-                               script_name)
+        if not os.path.exists(self._dmag_lookup_file)
+            if not testing:
+                script_name = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
+                                           'get_kepler_dmag.sh')
+                raise RuntimeError('\n%s does not exist; run the script\n\n%s\n\n' %
+                                   script_name)
+            else:
+                self._dmag_lookup_file_exists = False
 
     def acquire_lock(self):
         """
@@ -930,7 +934,9 @@ class AlertDataGenerator(object):
         if log_file_name is None:
             raise RuntimeError('must specify log_file_name')
 
-        if '_PARAMETRIZED_LC_DMAG_LOOKUP' not in self._variability_cache:
+        if ('_PARAMETRIZED_LC_DMAG_LOOKUP' not in self._variability_cache and
+            self._dmag_lookup_file_exists):
+
             self._variability_cache['_PARAMETRIZED_LC_DMAG_CUTOFF'] = dmag_cutoff
             self._variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'] = {}
 
