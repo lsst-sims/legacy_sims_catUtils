@@ -548,7 +548,7 @@ class AlertDataGenerator(object):
                                               'catUtilsData',
                                               'kplr_dmag_171204.txt')
 
-        if not os.path.exists(self._dmag_lookup_file)
+        if not os.path.exists(self._dmag_lookup_file):
             if not testing:
                 script_name = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
                                            'get_kepler_dmag.sh')
