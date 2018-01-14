@@ -78,34 +78,43 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 
+import time
+
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies",
-           "VariabilityAGN",
-           "reset_agn_lc_cache", "StellarVariabilityModels",
+           "VariabilityAGN", "StellarVariabilityModels",
            "ExtraGalacticVariabilityModels", "MLTflaringMixin",
-           "ParametrizedLightCurveMixin"]
+           "ParametrizedLightCurveMixin",
+           "create_variability_cache"]
 
-_AGN_LC_CACHE = {}  # a global cache of agn light curve calculations
 
-_MLT_LC_NPZ = None  # this will be loaded from a .npz file
-                    # (.npz files are the result of numpy.savez())
-
-_MLT_LC_NPZ_NAME = None  # the name of the .npz file to beloaded
-
-_MLT_LC_TIME_CACHE = {}  # a dict for storing loaded time grids
-
-_MLT_LC_FLUX_CACHE = {}  # a dict for storing loaded flux grids
-
-_PARAMETRIZED_LC_MODELS = {}  # a dict for storing the parametrized light curve models
-_PARAMETRIZED_MODELS_LOADED = []  # a list of all of the files from which models were loaded
-
-def reset_agn_lc_cache():
+def create_variability_cache():
     """
-    Resets the _AGN_LC_CACHE (a global dict for cacheing time steps in AGN
-    light curves) to an empty dict.
+    Create a blank variability cache
     """
-    global _AGN_LC_CACHE
-    _AGN_LC_CACHE = {}
-    return None
+    cache = {'parallelizable': False,
+
+             '_MLT_LC_NPZ' : None,  # this will be loaded from a .npz file
+                                        # (.npz files are the result of numpy.savez())
+
+             '_MLT_LC_NPZ_NAME' : None,  # the name of the .npz file to beloaded
+
+             '_MLT_LC_TIME_CACHE' : {},  # a dict for storing loaded time grids
+
+             '_MLT_LC_DURATION_CACHE' : {},  # a dict for storing the simulated length
+                                                 # of the time grids
+
+             '_MLT_LC_MAX_TIME_CACHE'  : {},  # a dict for storing the t_max of a light curve
+
+             '_MLT_LC_FLUX_CACHE' : {},  # a dict for storing loaded flux grids
+
+             '_PARAMETRIZED_LC_MODELS' : {},  # a dict for storing the parametrized light curve models
+
+             '_PARAMETRIZED_MODELS_LOADED' : []  # a list of all of the files from which models were loaded
+            }
+
+    return cache
+
+_GLOBAL_VARIABILITY_CACHE = create_variability_cache()
 
 
 class Variability(object):
@@ -164,7 +173,8 @@ class Variability(object):
 
 
 
-    def applyVariability(self, varParams_arr, expmjd=None):
+    def applyVariability(self, varParams_arr, expmjd=None,
+                         variability_cache=None):
         """
         Read in an array/list of varParamStr objects taken from the CatSim
         database.  For each varParamStr, call the appropriate variability
@@ -173,17 +183,28 @@ class Variability(object):
         array of magnitude offsets in which each row is an LSST band
         in ugrizy order and each column is an astrophysical object from
         the CatSim database.
+
+        variability_cache is a cache of data as initialized by the
+        create_variability_cache() method (optional; if None, the
+        method will just use a globl cache)
         """
+        t_start = time.time()
+        if not hasattr(self, '_total_t_apply_var'):
+            self._total_t_apply_var = 0.0
 
         # construct a registry of all of the variability models
         # available to the InstanceCatalog
         if not hasattr(self, '_methodRegistry'):
             self._methodRegistry = {}
+            self._method_name_to_int = {}
+            next_int = 0
             for methodname in dir(self):
                 method=getattr(self, methodname)
                 if hasattr(method, '_registryKey'):
                     if method._registryKey not in self._methodRegistry:
                         self._methodRegistry[method._registryKey] = method
+                        self._method_name_to_int[method._registryKey] = next_int
+                        next_int += 1
 
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
@@ -215,6 +236,12 @@ class Variability(object):
         # variability methods.
         method_name_arr = []
 
+        # also keep an array listing the methods to use
+        # by the integers mapped with self._method_name_to_int;
+        # this is for faster application of np.where when
+        # figuring out which objects go with which method
+        method_int_arr = -1*np.ones(len(varParams_arr), dtype=int)
+
         # Keep a dict keyed on all of the method names in
         # method_name_arr.  params[method_name] will be another
         # dict keyed on the names of the parameters required by
@@ -226,28 +253,25 @@ class Variability(object):
         params = {}
 
         for ix, varCmd in enumerate(varParams_arr):
-            if str(varCmd) != 'None':
-                varCmd = json.loads(varCmd)
+            if str(varCmd) == 'None':
+                continue
 
-                # find the key associated with the name of
-                # the specific variability model to be applied
-                if 'varMethodName' in varCmd:
-                    meth_key = 'varMethodName'
-                else:
-                    meth_key = 'm'
+            varCmd = json.loads(varCmd)
 
-                # find the key associated with the list of
-                # parameters to be supplied to the variability
-                # model
-                if 'pars' in varCmd:
-                    par_key = 'pars'
-                else:
-                    par_key = 'p'
-            else:
-                # if there is no varParamStr, setup a null model
-                varCmd = {'varMethodName': 'None', 'pars':{}}
+            # find the key associated with the name of
+            # the specific variability model to be applied
+            if 'varMethodName' in varCmd:
                 meth_key = 'varMethodName'
+            else:
+                meth_key = 'm'
+
+            # find the key associated with the list of
+            # parameters to be supplied to the variability
+            # model
+            if 'pars' in varCmd:
                 par_key = 'pars'
+            else:
+                par_key = 'p'
 
             # if we have discovered a new variability model
             # that needs to be called, initialize its entries
@@ -258,6 +282,14 @@ class Variability(object):
                     params[varCmd[meth_key]][p_name] = [None]*len(varParams_arr)
 
             method_name_arr.append(varCmd[meth_key])
+            if varCmd[meth_key] != 'None':
+                try:
+                    method_int_arr[ix] = self._method_name_to_int[varCmd[meth_key]]
+                except KeyError:
+                    raise RuntimeError("Your InstanceCatalog does not contain " \
+                                       + "a variability method corresponding to '%s'"
+                                       % varCmd[meth_key])
+
             for p_name in varCmd[par_key]:
                 params[varCmd[meth_key]][p_name][ix] = varCmd[par_key][p_name]
 
@@ -275,15 +307,12 @@ class Variability(object):
                 if expmjd is None:
                     expmjd = self.obs_metadata.mjd.TAI
 
-                if method_name not in self._methodRegistry:
-                    raise RuntimeError("Your InstanceCatalog does not contain " \
-                                       + "a variability method corresponding to '%s'"
-                                       % method_name)
-
-                deltaMag += self._methodRegistry[method_name](np.where(np.char.equal(method_name, method_name_arr)),
+                deltaMag += self._methodRegistry[method_name](np.where(method_int_arr==self._method_name_to_int[method_name]),
                                                               params[method_name],
-                                                              expmjd)
+                                                              expmjd,
+                                                              variability_cache=variability_cache)
 
+        self._total_t_apply_var += time.time()-t_start
         return deltaMag
 
 
@@ -393,7 +422,8 @@ class StellarVariabilityModels(Variability):
     """
 
     @register_method('applyRRly')
-    def applyRRly(self, valid_dexes, params, expmjd):
+    def applyRRly(self, valid_dexes, params, expmjd,
+                  variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -403,7 +433,8 @@ class StellarVariabilityModels(Variability):
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyCepheid')
-    def applyCepheid(self, valid_dexes, params, expmjd):
+    def applyCepheid(self, valid_dexes, params, expmjd,
+                     variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -413,7 +444,8 @@ class StellarVariabilityModels(Variability):
                 interpFactory=InterpolatedUnivariateSpline)
 
     @register_method('applyEb')
-    def applyEb(self, valid_dexes, params, expmjd):
+    def applyEb(self, valid_dexes, params, expmjd,
+                variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -435,11 +467,13 @@ class StellarVariabilityModels(Variability):
         return dMags
 
     @register_method('applyMicrolensing')
-    def applyMicrolensing(self, valid_dexes, params, expmjd_in):
+    def applyMicrolensing(self, valid_dexes, params, expmjd_in,
+                          variability_cache=None):
         return self.applyMicrolens(valid_dexes, params,expmjd_in)
 
     @register_method('applyMicrolens')
-    def applyMicrolens(self, valid_dexes, params, expmjd_in):
+    def applyMicrolens(self, valid_dexes, params, expmjd_in,
+                       variability_cache=None):
         #I believe this is the correct method based on
         #http://www.physics.fsu.edu/Courses/spring98/AST3033/Micro/lensing.htm
         #
@@ -477,7 +511,8 @@ class StellarVariabilityModels(Variability):
 
 
     @register_method('applyAmcvn')
-    def applyAmcvn(self, valid_dexes, params, expmjd_in):
+    def applyAmcvn(self, valid_dexes, params, expmjd_in,
+                   variability_cache=None):
         #21 October 2014
         #This method assumes that the parameters for Amcvn variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -547,7 +582,8 @@ class StellarVariabilityModels(Variability):
         return dMag
 
     @register_method('applyBHMicrolens')
-    def applyBHMicrolens(self, valid_dexes, params, expmjd_in):
+    def applyBHMicrolens(self, valid_dexes, params, expmjd_in,
+                         variability_cache=None):
         #21 October 2014
         #This method assumes that the parameters for BHMicrolensing variability
         #are stored in a varParamStr column in the database.  Actually, the
@@ -599,11 +635,112 @@ class MLTflaringMixin(Variability):
 
     # the file wherein light curves for MLT dwarf flares are stored
     _mlt_lc_file = os.path.join(getPackageDir('sims_data'),
-                                'catUtilsData', 'mdwarf_flare_light_curves_170412.npz')
+                                'catUtilsData', 'mlt_shortened_lc_171012.npz')
+
+    def load_MLT_light_curves(self, mlt_lc_file, variability_cache):
+        """
+        Load MLT light curves specified by the file mlt_lc_file into
+        the variability_cache
+        """
+
+        self._mlt_to_int = {}
+        self._mlt_to_int['None'] = -1
+        self._current_mlt_dex = 0
+
+        if not os.path.exists(mlt_lc_file):
+            catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
+            raise RuntimeError("The MLT flaring light curve file:\n"
+                               + "\n%s\n" % mlt_lc_file
+                               + "\ndoes not exist."
+                               +"\n\n"
+                               + "Go into %s " % catutils_scripts
+                               + "and run get_mdwarf_flares.sh "
+                               + "to get the data")
+
+        variability_cache['_MLT_LC_NPZ'] = np.load(mlt_lc_file)
+
+        global _GLOBAL_VARIABILITY_CACHE
+        if variability_cache is _GLOBAL_VARIABILITY_CACHE:
+            sims_clean_up.targets.append(variability_cache['_MLT_LC_NPZ'])
+
+        variability_cache['_MLT_LC_NPZ_NAME'] = mlt_lc_file
+
+        if variability_cache['parallelizable']:
+            variability_cache['_MLT_LC_TIME_CACHE'] = mgr.dict()
+            variability_cache['_MLT_LC_DURATION_CACHE'] = mgr.dict()
+            variability_cache['_MLT_LC_MAX_TIME_CACHE'] = mgr.dict()
+            variability_cache['_MLT_LC_FLUX_CACHE'] = mgr.dict()
+        else:
+            variability_cache['_MLT_LC_TIME_CACHE'] = {}
+            variability_cache['_MLT_LC_DURATION_CACHE'] = {}
+            variability_cache['_MLT_LC_MAX_TIME_CACHE'] = {}
+            variability_cache['_MLT_LC_FLUX_CACHE'] = {}
+
+
+    def _process_mlt_class(self, lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
+                           flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
+                           base_mags, mag_name_tuple, output_dict):
+
+        ss = Sed()
+
+        lc_name = lc_name_raw.replace('.txt', '')
+
+        lc_dex_target = self._mlt_to_int[lc_name]
+
+        use_this_lc = np.where(lc_dex_arr==lc_dex_target)[0]
+
+        if isinstance(expmjd, numbers.Number):
+            t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
+        else:
+            n_obj = len(use_this_lc)
+            n_time = len(expmjd)
+            t_interp = np.ones(shape=(n_obj, n_time))*expmjd
+            t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+
+        bad_dexes = np.where(t_interp>max_time)
+        while len(bad_dexes[0])>0:
+            t_interp[bad_dexes] -= dt
+            bad_dexes = np.where(t_interp>max_time)
+
+        local_output_dict = {}
+        for i_mag, mag_name in enumerate(mag_name_tuple):
+            if mag_name in flux_arr_dict:
+
+                flux_arr = flux_arr_dict[mag_name]
+
+                dflux = np.interp(t_interp, time_arr, flux_arr)
+
+                if isinstance(expmjd, numbers.Number):
+                    dflux *= flux_factor[use_this_lc]
+                else:
+                    dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+
+                dust_factor = np.interp(ebv[use_this_lc],
+                                        mlt_dust_lookup['ebv'],
+                                        mlt_dust_lookup[mag_name])
+
+                if not isinstance(expmjd, numbers.Number):
+                    dust_factor = np.array([dust_factor]*n_time).transpose()
+
+                dflux *= dust_factor
+
+                if isinstance(expmjd, numbers.Number):
+                    local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                    local_base_mags = base_mags[mag_name][use_this_lc]
+                else:
+                    local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                    local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+
+                dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
+
+                local_output_dict[i_mag]=dmag
+
+            output_dict[lc_name_raw] = {'dex':use_this_lc, 'dmag':local_output_dict}
 
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
-                        parallax=None, ebv=None, quiescent_mags=None):
+                        parallax=None, ebv=None, quiescent_mags=None,
+                        variability_cache=None):
         """
         parallax, ebv, and quiescent_mags are optional kwargs for use if you are
         calling this method outside the context of an InstanceCatalog (presumably
@@ -617,15 +754,18 @@ class MLTflaringMixin(Variability):
         with the quiescent magnitudes of the objects
         """
 
+        t_start = time.time()
+        if not hasattr(self, '_total_t_MLT'):
+            self._total_t_MLT = 0.0
+
         if parallax is None:
             parallax = self.column_by_name('parallax')
         if ebv is None:
             ebv = self.column_by_name('ebv')
 
-        global _MLT_LC_NPZ
-        global _MLT_LC_NPZ_NAME
-        global _MLT_LC_TIME_CACHE
-        global _MLT_LC_FLUX_CACHE
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         # this needs to occur before loading the MLT light curve cache,
         # just in case the user wants to override the light curve cache
@@ -651,22 +791,11 @@ class MLTflaringMixin(Variability):
                                "knowledge of the effective area of the LSST "
                                "mirror.")
 
-        if _MLT_LC_NPZ is None or _MLT_LC_NPZ_NAME != self._mlt_lc_file or _MLT_LC_NPZ.fid is None:
-            if not os.path.exists(self._mlt_lc_file):
-                catutils_scripts = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts')
-                raise RuntimeError("The MLT flaring light curve file:\n"
-                                    + "\n%s\n" % self._mlt_lc_file
-                                    + "\ndoes not exist."
-                                    +"\n\n"
-                                    + "Go into %s " % catutils_scripts
-                                    + "and run get_mdwarf_flares.sh "
-                                    + "to get the data")
+        if (variability_cache['_MLT_LC_NPZ'] is None
+            or variability_cache['_MLT_LC_NPZ_NAME'] != self._mlt_lc_file
+            or variability_cache['_MLT_LC_NPZ'].fid is None):
 
-            _MLT_LC_NPZ = np.load(self._mlt_lc_file)
-            sims_clean_up.targets.append(_MLT_LC_NPZ)
-            _MLT_LC_NPZ_NAME = self._mlt_lc_file
-            _MLT_LC_TIME_CACHE = {}
-            _MLT_LC_FLUX_CACHE = {}
+            self.load_MLT_light_curves(self._mlt_lc_file, variability_cache)
 
         if not hasattr(self, '_mlt_dust_lookup'):
             # Construct a look-up table to determine the factor
@@ -747,14 +876,64 @@ class MLTflaringMixin(Variability):
                 base_fluxes[mag_name] = ss.fluxFromMag(mm)
 
         lc_name_arr = params['lc'].astype(str)
-        lc_names_unique = np.unique(lc_name_arr)
+        lc_names_unique = np.sort(np.unique(lc_name_arr))
+
+        t_work = 0.0
+
+        # load all of the necessary light curves
+        # t_flux_dict = 0.0
+
+        if not hasattr(self, '_mlt_to_int'):
+            self._mlt_to_int = {}
+            self._mlt_to_int['None'] = -1
+            self._current_mlt_dex = 0
+
         for lc_name in lc_names_unique:
             if 'None' in lc_name:
                 continue
 
-            use_this_lc = np.where(np.char.find(lc_name_arr, lc_name)==0)
+            if lc_name not in self._mlt_to_int:
+                self._mlt_to_int[lc_name] = self._current_mlt_dex
+                self._mlt_to_int[lc_name.replace('.txt','')] = self._current_mlt_dex
+                self._current_mlt_dex += 1
+
 
             lc_name = lc_name.replace('.txt', '')
+
+            if 'late' in lc_name:
+                lc_name = lc_name.replace('in', '')
+
+            if lc_name not in variability_cache['_MLT_LC_DURATION_CACHE']:
+                time_arr = variability_cache['_MLT_LC_NPZ']['%s_time' % lc_name] + self._survey_start
+                variability_cache['_MLT_LC_TIME_CACHE'][lc_name] = time_arr
+                dt = time_arr.max() - time_arr.min()
+                variability_cache['_MLT_LC_DURATION_CACHE'][lc_name] = dt
+                max_time = time_arr.max()
+                variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name] = max_time
+
+            # t_before_flux = time.time()
+            for mag_name in mag_name_tuple:
+                if ('lsst_%s' % mag_name in self._actually_calculated_columns or
+                    'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
+
+                    flux_name = '%s_%s' % (lc_name, mag_name)
+                    if flux_name not in variability_cache['_MLT_LC_FLUX_CACHE']:
+
+                        flux_arr = variability_cache['_MLT_LC_NPZ'][flux_name]
+                        variability_cache['_MLT_LC_FLUX_CACHE'][flux_name] = flux_arr
+            # t_flux_dict += time.time()-t_before_flux
+
+        lc_dex_arr = np.array([self._mlt_to_int[name] for name in lc_name_arr])
+
+        t_set_up = time.time()-t_start
+
+        dmag_master_dict = {}
+
+        for lc_name_raw in lc_names_unique:
+            if 'None' in lc_name_raw:
+                continue
+
+            lc_name = lc_name_raw.replace('.txt', '')
 
             # 2017 May 1
             # There isn't supposed to be a 'late_inactive' light curve.
@@ -766,63 +945,30 @@ class MLTflaringMixin(Variability):
             if 'late' in lc_name:
                 lc_name = lc_name.replace('in', '')
 
-            if lc_name in _MLT_LC_TIME_CACHE:
-                raw_time_arr = _MLT_LC_TIME_CACHE[lc_name]
-            else:
-                raw_time_arr = _MLT_LC_NPZ['%s_time' % lc_name]
-                _MLT_LC_TIME_CACHE[lc_name] = raw_time_arr
-
-            time_arr = self._survey_start + raw_time_arr
-            dt = time_arr.max() - time_arr.min()
-
-            if isinstance(expmjd, numbers.Number):
-                t_interp = (expmjd + params['t0'][use_this_lc]).astype(float)
-            else:
-                n_obj = len(use_this_lc[0])
-                n_time = len(expmjd)
-                t_interp = np.ones(shape=(n_obj, n_time))*expmjd
-                t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
-
-            while t_interp.max() > time_arr.max():
-                bad_dexes = np.where(t_interp>time_arr.max())
-                t_interp[bad_dexes] -= dt
-
-            for i_mag, mag_name in enumerate(mag_name_tuple):
+            time_arr = variability_cache['_MLT_LC_TIME_CACHE'][lc_name]
+            dt = variability_cache['_MLT_LC_DURATION_CACHE'][lc_name]
+            max_time = variability_cache['_MLT_LC_MAX_TIME_CACHE'][lc_name]
+            flux_arr_dict = {}
+            for mag_name in mag_name_tuple:
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
-                    flux_name = '%s_%s' % (lc_name, mag_name)
-                    if flux_name in _MLT_LC_FLUX_CACHE:
-                        flux_arr = _MLT_LC_FLUX_CACHE[flux_name]
-                    else:
-                        flux_arr = _MLT_LC_NPZ[flux_name]
-                        _MLT_LC_FLUX_CACHE[flux_name] = flux_arr
+                    flux_arr_dict[mag_name] = variability_cache['_MLT_LC_FLUX_CACHE']['%s_%s' % (lc_name, mag_name)]
 
-                    dflux = np.interp(t_interp, time_arr, flux_arr)
+            t_before_work = time.time()
 
-                    if isinstance(expmjd, numbers.Number):
-                        dflux *= flux_factor[use_this_lc]
-                    else:
-                        dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+            self._process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
+                                    flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
+                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
 
-                    dust_factor = np.interp(ebv[use_this_lc],
-                                            self._mlt_dust_lookup['ebv'],
-                                            self._mlt_dust_lookup[mag_name])
+            t_work += time.time() - t_before_work
 
-                    if not isinstance(expmjd, numbers.Number):
-                        dust_factor = np.array([dust_factor]*n_time).transpose()
+        for lc_name in dmag_master_dict:
+            for i_mag in dmag_master_dict[lc_name]['dmag']:
+                dMags[i_mag][dmag_master_dict[lc_name]['dex']] += dmag_master_dict[lc_name]['dmag'][i_mag]
 
-                    dflux *= dust_factor
-
-                    if isinstance(expmjd, numbers.Number):
-                        local_base_fluxes = base_fluxes[mag_name][use_this_lc]
-                        local_base_mags = base_mags[mag_name][use_this_lc]
-                    else:
-                        local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
-                        local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
-
-                    dMags[i_mag][use_this_lc] = (ss.magFromFlux(local_base_fluxes + dflux)
-                                                 - local_base_mags)
+        t_mlt = time.time()-t_start
+        self._total_t_MLT += t_mlt
 
         return dMags
 
@@ -874,7 +1020,7 @@ class ParametrizedLightCurveMixin(Variability):
                              cc_i }
     """
 
-    def load_parametrized_light_curves(self, file_name=None):
+    def load_parametrized_light_curves(self, file_name=None, variability_cache=None):
         """
         This method will load the parametrized light curve models
         used by the ParametrizedLightCurveMixin and store them in
@@ -886,15 +1032,18 @@ class ParametrizedLightCurveMixin(Variability):
         file_name is the absolute path to the file being loaded.
         If None, it will load the default Kepler-based light curve model.
         """
-        global _PARAMETRIZED_LC_MODELS
-        global _PARAMETRIZED_MODELS_LOADED
+        using_global = False
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
+            using_global = True
 
-        if file_name in _PARAMETRIZED_MODELS_LOADED:
+        if file_name in variability_cache['_PARAMETRIZED_MODELS_LOADED']:
             return
 
-        if len(_PARAMETRIZED_LC_MODELS) == 0:
-            sims_clean_up.targets.append(_PARAMETRIZED_LC_MODELS)
-            sims_clean_up.targets.append(_PARAMETRIZED_MODELS_LOADED)
+        if len(variability_cache['_PARAMETRIZED_LC_MODELS']) == 0 and using_global:
+            sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_LC_MODELS'])
+            sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_MODELS_LOADED'])
 
         if file_name is None:
             sims_data_dir = getPackageDir('sims_data')
@@ -924,7 +1073,7 @@ class ParametrizedLightCurveMixin(Variability):
                 params = line.strip().split()
                 name = params[0]
                 tag = int(name.split('_')[0][4:])
-                if tag in _PARAMETRIZED_LC_MODELS:
+                if tag in variability_cache['_PARAMETRIZED_LC_MODELS']:
                     # In case multiple sets of models have been loaded that
                     # duplicate identifying integers.
                     raise RuntimeError("You are trying to load light curve with the "
@@ -950,17 +1099,19 @@ class ParametrizedLightCurveMixin(Variability):
                 local_cc = np.array(local_cc)
                 local_omega = np.array(local_omega)
                 local_tau = np.array(local_tau)
-                _PARAMETRIZED_LC_MODELS[tag] = {}
-                _PARAMETRIZED_LC_MODELS[tag]['median'] = median
-                _PARAMETRIZED_LC_MODELS[tag]['a'] = local_aa
-                _PARAMETRIZED_LC_MODELS[tag]['b'] = local_bb
-                _PARAMETRIZED_LC_MODELS[tag]['c'] = local_cc
-                _PARAMETRIZED_LC_MODELS[tag]['omega'] = local_omega
-                _PARAMETRIZED_LC_MODELS[tag]['tau'] = local_tau
 
-        _PARAMETRIZED_MODELS_LOADED.append(file_name)
+                local_params = {}
+                local_params['median'] = median
+                local_params['a'] = local_aa
+                local_params['b'] = local_bb
+                local_params['c'] = local_cc
+                local_params['omega'] = local_omega
+                local_params['tau'] = local_tau
+                variability_cache['_PARAMETRIZED_LC_MODELS'][tag] = local_params
 
-    def _calc_dflux(self, lc_id, expmjd):
+        variability_cache['_PARAMETRIZED_MODELS_LOADED'].append(file_name)
+
+    def _calc_dflux(self, lc_id, expmjd, variability_cache=None):
         """
         Parameters
         ----------
@@ -980,10 +1131,12 @@ class ParametrizedLightCurveMixin(Variability):
         the quiescent flux at each of expmjd
         """
 
-        global _PARAMETRIZED_LC_MODELS
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
 
         try:
-            model = _PARAMETRIZED_LC_MODELS[lc_id]
+            model = variability_cache['_PARAMETRIZED_LC_MODELS'][lc_id]
         except KeyError:
             raise KeyError('A KeyError was raised on the light curve id %d.  ' % lc_id
                            + 'You may not have loaded your parametrized light '
@@ -1004,76 +1157,138 @@ class ParametrizedLightCurveMixin(Variability):
 
         # use trig identities to calculate
         # \sum_i a_i*cos(omega_i*(expmjd-tau_i)) + b_i*sin(omega_i*(expmjd-tau_i))
-        a_cos_omega_tau = aa*np.cos(omega_tau)
-        a_sin_omega_tau = aa*np.sin(omega_tau)
-        b_cos_omega_tau = bb*np.cos(omega_tau)
-        b_sin_omega_tau = bb*np.sin(omega_tau)
+        cos_omega_tau = np.cos(omega_tau)
+        sin_omega_tau = np.sin(omega_tau)
+        a_cos_omega_tau = aa*cos_omega_tau
+        a_sin_omega_tau = aa*sin_omega_tau
+        b_cos_omega_tau = bb*cos_omega_tau
+        b_sin_omega_tau = bb*sin_omega_tau
 
         cos_omega_t = np.cos(omega_t)
         sin_omega_t = np.sin(omega_t)
 
-        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau)
-        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau)
-        delta_flux += np.dot(sin_omega_t, b_cos_omega_tau)
-        delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau)
+        #delta_flux = np.dot(cos_omega_t, a_cos_omega_tau)
+        #delta_flux += np.dot(sin_omega_t, a_sin_omega_tau)
+        #delta_flux += np.dot(sin_omega_t, b_cos_omega_tau)
+        #delta_flux -= np.dot(cos_omega_t, b_sin_omega_tau)
+
+        delta_flux = np.dot(cos_omega_t, a_cos_omega_tau-b_sin_omega_tau)
+        delta_flux += np.dot(sin_omega_t, a_sin_omega_tau+b_cos_omega_tau)
 
         if len(delta_flux)==1:
             delta_flux = np.float(delta_flux)
         return quiescent_flux, delta_flux
 
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
-    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd):
+    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
+                                    variability_cache=None):
+
+        t_start = time.time()
+        if not hasattr(self, '_total_t_param_lc'):
+            self._total_t_param_lc = 0.0
 
         if len(params) == 0:
             return np.array([[], [], [], [], [], []])
 
         n_obj = self.num_variable_obj(params)
-        good = np.where(np.logical_not(np.isnan(params['lc'].astype(float))))
+
+        if variability_cache is None:
+            global _GLOBAL_VARIABILITY_CACHE
+            variability_cache = _GLOBAL_VARIABILITY_CACHE
+
+        # t_before_cast = time.time()
+        lc_int_arr = -1*np.ones(len(params['lc']), dtype=int)
+        for ii in range(len(params['lc'])):
+            if params['lc'][ii] is not None:
+                lc_int_arr[ii] = params['lc'][ii]
+        # print('t_cast %.2e' % (time.time()-t_before_cast))
+
+        good = np.where(lc_int_arr>=0)
         unq_lc_int = np.unique(params['lc'][good])
 
+        # print('applyParamLC %d obj; %d unique' % (n_obj, len(unq_lc_int)))
+
         if isinstance(expmjd, numbers.Number):
+            mjd_is_number = True
             n_t = 1
             d_mag_out = np.zeros((6, n_obj))
             lc_time = expmjd - params['t0'].astype(float)
-            lc_int_arr = params['lc']
         else:
+            mjd_is_number = False
             n_t = len(expmjd)
             d_mag_out = np.zeros((6, n_obj, n_t))
             t0_float = params['t0'].astype(float)
             lc_time = np.zeros(n_t*n_obj)
             i_start = 0
-            lc_int_arr = []
-            lc_time_dex_map = {}
             for i_obj in range(n_obj):
                 lc_time[i_start:i_start+n_t] = expmjd - t0_float[i_obj]
-                lc_int_arr += [params['lc'][i_obj]]*n_t
-                lc_time_dex_map[i_start] = i_obj
                 i_start += n_t
 
-        lc_int_arr = np.array(lc_int_arr)
+        # print('initialized arrays in %e' % (time.time()-t_start))
+        # t_assign = 0.0
+        # t_flux = 0.0
+        t_use_this = 0.0
+
+        not_none = 0
+
         for lc_int in unq_lc_int:
             if lc_int is None:
                 continue
-            use_this_lc = np.where(lc_int_arr == lc_int)
+            if '_PARAMETRIZED_LC_DMAG_CUTOFF' in variability_cache:
+                if variability_cache['_PARAMETRIZED_LC_DMAG_LOOKUP'][lc_int] < 0.75*variability_cache['_PARAMETRIZED_LC_DMAG_CUTOFF']:
+                    continue
+            # t_before = time.time()
+            if mjd_is_number:
+                use_this_lc = np.where(lc_int_arr == lc_int)[0]
+                not_none += len(use_this_lc)
+            else:
+                use_this_lc_unq = np.where(lc_int_arr == lc_int)[0]
+                not_none += len(use_this_lc_unq)
+                template_arange = np.arange(0, n_t, dtype=int)
+                use_this_lc = np.array([template_arange + i_lc*n_t
+                                        for i_lc in use_this_lc_unq]).flatten()
+
+            # t_use_this += time.time()-t_before
             try:
-                assert len(use_this_lc[0]) % n_t == 0
+                assert len(use_this_lc) % n_t == 0
             except AssertionError:
                 raise RuntimeError("Something went wrong in applyParametrizedLightCurve\n"
-                                   "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc[0]), n_t))
+                                   "len(use_this_lc) %d ; n_t %d" % (len(use_this_lc), n_t))
 
-            q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc])
+            # t_before = time.time()
+            q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc],
+                                              variability_cache=variability_cache)
+
             d_mag = 2.5*np.log10(1.0+d_flux/q_flux)
+            # t_flux += time.time()-t_before
 
-            if n_t == 1:
+            if isinstance(d_mag, numbers.Number) and not isinstance(expmjd, numbers.Number):
+                # in case you only passed in one expmjd value,
+                # in which case self._calc_dflux will return a scalar
+                d_mag = np.array([d_mag])
+
+            # t_before = time.time()
+            if mjd_is_number:
                 for i_filter in range(6):
                     d_mag_out[i_filter][use_this_lc] = d_mag
             else:
-                for i_chunk in range(len(use_this_lc[0])//n_t):
-                    i_start = i_chunk*n_t
-                    i_to_map = use_this_lc[0][i_start]
-                    obj_dex = lc_time_dex_map[i_to_map]
+                for i_obj in range(len(use_this_lc)//n_t):
+                    i_start = i_obj*n_t
+                    obj_dex = use_this_lc_unq[i_obj]
                     for i_filter in range(6):
                         d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
+
+            # t_assign += time.time()-t_before
+
+        # print('applyParametrized took %.2e\nassignment %.2e\nflux %.2e\nuse %.2e\n' %
+        # (time.time()-t_start,t_assign,t_flux,t_use_this))
+
+        # print('applying Parametrized LC to %d' % not_none)
+        # print('per capita %.2e\n' % ((time.time()-t_start)/float(not_none)))
+
+        # print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
+        self._total_t_param_lc += time.time()-t_start
+
         return d_mag_out
 
 
@@ -1083,21 +1298,19 @@ class ExtraGalacticVariabilityModels(Variability):
     """
 
     @register_method('applyAgn')
-    def applyAgn(self, valid_dexes, params, expmjd):
-
-        global _AGN_LC_CACHE
+    def applyAgn(self, valid_dexes, params, expmjd,
+                 variability_cache=None):
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
 
         if isinstance(expmjd, numbers.Number):
             dMags = np.zeros((6, self.num_variable_obj(params)))
-            expmjd_arr = [expmjd]
+            expmjd_arr = np.array([expmjd])
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             expmjd_arr = expmjd
 
-        toff_arr = params['t0_mjd'].astype(float)
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
         sfu_arr = params['agn_sfu'].astype(float)
@@ -1107,94 +1320,70 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        for i_time, expmjd_val in enumerate(expmjd_arr):
-            for ix in valid_dexes[0]:
-                toff = toff_arr[ix]
-                seed = seed_arr[ix]
-                tau = tau_arr[ix]
+        start_date = 59580.0
+        endepoch = expmjd_arr.max() - start_date
 
-                sfint = {}
-                sfint['u'] = sfu_arr[ix]
-                sfint['g'] = sfg_arr[ix]
-                sfint['r'] = sfr_arr[ix]
-                sfint['i'] = sfi_arr[ix]
-                sfint['z'] = sfz_arr[ix]
-                sfint['y'] = sfy_arr[ix]
+        for i_obj in valid_dexes[0]:
 
-                # A string made up of this AGNs variability parameters that ought
-                # to uniquely identify it.
-                #
-                agn_ID = '%d_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f_%.12f' \
-                %(seed, sfint['u'], sfint['g'], sfint['r'], sfint['i'], sfint['z'],
-                  sfint['y'], tau, toff)
+            seed = seed_arr[i_obj]
+            tau = tau_arr[i_obj]
 
-                resumption = False
+            sfint = {}
+            sfint['u'] = sfu_arr[i_obj]
+            sfint['g'] = sfg_arr[i_obj]
+            sfint['r'] = sfr_arr[i_obj]
+            sfint['i'] = sfi_arr[i_obj]
+            sfint['z'] = sfz_arr[i_obj]
+            sfint['y'] = sfy_arr[i_obj]
 
-                # Check to see if this AGN has already been simulated.
-                # If it has, see if the previously simulated MJD is
-                # earlier than the first requested MJD.  If so,
-                # use that previous simulation as the starting point.
-                #
-                if agn_ID in _AGN_LC_CACHE:
-                    if _AGN_LC_CACHE[agn_ID]['mjd'] <expmjd_val:
-                        resumption = True
+            rng = np.random.RandomState(seed)
 
-                if resumption:
-                    rng = copy.deepcopy(_AGN_LC_CACHE[agn_ID]['rng'])
-                    start_date = _AGN_LC_CACHE[agn_ID]['mjd']
-                    dx_0 = _AGN_LC_CACHE[agn_ID]['dx']
+            if endepoch < 0:
+                raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
+                                   "Not applying variability. "+
+                                   "expmjd: %e should be > start_date: %e  " % (expmjd, start_date) +
+                                   "in applyAgn variability method")
+
+            dt = tau/100.
+            nbins = int(math.ceil(endepoch/dt))+1
+
+            time_dexes = np.round((expmjd_arr-start_date)/dt).astype(int)
+            time_dex_map = {}
+            ct_dex = 0
+            for i_t_dex, t_dex in enumerate(time_dexes):
+                if t_dex in time_dex_map:
+                    time_dex_map[t_dex].append(i_t_dex)
                 else:
-                    start_date = toff
-                    rng = np.random.RandomState(seed)
-                    dx_0 = {}
-                    for k in sfint:
-                        dx_0[k]=0.0
+                    time_dex_map[t_dex] = [i_t_dex]
+            time_dexes = set(time_dexes)
 
-                endepoch = expmjd_val - start_date
+            dx2 = 0.0
+            x1 = 0.0
+            x2 = 0.0
 
-                if endepoch < 0:
-                    raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
-                                       "Not applying variability. "+
-                                       "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
-                                       "in applyAgn variability method")
+            dt_over_tau = dt/tau
+            es = rng.normal(0., 1., nbins)*math.sqrt(dt_over_tau)
+            for i_time in range(nbins):
+                #The second term differs from Zeljko's equation by sqrt(2.)
+                #because he assumes stdev = sfint/sqrt(2)
+                dx1 = dx2
+                dx2 = -dx1*dt_over_tau + sfint['u']*es[i_time] + dx1
+                x1 = x2
+                x2 += dt
 
-                dt = tau/100.
-                nbins = int(math.ceil(endepoch/dt))
-
-                x1 = (nbins-1)*dt
-                x2 = (nbins)*dt
-
-                dt = dt/tau
-                es = rng.normal(0., 1., nbins)*math.sqrt(dt)
-                dx_cached = {}
-
-                for k, ik in zip(('u', 'g', 'r', 'i', 'z', 'y'), range(6)):
-                    dx2 = dx_0[k]
-                    for i in range(nbins):
-                        #The second term differs from Zeljko's equation by sqrt(2.)
-                        #because he assumes stdev = sfint/sqrt(2)
-                        dx1 = dx2
-                        dx2 = -dx1*dt + sfint[k]*es[i] + dx1
-
-                    dx_cached[k] = dx2
-                    dm_val = (endepoch*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                if i_time in time_dexes:
                     if isinstance(expmjd, numbers.Number):
-                        dMags[ik][ix] = dm_val
+                        dm_val = ((expmjd-start_date)*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                        dMags[0][i_obj] = dm_val
                     else:
-                        dMags[ik][ix][i_time] = dm_val
+                        for i_time_out in time_dex_map[i_time]:
+                            local_end = expmjd_arr[i_time_out]-start_date
+                            dm_val = (local_end*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                            dMags[0][i_obj][i_time_out] = dm_val
 
-                # Reset that AGN light curve cache once it contains
-                # one million objects (to prevent it from taking up
-                # too much memory).
-                if len(_AGN_LC_CACHE)>1000000:
-                    reset_agn_lc_cache()
-
-                if agn_ID not in _AGN_LC_CACHE:
-                    _AGN_LC_CACHE[agn_ID] = {}
-
-                _AGN_LC_CACHE[agn_ID]['mjd'] = start_date+x2
-                _AGN_LC_CACHE[agn_ID]['rng'] = copy.deepcopy(rng)
-                _AGN_LC_CACHE[agn_ID]['dx'] = dx_cached
+        for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
+            for i_obj in valid_dexes[0]:
+                dMags[i_filter+1][i_obj] = dMags[0][i_obj]*params['agn_sf%s' % filter_name][i_obj]/params['agn_sfu'][i_obj]
 
         return dMags
 

@@ -3,8 +3,8 @@
 # these variables indicate from where to download the
 # light curves
 data_url=https://lsst-web.ncsa.illinois.edu/
-data_dir=sim-data/mdwarf_flare_light_curves/
-data_file=mlt_shortened_lc_171012.npz
+data_dir=sim-data/parametrized_light_curves/
+data_file=kplr_dmag_171204.txt
 
 curl -O ${data_url}${data_dir}${data_file}
 
@@ -21,4 +21,4 @@ fi
 mv ${data_file} ${destination_dir}/${data_file}
 
 echo "\nThe md5 checksum for "${destination_dir}/${data_file}" should be"
-echo "57fe2d68f012ba02fd36f00dcfccb3ae"
+echo "9033d02f931551ccab837af1821a68f9"

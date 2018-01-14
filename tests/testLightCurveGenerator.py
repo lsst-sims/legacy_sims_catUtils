@@ -26,6 +26,7 @@ from lsst.sims.catalogs.db import CatalogDBObject
 
 from lsst.sims.catUtils.mixins import PhotometryGalaxies, VariabilityGalaxies
 from lsst.sims.catUtils.utils import AgnLightCurveGenerator
+from lsst.sims.utils import ModifiedJulianDate
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -93,8 +94,8 @@ class StellarLightCurveTest(unittest.TestCase):
         # write the catalog as a text file to be ingested with fileDBObject
         cls.txt_name = os.path.join(cls.scratchDir, "stellar_lc_catalog.txt")
         with open(cls.txt_name, "w") as output_file:
-            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=n_stars)
-            lc_dex = rng.random_integers(0, len(list_of_lc)-1, size=n_stars)
+            sed_dex = rng.randint(0, len(list_of_seds), size=n_stars)
+            lc_dex = rng.randint(0, len(list_of_lc), size=n_stars)
             mjd0 = rng.random_sample(n_stars)*10000.0+40000.0
             raList = rng.random_sample(n_stars)*360.0
             decList = -90.0 + rng.random_sample(n_stars)*120.0
@@ -579,8 +580,8 @@ class AgnLightCurveTest(unittest.TestCase):
 
         sed_dir = os.path.join(getPackageDir("sims_sed_library"), "galaxySED")
         list_of_seds = os.listdir(sed_dir)
-        disk_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
-        bulge_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+        disk_sed_dexes = rng.randint(0, len(list_of_seds), size=n_galaxies)
+        bulge_sed_dexes = rng.randint(0, len(list_of_seds), size=n_galaxies)
 
         avBulge = rng.random_sample(n_galaxies)*0.3+0.1
         avDisk = rng.random_sample(n_galaxies)*0.3+0.1
@@ -678,6 +679,11 @@ class AgnLightCurveTest(unittest.TestCase):
 
         lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         test_light_curves, truth_info = lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(test_light_curves), 2)  # make sure we got some light curves
@@ -715,6 +721,9 @@ class AgnLightCurveTest(unittest.TestCase):
                                               fieldDec=decRange,
                                               telescopeFilter=bandpass,
                                               boundLength=1.75)
+        for obs in obs_list:
+            mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+            obs.mjd = mjd
 
         ct = 0
         for obs in obs_list:
@@ -750,6 +759,10 @@ class AgnLightCurveTest(unittest.TestCase):
 
         lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
         self.assertEqual(len(pointings), 1)
 
         control_lc, truth = lc_gen.light_curves_from_pointings(pointings)
@@ -769,6 +782,11 @@ class AgnLightCurveTest(unittest.TestCase):
 
         gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         lc_dict, truth_info = gen.light_curves_from_pointings(pointings)
         self.assertGreater(len(lc_dict), 2)
 
@@ -776,8 +794,15 @@ class AgnLightCurveTest(unittest.TestCase):
         control_pointings_r = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
                                                              telescopeFilter='r', boundLength=1.75)
 
+        for obs in control_pointings_r:
+            mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+            obs.mjd = mjd
+
         control_pointings_g = obs_gen.getObservationMetaData(fieldRA=raRange, fieldDec=decRange,
                                                              telescopeFilter='g', boundLength=1.75)
+        for obs in control_pointings_g:
+            mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+            obs.mjd = mjd
 
         self.assertGreater(len(control_pointings_g), 0)
         self.assertGreater(len(control_pointings_r), 0)
@@ -903,6 +928,11 @@ class AgnLightCurveTest(unittest.TestCase):
         # verify that the LightCurveGenerator finds the two variable stars
         lc_gen = AgnLightCurveGenerator(agn_db, self.opsimDb)
         ptngs = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in ptngs:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         lc_dict, truth_dict = lc_gen.light_curves_from_pointings(ptngs)
         self.assertEqual(len(lc_dict), 2)
 

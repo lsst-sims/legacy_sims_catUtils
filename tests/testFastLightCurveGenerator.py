@@ -16,6 +16,7 @@ from lsst.sims.catUtils.utils import AgnLightCurveGenerator
 from lsst.sims.catUtils.utils import FastAgnLightCurveGenerator
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+from lsst.sims.utils import ModifiedJulianDate
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -77,8 +78,8 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
         cls.txt_name = os.path.join(cls.scratchDir, "fast_stellar_lc_catalog.txt")
         with open(cls.txt_name, "w") as output_file:
             output_file.write('# a silly header\n')
-            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars//2)
-            lc_dex = rng.random_integers(0, len(list_of_rrly_lc)-1, size=cls.n_stars//2)
+            sed_dex = rng.randint(0, len(list_of_seds), size=cls.n_stars//2)
+            lc_dex = rng.randint(0, len(list_of_rrly_lc), size=cls.n_stars//2)
             mjd0 = rng.random_sample(cls.n_stars//2)*10000.0+40000.0
             raList = rng.random_sample(cls.n_stars//2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
             decList = cls.decRange[0] + rng.random_sample(cls.n_stars//2)*(cls.decRange[1]-cls.decRange[1])
@@ -99,8 +100,8 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
                                      varparamstr,pxList[ix],
                                      AvList[ix]/3.1))
 
-            sed_dex = rng.random_integers(0, len(list_of_seds)-1, size=cls.n_stars//2)
-            lc_dex = rng.random_integers(1, 2, size=cls.n_stars//2)
+            sed_dex = rng.randint(0, len(list_of_seds), size=cls.n_stars//2)
+            lc_dex = rng.randint(1, 3, size=cls.n_stars//2)
             mjd0 = rng.random_sample(cls.n_stars//2)*10000.0+40000.0
             raList = rng.random_sample(cls.n_stars//2)*(cls.raRange[1]-cls.raRange[0])+cls.raRange[0]
             decList = cls.decRange[0] + rng.random_sample(cls.n_stars//2)*(cls.decRange[1]-cls.decRange[1])
@@ -185,8 +186,8 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
 
         sed_dir = os.path.join(getPackageDir("sims_sed_library"), "galaxySED")
         list_of_seds = os.listdir(sed_dir)
-        disk_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
-        bulge_sed_dexes = rng.random_integers(0, len(list_of_seds)-1, size=n_galaxies)
+        disk_sed_dexes = rng.randint(0, len(list_of_seds), size=n_galaxies)
+        bulge_sed_dexes = rng.randint(0, len(list_of_seds), size=n_galaxies)
 
         avBulge = rng.random_sample(n_galaxies)*0.3+0.1
         avDisk = rng.random_sample(n_galaxies)*0.3+0.1
@@ -276,12 +277,22 @@ class Fast_agn_lc_gen_test_case(unittest.TestCase):
 
         slow_lc_gen = AgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = slow_lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         slow_lc, slow_truth = slow_lc_gen.light_curves_from_pointings(pointings)
 
         self.assertGreater(len(slow_lc), 2)  # make sure we got some light curves
 
         fast_lc_gen = FastAgnLightCurveGenerator(self.agn_db, self.opsimDb)
         pointings = fast_lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+        for row in pointings:
+            for obs in row:
+                mjd = ModifiedJulianDate(TAI=obs.mjd.TAI-49000.0+59580.0)
+                obs.mjd = mjd
+
         fast_lc, fast_truth = fast_lc_gen.light_curves_from_pointings(pointings)
 
         self.assertEqual(len(slow_lc), len(fast_lc))

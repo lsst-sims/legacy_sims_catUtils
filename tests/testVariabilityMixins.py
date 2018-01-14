@@ -18,7 +18,7 @@ from lsst.sims.catUtils.mixins import VariabilityStars, VariabilityGalaxies
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 from lsst.sims.catUtils.utils import TestVariabilityMixin
 
-from lsst.sims.catUtils.mixins import Variability, reset_agn_lc_cache
+from lsst.sims.catUtils.mixins import Variability
 
 VARIABILITY_DB = 'VariabilityTestDatabase.db'
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -694,76 +694,27 @@ class VariabilityTest(unittest.TestCase):
             os.unlink(cat_name)
 
     def testAgn(self):
+        """
+        Just verify that the catalog generation code runs in this case
+        """
 
         cat_name = os.path.join(self.scratch_dir, 'agnTestCatalog.dat')
         makeAgnTable(database=self.variability_db)
         myDB = CatalogDBObject.from_objid('agnTest', database=self.variability_db)
-        myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=self.obs_metadata)
+        obs = ObservationMetaData(pointingRA=self.obs_metadata.pointingRA,
+                                  pointingDec=self.obs_metadata.pointingDec,
+                                  boundType=self.obs_metadata.boundType,
+                                  boundLength=self.obs_metadata.boundLength,
+                                  mjd=60000.0)
+        myCatalog = GalaxyVariabilityCatalog(myDB, obs_metadata=obs)
         myCatalog.write_catalog(cat_name, chunk_size=1000)
 
-        self.verify_catalogs(cat_name)
+        with open(cat_name,'r') as input_file:
+            lines = input_file.readlines()
+            self.assertGreater(len(lines), 10)
+
         if os.path.exists(cat_name):
             os.unlink(cat_name)
-
-
-class AgnCacheTest(unittest.TestCase):
-
-    @classmethod
-    def tearDownClass(self):
-        sims_clean_up()
-
-    def test_agn_caching(self):
-        """
-        Test that the light curve caching in applyAgn does not change
-        the outcomes of the delta_mag calculations.  We will do this
-        by simulating the same AGN twice:  once using caching, once resetting
-        the cache after every time step.  We will then verify that the two sets
-        of outputs are identical.
-        """
-
-        rng = np.random.RandomState(8374)
-        nn = 5
-        var = ExtraGalacticVariabilityModels()
-
-        seed_list = rng.random_integers(0, 20000, nn)
-        toff_list = rng.random_sample(nn)*10000.0+40000.0
-        sfz_list = rng.random_sample(nn)*2.0
-        sfu_list = rng.random_sample(nn)*2.0
-        sfg_list = rng.random_sample(nn)*2.0
-        sfr_list = rng.random_sample(nn)*2.0
-        sfi_list = rng.random_sample(nn)*2.0
-        sfy_list = rng.random_sample(nn)*2.0
-        tau_list = rng.random_sample(nn)*20.0+20.0
-
-        param_list = []
-        for ix in range(nn):
-            params = {'agn_sfu': np.array([sfu_list[ix]]), 'agn_sfg': np.array([sfg_list[ix]]),
-                      'agn_sfr': np.array([sfr_list[ix]]), 'agn_sfi': np.array([sfi_list[ix]]),
-                      'agn_sfz': np.array([sfz_list[ix]]), 'agn_sfy': np.array([sfy_list[ix]]),
-                      't0_mjd': np.array([toff_list[ix]]), 'agn_tau': np.array([tau_list[ix]]),
-                      'seed': np.array([seed_list[ix]])}
-            param_list.append(params)
-
-        mjd_list = rng.random_sample(100)*10000.0+50000.0
-        mjd_list = np.sort(mjd_list)
-
-        caching_output = []
-
-        for mjd in mjd_list:
-            for pp in param_list:
-                dd = var.applyAgn(np.where(np.array([True])), pp, mjd)
-                for ix in range(6):
-                    caching_output.append(dd[ix])
-
-        uncached_output = []
-        for mjd in mjd_list:
-            for pp in param_list:
-                reset_agn_lc_cache()
-                dd = var.applyAgn(np.where(np.array([True])), pp, mjd)
-                for ix in range(6):
-                    uncached_output.append(dd[ix])
-
-        np.testing.assert_array_almost_equal(np.array(caching_output), np.array(uncached_output), decimal=10)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

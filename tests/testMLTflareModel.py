@@ -6,7 +6,7 @@ import sqlite3
 import json
 import tempfile
 import shutil
-from astropy.analytic_functions import blackbody_lambda
+from astropy.modeling.blackbody import blackbody_lambda
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.utils.tests import getTempFilePath
@@ -197,6 +197,7 @@ class MLT_flare_test_case(unittest.TestCase):
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
             flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
+            self.assertGreater(len(flaring_data), 3)
 
             for ix in range(len(flaring_data)):
                 obj_id = flaring_data['id'][ix]
@@ -621,6 +622,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
 
             quiescent_data = np.genfromtxt(quiet_cat_name, dtype=dtype, delimiter=',')
             flaring_data = np.genfromtxt(flare_cat_name, dtype=dtype, delimiter=',')
+            self.assertGreater(len(flaring_data), 3)
 
             for ix in range(len(flaring_data)):
                 obj_id = flaring_data['id'][ix]
@@ -707,7 +709,8 @@ class DummyVariabilityMixin(Variability):
     scratch_dir = None
 
     @register_method('dummy')
-    def applyDummy(self, valid_dexes, params, expmjd):
+    def applyDummy(self, valid_dexes, params, expmjd,
+                   variability_cache=None):
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
         dtype = np.dtype([('t', float), ('du', float), ('dg', float),
