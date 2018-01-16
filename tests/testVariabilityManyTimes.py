@@ -508,22 +508,25 @@ class AgnVariability_at_many_times_case(unittest.TestCase):
         params['agn_sfy'] = rng.random_sample(n_obj)*2.0
         params['t0_mjd'] = 48000.0+rng.random_sample(n_obj)*5.0
         params['seed'] = rng.randint(0, 20000, size=n_obj)
+        redshift_arr = rng.random_sample(n_obj)*5.0
 
         mjd_arr = np.sort(rng.random_sample(6)*3653.3+59580.0)
         n_time = len(mjd_arr)
 
         valid_dexes = [np.arange(n_obj, dtype=int)]
-        dmag_vector = agn_model.applyAgn(valid_dexes, params, mjd_arr)
+        dmag_vector = agn_model.applyAgn(valid_dexes, params, mjd_arr,
+                                         redshift=redshift_arr)
         self.assertEqual(dmag_vector.shape, (6, n_obj,n_time))
 
         for i_time, mjd in enumerate(mjd_arr):
-            dmag_test = agn_model.applyAgn(valid_dexes, params, mjd)
+            dmag_test = agn_model.applyAgn(valid_dexes, params, mjd,
+                                           redshift=redshift_arr)
             self.assertEqual(dmag_test.shape, (6, n_obj))
             for i_band in range(6):
                 for i_obj in range(n_obj):
-                    self.assertEqual(dmag_vector[i_band][i_obj][i_time],
-                                     dmag_test[i_band][i_obj],
-                                     msg='failed on band %d obj %d time %d' % (i_band, i_obj, i_time))
+                    self.assertAlmostEqual(dmag_vector[i_band][i_obj][i_time],
+                                           dmag_test[i_band][i_obj], 6,
+                                           msg='failed on band %d obj %d time %d' % (i_band, i_obj, i_time))
 
     def test_agn_many_some_invalid(self):
         """
@@ -543,24 +546,27 @@ class AgnVariability_at_many_times_case(unittest.TestCase):
         params['agn_sfy'] = rng.random_sample(n_obj)*2.0
         params['t0_mjd'] = 48000.0+rng.random_sample(n_obj)*5.0
         params['seed'] = rng.randint(0, 20000, size=n_obj)
+        redshift_arr = rng.random_sample(n_obj)*5.0
 
         mjd_arr = np.sort(rng.random_sample(6)*3653.3+59580.0)
         n_time = len(mjd_arr)
 
         valid_dexes = [np.array([1,2,4])]
-        dmag_vector = agn_model.applyAgn(valid_dexes, params, mjd_arr)
+        dmag_vector = agn_model.applyAgn(valid_dexes, params, mjd_arr,
+                                         redshift=redshift_arr)
         self.assertEqual(dmag_vector.shape, (6, n_obj,n_time))
 
         for i_time, mjd in enumerate(mjd_arr):
-            dmag_test = agn_model.applyAgn(valid_dexes, params, mjd)
+            dmag_test = agn_model.applyAgn(valid_dexes, params, mjd,
+                                           redshift=redshift_arr)
             self.assertEqual(dmag_test.shape, (6, n_obj))
             for i_band in range(6):
                 for i_obj in range(n_obj):
                     if i_obj not in (1,2,4):
                         self.assertEqual(dmag_test[i_band][i_obj], 0.0)
-                    self.assertEqual(dmag_vector[i_band][i_obj][i_time],
-                                     dmag_test[i_band][i_obj],
-                                     msg='failed on band %d obj %d time %d' % (i_band, i_obj, i_time))
+                    self.assertAlmostEqual(dmag_vector[i_band][i_obj][i_time],
+                                           dmag_test[i_band][i_obj], 6,
+                                           msg='failed on band %d obj %d time %d' % (i_band, i_obj, i_time))
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
