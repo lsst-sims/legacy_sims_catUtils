@@ -1321,7 +1321,7 @@ class ExtraGalacticVariabilityModels(Variability):
         sfy_arr = params['agn_sfy'].astype(float)
 
         start_date = 59580.0
-        endepoch = expmjd_arr.max() - start_date
+        duration = expmjd_arr.max() - start_date
 
         for i_obj in valid_dexes[0]:
 
@@ -1338,14 +1338,14 @@ class ExtraGalacticVariabilityModels(Variability):
 
             rng = np.random.RandomState(seed)
 
-            if endepoch < 0:
+            if duration < 0:
                 raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
                                    "Not applying variability. "+
                                    "expmjd: %e should be > start_date: %e  " % (expmjd, start_date) +
                                    "in applyAgn variability method")
 
             dt = tau/100.
-            nbins = int(math.ceil(endepoch/dt))+1
+            nbins = int(math.ceil(duration/dt))+1
 
             time_dexes = np.round((expmjd_arr-start_date)/dt).astype(int)
             time_dex_map = {}
