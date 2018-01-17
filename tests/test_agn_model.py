@@ -107,7 +107,9 @@ class AgnModelTestCase(unittest.TestCase):
                 delta_i_t_min = int(np.round(tau/d_mjd))
                 self.assertLess(5*delta_i_t_min, len(mjd_grid)//20)
 
+                ct_lags = 0
                 for delta_i_t in range(5*delta_i_t_min, len(mjd_grid)//20, 100):
+                    ct_lags += 1
                     t_dexes = range(delta_i_t+rng.randint(0,high=10), len(mjd_grid), delta_i_t)
                     dmag_subset = dmag_arr[i_bp][i_obj][t_dexes]
                     self.assertGreater(len(dmag_subset), 19)
@@ -116,6 +118,7 @@ class AgnModelTestCase(unittest.TestCase):
                     msg = 'failed with %d samples' % len(dmag_subset)
                     self.assertLess(np.abs(dmag_mean)/dmag_stdev, 1.0,
                                     msg=msg)
+                self.assertGreater(ct_lags, 10)
 
     def test_agn_structure_function_with_redshift(self):
         """
@@ -217,7 +220,9 @@ class AgnModelTestCase(unittest.TestCase):
                 delta_i_t_min = int(np.round(tau/(time_dilation*d_mjd)))
                 self.assertLess(5*delta_i_t_min, len(mjd_grid)//20)
 
+                ct_lags = 0
                 for delta_i_t in range(5*delta_i_t_min, len(mjd_grid)//20, 100):
+                    ct_lags += 1
                     t_dexes = range(delta_i_t+rng.randint(0,high=10), len(mjd_grid), delta_i_t)
                     dmag_subset = dmag_arr[i_bp][i_obj][t_dexes]
                     self.assertGreater(len(dmag_subset), 19)
@@ -226,6 +231,8 @@ class AgnModelTestCase(unittest.TestCase):
                     msg = 'failed with %d samples' % len(dmag_subset)
                     self.assertLess(np.abs(dmag_mean)/dmag_stdev, 1.0,
                                     msg=msg)
+
+                self.assertGreater(ct_lags, 10)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
