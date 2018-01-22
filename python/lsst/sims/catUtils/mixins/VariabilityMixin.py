@@ -1299,7 +1299,12 @@ class ExtraGalacticVariabilityModels(Variability):
 
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd,
-                 variability_cache=None):
+                 variability_cache=None, redshift=None):
+
+        if redshift is None:
+            redshift_arr = self.column_by_name('redshift')
+        else:
+            redshift_arr = redshift
 
         if len(params) == 0:
             return np.array([[],[],[],[],[],[]])
@@ -1320,13 +1325,20 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        start_date = 59580.0
-        endepoch = expmjd_arr.max() - start_date
+        start_date = 58580.0
+        duration_observer_frame = expmjd_arr.max() - start_date
+
+        if duration_observer_frame < 0 or expmjd_arr.min() < start_date:
+            raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
+                               "Not applying variability. "+
+                               "expmjd: %e should be > start_date: %e  " % (expmjd.min(), start_date) +
+                               "in applyAgn variability method")
 
         for i_obj in valid_dexes[0]:
 
             seed = seed_arr[i_obj]
             tau = tau_arr[i_obj]
+            time_dilation = 1.0+redshift_arr[i_obj]
 
             sfint = {}
             sfint['u'] = sfu_arr[i_obj]
@@ -1338,16 +1350,11 @@ class ExtraGalacticVariabilityModels(Variability):
 
             rng = np.random.RandomState(seed)
 
-            if endepoch < 0:
-                raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
-                                   "Not applying variability. "+
-                                   "expmjd: %e should be > start_date: %e  " % (expmjd, start_date) +
-                                   "in applyAgn variability method")
-
             dt = tau/100.
-            nbins = int(math.ceil(endepoch/dt))+1
+            duration_rest_frame = duration_observer_frame/time_dilation
+            nbins = int(math.ceil(duration_rest_frame/dt))+1
 
-            time_dexes = np.round((expmjd_arr-start_date)/dt).astype(int)
+            time_dexes = np.round((expmjd_arr-start_date)/(time_dilation*dt)).astype(int)
             time_dex_map = {}
             ct_dex = 0
             for i_t_dex, t_dex in enumerate(time_dexes):
@@ -1373,11 +1380,11 @@ class ExtraGalacticVariabilityModels(Variability):
 
                 if i_time in time_dexes:
                     if isinstance(expmjd, numbers.Number):
-                        dm_val = ((expmjd-start_date)*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
+                        dm_val = ((expmjd-start_date)*(dx1-dx2)/time_dilation+dx2*x1-dx1*x2)/(x1-x2)
                         dMags[0][i_obj] = dm_val
                     else:
                         for i_time_out in time_dex_map[i_time]:
-                            local_end = expmjd_arr[i_time_out]-start_date
+                            local_end = (expmjd_arr[i_time_out]-start_date)/time_dilation
                             dm_val = (local_end*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                             dMags[0][i_obj][i_time_out] = dm_val
 
