@@ -1325,7 +1325,7 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        start_date = 59580.0
+        start_date = 58580.0
         duration_observer_frame = expmjd_arr.max() - start_date
 
         if duration_observer_frame < 0 or expmjd_arr.min() < start_date:
