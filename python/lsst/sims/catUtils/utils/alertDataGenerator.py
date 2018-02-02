@@ -739,7 +739,9 @@ class AlertDataGenerator(object):
 
     def _filter_on_photometry_then_chip_name(self, chunk, column_query,
                                              photometry_catalog,
-                                             dmag_cutoff):
+                                             q_snr_dict,
+                                             dmag_cutoff,
+                                             snr_cutoff):
         """
         Determine which simulated observations are actually worth storing
         by first figuring out which observations of which objects are
@@ -757,6 +759,16 @@ class AlertDataGenerator(object):
 
         photometry_catalog is an instantiation of the InstanceCatalog class
         being used to calculate magnitudes for these variable sources.
+
+        q_snr_dict is a dict keyed on i_filter (u=0, g=1, etc.)
+        that returns a numpy array of the quiescent SNR of all
+        of the sources in the current chunk.
+
+        dmag_cutoff is the minimum delta magnitude required to warrant
+        a simulated alert.
+
+        snr_cutoff is the minimum difference image signal to noise
+        required to warrant a simulated alert.
 
         Outputs
         -------
@@ -1178,7 +1190,8 @@ class AlertDataGenerator(object):
                  dmag_arr_transpose,
                  time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
                                                                        photometry_catalog,
-                                                                       dmag_cutoff)
+                                                                       q_snr_dict,
+                                                                       dmag_cutoff, snr_cutoff)
 
                 try:
                     assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(self._full_obs_data['mjd']))
