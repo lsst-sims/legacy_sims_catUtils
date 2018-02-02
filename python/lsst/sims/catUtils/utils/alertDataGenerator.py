@@ -728,7 +728,9 @@ class AlertDataGenerator(object):
                       np.degrees(data_cache[cache_tag]['raICRS'][i_obj]),
                       np.degrees(data_cache[cache_tag]['decICRS'][i_obj]))
                       for i_obj in range(n_obj))
+
             cursor.executemany('INSERT INTO alert_data VALUES (?,?,?,?,?,?,?,?,?)', values)
+
         conn.commit()
 
         n_rows_1 = cursor.execute('SELECT COUNT(uniqueId) FROM alert_data').fetchall()
