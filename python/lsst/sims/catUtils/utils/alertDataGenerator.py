@@ -738,7 +738,7 @@ class AlertDataGenerator(object):
         return n_written
 
     def _filter_on_photometry_then_chip_name(self, chunk, column_query,
-                                             obs_valid_dex, expmjd_list,
+                                             obs_valid_dex,
                                              photometry_catalog,
                                              dmag_cutoff):
         """
@@ -759,9 +759,6 @@ class AlertDataGenerator(object):
         obs_valid_dex is a list of integers corresponding to indexes in
         self._obs_list of the ObservationMetaData that are actually valid
         for the trixel currently being simulated
-
-        expmjd_list is a numpy array of the TAI dates of ObservtionMetaData
-        represented by obs_valid_dex
 
         photometry_catalog is an instantiation of the InstanceCatalog class
         being used to calculate magnitudes for these variable sources.
@@ -802,7 +799,7 @@ class AlertDataGenerator(object):
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                        variability_cache=self._variability_cache,
-                                                       expmjd=expmjd_list).transpose((2, 0, 1))
+                                                       expmjd=self._expmjd_list).transpose((2, 0, 1))
 
         dmag_arr_transpose = dmag_arr.transpose(2, 1, 0)
 
@@ -1019,7 +1016,7 @@ class AlertDataGenerator(object):
         print('n valid obs %d' % len(obs_valid_dex))
 
         cat_list = []
-        expmjd_list = []
+        self._expmjd_list = []
         mag_name_to_int = {'u': 0, 'g': 1, 'r': 2,
                            'i': 3, 'z': 4, 'y': 5}
         for obs_dex in obs_valid_dex:
@@ -1027,13 +1024,13 @@ class AlertDataGenerator(object):
             cat = photometry_class(dbobj, obs_metadata=obs)
             cat.lsstBandpassDict = self.bp_dict
             cat_list.append(cat)
-            expmjd_list.append(obs.mjd.TAI)
+            self._expmjd_list.append(obs.mjd.TAI)
 
-        expmjd_list = np.array(expmjd_list)
+        self._expmjd_list = np.array(self._expmjd_list)
         cat_list = np.array(cat_list)
-        sorted_dex = np.argsort(expmjd_list)
+        sorted_dex = np.argsort(self._expmjd_list)
 
-        expmjd_list = expmjd_list[sorted_dex]
+        self._expmjd_list = self._expmjd_list[sorted_dex]
         cat_list = cat_list[sorted_dex]
         obs_valid_dex = obs_valid_dex[sorted_dex]
 
@@ -1177,15 +1174,14 @@ class AlertDataGenerator(object):
                  dmag_arr_transpose,
                  time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
                                                                        obs_valid_dex,
-                                                                       expmjd_list,
                                                                        photometry_catalog,
                                                                        dmag_cutoff)
 
                 try:
-                    assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
+                    assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(self._expmjd_list))
                 except AssertionError:
                     print('dmag_arr_transpose_shape %s' % str(dmag_arr_transpose.shape))
-                    print('should be (%d, %d, %d)' % (len(chunk), len(mag_names), len(expmjd_list)))
+                    print('should be (%d, %d, %d)' % (len(chunk), len(mag_names), len(self._expmjd_list)))
                     raise
 
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
