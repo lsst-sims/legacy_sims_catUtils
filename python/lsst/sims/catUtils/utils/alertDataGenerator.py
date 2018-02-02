@@ -354,31 +354,23 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
 
         return np.array([mag, dmag, quiescent_mag])
 
-    @compound('flux', 'dflux', 'SNR')
-    def get_alertFlux(self):
-        quiescent_mag = self.column_by_name('quiescent_mag')
-        mag = self.column_by_name('mag')
-        if not hasattr(self, '_dummy_sed'):
-            self._dummy_sed = Sed()
-        if not hasattr(self, 'lsstBandpassDict'):
-            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        if not hasattr(self, 'phot_params'):
-            self.phot_params = PhotometricParameters()
-        if not hasattr(self, '_gamma'):
-            self._gamma = None
+    @cached
+    def get_flux(self):
+        if len(self.column_by_name('uniqueId')) == 0:
+            return np.array([])
+        raise RuntimeError("Should not get this far in get_flux")
 
-        quiescent_flux = self._dummy_sed.fluxFromMag(quiescent_mag)
-        flux = self._dummy_sed.fluxFromMag(mag)
-        dflux = flux - quiescent_flux
+    @cached
+    def get_dflux(self):
+        if len(self.column_by_name('uniqueId')) == 0:
+            return np.array([])
+        raise RuntimeError("Should not get this far in get_dflux")
 
-        snr_tot, gamma = calcSNR_m5(mag, self.lsstBandpassDict[self.obs_metadata.bandpass],
-                                    self.obs_metadata.m5[self.obs_metadata.bandpass],
-                                    self.phot_params, gamma=self._gamma)
-
-        if self._gamma is None:
-            self._gamma = gamma
-
-        return np.array([flux, dflux, snr_tot])
+    @cached
+    def get_SNR(self):
+        if len(self.column_by_name('uniqueId')) == 0:
+            return np.array([])
+        raise RuntimeError("Should not get this far in get_SNR")
 
 
 class AlertStellarVariabilityCatalog(_baseAlertCatalog,
@@ -529,6 +521,11 @@ class AlertDataGenerator(object):
         models, which aids performance, but uses more memory than we want to use
         in a unit test.
         """
+
+        self.mag_name_to_int = {'u': 0, 'g': 1, 'r': 2,
+                                'i': 3, 'z': 4, 'y': 5}
+
+        self.phot_params = PhotometricParameters()
 
         self._variability_cache = create_variability_cache()
         self._stdout_lock = None
@@ -741,6 +738,7 @@ class AlertDataGenerator(object):
 
     def _filter_on_photometry_then_chip_name(self, chunk, column_query,
                                              photometry_catalog,
+                                             q_m_dict,
                                              q_snr_dict,
                                              dmag_cutoff,
                                              snr_cutoff):
@@ -761,6 +759,10 @@ class AlertDataGenerator(object):
 
         photometry_catalog is an instantiation of the InstanceCatalog class
         being used to calculate magnitudes for these variable sources.
+
+        q_m_dict is a dict keyed on i_filter (u=0, g=1, etc.)
+        that returns a numpy array of the quiescent magnitudes
+        of all of the sources in the current chunk.
 
         q_snr_dict is a dict keyed on i_filter (u=0, g=1, etc.)
         that returns a numpy array of the quiescent SNR of all
@@ -796,11 +798,25 @@ class AlertDataGenerator(object):
         dmag_arr_transpose is dmag_arr with the time and object columns
         transposed so that dmag_arr_transpose[4][3][11] == dmag_arr[11][3][4].
 
+        flux_arr is a numpy array with the total flux of the sources (quiescent +
+        delta magnitude).  The first index corresponds to the ObservationMetaData
+        of the observation.  The second index corresponds to the object.
+
+        dflux_arr is a numpy array with the quiescent_flux-tot_flux of the sources.
+        The first index corresponds to the ObservationMetaData
+        of the observation.  The second index corresponds to the object.
+
+        snr_arr is a numpy array with the total SNR of the sources (quiescent +
+        delta magnitude).  The first index corresponds to the ObservationMetaData
+        of the observation.  The second index corresponds to the object.
+
         time_arr is an array of integers with shape == (len(chunk), len(self._full_obs_data['obs_dex'])).
         A -1 in time_arr means that that combination of object and observation did
         not yield a valid observation.  A +1 means that the object and observation
         combination are valid.
         """
+
+        dummy_sed = Sed()
 
         ######################################################
         # Calculate the delta_magnitude for all of the sources
@@ -810,16 +826,54 @@ class AlertDataGenerator(object):
                                                        variability_cache=self._variability_cache,
                                                        expmjd=self._full_obs_data['mjd']).transpose((2, 0, 1))
 
+        n_time = len(self._full_obs_data['mjd'])
+        n_obj = len(chunk)
+        tot_snr_array = np.zeros((n_time, n_obj), dtype=float)
+        diff_snr_array = np.zeros((n_time, n_obj), dtype=float)
+        flux_array = np.zeros((n_time, n_obj), dtype=float)
+        dflux_array = np.zeros((n_time, n_obj), dtype=float)
+
+        for i_obs, obs_dex in enumerate(self._full_obs_data['obs_dex']):
+            obs = self._obs_list[obs_dex]
+            i_filter = self.mag_name_to_int[obs.bandpass]
+            gamma = self._full_obs_data['gamma'][i_obs]
+
+            dmag = dmag_arr[i_obs][i_filter]
+            q_mag = q_m_dict[i_filter]
+
+            snr, new_gamma = calcSNR_m5(q_mag+dmag,
+                                        self.bp_dict[obs.bandpass],
+                                        obs.m5[obs.bandpass],
+                                        self.phot_params,
+                                        gamma=gamma)
+
+            self._full_obs_data['gamma'][i_obs] = new_gamma
+            tot_snr_array[i_obs] = snr
+
+            tot_flux = dummy_sed.fluxFromMag(q_mag+dmag)
+            tot_noise = tot_flux/snr
+            q_flux = dummy_sed.fluxFromMag(q_mag)
+            q_noise = q_flux/q_snr_dict[i_filter]
+
+            diff_noise = np.sqrt(tot_noise**2 + q_noise**2)
+            dflux = tot_flux-q_flux
+            diff_snr = np.abs(dflux)/diff_noise
+            diff_snr_array[i_obs] = diff_snr
+            flux_array[i_obs] = tot_flux
+            dflux_array[i_obs] = dflux
+
         dmag_arr_transpose = dmag_arr.transpose(2, 1, 0)
+        diff_snr_transpose = diff_snr_array.transpose()
 
         n_raw_obj = len(chunk)
         photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
         for i_obj in range(n_raw_obj):
             keep_it = False
-            for i_filter in range(6):
-                if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
-                    keep_it = True
-                    break
+            if diff_snr_transpose[i_obj].max() >= snr_cutoff:
+                for i_filter in range(6):
+                    if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
+                        keep_it = True
+                        break
             if keep_it:
                 photometrically_valid[i_obj] = 1
 
@@ -882,7 +936,8 @@ class AlertDataGenerator(object):
         time_arr = time_arr_transpose.transpose()
         assert len(chip_name_dict) == len(self._full_obs_data['obs_dex'])
 
-        return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
+        return (chip_name_dict, dmag_arr, dmag_arr_transpose,
+                flux_array, dflux_array, tot_snr_array, time_arr)
 
     def alert_data_from_htmid(self, htmid, dbobj,
                               dmag_cutoff=0.005,
@@ -1012,8 +1067,6 @@ class AlertDataGenerator(object):
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
 
-        phot_params = PhotometricParameters()
-
         # from Table 2 of the overview paper
         obs_mag_cutoff = (23.68, 24.89, 24.43, 24.0, 24.45, 22.60)
 
@@ -1031,12 +1084,12 @@ class AlertDataGenerator(object):
 
         local_cat_list = []
         local_expmjd_list = []
-        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2,
-                           'i': 3, 'z': 4, 'y': 5}
+
         for obs_dex in local_obs_valid_dex:
             obs = self._obs_list[obs_dex]
             cat = photometry_class(dbobj, obs_metadata=obs)
             cat.lsstBandpassDict = self.bp_dict
+            cat.phot_params = self.phot_params
             local_cat_list.append(cat)
             local_expmjd_list.append(obs.mjd.TAI)
 
@@ -1051,6 +1104,7 @@ class AlertDataGenerator(object):
         self._full_obs_data['mjd'] = local_expmjd_list
         self._full_obs_data['obs_dex'] = local_obs_valid_dex
         self._full_obs_data['cat'] = local_cat_list
+        self._full_obs_data['gamma'] = [None]*len(local_cat_list)
 
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
@@ -1108,7 +1162,7 @@ class AlertDataGenerator(object):
                 cmd = '''INSERT INTO metadata
                       VALUES(%d, %.5f, %d)''' % (obs.OpsimMetaData['obsHistID'],
                                                  obs.mjd.TAI,
-                                                 mag_name_to_int[obs.bandpass])
+                                                 self.mag_name_to_int[obs.bandpass])
 
                 cursor.execute(cmd)
             conn.commit()
@@ -1178,7 +1232,7 @@ class AlertDataGenerator(object):
                     snr_template, local_gamma = calcSNR_m5(q_m_dict[i_filter],
                                                            self.bp_dict[mag_names[i_filter]],
                                                            obs_mag_cutoff[i_filter],
-                                                           phot_params, gamma=gamma_template[i_filter])
+                                                           self.phot_params, gamma=gamma_template[i_filter])
                     q_snr_dict[i_filter] = snr_template
                     gamma_template[i_filter] = local_gamma
 
@@ -1190,8 +1244,12 @@ class AlertDataGenerator(object):
                 (chip_name_dict,
                  dmag_arr,
                  dmag_arr_transpose,
+                 flux_arr,
+                 dflux_arr,
+                 snr_arr,
                  time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
                                                                        photometry_catalog,
+                                                                       q_m_dict,
                                                                        q_snr_dict,
                                                                        dmag_cutoff, snr_cutoff)
 
@@ -1248,7 +1306,7 @@ class AlertDataGenerator(object):
                     obshistid = obs.OpsimMetaData['obsHistID']
 
                     obs_mag = obs.bandpass
-                    actual_i_mag = mag_name_to_int[obs_mag]
+                    actual_i_mag = self.mag_name_to_int[obs_mag]
                     assert mag_names[actual_i_mag] == obs_mag
 
                     # only include those sources which fall on a detector for this pointing
@@ -1272,6 +1330,9 @@ class AlertDataGenerator(object):
                                                                       dmag_arr[i_obs][i_mag][actually_valid_obj])
                                                                       for i_mag in range(len(mag_names))])
 
+                    local_column_cache['flux'] = flux_arr[i_obs][actually_valid_obj]
+                    local_column_cache['dflux'] = dflux_arr[i_obs][actually_valid_obj]
+                    local_column_cache['SNR'] = snr_arr[i_obs][actually_valid_obj]
                     local_column_cache['chipName'] = valid_chip_name[actually_valid_obj]
                     local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_obj]),
                                                                       ('y_pupil', valid_ypup[actually_valid_obj])])
