@@ -880,6 +880,7 @@ class AlertDataGenerator(object):
 
     def alert_data_from_htmid(self, htmid, dbobj,
                               dmag_cutoff=0.005,
+                              snr_cutoff=-1.0,
                               chunk_size=1000, write_every=10000,
                               output_dir='.', output_prefix='',
                               log_file_name=None,
@@ -900,6 +901,9 @@ class AlertDataGenerator(object):
 
         dmag_cutoff indicates the minimum change magnitude needed to trigger a
         simulated alert
+
+        snr_cutoff indicates the minimum difference image SNR needed to trigger
+        a simulated alert
 
         chunk_size denotes the number of objects to query from the database and
         process at one time
