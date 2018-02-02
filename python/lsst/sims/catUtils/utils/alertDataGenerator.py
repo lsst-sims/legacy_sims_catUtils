@@ -738,7 +738,6 @@ class AlertDataGenerator(object):
         return n_written
 
     def _filter_on_photometry_then_chip_name(self, chunk, column_query,
-                                             obs_valid_dex,
                                              photometry_catalog,
                                              dmag_cutoff):
         """
@@ -756,19 +755,15 @@ class AlertDataGenerator(object):
         column_query is a list of the columns that were queried from
         the database
 
-        obs_valid_dex is a list of integers corresponding to indexes in
-        self._obs_list of the ObservationMetaData that are actually valid
-        for the trixel currently being simulated
-
         photometry_catalog is an instantiation of the InstanceCatalog class
         being used to calculate magnitudes for these variable sources.
 
         Outputs
         -------
         chip_name_dict is a dict keyed on i_obs (which is the index of
-        an ObservationMetaData's position in obs_valid_dex, NOT its
-        position in self._obs_list).  The values of chip_name_dict are
-        tuples containing:
+        an ObservationMetaData's position in self._full_obs_data['obs_dex'],
+        NOT its position in self._obs_list).  The values of chip_name_dict
+        are tuples containing:
             - a list of the names of the detectors that objects from chunk
               landed on (including Nones for those objects that did not land
               on any detector)
@@ -787,7 +782,7 @@ class AlertDataGenerator(object):
         dmag_arr_transpose is dmag_arr with the time and object columns
         transposed so that dmag_arr_transpose[4][3][11] == dmag_arr[11][3][4].
 
-        time_arr is an array of integers with shape == (len(chunk), len(obs_valid_dex)).
+        time_arr is an array of integers with shape == (len(chunk), len(self._full_obs_data['obs_dex'])).
         A -1 in time_arr means that that combination of object and observation did
         not yield a valid observation.  A +1 means that the object and observation
         combination are valid.
@@ -799,7 +794,7 @@ class AlertDataGenerator(object):
         photometry_catalog._set_current_chunk(chunk)
         dmag_arr = photometry_catalog.applyVariability(chunk['varParamStr'],
                                                        variability_cache=self._variability_cache,
-                                                       expmjd=self._expmjd_list).transpose((2, 0, 1))
+                                                       expmjd=self._full_obs_data['mjd']).transpose((2, 0, 1))
 
         dmag_arr_transpose = dmag_arr.transpose(2, 1, 0)
 
@@ -835,10 +830,10 @@ class AlertDataGenerator(object):
 
         # time_arr will keep track of which objects appear in which observations;
         # 1 means the object appears; -1 means it does not
-        time_arr_transpose = -1*np.ones((len(obs_valid_dex), len(chunk['raJ2000'])),
+        time_arr_transpose = -1*np.ones((len(self._full_obs_data['obs_dex']), len(chunk['raJ2000'])),
                                         dtype=int)
 
-        for i_obs, obs_dex in enumerate(obs_valid_dex):
+        for i_obs, obs_dex in enumerate(self._full_obs_data['obs_dex']):
             obs = self._obs_list[obs_dex]
             chip_name_list = np.array([None]*n_raw_obj)
             xpup_list = np.zeros(n_raw_obj, dtype=float)
@@ -871,7 +866,7 @@ class AlertDataGenerator(object):
                                      valid_obj)
 
         time_arr = time_arr_transpose.transpose()
-        assert len(chip_name_dict) == len(obs_valid_dex)
+        assert len(chip_name_dict) == len(self._full_obs_data['obs_dex'])
 
         return chip_name_dict, dmag_arr, dmag_arr_transpose, time_arr
 
@@ -1012,27 +1007,36 @@ class AlertDataGenerator(object):
         for i_filter in range(6):
             gamma_template[i_filter] = None
 
-        obs_valid_dex = self._htmid_dict[htmid]
-        print('n valid obs %d' % len(obs_valid_dex))
+        local_obs_valid_dex = self._htmid_dict[htmid]
+        print('n valid obs %d' % len(local_obs_valid_dex))
 
-        cat_list = []
-        self._expmjd_list = []
+        # store sorted lists of MJD, indices of self._obs_list
+        # and photometric catalog classes in self._full_obs_data
+
+        self._full_obs_data = {}
+
+        local_cat_list = []
+        local_expmjd_list = []
         mag_name_to_int = {'u': 0, 'g': 1, 'r': 2,
                            'i': 3, 'z': 4, 'y': 5}
-        for obs_dex in obs_valid_dex:
+        for obs_dex in local_obs_valid_dex:
             obs = self._obs_list[obs_dex]
             cat = photometry_class(dbobj, obs_metadata=obs)
             cat.lsstBandpassDict = self.bp_dict
-            cat_list.append(cat)
-            self._expmjd_list.append(obs.mjd.TAI)
+            local_cat_list.append(cat)
+            local_expmjd_list.append(obs.mjd.TAI)
 
-        self._expmjd_list = np.array(self._expmjd_list)
-        cat_list = np.array(cat_list)
-        sorted_dex = np.argsort(self._expmjd_list)
+        local_expmjd_list = np.array(local_expmjd_list)
+        local_cat_list = np.array(local_cat_list)
+        sorted_dex = np.argsort(local_expmjd_list)
 
-        self._expmjd_list = self._expmjd_list[sorted_dex]
-        cat_list = cat_list[sorted_dex]
-        obs_valid_dex = obs_valid_dex[sorted_dex]
+        local_expmjd_list = local_expmjd_list[sorted_dex]
+        local_cat_list = local_cat_list[sorted_dex]
+        local_obs_valid_dex = local_obs_valid_dex[sorted_dex]
+
+        self._full_obs_data['mjd'] = local_expmjd_list
+        self._full_obs_data['obs_dex'] = local_obs_valid_dex
+        self._full_obs_data['cat'] = local_cat_list
 
         available_columns = list(dbobj.columnMap.keys())
         column_query = []
@@ -1046,7 +1050,7 @@ class AlertDataGenerator(object):
                                               htmid=htmid,
                                               chunk_size=chunk_size)
 
-        photometry_catalog = photometry_class(dbobj, self._obs_list[obs_valid_dex[0]],
+        photometry_catalog = photometry_class(dbobj, self._obs_list[self._full_obs_data['obs_dex'][0]],
                                               column_outputs=['lsst_u',
                                                               'lsst_g',
                                                               'lsst_r',
@@ -1085,7 +1089,7 @@ class AlertDataGenerator(object):
             cursor.execute(creation_cmd)
             conn.commit()
 
-            for obs_dex in obs_valid_dex:
+            for obs_dex in self._full_obs_data['obs_dex']:
                 obs = self._obs_list[obs_dex]
                 cmd = '''INSERT INTO metadata
                       VALUES(%d, %.5f, %d)''' % (obs.OpsimMetaData['obsHistID'],
@@ -1173,15 +1177,14 @@ class AlertDataGenerator(object):
                  dmag_arr,
                  dmag_arr_transpose,
                  time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
-                                                                       obs_valid_dex,
                                                                        photometry_catalog,
                                                                        dmag_cutoff)
 
                 try:
-                    assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(self._expmjd_list))
+                    assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(self._full_obs_data['mjd']))
                 except AssertionError:
                     print('dmag_arr_transpose_shape %s' % str(dmag_arr_transpose.shape))
-                    print('should be (%d, %d, %d)' % (len(chunk), len(mag_names), len(self._expmjd_list)))
+                    print('should be (%d, %d, %d)' % (len(chunk), len(mag_names), len(self._full_obs_data['mjd'])))
                     raise
 
                 # only include those sources for which np.abs(delta_mag) >= dmag_cutoff
@@ -1225,7 +1228,7 @@ class AlertDataGenerator(object):
                 ############################
                 # Process and output sources
                 #
-                for i_obs, obs_dex in enumerate(obs_valid_dex):
+                for i_obs, obs_dex in enumerate(self._full_obs_data['obs_dex']):
                     obs = self._obs_list[obs_dex]
                     obshistid = obs.OpsimMetaData['obsHistID']
 
@@ -1258,7 +1261,7 @@ class AlertDataGenerator(object):
                     local_column_cache['pupilFromSky'] = OrderedDict([('x_pupil', valid_xpup[actually_valid_obj]),
                                                                       ('y_pupil', valid_ypup[actually_valid_obj])])
 
-                    cat = cat_list[i_obs]
+                    cat = self._full_obs_data['cat'][i_obs]
                     i_valid_chunk = 0
                     for valid_chunk, chunk_map in cat.iter_catalog_chunks(query_cache=[valid_sources],
                                                                           column_cache=local_column_cache):
