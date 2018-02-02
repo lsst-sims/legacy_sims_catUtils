@@ -869,7 +869,7 @@ class AlertDataGenerator(object):
         photometrically_valid = -1*np.ones(n_raw_obj, dtype=int)
         for i_obj in range(n_raw_obj):
             keep_it = False
-            if diff_snr_transpose[i_obj].max() >= snr_cutoff:
+            if snr_cutoff is None or diff_snr_transpose[i_obj].max() >= snr_cutoff:
                 for i_filter in range(6):
                     if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
                         keep_it = True
@@ -941,7 +941,7 @@ class AlertDataGenerator(object):
 
     def alert_data_from_htmid(self, htmid, dbobj,
                               dmag_cutoff=0.005,
-                              snr_cutoff=-1.0,
+                              snr_cutoff=None,
                               chunk_size=1000, write_every=10000,
                               output_dir='.', output_prefix='',
                               log_file_name=None,
