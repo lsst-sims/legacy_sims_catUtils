@@ -1115,6 +1115,7 @@ class AlertDataGenerator(object):
                     break
 
                 n_time_last = 0
+
                 # filter the chunk so that we are only considering sources that are in
                 # the trixel being considered
                 reduced_htmid = chunk['htmid'] >> n_bits_off
@@ -1126,17 +1127,10 @@ class AlertDataGenerator(object):
                 chunk = chunk[valid_htmid]
                 n_obj += len(valid_htmid[0])
 
-                (chip_name_dict,
-                 dmag_arr,
-                 dmag_arr_transpose,
-                 time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
-                                                                       obs_valid_dex,
-                                                                       expmjd_list,
-                                                                       photometry_catalog,
-                                                                       dmag_cutoff)
-
                 q_f_dict = {}
                 q_m_dict = {}
+
+                photometry_catalog._set_current_chunk(chunk)
 
                 q_m_dict[0] = photometry_catalog.column_by_name('quiescent_lsst_u')
                 q_m_dict[1] = photometry_catalog.column_by_name('quiescent_lsst_g')
@@ -1170,6 +1164,18 @@ class AlertDataGenerator(object):
                     gamma_template[i_filter] = local_gamma
 
                 unq = photometry_catalog.column_by_name('uniqueId')
+
+                # find chipName, but only for objects with variability amplitude that
+                # exceeds dmag_cutoff
+
+                (chip_name_dict,
+                 dmag_arr,
+                 dmag_arr_transpose,
+                 time_arr) = self._filter_on_photometry_then_chip_name(chunk, column_query,
+                                                                       obs_valid_dex,
+                                                                       expmjd_list,
+                                                                       photometry_catalog,
+                                                                       dmag_cutoff)
 
                 try:
                     assert dmag_arr_transpose.shape == (len(chunk), len(mag_names), len(expmjd_list))
