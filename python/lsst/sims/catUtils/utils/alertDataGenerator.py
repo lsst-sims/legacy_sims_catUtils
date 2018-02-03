@@ -1135,6 +1135,7 @@ class AlertDataGenerator(object):
                                                               'lsst_i',
                                                               'lsst_z',
                                                               'lsst_y'])
+        photometry_catalog.lsstBandpassDict = self.bp_dict
 
         i_chunk = 0
 
