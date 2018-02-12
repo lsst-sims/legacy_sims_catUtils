@@ -771,19 +771,23 @@ class MLTflaringMixin(Variability):
             global _GLOBAL_VARIABILITY_CACHE
             variability_cache = _GLOBAL_VARIABILITY_CACHE
 
-        # this needs to occur before loading the MLT light curve cache,
-        # just in case the user wants to override the light curve cache
-        # file by hand before generating the catalog
-        if len(params) == 0:
-            return np.array([[],[],[],[],[],[]])
-
+        # this needs to occur before returning the empty array,
+        # so that the InstanceCatalog can detect that it needs
+        # to load the quiescent magnitudes
         if quiescent_mags is None:
             quiescent_mags = {}
             for mag_name in ('u', 'g', 'r', 'i', 'z', 'y'):
                 if ('lsst_%s' % mag_name in self._actually_calculated_columns or
                     'delta_lsst_%s' % mag_name in self._actually_calculated_columns):
 
-                    quiescent_mags[mag_name] = self.column_by_name('quiescent_lsst_%s' % mag_name)
+                    quiescent_mags[mag_name] = self.column_by_name('quiescent_lsst_%s' %
+                                                                   mag_name)
+
+        # this needs to occur before loading the MLT light curve cache,
+        # just in case the user wants to override the light curve cache
+        # file by hand before generating the catalog
+        if len(params) == 0:
+            return np.array([[],[],[],[],[],[]])
 
         if not hasattr(self, 'photParams'):
             raise RuntimeError("To apply MLT dwarf flaring, your "
