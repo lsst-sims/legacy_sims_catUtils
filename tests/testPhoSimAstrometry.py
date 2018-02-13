@@ -25,12 +25,15 @@ def setup_module(module):
 
 
 class StarTestCatalog(PhoSimAstrometryStars, InstanceCatalog):
-    column_outputs = ['raICRS', 'decICRS', 'raPhoSim', 'decPhoSim']
+    column_outputs = ['raICRS', 'decICRS', 'raPhoSim', 'decPhoSim',
+                      'raJ2000', 'decJ2000',
+                      'properMotionRa','properMotionDec', 'parallax',
+                      'radialVelocity']
+
     transformations = {'raICRS': np.degrees, 'decICRS': np.degrees,
                        'raPhoSim': np.degrees, 'decPhoSim': np.degrees}
 
-    override_formats = {'raICRS': '%.12g', 'decICRS': '%.12g',
-                        'raPhoSim': '%.12g', 'decPhoSim': '%.12g'}
+    default_formats = {'f': '%.12g'}
 
     delimiter = ' '
 
@@ -70,7 +73,10 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
             cat.write_catalog(cat_name)
             dtype = np.dtype([('raICRS', float), ('decICRS', float),
-                             ('raPhoSim', float), ('decPhoSim', float)])
+                             ('raPhoSim', float), ('decPhoSim', float),
+                             ('raJ2000', float), ('decJ2000', float),
+                             ('pmRA', float), ('pmDec', float),
+                             ('parallax', float), ('vRad', float)])
             data = np.genfromtxt(cat_name, dtype=dtype)
         self.assertGreater(len(data), 100)
         ra_pho_rad = np.radians(data['raPhoSim'])
@@ -111,7 +117,10 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
             cat.write_catalog(cat_name)
             dtype = np.dtype([('raICRS', float), ('decICRS', float),
-                             ('raPhoSim', float), ('decPhoSim', float)])
+                             ('raPhoSim', float), ('decPhoSim', float),
+                             ('raJ2000', float), ('decJ2000', float),
+                             ('pmRA', float), ('pmDec', float),
+                             ('parallax', float), ('vRad', float)])
             data = np.genfromtxt(cat_name, dtype=dtype)
         self.assertGreater(len(data), 100)
 
