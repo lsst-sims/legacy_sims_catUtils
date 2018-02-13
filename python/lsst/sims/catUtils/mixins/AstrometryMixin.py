@@ -6,7 +6,8 @@ from lsst.sims.utils import _galacticFromEquatorial, sphericalFromCartesian, \
 
 from lsst.sims.utils import _applyProperMotion
 from lsst.sims.utils import _observedFromICRS, _pupilCoordsFromRaDec
-from lsst.sims.utils import _icrsFromObserved
+from lsst.sims.utils import _appGeoFromObserved
+from lsst.sims.utils import _icrsFromAppGeo
 from lsst.sims.utils import _pupilCoordsFromObserved
 from lsst.sims.utils import rotationMatrixFromVectors
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
@@ -290,6 +291,76 @@ class PhoSimAstrometryBase(object):
         return np.array([ra_deprecessed, dec_deprecessed])
 
     @classmethod
+    def _appGeoFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
+        """
+        This method will convert from the 'deprecessed' coordinates expected by
+        PhoSim to apparent geocentric coordinates
+
+        Parameters
+        ----------
+        raPhoSim is the PhoSim RA-like coordinate (in radians)
+
+        decPhoSim is the PhoSim Dec-like coordinate (in radians)
+
+        obs_metadata is an ObservationMetaData characterizing the
+        telescope pointing
+
+        Returns
+        -------
+        apparent geocentric RA in radians
+
+        apparent geocentric Dec in radians
+        """
+        # Calculate the rotation matrix to go from the ICRS bore site to the
+        # precessed bore site
+        xyz_bore = cartesianFromSpherical(np.array([obs_metadata._pointingRA]),
+                                          np.array([obs_metadata._pointingDec]))
+
+        precessedRA, precessedDec = _observedFromICRS(np.array([obs_metadata._pointingRA]),
+                                                      np.array([obs_metadata._pointingDec]),
+                                                      obs_metadata=obs_metadata, epoch=2000.0,
+                                                      includeRefraction=False)
+
+        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
+
+        rotMat = rotationMatrixFromVectors(xyz_bore[0], xyz_precessed[0])
+
+        # apply this rotation matrix to the PhoSim RA, Dec-like coordinates,
+        # transforming back to "Observed" RA and Dec
+        xyz_list = cartesianFromSpherical(raPhoSim, decPhoSim)
+        xyz_obs = np.array([np.dot(rotMat, xx) for xx in xyz_list])
+        ra_obs, dec_obs = sphericalFromCartesian(xyz_obs)
+        return _appGeoFromObserved(ra_obs, dec_obs, includeRefraction=False,
+                                   obs_metadata=obs_metadata)
+
+    @classmethod
+    def appGeoFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
+        """
+        This method will convert from the 'deprecessed' coordinates expected by
+        PhoSim to apparent geocentric coordinates
+
+        Parameters
+        ----------
+        raPhoSim is the PhoSim RA-like coordinate (in degrees)
+
+        decPhoSim is the PhoSim Dec-like coordinate (in degrees)
+
+        obs_metadata is an ObservationMetaData characterizing the
+        telescope pointing
+
+        Returns
+        -------
+        apparent geocentric RA in degrees
+
+        apparent geocentric Dec in degrees
+        """
+        ra_appGeo, dec_appGeo = self._appGeoFromPhoSim(np.radians(raPhoSim),
+                                                       np.radians(decPhoSim),
+                                                       obs_metadata)
+
+        return np.degrees(ra_appGeo), np.degrees(dec_appGeo)
+
+    @classmethod
     def _icrsFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
         """
         This method will convert from the 'deprecessed' coordinates expected by
@@ -311,29 +382,12 @@ class PhoSimAstrometryBase(object):
         decICRS in radians
         """
 
-        # Calculate the rotation matrix to go from the ICRS bore site to the
-        # precessed bore site
-        xyz_bore = cartesianFromSpherical(np.array([obs_metadata._pointingRA]),
-                                          np.array([obs_metadata._pointingDec]))
-
-        precessedRA, precessedDec = _observedFromICRS(np.array([obs_metadata._pointingRA]),
-                                                      np.array([obs_metadata._pointingDec]),
-                                                      obs_metadata=obs_metadata, epoch=2000.0,
-                                                      includeRefraction=False)
-
-        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
-
-        rotMat = rotationMatrixFromVectors(xyz_bore[0], xyz_precessed[0])
-
-        # apply this rotation matrix to the PhoSim RA, Dec-like coordinates,
-        # transforming back to "Observed" RA and Dec
-        xyz_list = cartesianFromSpherical(raPhoSim, decPhoSim)
-        xyz_obs = np.array([np.dot(rotMat, xx) for xx in xyz_list])
-        ra_obs, dec_obs = sphericalFromCartesian(xyz_obs)
+        (ra_appGeo,
+         dec_appGeo) = self._appGeoFromPhoSim(raPhoSim, decPhoSim, obs_metadata)
 
         # convert to ICRS coordinates
-        return _icrsFromObserved(ra_obs, dec_obs, obs_metadata=obs_metadata,
-                                 epoch=2000.0, includeRefraction=False)
+        return _icrsFromAppGeo(ra_appGeo, dec_appGeo, mjd=obs_metadata.mjd,
+                                 epoch=2000.0)
 
     @classmethod
     def icrsFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
