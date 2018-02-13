@@ -266,7 +266,7 @@ class PhosimInputBase(InstanceCatalog):
         write_phoSim_header(self.obs_metadata, file_handle, self.phoSimHeaderMap)
 
 
-class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars, EBVmixin):
+class PhoSimCatalogPoint(PhosimInputBase, PhoSimAstrometryStars):
 
     catalog_type = 'phoSim_catalog_POINT'
 
