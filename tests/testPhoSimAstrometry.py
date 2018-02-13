@@ -19,6 +19,10 @@ from lsst.sims.catUtils.mixins import PhoSimAstrometryGalaxies
 from lsst.sims.utils import _observedFromICRS
 from lsst.sims.utils import _observedFromAppGeo
 
+
+from lsst.sims.utils import observedFromICRS
+from lsst.sims.utils import observedFromAppGeo
+
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -192,6 +196,49 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(ra_obs, ra_obs_2, decimal=10)
         np.testing.assert_array_almost_equal(dec_obs, dec_obs_2, decimal=10)
+
+    def test_stellar_observed_degrees(self):
+        """
+        Test ability to go all the way to observed RA, Dec
+        from PhoSim (this is necessary for the ImSim software
+        that DESC is working on)
+        """
+        db = testStarsDBObj(driver='sqlite', database=self.db_name)
+        cat = StarTestCatalog(db, obs_metadata=self.obs)
+        with lsst.utils.tests.getTempFilePath('.txt') as cat_name:
+            cat.write_catalog(cat_name)
+            dtype = np.dtype([('raICRS', float), ('decICRS', float),
+                             ('raPhoSim', float), ('decPhoSim', float),
+                             ('raJ2000', float), ('decJ2000', float),
+                             ('pmRA', float), ('pmDec', float),
+                             ('parallax', float), ('vRad', float)])
+            data = np.genfromtxt(cat_name, dtype=dtype)
+        self.assertGreater(len(data), 100)
+
+        (ra_obs,
+         dec_obs) = observedFromICRS(np.degrees(data['raJ2000']),
+                                     np.degrees(data['decJ2000']),
+                                     obs_metadata=self.obs,
+                                     pm_ra=arcsecFromRadians(data['pmRA']),
+                                     pm_dec=arcsecFromRadians(data['pmDec']),
+                                     parallax=arcsecFromRadians(data['parallax']),
+                                     v_rad=data['vRad'],
+                                     includeRefraction=True,
+                                     epoch=2000.0)
+
+        (ra_appGeo,
+         dec_appGeo) = PhoSimAstrometryBase.appGeoFromPhoSim(data['raPhoSim'],
+                                                             data['decPhoSim'],
+                                                             self.obs)
+
+        (ra_obs_2,
+         dec_obs_2) = observedFromAppGeo(ra_appGeo, dec_appGeo,
+                                         obs_metadata=self.obs,
+                                         includeRefraction=True)
+
+        np.testing.assert_array_almost_equal(ra_obs, ra_obs_2, decimal=8)
+        np.testing.assert_array_almost_equal(dec_obs, dec_obs_2, decimal=8)
+
 
     def test_galaxy_astrometry_radians(self):
         """
