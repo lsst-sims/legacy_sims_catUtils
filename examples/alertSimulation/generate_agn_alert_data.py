@@ -18,7 +18,7 @@ import argparse
 
 def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                 log_file_name, lock,
-                write_every, chunk_size, dmag_cutoff):
+                write_every, chunk_size, dmag_cutoff, snr_cutoff):
 
     try:
         db = AgnAlertDBObj(database='LSSTCATSIM',
@@ -36,6 +36,7 @@ def query_htmid(alert_gen, htmid_list, out_dir, out_prefix,
                                                  output_dir=out_dir,
                                                  output_prefix=out_prefix,
                                                  dmag_cutoff=dmag_cutoff,
+                                                 snr_cutoff=snr_cutoff,
                                                  photometry_class=AlertAgnVariabilityCatalog,
                                                  lock=lock,
                                                  log_file_name=log_file_name)
@@ -76,6 +77,9 @@ if __name__ == "__main__":
     parser.add_argument('--dmag_cutoff', type=float, default=0.001,
                         help='Minimum delta magnitude to trigger an alert '
                         '(default = 0.001)')
+    parser.add_argument('--snr_cutoff', dtype=float, default=5.0,
+                        help='Minimum SNR on difference image detection '
+                        'to trigger an alert (default=5)')
     parser.add_argument('--opsim_db', type=str,
                         default=os.path.join('/local', 'lsst', 'danielsf',
                                              'OpSimData', 'minion_1016_sqlite.db'),
@@ -148,7 +152,9 @@ if __name__ == "__main__":
                                   args.out_dir, args.out_prefix,
                                   args.log_file, lock,
                                   args.write_every,
-                                  args.chunk_size, args.dmag_cutoff))
+                                  args.chunk_size,
+                                  args.dmag_cutoff,
+                                  args.snr_cutoff))
 
         p.start()
         p_list.append(p)
