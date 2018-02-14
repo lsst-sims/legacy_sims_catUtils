@@ -64,6 +64,51 @@ class StarAlertTestDBObj(StellarAlertDBObjMixin, CatalogDBObject):
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 500)]
 
+
+class TestAlertsVarCatMixin(object):
+
+    @register_method('alert_test')
+    def applyAlertTest(self, valid_dexes, params, expmjd, variability_cache=None):
+        if len(params) == 0:
+            return np.array([[], [], [], [], [], []])
+
+        if isinstance(expmjd, numbers.Number):
+            dmags_out = np.zeros((6, self.num_variable_obj(params)))
+        else:
+            dmags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+
+        for i_star in range(self.num_variable_obj(params)):
+            if params['amp'][i_star] is not None:
+                dmags = params['amp'][i_star]*np.cos(params['per'][i_star]*expmjd)
+                for i_filter in range(6):
+                    dmags_out[i_filter][i_star] = dmags
+
+        return dmags_out
+
+
+class TestAlertsVarCat(TestAlertsVarCatMixin, AlertStellarVariabilityCatalog):
+    pass
+
+
+class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
+                         Variability, InstanceCatalog):
+    column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert']
+
+    @compound('delta_umag', 'delta_gmag', 'delta_rmag',
+              'delta_imag', 'delta_zmag', 'delta_ymag')
+    def get_TruthVariability(self):
+        return self.applyVariability(self.column_by_name('varParamStr'))
+
+    @cached
+    def get_dmagAlert(self):
+        return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
+
+    @cached
+    def get_magAlert(self):
+        return self.column_by_name('%smag' % self.obs_metadata.bandpass) + \
+               self.column_by_name('dmagAlert')
+
+
 class AlertDataGeneratorTestCase(unittest.TestCase):
 
     longMessage = True
@@ -234,47 +279,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         dmag_cutoff = 0.005
         mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z' : 4, 'y': 5}
-
-        class TestAlertsVarCatMixin(object):
-
-            @register_method('alert_test')
-            def applyAlertTest(self, valid_dexes, params, expmjd, variability_cache=None):
-                if len(params) == 0:
-                    return np.array([[], [], [], [], [], []])
-
-                if isinstance(expmjd, numbers.Number):
-                    dmags_out = np.zeros((6, self.num_variable_obj(params)))
-                else:
-                    dmags_out = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
-
-                for i_star in range(self.num_variable_obj(params)):
-                    if params['amp'][i_star] is not None:
-                        dmags = params['amp'][i_star]*np.cos(params['per'][i_star]*expmjd)
-                        for i_filter in range(6):
-                            dmags_out[i_filter][i_star] = dmags
-
-                return dmags_out
-
-        class TestAlertsVarCat(TestAlertsVarCatMixin, AlertStellarVariabilityCatalog):
-            pass
-
-        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
-                                 Variability, InstanceCatalog):
-            column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert']
-
-            @compound('delta_umag', 'delta_gmag', 'delta_rmag',
-                      'delta_imag', 'delta_zmag', 'delta_ymag')
-            def get_TruthVariability(self):
-                return self.applyVariability(self.column_by_name('varParamStr'))
-
-            @cached
-            def get_dmagAlert(self):
-                return self.column_by_name('delta_%smag' % self.obs_metadata.bandpass)
-
-            @cached
-            def get_magAlert(self):
-                return self.column_by_name('%smag' % self.obs_metadata.bandpass) + \
-                       self.column_by_name('dmagAlert')
 
         star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
 
