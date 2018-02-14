@@ -204,7 +204,8 @@ class AvroAlertGenerator(object):
 
     def write_alerts(self, obshistid, data_dir, prefix_list,
                      htmid_list, out_dir, out_prefix,
-                     dmag_cutoff, lock=None, log_file_name=None):
+                     dmag_cutoff, snr_cutoff=-1.0,
+                     lock=None, log_file_name=None):
         """
         Write the alerts for an obsHistId to a properly formatted avro file.
 
@@ -229,6 +230,9 @@ class AvroAlertGenerator(object):
         out_prefix is the prefix of the avro file names
 
         dmag_cutoff is the minimum delta magnitude needed to trigger an alert
+
+        snr_cutoff is the minimum difference imaging SNR needed to trigger
+        an alert
 
         lock is an optional multiprocessing.Lock() for use when running many
         instances of this method. It prevents multiple processes from writing to
@@ -287,7 +291,17 @@ class AvroAlertGenerator(object):
                                                               dtype=diasource_dtype)
 
                     dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
-                    valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
+                    if snr_cutoff>0.0:
+                        q_noise = diasource_data['quiescent_flux']/diasource_data['quiescent_snr']
+                        a_flux = diasource_data['quiescent_flux'] + diasource_data['dflux']
+                        a_noise = a_flux/diasource_data['tot_snr']
+                        diff_noise = np.sqrt(q_noise**2 + a_noise**2)
+                        diff_snr = np.abs(diasource_data['dflux']/diff_noise)
+                        valid_alerts = np.where(np.logical_and(np.abs(dmag) >= dmag_cutoff,
+                                                               diff_snr >= snr_cutoff))
+                    else:
+                        valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
+
                     diasource_data = diasource_data[valid_alerts]
                     avro_diasource_list = self._create_sources(obshistid, diasource_data)
 
