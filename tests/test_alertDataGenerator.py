@@ -109,6 +109,42 @@ class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStar
                self.column_by_name('dmagAlert')
 
 
+class TestAlertsTruthCatSNR(TestAlertsTruthCat):
+
+    column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert', 'snrAlert', 'q_snr', 'tot_snr']
+
+    @compound('snrAlert', 'q_snr', 'tot_snr')
+    def get_snrVals(self):
+        if not hasattr(self, 'lsstBandpassDict'):
+            self.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        if not hasattr(self, 'photParams'):
+            self.photParams = PhotometricParameters()
+
+        q_m5 = {'u': 23.68, 'g': 24.89, 'r': 24.43,
+                'i': 24.0, 'z': 24.45, 'y': 22.60}
+
+        dummy_sed = Sed()
+
+        q_mag = self.column_by_name('magAlert') - self.column_by_name('dmagAlert')
+        q_flux = dummy_sed.fluxFromMag(q_mag)
+        q_snr, gamma = calcSNR_m5(q_mag, self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                  q_m5[self.obs_metadata.bandpass], self.photParams)
+        q_noise = q_flux/q_snr
+
+        a_flux = dummy_sed.fluxFromMag(self.column_by_name('magAlert'))
+        a_snr, gamma = calcSNR_m5(self.column_by_name('magAlert'),
+                                  self.lsstBandpassDict[self.obs_metadata.bandpass],
+                                  self.obs_metadata.m5[self.obs_metadata.bandpass], self.photParams)
+        a_noise = a_flux/a_snr
+
+        d_noise = np.sqrt(a_noise**2 + q_noise**2)
+        d_flux = a_flux-q_flux
+        d_snr = np.abs(d_flux/d_noise)
+
+        return np.array([d_snr, q_snr, a_snr])
+
+
 class AlertDataGeneratorTestCase(unittest.TestCase):
 
     longMessage = True
@@ -462,6 +498,311 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 dmag_sim = -2.5*np.log10(1.0+alert_data['dflux'][i_obj]/alert_data['q_flux'][i_obj])
                 self.assertAlmostEqual(true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
                                        dmag_sim, 3)
+
+                mag_name = ('u', 'g', 'r', 'i', 'z', 'y')[alert_data['band'][i_obj]]
+                m5 = obs.m5[mag_name]
+
+                q_mag = dummy_sed.magFromFlux(alert_data['q_flux'][i_obj])
+                self.assertAlmostEqual(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
+                                       q_mag, 4)
+
+                snr, gamma = calcSNR_m5(self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex],
+                                        bp_dict[mag_name],
+                                        self.obs_mag_cutoff[alert_data['band'][i_obj]],
+                                        phot_params)
+
+                self.assertAlmostEqual(snr/alert_data['q_snr'][i_obj], 1.0, 4)
+
+                tot_mag = self.mag0_truth_dict[alert_data['band'][i_obj]][obj_dex] + \
+                          true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]]
+
+                snr, gamma = calcSNR_m5(tot_mag, bp_dict[mag_name],
+                                        m5, phot_params)
+                self.assertAlmostEqual(snr/alert_data['tot_snr'][i_obj], 1.0, 4)
+
+        for val in obshistid_unqid_set:
+            self.assertIn(val, obshistid_unqid_simulated_set)
+        self.assertEqual(len(obshistid_unqid_set), len(obshistid_unqid_simulated_set))
+
+        astrometry_query = 'SELECT uniqueId, ra, dec, TAI '
+        astrometry_query += 'FROM baseline_astrometry'
+        astrometry_dtype = np.dtype([('uniqueId', int),
+                                     ('ra', float),
+                                     ('dec', float),
+                                     ('TAI', float)])
+
+        tai_list = []
+        for obs in self.obs_list:
+            tai_list.append(obs.mjd.TAI)
+        tai_list = np.array(tai_list)
+
+        n_tot_ast_simulated = 0
+        for file_name in sqlite_file_list:
+            if not file_name.endswith('db'):
+                continue
+            full_name = os.path.join(output_dir, file_name)
+            self.assertTrue(os.path.exists(full_name))
+            alert_db = DBObject(full_name, driver='sqlite')
+            astrometry_data = alert_db.execute_arbitrary(astrometry_query, dtype=astrometry_dtype)
+
+            if len(astrometry_data) == 0:
+                continue
+
+            mjd_list = ModifiedJulianDate.get_list(TAI=astrometry_data['TAI'])
+            for i_obj in range(len(astrometry_data)):
+                n_tot_ast_simulated += 1
+                obj_dex = (astrometry_data['uniqueId'][i_obj]//1024) - 1
+                ra_truth, dec_truth = applyProperMotion(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex], self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex], self.vrad_truth[obj_dex],
+                                                        mjd=mjd_list[i_obj])
+
+                distance = angularSeparation(ra_truth, dec_truth,
+                                             astrometry_data['ra'][i_obj],
+                                             astrometry_data['dec'][i_obj])
+
+                self.assertLess(3600.0*distance, 0.0005)
+
+        del alert_gen
+        gc.collect()
+        self.assertGreater(n_tot_simulated, 10)
+        self.assertGreater(len(obshistid_unqid_simulated_set), 10)
+        self.assertLess(len(obshistid_unqid_simulated_set), n_total_observations)
+        self.assertGreater(n_tot_ast_simulated, 0)
+
+        out_file_list = os.listdir(output_dir)
+        for file_name in out_file_list:
+            os.unlink(os.path.join(output_dir, file_name))
+        shutil.rmtree(output_dir)
+
+
+    def test_alert_data_generation_snr(self):
+        """
+        Test that the AlertDataGenerator generates the alerts
+        it is supposed to by comparing to InstanceCatalogs of
+        the objects being simulated and doing a brute force comparison.
+
+        Add a signal-to-noise ratio cut-off in the alert generation step.
+        """
+
+        dmag_cutoff = 0.005
+        snr_cutoff = 15.0   # the simulated light curves in this test
+                            # have ridiculous SNR
+
+        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z' : 4, 'y': 5}
+
+        star_db = StarAlertTestDBObj(database=self.star_db_name, driver='sqlite')
+
+        # assemble the true light curves for each object; we need to figure out
+        # if their np.max(dMag) ever goes over dmag_cutoff; then we will know if
+        # we are supposed to simulate them
+        true_lc_dict = {}
+        true_lc_snr_dict ={}
+        true_lc_q_snr_dict = {}
+        true_lc_tot_snr_dict = {}
+        true_lc_obshistid_dict = {}
+        is_visible_dict = {}
+        makes_snr_cut_dict = {}
+        max_snr_dict = {}
+        obs_dict = {}
+        max_obshistid = -1
+        n_total_observations = 0
+        for obs in self.obs_list:
+            obs_dict[obs.OpsimMetaData['obsHistID']] = obs
+            obshistid = obs.OpsimMetaData['obsHistID']
+            if obshistid > max_obshistid:
+                max_obshistid = obshistid
+            cat = TestAlertsTruthCatSNR(star_db, obs_metadata=obs)
+
+            for line in cat.iter_catalog():
+                if line[1] is None:
+                    continue
+
+                n_total_observations += 1
+                if line[0] not in true_lc_dict:
+                    true_lc_dict[line[0]] = {}
+                    true_lc_snr_dict[line[0]] = {}
+                    true_lc_q_snr_dict[line[0]] ={}
+                    true_lc_tot_snr_dict[line[0]] = {}
+                    true_lc_obshistid_dict[line[0]] = []
+
+                true_lc_dict[line[0]][obshistid] = line[2]
+                true_lc_snr_dict[line[0]][obshistid] = line[4]
+                true_lc_q_snr_dict[line[0]][obshistid] = line[5]
+                true_lc_tot_snr_dict[line[0]][obshistid] = line[6]
+                true_lc_obshistid_dict[line[0]].append(obshistid)
+
+                if line[0] not in is_visible_dict:
+                    is_visible_dict[line[0]] = False
+
+                if line[3] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
+                    is_visible_dict[line[0]] = True
+
+                if line[0] not in makes_snr_cut_dict:
+                    makes_snr_cut_dict[line[0]] = False
+
+                if line[4] > snr_cutoff:
+                    makes_snr_cut_dict[line[0]] = True
+
+        obshistid_bits = int(np.ceil(np.log(max_obshistid)/np.log(2)))
+
+        skipped_due_to_mag = 0
+        skipped_due_to_snr = 0
+
+        objects_to_simulate = []
+        obshistid_unqid_set = set()
+        for obj_id in true_lc_dict:
+
+            dmag_max = -1.0
+            for obshistid in true_lc_dict[obj_id]:
+                if np.abs(true_lc_dict[obj_id][obshistid]) > dmag_max:
+                    dmag_max = np.abs(true_lc_dict[obj_id][obshistid])
+
+            if dmag_max >= dmag_cutoff:
+                if not is_visible_dict[obj_id]:
+                    skipped_due_to_mag += 1
+                    continue
+
+                if not makes_snr_cut_dict[obj_id]:
+                    skipped_due_to_snr += 1
+                    continue
+
+                objects_to_simulate.append(obj_id)
+                for obshistid in true_lc_obshistid_dict[obj_id]:
+                    obshistid_unqid_set.add((obj_id << obshistid_bits) + obshistid)
+
+        self.assertGreater(len(objects_to_simulate), 10)
+        self.assertGreater(skipped_due_to_snr, 0)
+        self.assertGreater(skipped_due_to_mag, 0)
+
+        output_dir = tempfile.mkdtemp(dir=ROOT, prefix='alert_gen_output')
+        log_file_name = tempfile.mktemp(dir=output_dir, suffix='log.txt')
+        alert_gen = AlertDataGenerator(testing=True)
+
+        alert_gen.subdivide_obs(self.obs_list, htmid_level=6)
+
+        for htmid in alert_gen.htmid_list:
+            alert_gen.alert_data_from_htmid(htmid, star_db,
+                                            photometry_class=TestAlertsVarCat,
+                                            output_prefix='alert_test',
+                                            output_dir=output_dir,
+                                            dmag_cutoff=dmag_cutoff,
+                                            snr_cutoff=snr_cutoff,
+                                            log_file_name=log_file_name)
+
+        dummy_sed = Sed()
+
+        bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
+
+        phot_params = PhotometricParameters()
+
+        # First, verify that the contents of the sqlite files are all correct
+
+        n_tot_simulated = 0
+
+        alert_query = 'SELECT alert.uniqueId, alert.obshistId, meta.TAI, '
+        alert_query += 'meta.band, quiescent.flux, alert.dflux, '
+        alert_query += 'quiescent.snr, alert.snr, '
+        alert_query += 'alert.ra, alert.dec, alert.chipNum, '
+        alert_query += 'alert.xPix, alert.yPix, ast.pmRA, ast.pmDec, '
+        alert_query += 'ast.parallax '
+        alert_query += 'FROM alert_data AS alert '
+        alert_query += 'INNER JOIN metadata AS meta ON meta.obshistId=alert.obshistId '
+        alert_query += 'INNER JOIN quiescent_flux AS quiescent '
+        alert_query += 'ON quiescent.uniqueId=alert.uniqueId '
+        alert_query += 'AND quiescent.band=meta.band '
+        alert_query += 'INNER JOIN baseline_astrometry AS ast '
+        alert_query += 'ON ast.uniqueId=alert.uniqueId'
+
+        alert_dtype = np.dtype([('uniqueId', int), ('obshistId', int),
+                                ('TAI', float), ('band', int),
+                                ('q_flux', float), ('dflux', float),
+                                ('q_snr', float), ('tot_snr', float),
+                                ('ra', float), ('dec', float),
+                                ('chipNum', int), ('xPix', float), ('yPix', float),
+                                ('pmRA', float), ('pmDec', float), ('parallax', float)])
+
+        sqlite_file_list = os.listdir(output_dir)
+
+        n_tot_simulated = 0
+        obshistid_unqid_simulated_set = set()
+        for file_name in sqlite_file_list:
+            if not file_name.endswith('db'):
+                continue
+            full_name = os.path.join(output_dir, file_name)
+            self.assertTrue(os.path.exists(full_name))
+            alert_db = DBObject(full_name, driver='sqlite')
+            alert_data = alert_db.execute_arbitrary(alert_query, dtype=alert_dtype)
+            if len(alert_data) == 0:
+                continue
+
+            mjd_list = ModifiedJulianDate.get_list(TAI=alert_data['TAI'])
+            for i_obj in range(len(alert_data)):
+                n_tot_simulated += 1
+                obshistid_unqid_simulated_set.add((alert_data['uniqueId'][i_obj] << obshistid_bits) +
+                                                  alert_data['obshistId'][i_obj])
+
+                unq = alert_data['uniqueId'][i_obj]
+                obj_dex = (unq//1024)-1
+                self.assertAlmostEqual(self.pmra_truth[obj_dex], 0.001*alert_data['pmRA'][i_obj], 4)
+                self.assertAlmostEqual(self.pmdec_truth[obj_dex], 0.001*alert_data['pmDec'][i_obj], 4)
+                self.assertAlmostEqual(self.px_truth[obj_dex], 0.001*alert_data['parallax'][i_obj], 4)
+
+                ra_truth, dec_truth = applyProperMotion(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex], self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex], self.vrad_truth[obj_dex],
+                                                        mjd=mjd_list[i_obj])
+                distance = angularSeparation(ra_truth, dec_truth,
+                                             alert_data['ra'][i_obj], alert_data['dec'][i_obj])
+
+                distance_arcsec = 3600.0*distance
+                msg = '\ntruth: %e %e\nalert: %e %e\n' % (ra_truth, dec_truth,
+                                                          alert_data['ra'][i_obj],
+                                                          alert_data['dec'][i_obj])
+
+                self.assertLess(distance_arcsec, 0.0005, msg=msg)
+
+                obs = obs_dict[alert_data['obshistId'][i_obj]]
+
+                chipname = chipNameFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                 pm_ra=self.pmra_truth[obj_dex],
+                                                 pm_dec=self.pmdec_truth[obj_dex],
+                                                 parallax=self.px_truth[obj_dex],
+                                                 v_rad=self.vrad_truth[obj_dex],
+                                                 obs_metadata=obs)
+
+                chipnum = int(chipname.replace('R', '').replace('S', '').
+                              replace(' ', '').replace(';', '').replace(',', '').
+                              replace(':', ''))
+
+                self.assertEqual(chipnum, alert_data['chipNum'][i_obj])
+
+                xpix, ypix = pixelCoordsFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                      pm_ra=self.pmra_truth[obj_dex],
+                                                      pm_dec=self.pmdec_truth[obj_dex],
+                                                      parallax=self.px_truth[obj_dex],
+                                                      v_rad=self.vrad_truth[obj_dex],
+                                                      obs_metadata=obs)
+
+                self.assertAlmostEqual(alert_data['xPix'][i_obj], xpix, 4)
+                self.assertAlmostEqual(alert_data['yPix'][i_obj], ypix, 4)
+
+                dmag_sim = -2.5*np.log10(1.0+alert_data['dflux'][i_obj]/alert_data['q_flux'][i_obj])
+                self.assertAlmostEqual(true_lc_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
+                                       dmag_sim, 3)
+
+                q_noise = alert_data['q_flux'][i_obj]/alert_data['q_snr'][i_obj]
+                tot_noise = (alert_data['dflux'][i_obj]+alert_data['q_flux'][i_obj])/alert_data['tot_snr'][i_obj]
+                d_noise = np.sqrt(q_noise**2 + tot_noise**2)
+                d_snr = np.abs(alert_data['dflux'][i_obj]/d_noise)
+
+                i0 = alert_data['uniqueId'][i_obj]
+                i1 = alert_data['obshistId'][i_obj]
+                msg = '\nq_snr %e %e\n' % (alert_data['q_snr'][i_obj], true_lc_q_snr_dict[i0][i1])
+                msg += 'tot_snr %e %e\n' % (alert_data['tot_snr'][i_obj], true_lc_tot_snr_dict[i0][i1])
+
+                self.assertAlmostEqual(true_lc_snr_dict[alert_data['uniqueId'][i_obj]][alert_data['obshistId'][i_obj]],
+                                       d_snr, 3, msg=msg)
 
                 mag_name = ('u', 'g', 'r', 'i', 'z', 'y')[alert_data['band'][i_obj]]
                 m5 = obs.m5[mag_name]
