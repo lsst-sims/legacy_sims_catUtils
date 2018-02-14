@@ -252,7 +252,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         assert max_str_len<500
 
-        cls.output_dir = tempfile.mkdtemp(dir=ROOT, prefix='alert_gen_output')
         cls.mag0_truth_dict = {}
         cls.mag0_truth_dict[0] = u_truth
         cls.mag0_truth_dict[1] = g_truth
@@ -274,6 +273,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         shutil.rmtree(cls.output_dir)
 
         clean_up_lsst_camera()
+
 
     def test_alert_data_generation(self):
         """
@@ -346,7 +346,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         self.assertGreater(len(objects_to_simulate), 10)
         self.assertGreater(skipped_due_to_mag, 0)
 
-        log_file_name = tempfile.mktemp(dir=self.output_dir, suffix='log.txt')
+        output_dir = tempfile.mkdtemp(dir=ROOT, prefix='alert_gen_output')
+        log_file_name = tempfile.mktemp(dir=output_dir, suffix='log.txt')
         alert_gen = AlertDataGenerator(testing=True)
 
         alert_gen.subdivide_obs(self.obs_list, htmid_level=6)
@@ -355,7 +356,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             alert_gen.alert_data_from_htmid(htmid, star_db,
                                             photometry_class=TestAlertsVarCat,
                                             output_prefix='alert_test',
-                                            output_dir=self.output_dir,
+                                            output_dir=output_dir,
                                             dmag_cutoff=dmag_cutoff,
                                             log_file_name=log_file_name)
 
@@ -391,14 +392,14 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                 ('chipNum', int), ('xPix', float), ('yPix', float),
                                 ('pmRA', float), ('pmDec', float), ('parallax', float)])
 
-        sqlite_file_list = os.listdir(self.output_dir)
+        sqlite_file_list = os.listdir(output_dir)
 
         n_tot_simulated = 0
         obshistid_unqid_simulated_set = set()
         for file_name in sqlite_file_list:
             if not file_name.endswith('db'):
                 continue
-            full_name = os.path.join(self.output_dir, file_name)
+            full_name = os.path.join(output_dir, file_name)
             self.assertTrue(os.path.exists(full_name))
             alert_db = DBObject(full_name, driver='sqlite')
             alert_data = alert_db.execute_arbitrary(alert_query, dtype=alert_dtype)
@@ -503,7 +504,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         for file_name in sqlite_file_list:
             if not file_name.endswith('db'):
                 continue
-            full_name = os.path.join(self.output_dir, file_name)
+            full_name = os.path.join(output_dir, file_name)
             self.assertTrue(os.path.exists(full_name))
             alert_db = DBObject(full_name, driver='sqlite')
             astrometry_data = alert_db.execute_arbitrary(astrometry_query, dtype=astrometry_dtype)
@@ -532,6 +533,11 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         self.assertGreater(len(obshistid_unqid_simulated_set), 10)
         self.assertLess(len(obshistid_unqid_simulated_set), n_total_observations)
         self.assertGreater(n_tot_ast_simulated, 0)
+
+        out_file_list = os.listdir(output_dir)
+        for file_name in out_file_list:
+            os.unlink(os.path.join(output_dir, file_name))
+        shutil.rmtree(output_dir)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
