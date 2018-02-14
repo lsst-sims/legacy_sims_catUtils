@@ -276,6 +276,11 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         clean_up_lsst_camera()
 
     def test_alert_data_generation(self):
+        """
+        Test that the AlertDataGenerator generates the alerts
+        it is supposed to by comparing to InstanceCatalogs of
+        the objects being simulated and doing a brute force comparison
+        """
 
         dmag_cutoff = 0.005
         mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z' : 4, 'y': 5}
