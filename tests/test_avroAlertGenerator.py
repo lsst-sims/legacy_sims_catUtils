@@ -626,6 +626,209 @@ class AvroAlertTestCase(unittest.TestCase):
 
         self.assertEqual(alert_ct, len(true_alert_dict))
 
+    def test_avro_alert_generation_snr(self):
+        """
+        Test that the avroAlertGenerator selects the correct objects when you
+        set a signal-to-noise cutoff
+        """
+        dmag_cutoff = 0.005
+        snr_cutoff = 15.0
+        mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}
+        bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
+        phot_params = PhotometricParameters()
+
+        quiescent_m5 = {'u': 23.68, 'g': 24.89, 'r': 24.43,
+                        'i': 24.0, 'z': 24.45, 'y': 22.60}
+
+        dummy_sed = Sed()
+
+        star_db = StarAlertTestDBObj_avro(database=self.star_db_name, driver='sqlite')
+
+        # assemble a dict of all of the alerts that need to be generated
+
+        obshistid_list = []
+        for obs in self.obs_list:
+            obshistid_list.append(obs.OpsimMetaData['obsHistID'])
+        obshistid_max = max(obshistid_list)
+        obshistid_bits = int(np.ceil(np.log(obshistid_max)/np.log(2.0)))
+
+        skipped_by_snr = 0
+        true_alert_dict = {}
+        obs_dict = {}
+        for obs in self.obs_list:
+            obs_dict[obs.OpsimMetaData['obsHistID']] = obs
+            obshistid = obs.OpsimMetaData['obsHistID']
+            cat = TestAlertsTruthCat_avro(star_db, obs_metadata=obs)
+            cat.camera = lsst_camera()
+
+            for line in cat.iter_catalog():
+                if line[1] is None:
+                    continue
+
+                dmag = line[2]
+                mag = line[3]
+                if (np.abs(dmag) > dmag_cutoff and
+                    mag <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]):
+
+
+                    q_mag = mag - dmag
+                    q_flux = dummy_sed.fluxFromMag(q_mag)
+                    q_snr, gamma = calcSNR_m5(q_mag,
+                                              bp_dict[obs.bandpass],
+                                              quiescent_m5[obs.bandpass],
+                                              phot_params)
+                    q_noise = q_flux/q_snr
+
+                    a_flux = dummy_sed.fluxFromMag(mag)
+                    a_snr, gamma = calcSNR_m5(mag,
+                                              bp_dict[obs.bandpass],
+                                              obs.m5[obs.bandpass],
+                                              phot_params)
+                    a_noise = a_flux/a_snr
+
+                    d_noise = np.sqrt(a_noise**2+q_noise**2)
+                    d_snr = np.abs((a_flux-q_flux)/d_noise)
+                    if d_snr < snr_cutoff:
+                        skipped_by_snr += 1
+                        continue
+
+                    alertId = (line[0] << obshistid_bits) + obshistid
+                    self.assertNotIn(alertId, true_alert_dict)
+                    true_alert_dict[alertId] = {}
+                    true_alert_dict[alertId]['chipName'] = line[1]
+                    true_alert_dict[alertId]['dmag'] = dmag
+                    true_alert_dict[alertId]['mag'] = mag
+                    true_alert_dict[alertId]['ra'] = np.degrees(line[4])
+                    true_alert_dict[alertId]['decl'] = np.degrees(line[5])
+                    true_alert_dict[alertId]['xPix'] = line[6]
+                    true_alert_dict[alertId]['yPix'] = line[7]
+
+
+        self.assertGreater(skipped_by_snr, 10)
+        self.assertGreater(len(true_alert_dict), 10)
+
+        log_file_name = tempfile.mktemp(dir=self.alert_data_output_dir, suffix='log.txt')
+        alert_gen = AlertDataGenerator(testing=True)
+
+        alert_gen.subdivide_obs(self.obs_list, htmid_level=6)
+
+        for htmid in alert_gen.htmid_list:
+            alert_gen.alert_data_from_htmid(htmid, star_db,
+                                            photometry_class=TestAlertsVarCat_avro,
+                                            output_prefix='alert_test',
+                                            output_dir=self.alert_data_output_dir,
+                                            dmag_cutoff=dmag_cutoff,
+                                            log_file_name=log_file_name)
+
+        obshistid_to_htmid = {}
+        for htmid in alert_gen.htmid_list:
+            for obs in alert_gen.obs_from_htmid(htmid):
+                obshistid = obs.OpsimMetaData['obsHistID']
+                if obshistid not in obshistid_to_htmid:
+                    obshistid_to_htmid[obshistid] = []
+                obshistid_to_htmid[obshistid].append(htmid)
+
+        avro_gen = AvroAlertGenerator()
+        avro_gen.load_schema(os.path.join(getPackageDir('sims_catUtils'), 'tests', 'testData', 'avroSchema'))
+        sql_prefix_list = ['alert_test']
+        out_prefix = 'test_avro'
+        log_file_name = tempfile.mktemp(dir=self.avro_out_dir,
+                                        prefix='test_avro',
+                                        suffix='log.txt')
+        for obshistid in obshistid_list:
+            avro_gen.write_alerts(obshistid, self.alert_data_output_dir,
+                                  sql_prefix_list,
+                                  obshistid_to_htmid[obshistid],
+                                  self.avro_out_dir, out_prefix,
+                                  dmag_cutoff,
+                                  snr_cutoff=snr_cutoff,
+                                  lock=None,
+                                  log_file_name=log_file_name)
+
+        list_of_avro_files = os.listdir(self.avro_out_dir)
+        self.assertGreater(len(list_of_avro_files), 2)
+        alert_ct = 0
+        dummy_sed = Sed()
+        bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
+        photParams = PhotometricParameters()
+        diasourceId_set = set()
+        for avro_file_name in list_of_avro_files:
+            if avro_file_name.endswith('log.txt'):
+                continue
+            full_name = os.path.join(self.avro_out_dir, avro_file_name)
+            with DataFileReader(open(full_name, 'rb'), DatumReader()) as data_reader:
+                for alert in data_reader:
+                    alert_ct += 1
+                    obshistid = alert['alertId'] >> 20
+                    obs = obs_dict[obshistid]
+                    uniqueId = alert['diaObject']['diaObjectId']
+                    true_alert_id = (uniqueId << obshistid_bits) + obshistid
+                    self.assertIn(true_alert_id, true_alert_dict)
+                    self.assertEqual(alert['l1dbId'], uniqueId)
+
+                    true_alert = true_alert_dict[true_alert_id]
+
+                    diaSource = alert['diaSource']
+                    self.assertAlmostEqual(diaSource['ra'], true_alert['ra'], 10)
+                    self.assertAlmostEqual(diaSource['decl'], true_alert['decl'], 10)
+                    self.assertAlmostEqual(diaSource['x'], true_alert['xPix'], 3)
+                    self.assertAlmostEqual(diaSource['y'], true_alert['yPix'], 3)
+                    self.assertAlmostEqual(diaSource['midPointTai'], obs.mjd.TAI, 4)
+
+                    true_tot_flux = dummy_sed.fluxFromMag(true_alert['mag'])
+                    true_q_mag = true_alert['mag'] - true_alert['dmag']
+                    true_q_flux = dummy_sed.fluxFromMag(true_q_mag)
+                    true_dflux = true_tot_flux - true_q_flux
+                    self.assertAlmostEqual(diaSource['psFlux']/true_dflux, 1.0, 6)
+                    self.assertAlmostEqual(diaSource['totFlux']/true_tot_flux, 1.0, 6)
+                    self.assertAlmostEqual(diaSource['diffFlux']/true_dflux, 1.0, 6)
+
+                    true_tot_snr, gamma = calcSNR_m5(true_alert['mag'], bp_dict[obs.bandpass],
+                                                     obs.m5[obs.bandpass], photParams)
+
+                    true_q_snr, gamma = calcSNR_m5(true_q_mag, bp_dict[obs.bandpass],
+                                                   self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]],
+                                                   photParams)
+
+                    true_tot_err = true_tot_flux/true_tot_snr
+                    true_q_err = true_q_flux/true_q_snr
+                    true_diff_err = np.sqrt(true_tot_err**2 + true_q_err**2)
+
+                    self.assertAlmostEqual(diaSource['snr']/np.abs(true_dflux/true_diff_err),
+                                           1.0, 6)
+
+                    self.assertAlmostEqual(diaSource['totFluxErr']/true_tot_err, 1.0, 6)
+                    self.assertAlmostEqual(diaSource['diffFluxErr']/true_diff_err, 1.0, 6)
+
+                    chipnum = int(true_alert['chipName'].replace('R', '').replace('S', '').
+                                  replace(',', '').replace(':', '').replace(' ', ''))
+
+                    true_ccdid = (chipnum*10**7)+obshistid
+                    self.assertEqual(true_ccdid, diaSource['ccdVisitId'])
+                    self.assertEqual(uniqueId, diaSource['diaObjectId'])
+
+                    self.assertNotIn(diaSource['diaSourceId'], diasourceId_set)
+                    diasourceId_set.add(diaSource['diaSourceId'])
+
+                    diaObject = alert['diaObject']
+                    obj_dex = (uniqueId//1024) - 1
+                    self.assertAlmostEqual(0.001*diaObject['pmRa']/self.pmra_truth[obj_dex], 1.0, 5)
+                    self.assertAlmostEqual(0.001*diaObject['pmDecl']/self.pmdec_truth[obj_dex], 1.0, 5)
+                    self.assertAlmostEqual(0.001*diaObject['parallax']/self.px_truth[obj_dex], 1.0, 5)
+
+                    (true_ra_base,
+                     true_dec_base) = applyProperMotion(self.ra_truth[obj_dex],
+                                                        self.dec_truth[obj_dex],
+                                                        self.pmra_truth[obj_dex],
+                                                        self.pmdec_truth[obj_dex],
+                                                        self.px_truth[obj_dex],
+                                                        self.vrad_truth[obj_dex],
+                                                        mjd=ModifiedJulianDate(TAI=diaObject['radecTai']))
+
+                    self.assertAlmostEqual(true_ra_base, diaObject['ra'], 7)
+                    self.assertAlmostEqual(true_dec_base, diaObject['decl'], 7)
+
+        self.assertEqual(alert_ct, len(true_alert_dict))
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
