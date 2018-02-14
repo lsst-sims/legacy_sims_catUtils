@@ -48,6 +48,22 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
+
+class StarAlertTestDBObj(StellarAlertDBObjMixin, CatalogDBObject):
+    objid = 'star_alert'
+    tableid = 'stars'
+    idColKey = 'simobjid'
+    raColName = 'ra'
+    decColName = 'dec'
+    objectTypeId = 0
+    columns = [('raJ2000', 'ra*0.01745329252'),
+               ('decJ2000', 'dec*0.01745329252'),
+               ('parallax', 'px*0.01745329252/3600.0'),
+               ('properMotionRa', 'pmra*0.01745329252/3600.0'),
+               ('properMotionDec', 'pmdec*0.01745329252/3600.0'),
+               ('radialVelocity', 'vrad'),
+               ('variabilityParameters', 'varParamStr', str, 500)]
+
 class AlertDataGeneratorTestCase(unittest.TestCase):
 
     longMessage = True
@@ -162,7 +178,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             cls.amp_truth[id_offset:id_offset+n_stars] = np.round(var_amp, decimals=4)
             cls.period_truth[id_offset:id_offset+n_stars] = np.round(var_period, decimals=4)
 
-            cls.max_str_len = -1
+            max_str_len = -1
 
             for i_star in range(n_stars):
                 if var_amp[i_star] >= -0.1:
@@ -171,8 +187,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 else:
                     varParamStr = 'None'
 
-                if len(varParamStr) > cls.max_str_len:
-                    cls.max_str_len = len(varParamStr)
+                if len(varParamStr) > max_str_len:
+                    max_str_len = len(varParamStr)
 
                 htmid = findHtmid(ra[i_star], dec[i_star], 21)
 
@@ -189,6 +205,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         conn.commit()
         conn.close()
 
+        assert max_str_len<500
+
         cls.output_dir = tempfile.mkdtemp(dir=ROOT, prefix='alert_gen_output')
         cls.mag0_truth_dict = {}
         cls.mag0_truth_dict[0] = u_truth
@@ -197,6 +215,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         cls.mag0_truth_dict[3] = i_truth
         cls.mag0_truth_dict[4] = z_truth
         cls.mag0_truth_dict[5] = y_truth
+
 
     @classmethod
     def tearDownClass(cls):
@@ -215,23 +234,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         dmag_cutoff = 0.005
         mag_name_to_int = {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z' : 4, 'y': 5}
-
-        _max_var_param_str = self.max_str_len
-
-        class StarAlertTestDBObj(StellarAlertDBObjMixin, CatalogDBObject):
-            objid = 'star_alert'
-            tableid = 'stars'
-            idColKey = 'simobjid'
-            raColName = 'ra'
-            decColName = 'dec'
-            objectTypeId = 0
-            columns = [('raJ2000', 'ra*0.01745329252'),
-                       ('decJ2000', 'dec*0.01745329252'),
-                       ('parallax', 'px*0.01745329252/3600.0'),
-                       ('properMotionRa', 'pmra*0.01745329252/3600.0'),
-                       ('properMotionDec', 'pmdec*0.01745329252/3600.0'),
-                       ('radialVelocity', 'vrad'),
-                       ('variabilityParameters', 'varParamStr', str, _max_var_param_str)]
 
         class TestAlertsVarCatMixin(object):
 
