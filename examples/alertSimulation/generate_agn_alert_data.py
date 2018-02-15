@@ -77,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument('--dmag_cutoff', type=float, default=0.001,
                         help='Minimum delta magnitude to trigger an alert '
                         '(default = 0.001)')
-    parser.add_argument('--snr_cutoff', dtype=float, default=5.0,
+    parser.add_argument('--snr_cutoff', type=float, default=5.0,
                         help='Minimum SNR on difference image detection '
                         'to trigger an alert (default=5)')
     parser.add_argument('--opsim_db', type=str,
