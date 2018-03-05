@@ -5,6 +5,7 @@ import sqlite3
 from collections import OrderedDict
 import time
 import gc
+import multiprocessing.synchronize as mprocSync
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import trixelFromHtmid, getAllTrixels
@@ -36,6 +37,24 @@ __all__ = ["AlertDataGenerator",
            "StellarAlertDBObj",
            "AgnAlertDBObj",
            "StellarAlertDBObjMixin"]
+
+
+class _lock_context(object):
+    """
+    A class to handle lock acquisition through a context manager
+    which allows for the possiblity that lock is None
+    """
+
+    def __init__(self, lock_obj):
+        self._lock = lock_obj
+
+    def __enter__(self):
+        if isinstance(self._lock, mprocSync.Lock):
+            self._lock.acquire()
+
+    def __exit__(self, *args):
+        if isinstance(self._lock, mprocSync.Lock):
+            self._lock.release()
 
 
 class StellarAlertDBObjMixin(object):
@@ -552,22 +571,6 @@ class AlertDataGenerator(object):
                                    script_name)
             else:
                 self._dmag_lookup_file_exists = False
-
-    def acquire_lock(self):
-        """
-        If running with multiprocessing, acquire
-        the lock.
-        """
-        if self._stdout_lock is not None:
-            self._stdout_lock.acquire()
-
-    def release_lock(self):
-        """
-        If running with multiprocessing, release
-        the lock.
-        """
-        if self._stdout_lock is not None:
-            self._stdout_lock.release()
 
     def subdivide_obs(self, obs_list, htmid_level=6):
         """
@@ -1388,41 +1391,37 @@ class AlertDataGenerator(object):
                 cursor.executemany('INSERT INTO baseline_astrometry VALUES (?,?,?,?,?,?,?)', values)
 
                 if n_rows_cached >= write_every:
-                    self.acquire_lock()
-                    with open(log_file_name, 'a') as out_file:
-                        out_file.write('%d is writing \n' % os.getpid())
+                    with _lock_context(self._stdout_lock):
+                        with open(log_file_name, 'a') as out_file:
+                            out_file.write('%d is writing \n' % os.getpid())
 
-                        print('%d is writing' % os.getpid())
-
-                    self.release_lock()
+                            print('%d is writing' % os.getpid())
 
                     n_rows += self._output_alert_data(conn, output_data_cache)
                     output_data_cache = {}
                     n_rows_cached = 0
 
                     if n_rows > 0:
-                        self.acquire_lock()
-                        with open(log_file_name, 'a') as out_file:
-                            elapsed = (time.time()-t_before_obj)/3600.0
-                            elapsed_per = elapsed/n_rows
-                            rows_per_chunk = float(n_rows)/float(i_chunk)
-                            total_projection = 1000.0*rows_per_chunk*elapsed_per
-                            out_file.write('\n    %d n_obj %d %d trimmed %d\n' %
-                                           (this_pid, n_obj, n_actual_obj, n_htmid_trim))
-                            out_file.write('    elapsed %.2e hrs per row %.2e total %2e\n' %
-                                           (elapsed, elapsed_per, total_projection))
-                            out_file.write('    n_time_last %d; rows %d\n' % (n_time_last, n_rows))
+                        with _lock_context(self._stdout_lock):
+                            with open(log_file_name, 'a') as out_file:
+                                elapsed = (time.time()-t_before_obj)/3600.0
+                                elapsed_per = elapsed/n_rows
+                                rows_per_chunk = float(n_rows)/float(i_chunk)
+                                total_projection = 1000.0*rows_per_chunk*elapsed_per
+                                out_file.write('\n    %d n_obj %d %d trimmed %d\n' %
+                                               (this_pid, n_obj, n_actual_obj, n_htmid_trim))
+                                out_file.write('    elapsed %.2e hrs per row %.2e total %2e\n' %
+                                               (elapsed, elapsed_per, total_projection))
+                                out_file.write('    n_time_last %d; rows %d\n' % (n_time_last, n_rows))
 
-                            out_file.write('%d is done writing\n' % os.getpid())
+                                out_file.write('%d is done writing\n' % os.getpid())
 
-                            print('\n    %d n_obj %d %d trimmed %d' %
-                                  (this_pid, n_obj, n_actual_obj, n_htmid_trim))
-                            print('    elapsed %.2e hrs per row %.2e total %2e' %
-                                  (elapsed, elapsed_per, total_projection))
-                            print('    n_time_last %d; rows %d\n' % (n_time_last, n_rows))
-                            print('%d is done writing' % os.getpid())
-
-                        self.release_lock()
+                                print('\n    %d n_obj %d %d trimmed %d' %
+                                      (this_pid, n_obj, n_actual_obj, n_htmid_trim))
+                                print('    elapsed %.2e hrs per row %.2e total %2e' %
+                                      (elapsed, elapsed_per, total_projection))
+                                print('    n_time_last %d; rows %d\n' % (n_time_last, n_rows))
+                                print('%d is done writing' % os.getpid())
 
             if len(output_data_cache) > 0:
                 n_rows += self._output_alert_data(conn, output_data_cache)
@@ -1431,9 +1430,8 @@ class AlertDataGenerator(object):
             print('htmid %d that took %.2e hours; n_obj %d n_rows %d' %
                   (htmid, (time.time()-t_start)/3600.0, n_obj, n_rows))
 
-            self.acquire_lock()
-            print("INDEXING %d" % htmid)
-            self.release_lock()
+            with _lock_context(self._stdout_lock):
+                print("INDEXING %d" % htmid)
 
             cursor.execute('CREATE INDEX unq_obs ON alert_data (uniqueId, obshistId)')
             cursor.execute('CREATE INDEX unq_flux ON quiescent_flux (uniqueId, band)')
@@ -1441,10 +1439,9 @@ class AlertDataGenerator(object):
             cursor.execute('CREATE INDEX unq_ast ON baseline_astrometry (uniqueId)')
             conn.commit()
 
-            self.acquire_lock()
-            with open(log_file_name, 'a') as out_file:
-                out_file.write('done with htmid %d -- %e %d\n' %
-                               (htmid, (time.time()-t_start)/3600.0, n_obj))
-            self.release_lock()
+            with _lock_context(self._stdout_lock):
+                with open(log_file_name, 'a') as out_file:
+                    out_file.write('done with htmid %d -- %e %d\n' %
+                                   (htmid, (time.time()-t_start)/3600.0, n_obj))
 
         return n_rows
