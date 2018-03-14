@@ -145,7 +145,7 @@ class AvroAlertGenerator(object):
 
             avro_diasource_list.append(avro_diasource)
 
-        return avro_diasource_list
+        return np.array(avro_diasource_list)
 
     def _create_objects(self, diaobject_data):
         """
