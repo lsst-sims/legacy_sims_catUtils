@@ -300,16 +300,22 @@ class AvroAlertGenerator(object):
 
                 for i_source in range(len(avro_diasource_list)):
                     alert_ct += 1
-                    unq = diasource_data[i_source]['uniqueId']
+
+                    obshistid = diasource_data['obshistId'][i_source]
+                    unq = diasource_data['uniqueId'][i_source]
+
+                    history = np.where(np.logical_and(diasource_data['uniqueId']==unq,
+                                                      diasource_data['obshistId']<obshistid))
+
                     diaobject = diaobject_dict[unq]
                     diasource = avro_diasource_list[i_source]
 
                     avro_alert = {}
-                    obshistid = diasource_data['obshistId'][i_source]
                     avro_alert['alertId'] = np.long((obshistid << 20) + alert_ct)
                     avro_alert['l1dbId'] = np.long(unq)
                     avro_alert['diaSource'] = diasource
                     avro_alert['diaObject'] = diaobject
+                    avro_alert['prv_diaSources'] = list(avro_diasource_list[history])
 
                     data_writer.append(avro_alert)
 

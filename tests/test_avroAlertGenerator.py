@@ -370,6 +370,7 @@ class AvroAlertTestCase(unittest.TestCase):
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
         photParams = PhotometricParameters()
         diasourceId_set = set()
+        num_with_history = 0
         for avro_file_name in list_of_avro_files:
             if avro_file_name.endswith('log.txt'):
                 continue
@@ -377,6 +378,10 @@ class AvroAlertTestCase(unittest.TestCase):
             with DataFileReader(open(full_name, 'rb'), DatumReader()) as data_reader:
                 for alert in data_reader:
                     alert_ct += 1
+
+                    if len(alert['prv_diaSources'])>0:
+                        num_with_history += 1
+
                     obshistid = alert['alertId'] >> 20
                     obs = obs_dict[obshistid]
                     uniqueId = alert['diaObject']['diaObjectId']
@@ -447,6 +452,8 @@ class AvroAlertTestCase(unittest.TestCase):
                     self.assertAlmostEqual(true_dec_base, diaObject['decl'], 7)
 
         self.assertEqual(alert_ct, len(true_alert_dict))
+        self.assertGreater(num_with_history, 0)
+        self.assertLess(num_with_history, alert_ct)
 
     def test_avro_alert_generation_diff_dmag(self):
         """
