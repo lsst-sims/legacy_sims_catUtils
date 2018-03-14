@@ -878,19 +878,11 @@ class AlertDataGenerator(object):
                     if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
                         keep_it = True
                         break
-            else:
-                snr_offense = False
-                for i_filter in range(6):
-                    if np.abs(dmag_arr_transpose[i_obj][i_filter]).max() >= dmag_cutoff:
-                        snr_offense = True
-                        break
-                if snr_offense:
-                    snr_invalid += 1
+
             if keep_it:
                 photometrically_valid[i_obj] = 1
 
         photometrically_valid = np.where(photometrically_valid >= 0)
-        print('\ntot %d kept %d snr_invalid %d\n' % (n_raw_obj, len(photometrically_valid[0]), snr_invalid))
 
         if 'properMotionRa'in column_query:
             pmra = chunk['properMotionRa'][photometrically_valid]
