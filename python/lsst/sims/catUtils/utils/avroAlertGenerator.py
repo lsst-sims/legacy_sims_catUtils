@@ -236,88 +236,101 @@ class AvroAlertGenerator(object):
         written.
         """
 
-        out_name = os.path.join(out_dir, '%s_%d.avro' % (out_prefix, htmid))
-        if os.path.exists(out_name):
-            os.unlink(out_name)
+        has_been_written = set()
 
-        with DataFileWriter(open(out_name, "wb"),
-                            DatumWriter(), self._alert_schema) as data_writer:
+        diasource_query = 'SELECT alert.uniqueId, alert.obshistId, alert.xPix, alert.yPix, '
+        diasource_query += 'alert.chipNum, alert.dflux, alert.snr, alert.ra, alert.dec, '
+        diasource_query += 'meta.band, meta.TAI, quiescent.flux, quiescent.snr '
+        diasource_query += 'FROM alert_data as alert '
+        diasource_query += 'INNER JOIN quiescent_flux AS quiescent ON quiescent.uniqueId=alert.uniqueID '
+        diasource_query += 'INNER JOIN metadata AS meta '
+        diasource_query += 'ON quiescent.band=meta.band AND alert.obshistId=meta.obshistId '
+        diasource_query += 'ORDER BY alert.uniqueId, alert.obshistId'
 
-            diasource_query = 'SELECT alert.uniqueId, alert.obshistId, alert.xPix, alert.yPix, '
-            diasource_query += 'alert.chipNum, alert.dflux, alert.snr, alert.ra, alert.dec, '
-            diasource_query += 'meta.band, meta.TAI, quiescent.flux, quiescent.snr '
-            diasource_query += 'FROM alert_data as alert '
-            diasource_query += 'INNER JOIN quiescent_flux AS quiescent ON quiescent.uniqueId=alert.uniqueID '
-            diasource_query += 'INNER JOIN metadata AS meta '
-            diasource_query += 'ON quiescent.band=meta.band AND alert.obshistId=meta.obshistId '
-            diasource_query += 'ORDER BY alert.uniqueId, alert.obshistId'
+        diasource_dtype = np.dtype([('uniqueId', int), ('obshistId', int),
+                                    ('xPix', float), ('yPix', float),
+                                    ('chipNum', int), ('dflux', float), ('tot_snr', float),
+                                    ('ra', float), ('dec', float), ('band', int), ('TAI', float),
+                                    ('quiescent_flux', float), ('quiescent_snr', float)])
 
-            diasource_dtype = np.dtype([('uniqueId', int), ('obshistId', int),
-                                        ('xPix', float), ('yPix', float),
-                                        ('chipNum', int), ('dflux', float), ('tot_snr', float),
-                                        ('ra', float), ('dec', float), ('band', int), ('TAI', float),
-                                        ('quiescent_flux', float), ('quiescent_snr', float)])
+        diaobject_query = 'SELECT uniqueId, ra, dec, TAI, pmRA, pmDec, parallax '
+        diaobject_query += 'FROM baseline_astrometry'
 
-            diaobject_query = 'SELECT uniqueId, ra, dec, TAI, pmRA, pmDec, parallax '
-            diaobject_query += 'FROM baseline_astrometry'
+        diaobject_dtype = np.dtype([('uniqueId', int), ('ra', float), ('dec', float),
+                                    ('TAI', float), ('pmRA', float), ('pmDec', float),
+                                    ('parallax', float)])
 
-            diaobject_dtype = np.dtype([('uniqueId', int), ('ra', float), ('dec', float),
-                                        ('TAI', float), ('pmRA', float), ('pmDec', float),
-                                        ('parallax', float)])
+        t_start = time.time()
+        alert_ct = 0
+        for prefix in prefix_list:
+            db_name = os.path.join(data_dir, '%s_%d_sqlite.db' % (prefix, htmid))
+            if not os.path.exists(db_name):
+                warnings.warn('%s does not exist' % db_name)
+                continue
 
-            t_start = time.time()
-            alert_ct = 0
-            for prefix in prefix_list:
-                db_name = os.path.join(data_dir, '%s_%d_sqlite.db' % (prefix, htmid))
-                if not os.path.exists(db_name):
-                    warnings.warn('%s does not exist' % db_name)
-                    continue
+            db_obj = DBObject(db_name, driver='sqlite')
 
-                db_obj = DBObject(db_name, driver='sqlite')
+            diaobject_data = db_obj.execute_arbitrary(diaobject_query,
+                                                      dtype=diaobject_dtype)
 
-                diaobject_data = db_obj.execute_arbitrary(diaobject_query,
-                                                          dtype=diaobject_dtype)
+            diaobject_dict = self._create_objects(diaobject_data)
 
-                diaobject_dict = self._create_objects(diaobject_data)
+            diasource_data = db_obj.execute_arbitrary(diasource_query,
+                                                      dtype=diasource_dtype)
 
-                diasource_data = db_obj.execute_arbitrary(diasource_query,
-                                                          dtype=diasource_dtype)
+            dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
+            if snr_cutoff>0.0:
+                q_noise = diasource_data['quiescent_flux']/diasource_data['quiescent_snr']
+                a_flux = diasource_data['quiescent_flux'] + diasource_data['dflux']
+                a_noise = a_flux/diasource_data['tot_snr']
+                diff_noise = np.sqrt(q_noise**2 + a_noise**2)
+                diff_snr = np.abs(diasource_data['dflux']/diff_noise)
+                valid_alerts = np.where(np.logical_and(np.abs(dmag) >= dmag_cutoff,
+                                                       diff_snr >= snr_cutoff))
+            else:
+                valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
 
-                dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
-                if snr_cutoff>0.0:
-                    q_noise = diasource_data['quiescent_flux']/diasource_data['quiescent_snr']
-                    a_flux = diasource_data['quiescent_flux'] + diasource_data['dflux']
-                    a_noise = a_flux/diasource_data['tot_snr']
-                    diff_noise = np.sqrt(q_noise**2 + a_noise**2)
-                    diff_snr = np.abs(diasource_data['dflux']/diff_noise)
-                    valid_alerts = np.where(np.logical_and(np.abs(dmag) >= dmag_cutoff,
-                                                           diff_snr >= snr_cutoff))
-                else:
-                    valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
+            diasource_data = diasource_data[valid_alerts]
+            avro_diasource_list = self._create_sources(diasource_data)
 
-                diasource_data = diasource_data[valid_alerts]
-                avro_diasource_list = self._create_sources(diasource_data)
+            unique_obshistid = np.unique(diasource_data['obshistId'])
+            for obshistid in unique_obshistid:
 
-                for i_source in range(len(avro_diasource_list)):
-                    alert_ct += 1
+                valid_dexes = np.where(diasource_data['obshistId'] == obshistid)
+                valid_diasource_data = diasource_data[valid_dexes]
+                valid_avro_diasource_list = avro_diasource_list[valid_dexes]
 
-                    obshistid = diasource_data['obshistId'][i_source]
-                    unq = diasource_data['uniqueId'][i_source]
+                out_name = os.path.join(out_dir, '%s_%d_%d.avro' % (out_prefix, obshistid, htmid))
+                if out_name not in has_been_written:
+                    if os.path.exists(out_name):
+                        os.unlink(out_name)
 
-                    history = np.where(np.logical_and(diasource_data['uniqueId']==unq,
-                                                      diasource_data['obshistId']<obshistid))
+                has_been_written.add(out_name)
 
-                    diaobject = diaobject_dict[unq]
-                    diasource = avro_diasource_list[i_source]
+                with DataFileWriter(open(out_name, "ab"),
+                                DatumWriter(), self._alert_schema) as data_writer:
 
-                    avro_alert = {}
-                    avro_alert['alertId'] = np.long((obshistid << 20) + alert_ct)
-                    avro_alert['l1dbId'] = np.long(unq)
-                    avro_alert['diaSource'] = diasource
-                    avro_alert['diaObject'] = diaobject
-                    avro_alert['prv_diaSources'] = list(avro_diasource_list[history])
 
-                    data_writer.append(avro_alert)
+                    for i_source in range(len(valid_avro_diasource_list)):
+                        alert_ct += 1
+
+                        obshistid = valid_diasource_data['obshistId'][i_source]
+                        unq = valid_diasource_data['uniqueId'][i_source]
+
+                        history = np.where(np.logical_and(diasource_data['uniqueId']==unq,
+                                                          diasource_data['obshistId']<obshistid))
+
+                        diaobject = diaobject_dict[unq]
+                        diasource = valid_avro_diasource_list[i_source]
+
+                        avro_alert = {}
+                        avro_alert['alertId'] = np.long((obshistid << 20) + alert_ct)
+                        avro_alert['l1dbId'] = np.long(unq)
+                        avro_alert['diaSource'] = diasource
+                        avro_alert['diaObject'] = diaobject
+                        avro_alert['prv_diaSources'] = list(avro_diasource_list[history])
+
+                        data_writer.append(avro_alert)
 
         if lock is not None:
             lock.acquire()
