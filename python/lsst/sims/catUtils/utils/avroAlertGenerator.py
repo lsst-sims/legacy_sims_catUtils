@@ -75,16 +75,13 @@ class AvroAlertGenerator(object):
 
         self._alert_schema = combine_schemas(file_names)
 
-    def _create_sources(self, obshistid, diasource_data):
+    def _create_sources(self, diasource_data):
         """
         Create a list of diaSources that adhere to the corresponding
         avro schema.
 
         Parameters
         ----------
-        obshistid is an integer corresponding to the OpSim pointing
-        being simulated
-
         diasource_data is numpy recarray containing all of the data
         for the diaSources being formatted
 
@@ -113,7 +110,7 @@ class AvroAlertGenerator(object):
             avro_diasource['diaSourceId'] = np.long((diasource['uniqueId'] << self._n_bit_shift) +
                                                     self._diasource_ct[diasource['uniqueId']])
             self._diasource_ct[diasource['uniqueId']] += 1
-            avro_diasource['ccdVisitId'] = np.long((diasource['chipNum']*10**7) + obshistid)
+            avro_diasource['ccdVisitId'] = np.long((diasource['chipNum']*10**7) + diasource['obshistId'])
             avro_diasource['diaObjectId'] = np.long(diasource['uniqueId'])
 
             avro_diasource['midPointTai'] = diasource['TAI']
@@ -202,28 +199,25 @@ class AvroAlertGenerator(object):
             diaobject_dict[diaobject['uniqueId']] = avro_diaobject
         return diaobject_dict
 
-    def write_alerts(self, obshistid, data_dir, prefix_list,
-                     htmid_list, out_dir, out_prefix,
+    def write_alerts(self, htmid, data_dir, prefix_list,
+                     out_dir, out_prefix,
                      dmag_cutoff, snr_cutoff=-1.0,
                      lock=None, log_file_name=None):
         """
-        Write the alerts for an obsHistId to a properly formatted avro file.
+        Write the alerts for a specific htmid to a properly formatted avro file.
 
         Parameters
         ----------
-        obshistid is the integer uniquely identifying the OpSim pointing
-        being simulated
+        htmid is the integer uniquely identifying the region of the sky
+        to format alerts for (in the Hierarchical Triangular Mesh system).
+        For each prefix in prefix_list, this method will generate queries
+        from the database files
+            data_dir/prefix_htmid_sqlite.db
 
         data_dir is the directory containing the sqlite files created by
         the AlertDataGenerator
 
         prefix_list is a list of prefixes for those sqlite files.
-
-        htmid_list is the list of htmids identifying the trixels that overlap
-        this obshistid's field of view. For each htmid in htmid_list and each
-        prefix in prefix_list, this method will process the files
-            data_dir/prefix_htmid_sqlite.db
-        searching for alerts that correspond to this obshistid
 
         out_dir is the directory to which the avro files should be written
 
@@ -242,24 +236,24 @@ class AvroAlertGenerator(object):
         written.
         """
 
-        out_name = os.path.join(out_dir, '%s_%d.avro' % (out_prefix, obshistid))
+        out_name = os.path.join(out_dir, '%s_%d.avro' % (out_prefix, htmid))
         if os.path.exists(out_name):
             os.unlink(out_name)
 
         with DataFileWriter(open(out_name, "wb"),
                             DatumWriter(), self._alert_schema) as data_writer:
 
-            diasource_query = 'SELECT alert.uniqueId, alert.xPix, alert.yPix, '
+            diasource_query = 'SELECT alert.uniqueId, alert.obshistId, alert.xPix, alert.yPix, '
             diasource_query += 'alert.chipNum, alert.dflux, alert.snr, alert.ra, alert.dec, '
             diasource_query += 'meta.band, meta.TAI, quiescent.flux, quiescent.snr '
             diasource_query += 'FROM alert_data as alert '
-            diasource_query += 'INNER JOIN metadata AS meta ON alert.obshistId=meta.obshistId '
             diasource_query += 'INNER JOIN quiescent_flux AS quiescent ON quiescent.uniqueId=alert.uniqueID '
-            diasource_query += 'AND quiescent.band=meta.band '
-            diasource_query += 'WHERE alert.obshistId=%d ' % obshistid
+            diasource_query += 'INNER JOIN metadata AS meta '
+            diasource_query += 'ON quiescent.band=meta.band AND alert.obshistId=meta.obshistId '
             diasource_query += 'ORDER BY alert.uniqueId'
 
-            diasource_dtype = np.dtype([('uniqueId', int), ('xPix', float), ('yPix', float),
+            diasource_dtype = np.dtype([('uniqueId', int), ('obshistId', int),
+                                        ('xPix', float), ('yPix', float),
                                         ('chipNum', int), ('dflux', float), ('tot_snr', float),
                                         ('ra', float), ('dec', float), ('band', int), ('TAI', float),
                                         ('quiescent_flux', float), ('quiescent_snr', float)])
@@ -273,58 +267,58 @@ class AvroAlertGenerator(object):
 
             t_start = time.time()
             alert_ct = 0
-            for htmid in htmid_list:
-                for prefix in prefix_list:
-                    db_name = os.path.join(data_dir, '%s_%d_sqlite.db' % (prefix, htmid))
-                    if not os.path.exists(db_name):
-                        warnings.warn('%s does not exist' % db_name)
-                        continue
+            for prefix in prefix_list:
+                db_name = os.path.join(data_dir, '%s_%d_sqlite.db' % (prefix, htmid))
+                if not os.path.exists(db_name):
+                    warnings.warn('%s does not exist' % db_name)
+                    continue
 
-                    db_obj = DBObject(db_name, driver='sqlite')
+                db_obj = DBObject(db_name, driver='sqlite')
 
-                    diaobject_data = db_obj.execute_arbitrary(diaobject_query,
-                                                              dtype=diaobject_dtype)
+                diaobject_data = db_obj.execute_arbitrary(diaobject_query,
+                                                          dtype=diaobject_dtype)
 
-                    diaobject_dict = self._create_objects(diaobject_data)
+                diaobject_dict = self._create_objects(diaobject_data)
 
-                    diasource_data = db_obj.execute_arbitrary(diasource_query,
-                                                              dtype=diasource_dtype)
+                diasource_data = db_obj.execute_arbitrary(diasource_query,
+                                                          dtype=diasource_dtype)
 
-                    dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
-                    if snr_cutoff>0.0:
-                        q_noise = diasource_data['quiescent_flux']/diasource_data['quiescent_snr']
-                        a_flux = diasource_data['quiescent_flux'] + diasource_data['dflux']
-                        a_noise = a_flux/diasource_data['tot_snr']
-                        diff_noise = np.sqrt(q_noise**2 + a_noise**2)
-                        diff_snr = np.abs(diasource_data['dflux']/diff_noise)
-                        valid_alerts = np.where(np.logical_and(np.abs(dmag) >= dmag_cutoff,
-                                                               diff_snr >= snr_cutoff))
-                    else:
-                        valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
+                dmag = 2.5*np.log10(1.0+diasource_data['dflux']/diasource_data['quiescent_flux'])
+                if snr_cutoff>0.0:
+                    q_noise = diasource_data['quiescent_flux']/diasource_data['quiescent_snr']
+                    a_flux = diasource_data['quiescent_flux'] + diasource_data['dflux']
+                    a_noise = a_flux/diasource_data['tot_snr']
+                    diff_noise = np.sqrt(q_noise**2 + a_noise**2)
+                    diff_snr = np.abs(diasource_data['dflux']/diff_noise)
+                    valid_alerts = np.where(np.logical_and(np.abs(dmag) >= dmag_cutoff,
+                                                           diff_snr >= snr_cutoff))
+                else:
+                    valid_alerts = np.where(np.abs(dmag) >= dmag_cutoff)
 
-                    diasource_data = diasource_data[valid_alerts]
-                    avro_diasource_list = self._create_sources(obshistid, diasource_data)
+                diasource_data = diasource_data[valid_alerts]
+                avro_diasource_list = self._create_sources(diasource_data)
 
-                    for i_source in range(len(avro_diasource_list)):
-                        alert_ct += 1
-                        unq = diasource_data[i_source]['uniqueId']
-                        diaobject = diaobject_dict[unq]
-                        diasource = avro_diasource_list[i_source]
+                for i_source in range(len(avro_diasource_list)):
+                    alert_ct += 1
+                    unq = diasource_data[i_source]['uniqueId']
+                    diaobject = diaobject_dict[unq]
+                    diasource = avro_diasource_list[i_source]
 
-                        avro_alert = {}
-                        avro_alert['alertId'] = np.long((obshistid << 20) + alert_ct)
-                        avro_alert['l1dbId'] = np.long(unq)
-                        avro_alert['diaSource'] = diasource
-                        avro_alert['diaObject'] = diaobject
+                    avro_alert = {}
+                    obshistid = diasource_data['obshistId'][i_source]
+                    avro_alert['alertId'] = np.long((obshistid << 20) + alert_ct)
+                    avro_alert['l1dbId'] = np.long(unq)
+                    avro_alert['diaSource'] = diasource
+                    avro_alert['diaObject'] = diaobject
 
-                        data_writer.append(avro_alert)
+                    data_writer.append(avro_alert)
 
         if lock is not None:
             lock.acquire()
 
         elapsed = (time.time()-t_start)/3600.0
 
-        msg = 'finished obshistid %d; %d alerts in %.2e hrs' % (obshistid, alert_ct, elapsed)
+        msg = 'finished htmid %d; %d alerts in %.2e hrs' % (htmid, alert_ct, elapsed)
 
         print(msg)
 

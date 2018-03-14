@@ -356,10 +356,9 @@ class AvroAlertTestCase(unittest.TestCase):
         log_file_name = tempfile.mktemp(dir=self.avro_out_dir,
                                         prefix='test_avro',
                                         suffix='log.txt')
-        for obshistid in obshistid_list:
-            avro_gen.write_alerts(obshistid, self.alert_data_output_dir,
+        for htmid in alert_gen.htmid_list:
+            avro_gen.write_alerts(htmid, self.alert_data_output_dir,
                                   sql_prefix_list,
-                                  obshistid_to_htmid[obshistid],
                                   self.avro_out_dir, out_prefix,
                                   dmag_cutoff, lock=None,
                                   log_file_name=log_file_name)
@@ -533,10 +532,9 @@ class AvroAlertTestCase(unittest.TestCase):
         log_file_name = tempfile.mktemp(dir=self.avro_out_dir,
                                         prefix='test_avro',
                                         suffix='log.txt')
-        for obshistid in obshistid_list:
-            avro_gen.write_alerts(obshistid, self.alert_data_output_dir,
+        for htmid in alert_gen.htmid_list:
+            avro_gen.write_alerts(htmid, self.alert_data_output_dir,
                                   sql_prefix_list,
-                                  obshistid_to_htmid[obshistid],
                                   self.avro_out_dir, out_prefix,
                                   dmag_cutoff_avro, lock=None,
                                   log_file_name=log_file_name)
@@ -735,10 +733,9 @@ class AvroAlertTestCase(unittest.TestCase):
         log_file_name = tempfile.mktemp(dir=self.avro_out_dir,
                                         prefix='test_avro',
                                         suffix='log.txt')
-        for obshistid in obshistid_list:
-            avro_gen.write_alerts(obshistid, self.alert_data_output_dir,
+        for htmid in alert_gen.htmid_list:
+            avro_gen.write_alerts(htmid, self.alert_data_output_dir,
                                   sql_prefix_list,
-                                  obshistid_to_htmid[obshistid],
                                   self.avro_out_dir, out_prefix,
                                   dmag_cutoff,
                                   snr_cutoff=snr_cutoff,
