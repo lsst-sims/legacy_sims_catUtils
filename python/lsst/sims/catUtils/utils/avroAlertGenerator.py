@@ -250,7 +250,7 @@ class AvroAlertGenerator(object):
             diasource_query += 'INNER JOIN quiescent_flux AS quiescent ON quiescent.uniqueId=alert.uniqueID '
             diasource_query += 'INNER JOIN metadata AS meta '
             diasource_query += 'ON quiescent.band=meta.band AND alert.obshistId=meta.obshistId '
-            diasource_query += 'ORDER BY alert.uniqueId'
+            diasource_query += 'ORDER BY alert.uniqueId, alert.obshistId'
 
             diasource_dtype = np.dtype([('uniqueId', int), ('obshistId', int),
                                         ('xPix', float), ('yPix', float),
