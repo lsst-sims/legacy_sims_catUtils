@@ -283,6 +283,8 @@ class PhoSimAstrometryBase(object):
         xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
 
         rotMat = rotationMatrixFromVectors(xyz_precessed[0], xyz_bore[0])
+        dotProd = np.dot(xyz_precessed[0], xyz_bore[0])
+        print('angle %e\n' % np.degrees(np.arccos(dotProd)))
 
         xyz_list = cartesianFromSpherical(ra_in, dec_in)
 
