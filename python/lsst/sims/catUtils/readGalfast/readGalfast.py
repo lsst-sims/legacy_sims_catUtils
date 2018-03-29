@@ -12,7 +12,7 @@ from astropy.io import fits
 import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
-from lsst.sims.photUtils.selectStarSED import selectStarSED
+from lsst.sims.catUtils.matchSED import selectStarSED
 from lsst.sims.photUtils import BandpassDict
 
 __all__ = ["readGalfast"]

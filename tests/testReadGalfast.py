@@ -7,7 +7,7 @@ import re
 from astropy.io import fits
 import lsst.utils
 import lsst.utils.tests
-from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
+from lsst.sims.catUtils.readGalfast import readGalfast
 from lsst.utils import getPackageDir
 
 
