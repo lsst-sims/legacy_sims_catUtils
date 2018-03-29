@@ -6,12 +6,12 @@ import os
 import numpy as np
 import lsst.utils
 import lsst.utils.tests
-from lsst.sims.photUtils.selectStarSED import selectStarSED
-from lsst.sims.photUtils.selectGalaxySED import selectGalaxySED
-from lsst.sims.photUtils.matchUtils import matchBase
-from lsst.sims.photUtils.matchUtils import matchStar
-from lsst.sims.photUtils.matchUtils import matchGalaxy
-from lsst.sims.photUtils.EBV import EBVbase as ebv
+from lsst.sims.catUtils.matchSED.selectStarSED import selectStarSED
+from lsst.sims.catUtils.matchSED.selectGalaxySED import selectGalaxySED
+from lsst.sims.catUtils.matchSED.matchUtils import matchBase
+from lsst.sims.catUtils.matchSED.matchUtils import matchStar
+from lsst.sims.catUtils.matchSED.matchUtils import matchGalaxy
+from lsst.sims.catUtils.dust.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils import BandpassDict

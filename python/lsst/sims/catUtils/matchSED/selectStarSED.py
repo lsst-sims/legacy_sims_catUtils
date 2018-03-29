@@ -5,9 +5,9 @@ import numpy as np
 import warnings
 
 import lsst.utils
-from .matchUtils import matchStar
-from .BandpassDict import BandpassDict
-from .EBV import EBVbase as ebv
+from lsst.sims.catUtils.matchSED.matchUtils import matchStar
+from lsst.sims.photUtils import BandpassDict
+from lsst.sims.catUtils.dust import EBVbase as ebv
 
 __all__ = ["selectStarSED"]
 

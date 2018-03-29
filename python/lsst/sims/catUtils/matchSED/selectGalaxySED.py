@@ -4,10 +4,10 @@ import os
 import numpy as np
 
 import lsst.utils
-from .Sed import Sed
-from .matchUtils import matchGalaxy
-from .BandpassDict import BandpassDict
-from .EBV import EBVbase as ebv
+from lsst.sims.photUtils import Sed
+from lsst.sims.catUtils.matchSED.matchUtils import matchGalaxy
+from lsst.sims.photUtils import BandpassDict
+from lsst.sims.catUtils.dust import EBVbase as ebv
 
 __all__ = ["selectGalaxySED"]
 

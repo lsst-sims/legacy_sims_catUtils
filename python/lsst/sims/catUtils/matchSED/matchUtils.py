@@ -13,8 +13,8 @@ import numpy as np
 import os
 import re
 import lsst.utils
-from .Sed import Sed
-from .Bandpass import Bandpass
+from lsst.sims.photUtils import Sed
+from lsst.sims.photUtils import Bandpass
 from lsst.sims.utils import SpecMap
 
 __all__ = ["matchBase", "matchStar", "matchGalaxy"]
