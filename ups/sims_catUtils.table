@@ -1,4 +1,5 @@
 setupRequired(utils)
+setupRequired(sims_sed_library)
 setupRequired(sims_utils)
 setupRequired(sims_catalogs)
 setupRequired(sims_coordUtils)
