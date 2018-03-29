@@ -4,7 +4,7 @@ import numpy as np
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
-from lsst.sims.photUtils import EBVbase
+from lsst.sims.catUtils.dust import EBVbase
 
 
 def setup_module(module):
