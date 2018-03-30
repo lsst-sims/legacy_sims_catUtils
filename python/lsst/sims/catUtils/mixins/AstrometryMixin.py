@@ -280,8 +280,8 @@ class PhoSimAstrometryBase(object):
 
         if (not hasattr(self, '_field_rotator') or
             arcsecFromRadians(_angularSeparation(obs._pointingRA, obs._pointingDec,
-                                                 self.field_rotator._ra1,
-                                                 self.field_rotator._dec1))>1.0e-6 or
+                                                 self._field_rotator._ra1,
+                                                 self._field_rotator._dec1))>1.0e-6 or
             arcsecFromRadians(_angularSeparation(precessedRA, precessedDec,
                                                  self._field_rotator._ra0,
                                                  self._field_rotator._dec0))>1.0e-6):
