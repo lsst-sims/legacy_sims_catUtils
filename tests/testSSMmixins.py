@@ -8,6 +8,7 @@ import lsst
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
+from lsst.sims.utils import defaultSpecMap
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -92,7 +93,9 @@ class SSMphotometryTest(unittest.TestCase):
 
         LSSTbandpasses = BandpassDict.loadTotalBandpassesFromFiles()
         controlSedList = SedList(controlData['sedFilename'], controlData['magNorm'],
-                                 wavelenMatch=LSSTbandpasses.wavelenMatch)
+                                 wavelenMatch=LSSTbandpasses.wavelenMatch,
+                                 fileDir=getPackageDir('sims_sed_library'),
+                                 specMap=defaultSpecMap)
 
         controlMags = LSSTbandpasses.magListForSedList(controlSedList)
 
@@ -129,7 +132,9 @@ class SSMphotometryTest(unittest.TestCase):
                                                                       bandpassRoot='test_bandpass_')
 
         controlSedList = SedList(controlData['sedFilename'], controlData['magNorm'],
-                                 wavelenMatch=LSSTbandpasses.wavelenMatch)
+                                 wavelenMatch=LSSTbandpasses.wavelenMatch,
+                                 fileDir=getPackageDir('sims_sed_library'),
+                                 specMap=defaultSpecMap)
 
         controlLsstMags = LSSTbandpasses.magListForSedList(controlSedList)
         controlCartoonMags = cartoonBandpasses.magListForSedList(controlSedList)
