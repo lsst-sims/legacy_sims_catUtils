@@ -20,6 +20,7 @@ from lsst.sims.photUtils import SedList, BandpassDict, Sed
 from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.utils.CodeUtilities import sims_clean_up
+from lsst.sims.utils import defaultSpecMap
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -154,7 +155,9 @@ class MLT_flare_test_case(unittest.TestCase):
         # load the quiescent SEDs of the objects in our catalog
         sed_list = SedList(['lte028-5.0+0.5a+0.0.BT-Settl.spec.gz']*4,
                            [17.1, 17.2, 17.3, 17.4],
-                           galacticAvList = [2.432, 1.876, 2.654, 2.364])
+                           galacticAvList = [2.432, 1.876, 2.654, 2.364],
+                           fileDir=getPackageDir('sims_sed_library'),
+                           specMap=defaultSpecMap)
 
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
@@ -579,7 +582,9 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
         # load the quiescent SEDs of the objects in our catalog
         sed_list = SedList(['lte028-5.0+0.5a+0.0.BT-Settl.spec.gz']*4,
                            [17.1, 17.2, 17.3, 17.4],
-                           galacticAvList = [2.432, 1.876, 2.654, 2.364])
+                           galacticAvList = [2.432, 1.876, 2.654, 2.364],
+                           fileDir=getPackageDir('sims_sed_library'),
+                           specMap=defaultSpecMap)
 
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
@@ -840,7 +845,9 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
         # load the quiescent SEDs of the objects in our catalog
         sed_list = SedList(['lte028-5.0+0.5a+0.0.BT-Settl.spec.gz']*4,
                            [17.1, 17.2, 17.3, 17.4],
-                           galacticAvList = [2.432, 1.876, 2.654, 2.364])
+                           galacticAvList = [2.432, 1.876, 2.654, 2.364],
+                           fileDir=getPackageDir('sims_sed_library'),
+                           specMap=defaultSpecMap)
 
         bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 
