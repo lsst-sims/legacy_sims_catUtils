@@ -23,6 +23,8 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.decorators import compound
 from lsst.sims.photUtils import SedList
+from lsst.sims.utils import defaultSpecMap
+from lsst.utils import getPackageDir
 
 __all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars", "PhotometrySSM"]
 
@@ -267,7 +269,9 @@ class PhotometryGalaxies(PhotometryBase):
                                                internalAvList=internalAvList,
                                                redshiftList=redshiftList,
                                                cosmologicalDimming=cosmologicalDimming,
-                                               wavelenMatch=wavelen_match)
+                                               wavelenMatch=wavelen_match,
+                                               fileDir=getPackageDir('sims_sed_library'),
+                                               specMap=defaultSpecMap)
         else:
             self._bulgeSedList.flush()
             self._bulgeSedList.loadSedsFromList(sedNameList, magNormList,
@@ -298,7 +302,9 @@ class PhotometryGalaxies(PhotometryBase):
                                                internalAvList=internalAvList,
                                                redshiftList=redshiftList,
                                                cosmologicalDimming=cosmologicalDimming,
-                                               wavelenMatch=wavelen_match)
+                                               wavelenMatch=wavelen_match,
+                                               fileDir=getPackageDir('sims_sed_library'),
+                                               specMap=defaultSpecMap)
         else:
             self._diskSedList.flush()
             self._diskSedList.loadSedsFromList(sedNameList, magNormList,
@@ -327,7 +333,9 @@ class PhotometryGalaxies(PhotometryBase):
             self._agnSedList = SedList(sedNameList, magNormList,
                                                redshiftList=redshiftList,
                                                cosmologicalDimming=cosmologicalDimming,
-                                               wavelenMatch=wavelen_match)
+                                               wavelenMatch=wavelen_match,
+                                               fileDir=getPackageDir('sims_sed_library'),
+                                               specMap=defaultSpecMap)
         else:
             self._agnSedList.flush()
             self._agnSedList.loadSedsFromList(sedNameList, magNormList,
@@ -616,7 +624,9 @@ class PhotometryStars(PhotometryBase):
         if not hasattr(self, '_sedList'):
             self._sedList = SedList(sedNameList, magNormList,
                                          galacticAvList=galacticAvList,
-                                         wavelenMatch=wavelen_match)
+                                         wavelenMatch=wavelen_match,
+                                         fileDir=getPackageDir('sims_sed_library'),
+                                         specMap=defaultSpecMap)
         else:
             self._sedList.flush()
             self._sedList.loadSedsFromList(sedNameList, magNormList,
