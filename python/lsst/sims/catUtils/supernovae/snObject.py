@@ -14,7 +14,7 @@ from builtins import str
 import numpy as np
 
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.EBV import EBVbase
+from lsst.sims.catUtils.dust import EBVbase
 from lsst.sims.photUtils.BandpassDict import BandpassDict
 from lsst.sims.photUtils.SignalToNoise import calcSNR_m5, calcMagError_m5
 from lsst.sims.photUtils.PhotometricParameters import PhotometricParameters
