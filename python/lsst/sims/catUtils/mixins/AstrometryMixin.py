@@ -294,7 +294,7 @@ class PhoSimAstrometryBase(object):
         return np.array([ra_deprecessed, dec_deprecessed])
 
     @classmethod
-    def _appGeoFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
+    def _appGeoFromPhoSim(self, raPhoSim, decPhoSim, obs):
         """
         This method will convert from the 'deprecessed' coordinates expected by
         PhoSim to apparent geocentric coordinates
@@ -305,7 +305,7 @@ class PhoSimAstrometryBase(object):
 
         decPhoSim is the PhoSim Dec-like coordinate (in radians)
 
-        obs_metadata is an ObservationMetaData characterizing the
+        obs is an ObservationMetaData characterizing the
         telescope pointing
 
         Returns
@@ -314,27 +314,25 @@ class PhoSimAstrometryBase(object):
 
         apparent geocentric Dec in radians
         """
-        # Calculate the rotation matrix to go from the ICRS bore site to the
-        # precessed bore site
-        xyz_bore = cartesianFromSpherical(np.array([obs_metadata._pointingRA]),
-                                          np.array([obs_metadata._pointingDec]))
-
-        precessedRA, precessedDec = _observedFromICRS(np.array([obs_metadata._pointingRA]),
-                                                      np.array([obs_metadata._pointingDec]),
-                                                      obs_metadata=obs_metadata, epoch=2000.0,
+        precessedRA, precessedDec = _observedFromICRS(obs._pointingRA,obs._pointingDec,
+                                                      obs_metadata=obs, epoch=2000.0,
                                                       includeRefraction=False)
 
-        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
+        if (not hasattr(self, '_inverse_field_rotator') or
+            arcsecFromRadians(_angularSeparation(obs._pointingRA, obs._pointingDec,
+                                                 self._inverse_field_rotator._ra0,
+                                                 self._inverse_field_rotator._dec0))>1.0e-6 or
+            arcsecFromRadians(_angularSeparation(precessedRA, precessedDec,
+                                                 self._inverse_field_rotator._ra1,
+                                                 self._inverse_field_rotator._dec1))>1.0e-6):
 
-        rotMat = rotationMatrixFromVectors(xyz_bore[0], xyz_precessed[0])
+            self._inverse_field_rotator = _FieldRotator(obs._pointingRA, obs._pointingDec,
+                                                        precessedRA, precessedDec)
 
-        # apply this rotation matrix to the PhoSim RA, Dec-like coordinates,
-        # transforming back to "Observed" RA and Dec
-        xyz_list = cartesianFromSpherical(raPhoSim, decPhoSim)
-        xyz_obs = np.array([np.dot(rotMat, xx) for xx in xyz_list])
-        ra_obs, dec_obs = sphericalFromCartesian(xyz_obs)
+        ra_obs, dec_obs = self._inverse_field_rotator.transform(raPhoSim, decPhoSim)
+
         return _appGeoFromObserved(ra_obs, dec_obs, includeRefraction=False,
-                                   obs_metadata=obs_metadata)
+                                   obs_metadata=obs)
 
     @classmethod
     def appGeoFromPhoSim(self, raPhoSim, decPhoSim, obs_metadata):
