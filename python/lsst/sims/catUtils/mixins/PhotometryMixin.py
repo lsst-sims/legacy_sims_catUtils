@@ -266,12 +266,12 @@ class PhotometryGalaxies(PhotometryBase):
 
         if not hasattr(self, '_bulgeSedList'):
             self._bulgeSedList = SedList(sedNameList, magNormList,
-                                               internalAvList=internalAvList,
-                                               redshiftList=redshiftList,
-                                               cosmologicalDimming=cosmologicalDimming,
-                                               wavelenMatch=wavelen_match,
-                                               fileDir=getPackageDir('sims_sed_library'),
-                                               specMap=defaultSpecMap)
+                                         internalAvList=internalAvList,
+                                         redshiftList=redshiftList,
+                                         cosmologicalDimming=cosmologicalDimming,
+                                         wavelenMatch=wavelen_match,
+                                         fileDir=getPackageDir('sims_sed_library'),
+                                         specMap=defaultSpecMap)
         else:
             self._bulgeSedList.flush()
             self._bulgeSedList.loadSedsFromList(sedNameList, magNormList,
@@ -299,12 +299,12 @@ class PhotometryGalaxies(PhotometryBase):
 
         if not hasattr(self, '_diskSedList'):
             self._diskSedList = SedList(sedNameList, magNormList,
-                                               internalAvList=internalAvList,
-                                               redshiftList=redshiftList,
-                                               cosmologicalDimming=cosmologicalDimming,
-                                               wavelenMatch=wavelen_match,
-                                               fileDir=getPackageDir('sims_sed_library'),
-                                               specMap=defaultSpecMap)
+                                        internalAvList=internalAvList,
+                                        redshiftList=redshiftList,
+                                        cosmologicalDimming=cosmologicalDimming,
+                                        wavelenMatch=wavelen_match,
+                                        fileDir=getPackageDir('sims_sed_library'),
+                                        specMap=defaultSpecMap)
         else:
             self._diskSedList.flush()
             self._diskSedList.loadSedsFromList(sedNameList, magNormList,
@@ -331,11 +331,11 @@ class PhotometryGalaxies(PhotometryBase):
 
         if not hasattr(self, '_agnSedList'):
             self._agnSedList = SedList(sedNameList, magNormList,
-                                               redshiftList=redshiftList,
-                                               cosmologicalDimming=cosmologicalDimming,
-                                               wavelenMatch=wavelen_match,
-                                               fileDir=getPackageDir('sims_sed_library'),
-                                               specMap=defaultSpecMap)
+                                       redshiftList=redshiftList,
+                                       cosmologicalDimming=cosmologicalDimming,
+                                       wavelenMatch=wavelen_match,
+                                       fileDir=getPackageDir('sims_sed_library'),
+                                       specMap=defaultSpecMap)
         else:
             self._agnSedList.flush()
             self._agnSedList.loadSedsFromList(sedNameList, magNormList,
@@ -623,10 +623,10 @@ class PhotometryStars(PhotometryBase):
 
         if not hasattr(self, '_sedList'):
             self._sedList = SedList(sedNameList, magNormList,
-                                         galacticAvList=galacticAvList,
-                                         wavelenMatch=wavelen_match,
-                                         fileDir=getPackageDir('sims_sed_library'),
-                                         specMap=defaultSpecMap)
+                                    galacticAvList=galacticAvList,
+                                    wavelenMatch=wavelen_match,
+                                    fileDir=getPackageDir('sims_sed_library'),
+                                    specMap=defaultSpecMap)
         else:
             self._sedList.flush()
             self._sedList.loadSedsFromList(sedNameList, magNormList,
