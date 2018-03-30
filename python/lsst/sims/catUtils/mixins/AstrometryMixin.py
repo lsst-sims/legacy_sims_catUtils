@@ -14,6 +14,9 @@ from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoord
 from lsst.sims.coordUtils.LsstCameraUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
+from lsst.sims.catUtils.mixins.PhoSimSupport import _FieldRotator
+from lsst.sims.utils import _angularSeparation, arcsecFromRadians
+
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies", "AstrometrySSM",
            "PhoSimAstrometryBase", "PhoSimAstrometryStars", "PhoSimAstrometryGalaxies",
            "PhoSimAstrometrySSM",
@@ -236,7 +239,7 @@ class PhoSimAstrometryBase(object):
     images that are astrometrically consistent with their input catalogs.
     """
 
-    def _dePrecess(self, ra_in, dec_in, obs_metadata):
+    def _dePrecess(self, ra_in, dec_in, obs):
         """
         Transform a set of RA, Dec pairs by subtracting out a rotation
         which represents the effects of precession, nutation, and aberration.
@@ -260,7 +263,7 @@ class PhoSimAstrometryBase(object):
 
         @param [in] dec_in is a numpy array of Dec in radians
 
-        @param [in] obs_metadata is an ObservationMetaData
+        @param [in] obs is an ObservationMetaData
 
         @param [out] ra_out is a numpy array of de-precessed RA in radians
 
@@ -270,26 +273,24 @@ class PhoSimAstrometryBase(object):
         if len(ra_in) == 0:
             return np.array([[], []])
 
-        # Calculate the rotation matrix to go from the precessed bore site
-        # to the ICRS bore site
-        xyz_bore = cartesianFromSpherical(np.array([obs_metadata._pointingRA]),
-                                          np.array([obs_metadata._pointingDec]))
 
-        precessedRA, precessedDec = _observedFromICRS(np.array([obs_metadata._pointingRA]),
-                                                      np.array([obs_metadata._pointingDec]),
-                                                      obs_metadata=obs_metadata, epoch=2000.0,
+        precessedRA, precessedDec = _observedFromICRS(obs._pointingRA,obs._pointingDec,
+                                                      obs_metadata=obs, epoch=2000.0,
                                                       includeRefraction=False)
 
-        xyz_precessed = cartesianFromSpherical(precessedRA, precessedDec)
+        if (not hasattr(self, '_field_rotator') or
+            arcsecFromRadians(_angularSeparation(obs._pointingRA, obs._pointingDec,
+                                                 self.field_rotator._ra1,
+                                                 self.field_rotator._dec1))>1.0e-6 or
+            arcsecFromRadians(_angularSeparation(precessedRA, precessedDec,
+                                                 self._field_rotator._ra0,
+                                                 self._field_rotator._dec0))>1.0e-6):
 
-        rotMat = rotationMatrixFromVectors(xyz_precessed[0], xyz_bore[0])
-        dotProd = np.dot(xyz_precessed[0], xyz_bore[0])
-        print('angle %e\n' % np.degrees(np.arccos(dotProd)))
+            self._field_rotator = _FieldRotator(precessedRA, precessedDec,
+                                                obs._pointingRA, obs._pointingDec)
 
-        xyz_list = cartesianFromSpherical(ra_in, dec_in)
+        ra_deprecessed, dec_deprecessed = self._field_rotator.transform(ra_in, dec_in)
 
-        xyz_de_precessed = np.array([np.dot(rotMat, xx) for xx in xyz_list])
-        ra_deprecessed, dec_deprecessed = sphericalFromCartesian(xyz_de_precessed)
         return np.array([ra_deprecessed, dec_deprecessed])
 
     @classmethod
