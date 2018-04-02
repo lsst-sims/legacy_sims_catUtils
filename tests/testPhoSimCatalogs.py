@@ -136,17 +136,17 @@ class PhoSimCatalogTest(unittest.TestCase):
                                        self.obs_metadata, includeRefraction=False)
         self.control_header = ['moondec %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moondec']),
                                'rottelpos %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['rottelpos']),
-                               'declination %.7f\n' % self.obs_metadata.pointingDec,
+                               'declination %.17f\n' % self.obs_metadata.pointingDec,
                                'moonalt %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonalt']),
-                               'rotskypos %.7f\n' % self.obs_metadata.rotSkyPos,
+                               'rotskypos %.17f\n' % self.obs_metadata.rotSkyPos,
                                'moonra %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['moonra']),
                                'sunalt %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['sunalt']),
-                               'mjd %.7f\n' % (self.obs_metadata.mjd.TAI+16.5/86400.0),
-                               'azimuth %.7f\n' % az,
-                               'rightascension %.7f\n' % self.obs_metadata.pointingRA,
+                               'mjd %.17f\n' % (self.obs_metadata.mjd.TAI+16.5/86400.0),
+                               'azimuth %.17f\n' % az,
+                               'rightascension %.17f\n' % self.obs_metadata.pointingRA,
                                'dist2moon %.7f\n' % np.degrees(self.obs_metadata.OpsimMetaData['dist2moon']),
                                'filter %d\n' % filter_translation[self.obs_metadata.bandpass],
-                               'altitude %.7f\n' % alt]
+                               'altitude %.17f\n' % alt]
 
     def tearDown(self):
         del self.starDB
