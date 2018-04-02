@@ -469,6 +469,45 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
 
         self.assertLess(dd.max(), 1.0e-8)
 
+    def test_against_catalog(self):
+        """
+        Compare deprecession results to a catalog that was validated
+        with PhoSim.
+        """
+        obs = ObservationMetaData(pointingRA=53.00913847303155535,
+                                  pointingDec=-27.43894880881512321,
+                                  rotSkyPos=256.75075318193080420,
+                                  mjd=59580.13955500000156462,
+                                  site=Site(name="LSST", pressure=0.0,
+                                            humidity=0.0))
+
+        dtype = np.dtype([('id', int), ('ra', float), ('dec', float),
+                          ('ra_deprecessed', float), ('dec_deprecessed', float),
+                          ('x_dm', float), ('y_dm', float),
+                          ('x_focal', float), ('y_focal', float),
+                          ('x_cam', float), ('y_cam', float)])
+
+        data = np.genfromtxt(os.path.join(getPackageDir('sims_catUtils'),
+                                          'tests', 'testData',
+                                          'pixel_prediction_catalog.txt'),
+                             dtype=dtype)
+
+        ra_obs, dec_obs = observedFromICRS(data['ra'], data['dec'],
+                                           obs_metadata=obs,
+                                           includeRefraction=False,
+                                           epoch=2000.0)
+
+        phosim_mixin = PhoSimAstrometryBase()
+        ra_dep, dec_dep = phosim_mixin._dePrecess(np.radians(ra_obs),
+                                                  np.radians(dec_obs),
+                                                  obs)
+
+        np.testing.assert_array_almost_equal(data['ra_deprecessed'],
+                                             np.degrees(ra_dep), decimal=10)
+
+        np.testing.assert_array_almost_equal(data['dec_deprecessed'],
+                                             np.degrees(dec_dep), decimal=10)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
