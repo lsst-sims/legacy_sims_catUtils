@@ -7,6 +7,7 @@ import palpy
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 
+from lsst.sims.catalogs.db import fileDBObject
 from lsst.sims.utils import _angularSeparation
 from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import arcsecFromRadians
@@ -33,6 +34,9 @@ from lsst.sims.coordUtils import lsst_camera
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils.CodeUtilities import _validate_inputs
+
+from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogPoint
+from lsst.sims.catUtils.exampleCatalogDefinitions import DefaultPhoSimHeaderMap
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -507,6 +511,117 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(data['dec_deprecessed'],
                                              np.degrees(dec_dep), decimal=10)
+
+    def test_InstanceCatalog_against_catalog(self):
+        """
+        Test that we can reproduce the validated data using the
+        InstanceCatalog framework
+        """
+
+        obs = ObservationMetaData(pointingRA=53.00913847303155535,
+                                  pointingDec=-27.43894880881512321,
+                                  rotSkyPos=256.75075318193080420,
+                                  mjd=59580.13955500000156462,
+                                  bandpassName='r',
+                                  site=Site(name="LSST", pressure=0.0,
+                                            humidity=0.0))
+
+        data_dir = os.path.join(getPackageDir('sims_catUtils'),'tests',
+                                'testData')
+
+        dtype = np.dtype([('id', int), ('ra', float), ('dec', float),
+                          ('ra_deprecessed', float), ('dec_deprecessed', float),
+                          ('x_dm', float), ('y_dm', float),
+                          ('x_focal', float), ('y_focal', float),
+                          ('x_cam', float), ('y_cam', float)])
+
+        data = np.genfromtxt(os.path.join(data_dir,
+                                          'pixel_prediction_catalog.txt'),
+                             dtype=dtype)
+
+        data_txt_file = tempfile.mktemp(dir=data_dir,
+                                        prefix='ic_validation_cat',
+                                        suffix='.txt')
+
+        cat_dtype = np.dtype([('id', int),
+                              ('raJ2000', float), ('decJ2000', float)])
+
+        with open(data_txt_file, 'w') as out_file:
+            out_file.write('# a header\n')
+            for ii, rr, dd in zip(data['id'],
+                                  np.radians(data['ra']),
+                                  np.radians(data['dec'])):
+
+                out_file.write('%d %.17f %.17f\n' % (ii, rr, dd))
+
+        db = fileDBObject(data_txt_file, idColKey='id', dtype=cat_dtype,
+                          delimiter=' ')
+
+        class DeprecessionTestCatalog(PhoSimCatalogPoint):
+            def get_uniqueId(self):
+                return self.column_by_name('id')
+
+            def get_properMotionRa(self):
+                return np.zeros(len(self.column_by_name('raJ2000')))
+
+            def get_properMotionDec(self):
+                return np.zeros(len(self.column_by_name('raJ2000')))
+
+            def get_radialVelocity(self):
+                return np.zeros(len(self.column_by_name('raJ2000')))
+
+            def get_parallax(self):
+                return np.zeros(len(self.column_by_name('raJ2000')))
+
+            def get_galacticAv(self):
+                return np.zeros(len(self.column_by_name('raJ2000')))
+
+            def get_galacticRv(self):
+                return 3.1*np.ones(len(self.column_by_name('raJ2000')))
+
+            def get_sedFilepath(self):
+                 return np.array(['sed_flat.txt.gz']*len(self.column_by_name('raJ2000')))
+
+            def get_phoSimMagNorm(self):
+                 return np.ones(len(self.column_by_name('raJ2000')))
+
+        cat = DeprecessionTestCatalog(db, obs_metadata=obs)
+        cat.phoSimHeaderMap = DefaultPhoSimHeaderMap
+
+        id_list = []
+        ra_dep_list = []
+        dec_dep_list= []
+
+        phosim_cat_name = tempfile.mktemp(dir=data_dir,
+                                          prefix='phosim_dep',
+                                          suffix='.txt')
+
+        cat.write_catalog(phosim_cat_name)
+        with open(phosim_cat_name, 'r') as input_file:
+            for line in input_file:
+                params = line.strip().split()
+                if len(params) < 3:
+                    continue
+                id_list.append(int(params[1]))
+                ra_dep_list.append(float(params[2]))
+                dec_dep_list.append(float(params[3]))
+
+        id_list = np.array(id_list)
+        np.testing.assert_array_equal(id_list, data['id'])
+        ra_dep_list = np.array(ra_dep_list)
+        dec_dep_list = np.array(dec_dep_list)
+        np.testing.assert_array_almost_equal(ra_dep_list,
+                                             data['ra_deprecessed'],
+                                             decimal=10)
+        np.testing.assert_array_almost_equal(dec_dep_list,
+                                             data['dec_deprecessed'],
+                                             decimal=10)
+
+        if os.path.exists(data_txt_file):
+            os.unlink(data_txt_file)
+
+        if os.path.exists(phosim_cat_name):
+            os.unlink(phosim_cat_name)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
