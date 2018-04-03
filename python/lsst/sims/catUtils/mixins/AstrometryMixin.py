@@ -278,18 +278,18 @@ class PhoSimAstrometryBase(object):
                                                       obs_metadata=obs, epoch=2000.0,
                                                       includeRefraction=False)
 
-        if (not hasattr(self, '_field_rotator') or
+        if (not hasattr(self, '_icrs_to_phosim_rotator') or
             arcsecFromRadians(_angularSeparation(obs._pointingRA, obs._pointingDec,
-                                                 self._field_rotator._ra1,
-                                                 self._field_rotator._dec1))>1.0e-6 or
+                                                 self._icrs_to_phosim_rotator._ra1,
+                                                 self._icrs_to_phosim_rotator._dec1))>1.0e-6 or
             arcsecFromRadians(_angularSeparation(precessedRA, precessedDec,
-                                                 self._field_rotator._ra0,
-                                                 self._field_rotator._dec0))>1.0e-6):
+                                                 self._icrs_to_phosim_rotator._ra0,
+                                                 self._icrs_to_phosim_rotator._dec0))>1.0e-6):
 
-            self._field_rotator = _FieldRotator(precessedRA, precessedDec,
-                                                obs._pointingRA, obs._pointingDec)
+            self._icrs_to_phosim_rotator = _FieldRotator(precessedRA, precessedDec,
+                                                         obs._pointingRA, obs._pointingDec)
 
-        ra_deprecessed, dec_deprecessed = self._field_rotator.transform(ra_in, dec_in)
+        ra_deprecessed, dec_deprecessed = self._icrs_to_phosim_rotator.transform(ra_in, dec_in)
 
         return np.array([ra_deprecessed, dec_deprecessed])
 
@@ -318,18 +318,18 @@ class PhoSimAstrometryBase(object):
                                                       obs_metadata=obs, epoch=2000.0,
                                                       includeRefraction=False)
 
-        if (not hasattr(self, '_inverse_field_rotator') or
+        if (not hasattr(self, '_phosim_to_icrs_rotator') or
             arcsecFromRadians(_angularSeparation(obs._pointingRA, obs._pointingDec,
-                                                 self._inverse_field_rotator._ra0,
-                                                 self._inverse_field_rotator._dec0))>1.0e-6 or
+                                                 self._phosim_to_icrs_rotator._ra0,
+                                                 self._phosim_to_icrs_rotator._dec0))>1.0e-6 or
             arcsecFromRadians(_angularSeparation(precessedRA, precessedDec,
-                                                 self._inverse_field_rotator._ra1,
-                                                 self._inverse_field_rotator._dec1))>1.0e-6):
+                                                 self._phosim_to_icrs_rotator._ra1,
+                                                 self._phosim_to_icrs_rotator._dec1))>1.0e-6):
 
-            self._inverse_field_rotator = _FieldRotator(obs._pointingRA, obs._pointingDec,
-                                                        precessedRA, precessedDec)
+            self._phosim_to_icrs_rotator = _FieldRotator(obs._pointingRA, obs._pointingDec,
+                                                         precessedRA, precessedDec)
 
-        ra_obs, dec_obs = self._inverse_field_rotator.transform(raPhoSim, decPhoSim)
+        ra_obs, dec_obs = self._phosim_to_icrs_rotator.transform(raPhoSim, decPhoSim)
 
         return _appGeoFromObserved(ra_obs, dec_obs, includeRefraction=False,
                                    obs_metadata=obs)
