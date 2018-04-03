@@ -21,7 +21,6 @@ from lsst.sims.catUtils.mixins import PhoSimAstrometryGalaxies
 from lsst.sims.utils import _observedFromICRS
 from lsst.sims.utils import _observedFromAppGeo
 
-
 from lsst.sims.utils import observedFromICRS
 from lsst.sims.utils import observedFromAppGeo
 
@@ -37,6 +36,10 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogPoint
 from lsst.sims.catUtils.exampleCatalogDefinitions import DefaultPhoSimHeaderMap
+
+from lsst.sims.utils import angularSeparation
+from lsst.sims.utils import _angularSeparation,arcsecFromRadians
+
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -278,8 +281,8 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
                                           obs_metadata=self.obs,
                                           includeRefraction=True)
 
-        np.testing.assert_array_almost_equal(ra_obs, ra_obs_2, decimal=10)
-        np.testing.assert_array_almost_equal(dec_obs, dec_obs_2, decimal=10)
+        dd = arcsecFromRadians(_angularSeparation(ra_obs, dec_obs, ra_obs_2, dec_obs_2))
+        self.assertLess(dd.max(), 1.0e-5)
 
     def test_stellar_observed_degrees(self):
         """
@@ -320,9 +323,8 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
                                          obs_metadata=self.obs,
                                          includeRefraction=True)
 
-        np.testing.assert_array_almost_equal(ra_obs, ra_obs_2, decimal=8)
-        np.testing.assert_array_almost_equal(dec_obs, dec_obs_2, decimal=8)
-
+        dd = 3600.0*angularSeparation(ra_obs, dec_obs, ra_obs_2, dec_obs_2)
+        self.assertLess(dd.max(), 1.0e-5)
 
     def test_galaxy_astrometry_radians(self):
         """
@@ -506,11 +508,9 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
                                                   np.radians(dec_obs),
                                                   obs)
 
-        np.testing.assert_array_almost_equal(data['ra_deprecessed'],
-                                             np.degrees(ra_dep), decimal=10)
-
-        np.testing.assert_array_almost_equal(data['dec_deprecessed'],
-                                             np.degrees(dec_dep), decimal=10)
+        dd = 3600.0*angularSeparation(data['ra_deprecessed'], data['dec_deprecessed'],
+                                      np.degrees(ra_dep), np.degrees(dec_dep))
+        self.assertLess(dd.max(), 1.0e-5)
 
     def test_InstanceCatalog_against_catalog(self):
         """
@@ -610,12 +610,11 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         np.testing.assert_array_equal(id_list, data['id'])
         ra_dep_list = np.array(ra_dep_list)
         dec_dep_list = np.array(dec_dep_list)
-        np.testing.assert_array_almost_equal(ra_dep_list,
-                                             data['ra_deprecessed'],
-                                             decimal=10)
-        np.testing.assert_array_almost_equal(dec_dep_list,
-                                             data['dec_deprecessed'],
-                                             decimal=10)
+
+        dd = 3600.0*angularSeparation(data['ra_deprecessed'], data['dec_deprecessed'],
+                                      ra_dep_list, dec_dep_list)
+
+        self.assertLess(dd.max(), 1.0e-5)
 
         if os.path.exists(data_txt_file):
             os.unlink(data_txt_file)
