@@ -74,7 +74,6 @@ class ObsMetadataBase(object):
         try:
             visitExpTime = [self.obs_metadata.OpsimMetaData['visitExpTime']] * n_records
         except KeyError:
-            try:
-                # V4 future proofing.
-                visitExpTime = [self.obs_metadata.OpsimMetaData['visitExposureTime']] * n_records
+            # V4 future proofing.
+            visitExpTime = [self.obs_metadata.OpsimMetaData['visitExposureTime']] * n_records
         return np.array(visitExpTime)
