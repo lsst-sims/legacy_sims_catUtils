@@ -166,16 +166,16 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
         else:
             delta_t = 16.5  # half of the default 33 seconds
 
-        file_handle.write('rightascension %.7f\n' % obs.pointingRA)
-        file_handle.write('declination %.7f\n' % obs.pointingDec)
-        file_handle.write('mjd %.7f\n' % (obs.mjd.TAI + delta_t/86400.0))
+        file_handle.write('rightascension %.17f\n' % obs.pointingRA)
+        file_handle.write('declination %.17f\n' % obs.pointingDec)
+        file_handle.write('mjd %.17f\n' % (obs.mjd.TAI + delta_t/86400.0))
         alt, az, pa = altAzPaFromRaDec(obs.pointingRA, obs.pointingDec, obs, includeRefraction=False)
-        file_handle.write('altitude %.7f\n' % alt)
-        file_handle.write('azimuth %.7f\n' % az)
+        file_handle.write('altitude %.17f\n' % alt)
+        file_handle.write('azimuth %.17f\n' % az)
         file_handle.write('filter %d\n' %
                           {'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5}[obs.bandpass])
 
-        file_handle.write('rotskypos %.7f\n' % obs.rotSkyPos)
+        file_handle.write('rotskypos %.17f\n' % obs.rotSkyPos)
     except:
         print("\n\n")
         print("The ObservationMetaData you tried to write a PhoSim header from")
@@ -202,6 +202,8 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
 
 
 class PhosimInputBase(InstanceCatalog):
+
+    override_formats = {'raPhoSim': '%.16g', 'decPhoSim': '%.16g'}
 
     filtMap = dict([(c, i) for i, c in enumerate('ugrizy')])
 
