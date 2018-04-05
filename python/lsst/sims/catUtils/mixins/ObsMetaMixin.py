@@ -71,5 +71,9 @@ class ObsMetadataBase(object):
         Returns the visitExpTime (open shutter time) in seconds.
         """
         n_records = self._get_nobj()
-        visitExpTime = [self.obs_metadata.phoSimMetaData['exptime'][0]] * n_records
+        try:
+            visitExpTime = [self.obs_metadata.OpsimMetaData['visitExpTime']] * n_records
+        except KeyError:
+            # V4 future proofing.
+            visitExpTime = [self.obs_metadata.OpsimMetaData['visitExposureTime']] * n_records
         return np.array(visitExpTime)

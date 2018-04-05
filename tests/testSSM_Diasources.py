@@ -110,7 +110,6 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                 newMJD = 59590.2  # this MJD is artificially chosen to be in the
                                   # time span of the new baseline simulated survey
 
-                phoSimMetaDict = {'exptime': [30]}
                 obs = ObservationMetaData(mjd=newMJD,
                                           pointingRA=obsMeta.pointingRA,
                                           pointingDec=obsMeta.pointingDec,
@@ -121,10 +120,10 @@ class createSSMSourceCatalogsTest(unittest.TestCase):
                                           boundLength=obsMeta.boundLength,
                                           boundType=obsMeta.boundType)
 
-                obs.phoSimMetaData = phoSimMetaDict
+                obs._OpsimMetaData = {'visitExpTime': 30}
 
                 mySsmDb = ssmCatCamera(ssmObj, obs_metadata = obs)
-                photParams = PhotometricParameters(exptime = obs.phoSimMetaData['exptime'][0],
+                photParams = PhotometricParameters(exptime = obs.OpsimMetaData['visitExpTime'],
                                                    nexp=1, bandpass=obs.bandpass)
                 mySsmDb.photParams = photParams
 

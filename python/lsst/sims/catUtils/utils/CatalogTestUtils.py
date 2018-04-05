@@ -12,6 +12,7 @@ import os
 import sqlite3
 import json
 from lsst.utils import getPackageDir
+from lsst.sims.utils import defaultSpecMap
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import register_method, compound
 from lsst.sims.catUtils.mixins import AstrometryStars, AstrometryGalaxies
@@ -300,7 +301,9 @@ class cartoonPhotometryStars(PhotometryStars):
         #the two variables below will allow us to get at the SED and magnitude
         #data from within the unit test class, so that we can be sure
         #that the mixin loaded the correct bandpasses
-        sublist = SedList(sedNames, magNormList, galacticAvList=av)
+        sublist = SedList(sedNames, magNormList, galacticAvList=av,
+                          fileDir=getPackageDir('sims_sed_library'),
+                          specMap=defaultSpecMap)
 
         for ss in sublist:
             self.sedMasterList.append(ss)

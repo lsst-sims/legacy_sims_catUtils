@@ -4,7 +4,7 @@ import numpy
 import os
 
 from lsst.sims.catalogs.decorators import cached
-from lsst.sims.photUtils import EBVmap, EBVbase
+from lsst.sims.catUtils.dust import EBVmap, EBVbase
 
 __all__ = ["EBVmixin"]
 
