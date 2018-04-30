@@ -40,6 +40,7 @@ from lsst.sims.catUtils.exampleCatalogDefinitions import DefaultPhoSimHeaderMap
 from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import _angularSeparation,arcsecFromRadians
 
+from lsst.sims.coordUtils import clean_up_lsst_camera
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -151,12 +152,11 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
-
         sims_clean_up()
         if os.path.exists(cls.db_name):
             os.unlink(cls.db_name)
+
+        clean_up_lsst_camera()
 
     def test_stellar_astrometry_radians(self):
         """

@@ -39,6 +39,8 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoordsLSST
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 
+from lsst.sims.coordUtils import clean_up_lsst_camera
+
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -207,19 +209,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             os.unlink(os.path.join(cls.output_dir, file_name))
         shutil.rmtree(cls.output_dir)
 
-        if hasattr(focalPlaneCoordsFromPupilCoordsLSST,'_z_fitter'):
-            del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
-        if hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
-            del pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
-        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
-            del chipNameFromPupilCoordsLSST._detector_arr
-
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
-        attr_list = list(chipNameFromPupilCoordsLSST.__dict__.keys())
-        for attr in attr_list:
-            chipNameFromPupilCoordsLSST.__delattr__(attr)
-        gc.collect()
+        clean_up_lsst_camera()
 
     def test_alert_data_generation(self):
 
