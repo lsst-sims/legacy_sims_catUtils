@@ -12,6 +12,8 @@ from lsst.sims.utils import _pupilCoordsFromObserved
 from lsst.sims.utils import rotationMatrixFromVectors
 from lsst.sims.coordUtils.CameraUtils import chipNameFromPupilCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils.LsstCameraUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.coordUtils.LsstCameraUtils import pixelCoordsFromPupilCoordsLSST
+from lsst.sims.coordUtils.LsstCameraUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.coordUtils.CameraUtils import focalPlaneCoordsFromPupilCoords
 
 from lsst.sims.catUtils.mixins.PhoSimSupport import _FieldRotator
@@ -110,6 +112,24 @@ class CameraCoordsLSST(CameraCoords):
 
         return chipNameFromPupilCoordsLSST(xPupil, yPupil,
                                            allow_multiple_chips=self.allow_multiple_chips)
+
+    @compound('xPix', 'yPix')
+    def get_pixelCoordinates(self):
+        """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        chipNameList = self.column_by_name('chipName')
+        if len(xPupil) == 0:
+            return np.array([[],[]])
+        return pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=chipNameList,
+                                              band=self.obs_metadata.bandpass)
+
+    @compound('xFocalPlane', 'yFocalPlane')
+    def get_focalPlaneCoordinates(self):
+        """Get the focal plane coordinates for all objects in the catalog."""
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        if len(xPupil) == 0:
+            return np.array([[],[]])
+        return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, band=self.obs_metadata.bandpass)
 
 
 class AstrometryGalaxies(AstrometryBase):

@@ -30,6 +30,8 @@ from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.catUtils.utils import AlertDataGenerator
 from lsst.sims.catUtils.utils import AvroAlertGenerator
 
+from lsst.sims.coordUtils import clean_up_lsst_camera
+
 _avro_is_installed = True
 try:
     from avro.io import DatumReader
@@ -267,12 +269,7 @@ class AvroAlertTestCase(unittest.TestCase):
         if os.path.exists(cls.input_dir):
             shutil.rmtree(cls.input_dir)
 
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
-        attr_list = list(chipNameFromPupilCoordsLSST.__dict__.keys())
-        for attr in attr_list:
-            chipNameFromPupilCoordsLSST.__delattr__(attr)
-        gc.collect()
+        clean_up_lsst_camera()
 
     def setUp(self):
         self.alert_data_output_dir = tempfile.mkdtemp(dir=ROOT, prefix='avro_gen_output')

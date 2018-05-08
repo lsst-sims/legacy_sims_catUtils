@@ -14,8 +14,7 @@ from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
-from lsst.sims.coordUtils import pixelCoordsFromPupilCoords
-from lsst.sims.coordUtils import lsst_camera
+from lsst.sims.coordUtils import pixelCoordsFromPupilCoordsLSST
 
 from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.photUtils import BandpassDict, Sed, calcSNR_m5
@@ -310,9 +309,9 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         xpup = self.column_by_name('x_pupil')
         ypup = self.column_by_name('y_pupil')
         chip_name = self.column_by_name('chipName')
-        xpix, ypix = pixelCoordsFromPupilCoords(xpup, ypup, chipName=chip_name,
-                                                camera=lsst_camera(),
-                                                includeDistortion=True)
+        xpix, ypix = pixelCoordsFromPupilCoordsLSST(xpup, ypup, chipName=chip_name,
+                                                    band=self.obs_metadata.bandpass,
+                                                    includeDistortion=True)
         return np.array([xpix, ypix])
 
     @compound('delta_umag', 'delta_gmag', 'delta_rmag',

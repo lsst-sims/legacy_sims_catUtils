@@ -35,6 +35,12 @@ from lsst.sims.catUtils.mixins import Variability
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound, cached
 
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
+from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoordsLSST
+from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+
+from lsst.sims.coordUtils import clean_up_lsst_camera
+
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -202,12 +208,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         for file_name in os.listdir(cls.output_dir):
             os.unlink(os.path.join(cls.output_dir, file_name))
         shutil.rmtree(cls.output_dir)
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
-        attr_list = list(chipNameFromPupilCoordsLSST.__dict__.keys())
-        for attr in attr_list:
-            chipNameFromPupilCoordsLSST.__delattr__(attr)
-        gc.collect()
+
+        clean_up_lsst_camera()
 
     def test_alert_data_generation(self):
 
@@ -425,7 +427,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                                  pm_dec=self.pmdec_truth[obj_dex],
                                                  parallax=self.px_truth[obj_dex],
                                                  v_rad=self.vrad_truth[obj_dex],
-                                                 obs_metadata=obs)
+                                                 obs_metadata=obs,
+                                                 band=obs.bandpass)
 
                 chipnum = int(chipname.replace('R', '').replace('S', '').
                               replace(' ', '').replace(';', '').replace(',', '').
@@ -438,7 +441,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                                       pm_dec=self.pmdec_truth[obj_dex],
                                                       parallax=self.px_truth[obj_dex],
                                                       v_rad=self.vrad_truth[obj_dex],
-                                                      obs_metadata=obs)
+                                                      obs_metadata=obs,
+                                                      band=obs.bandpass)
 
                 self.assertAlmostEqual(alert_data['xPix'][i_obj], xpix, 4)
                 self.assertAlmostEqual(alert_data['yPix'][i_obj], ypix, 4)
