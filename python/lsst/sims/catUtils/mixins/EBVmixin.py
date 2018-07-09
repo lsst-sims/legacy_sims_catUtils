@@ -1,4 +1,3 @@
-import pyfits
 import math
 import numpy
 import os
