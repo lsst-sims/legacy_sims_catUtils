@@ -73,12 +73,12 @@ class ApplyIGM(object):
         self.varLookups = {}
 
         for zValue in self.zRange:
-            self.meanLookups[str(zValue)] = np.genfromtxt(str(filesDir + '/MeanLookupTable_zSource' +
-                                                              str(zValue) + '.tbl.gz'))
+            self.meanLookups['%.1f' % zValue] = np.genfromtxt(str(filesDir + '/MeanLookupTable_zSource' +
+                                                              '%.1f' % zValue + '.tbl.gz'))
             if varianceTbl == True:
                 try:
-                    self.varLookups[str(zValue)] = np.genfromtxt(str(filesDir + '/VarLookupTable_zSource' +
-                                                                     str(zValue) + '.tbl.gz'))
+                    self.varLookups['%.1f' % zValue] = np.genfromtxt(str(filesDir + '/VarLookupTable_zSource' +
+                                                                     '%.1f' % zValue + '.tbl.gz'))
                 except IOError:
                     raise IOError("Cannot find variance tables.")
 
@@ -109,10 +109,10 @@ class ApplyIGM(object):
         upperSed = Sed()
         for lower, upper in zip(self.zRange[:-1], self.zRange[1:]):
             if lower <= redshift <= upper:
-                lowerSed.setSED(self.meanLookups[str(lower)][:,0],
-                                flambda = self.meanLookups[str(lower)][:,1])
-                upperSed.setSED(self.meanLookups[str(upper)][:,0],
-                                flambda = self.meanLookups[str(upper)][:,1])
+                lowerSed.setSED(self.meanLookups['%.1f' % lower][:,0],
+                                flambda = self.meanLookups['%.1f' % lower][:,1])
+                upperSed.setSED(self.meanLookups['%.1f' % upper][:,0],
+                                flambda = self.meanLookups['%.1f' % lower][:,1])
                 break
 
         #Redshift lookup tables to redshift of source, i.e. if source redshift is 1.78 shift lookup
