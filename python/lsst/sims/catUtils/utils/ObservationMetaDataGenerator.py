@@ -1,6 +1,7 @@
 from builtins import object
 import numpy as np
 import os
+import numbers
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
@@ -277,7 +278,15 @@ class ObservationMetaDataGenerator(object):
                         vv = transform[1](value)
                     else:
                         vv = value
-                    query += ' %s == %s' % (transform[0], vv)
+
+                    if isinstance(vv, numbers.Number):
+                        bounds = [vv*(1.0+1.0e-10), vv*(1.0-1.0e-10)]
+                        query += ' %s < %.10e AND %s > %.10e' % (transform[0],
+                                                                max(bounds),
+                                                                transform[0],
+                                                                min(bounds))
+                    else:
+                        query += ' %s == %s' % (transform[0], vv)
 
                 nConstraints += 1
 
