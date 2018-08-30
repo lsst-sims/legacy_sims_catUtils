@@ -280,11 +280,13 @@ class ObservationMetaDataGenerator(object):
                         vv = value
 
                     if isinstance(vv, numbers.Number):
-                        bounds = [vv*(1.0+1.0e-10), vv*(1.0-1.0e-10)]
-                        query += ' %s < %.10e AND %s > %.10e' % (transform[0],
-                                                                max(bounds),
-                                                                transform[0],
-                                                                min(bounds))
+                        tol = np.abs(vv)*1.0e-10
+                        if tol == 0.0:
+                            tol = 1.0e-10
+                        query += ' %s < %.12e AND %s > %.12e' % (transform[0],
+                                                                 vv+tol,
+                                                                 transform[0],
+                                                                 vv-tol)
                     else:
                         query += ' %s == %s' % (transform[0], vv)
 
