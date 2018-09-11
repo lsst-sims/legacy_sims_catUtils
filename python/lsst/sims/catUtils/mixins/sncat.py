@@ -15,6 +15,7 @@ are three classes here:
 from builtins import str
 from builtins import range
 import numpy as np
+import numbers
 
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound
@@ -141,7 +142,9 @@ class SNFunctionality(InstanceCatalog, EBVmixin, CosmologyMixin, SNUniverse):
         mjd = "_{:0.4f}_".format(self.mjdobs)
         mjd += self.obs_metadata.bandpass + '.dat'
         fnames = np.array([self.sn_sedfile_prefix + str(int(elem)) + mjd
-                          for elem in self.column_by_name('snid')], dtype='str')
+                           if isinstance(elem, numbers.Number) else
+                           self.sn_sedfile_prefix + str(elem) + mjd
+                           for elem in self.column_by_name('snid')], dtype='str')
 
         c, x1, x0, t0, z = self.column_by_name('c'),\
             self.column_by_name('x1'),\
