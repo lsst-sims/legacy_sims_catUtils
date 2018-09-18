@@ -1297,6 +1297,8 @@ class ExtraGalacticVariabilityModels(Variability):
     A mixin providing the model for AGN variability.
     """
 
+    _agn_walk_start_date = 58580.0
+
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd,
                  variability_cache=None, redshift=None):
@@ -1325,7 +1327,8 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        start_date = 58580.0
+        start_date = self._agn_walk_start_date
+
         duration_observer_frame = expmjd_arr.max() - start_date
 
         if duration_observer_frame < 0 or expmjd_arr.min() < start_date:
