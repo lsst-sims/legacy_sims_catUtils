@@ -1038,17 +1038,17 @@ class ParametrizedLightCurveMixin(Variability):
             variability_cache = _GLOBAL_VARIABILITY_CACHE
             using_global = True
 
+        if file_name is None:
+            sims_data_dir = getPackageDir('sims_data')
+            lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
+            file_name = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
+
         if file_name in variability_cache['_PARAMETRIZED_MODELS_LOADED']:
             return
 
         if len(variability_cache['_PARAMETRIZED_LC_MODELS']) == 0 and using_global:
             sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_LC_MODELS'])
             sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_MODELS_LOADED'])
-
-        if file_name is None:
-            sims_data_dir = getPackageDir('sims_data')
-            lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
-            file_name = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
 
         if file_name.endswith('.gz'):
             open_fn = gzip.open
