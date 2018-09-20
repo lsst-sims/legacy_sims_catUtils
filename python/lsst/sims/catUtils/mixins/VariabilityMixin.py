@@ -1386,10 +1386,14 @@ class ExtraGalacticVariabilityModels(Variability):
                                seed_arr, dex_arr, out_dict):
 
         print('running thread')
+        t_start = time.time()
         for tau, time_dilation, sf_u, seed, dex in \
         zip(tau_arr, time_dilation_arr, sf_u_arr, seed_arr, dex_arr):
             out_dict[dex] = self._simulate_agn(expmjd, tau, time_dilation,
                                                sf_u, seed)
+
+        duration = (time.time()-t_start)/3600.0
+        print('thread took %.2e' % duration)
 
     def _simulate_agn(self, expmjd, tau, time_dilation, sf_u, seed):
             """
