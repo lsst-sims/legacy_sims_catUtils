@@ -1365,7 +1365,7 @@ class ExtraGalacticVariabilityModels(Variability):
 
             tau -- the characteristic timescale of the AGN in days
 
-            time_dilation -- 1/(1+z) for the AGN
+            time_dilation -- (1+z) for the AGN
 
             sf_u -- the u-band structure function of the AGN
 
