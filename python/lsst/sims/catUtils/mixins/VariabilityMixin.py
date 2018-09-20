@@ -1038,17 +1038,17 @@ class ParametrizedLightCurveMixin(Variability):
             variability_cache = _GLOBAL_VARIABILITY_CACHE
             using_global = True
 
+        if file_name is None:
+            sims_data_dir = getPackageDir('sims_data')
+            lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
+            file_name = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
+
         if file_name in variability_cache['_PARAMETRIZED_MODELS_LOADED']:
             return
 
         if len(variability_cache['_PARAMETRIZED_LC_MODELS']) == 0 and using_global:
             sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_LC_MODELS'])
             sims_clean_up.targets.append(variability_cache['_PARAMETRIZED_MODELS_LOADED'])
-
-        if file_name is None:
-            sims_data_dir = getPackageDir('sims_data')
-            lc_dir = os.path.join(sims_data_dir, 'catUtilsData')
-            file_name = os.path.join(lc_dir, 'kplr_lc_params.txt.gz')
 
         if file_name.endswith('.gz'):
             open_fn = gzip.open
@@ -1297,6 +1297,8 @@ class ExtraGalacticVariabilityModels(Variability):
     A mixin providing the model for AGN variability.
     """
 
+    _agn_walk_start_date = 58580.0
+
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd,
                  variability_cache=None, redshift=None):
@@ -1325,7 +1327,8 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        start_date = 58580.0
+        start_date = self._agn_walk_start_date
+
         duration_observer_frame = expmjd_arr.max() - start_date
 
         if duration_observer_frame < 0 or expmjd_arr.min() < start_date:
