@@ -1331,14 +1331,12 @@ class ExtraGalacticVariabilityModels(Variability):
         sfz_arr = params['agn_sfz'].astype(float)
         sfy_arr = params['agn_sfy'].astype(float)
 
-        start_date = self._agn_walk_start_date
+        duration_observer_frame = max_mjd - self._agn_walk_start_date
 
-        duration_observer_frame = max_mjd - start_date
-
-        if duration_observer_frame < 0 or min_mjd < start_date:
+        if duration_observer_frame < 0 or min_mjd < self._agn_walk_start_date:
             raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
                                "Not applying variability. "+
-                               "expmjd: %e should be > start_date: %e  " % (min_mjd, start_date) +
+                               "expmjd: %e should be > start_date: %e  " % (min_mjd, self._agn_walk_start_date) +
                                "in applyAgn variability method")
 
         for i_obj in valid_dexes[0]:
@@ -1346,16 +1344,51 @@ class ExtraGalacticVariabilityModels(Variability):
             seed = seed_arr[i_obj]
             tau = tau_arr[i_obj]
             time_dilation = 1.0+redshift_arr[i_obj]
-
             sf_u = sfu_arr[i_obj]
+            dmag_u[i_obj] = self._simulate_agn(expmjd, tau, time_dilation, sf_u, seed)
+
+        dMags[0] = dmag_u
+
+        for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
+            for i_obj in valid_dexes[0]:
+                dMags[i_filter+1][i_obj] = dMags[0][i_obj]*params['agn_sf%s' % filter_name][i_obj]/params['agn_sfu'][i_obj]
+
+        return dMags
+
+    def _simulate_agn(self, expmjd, tau, time_dilation, sf_u, seed):
+            """
+            Simulate the u-band light curve for a single AGN
+
+            Parameters
+            ----------
+            expmjd -- a number or numpy array of dates for the light curver
+
+            tau -- the characteristic timescale of the AGN in days
+
+            time_dilation -- 1/(1+z) for the AGN
+
+            sf_u -- the u-band structure function of the AGN
+
+            seed -- the seed for the random number generator
+
+            Returns
+            -------
+            a numpy array (or number) of delta_magnitude in the u-band at expmjd
+            """
+
+            if not isinstance(expmjd, numbers.Number):
+                d_m_out = np.zeros(len(expmjd))
+                duration_observer_frame = max(expmjd) - self._agn_walk_start_date
+            else:
+                duration_observer_frame = expmjd - self._agn_walk_start_date
+
 
             rng = np.random.RandomState(seed)
-
             dt = tau/100.
             duration_rest_frame = duration_observer_frame/time_dilation
             nbins = int(math.ceil(duration_rest_frame/dt))+1
 
-            time_dexes = np.round((expmjd-start_date)/(time_dilation*dt)).astype(int)
+            time_dexes = np.round((expmjd-self._agn_walk_start_date)/(time_dilation*dt)).astype(int)
             time_dex_map = {}
             ct_dex = 0
             for i_t_dex, t_dex in enumerate(time_dexes):
@@ -1381,21 +1414,15 @@ class ExtraGalacticVariabilityModels(Variability):
 
                 if i_time in time_dexes:
                     if isinstance(expmjd, numbers.Number):
-                        dm_val = ((expmjd-start_date)*(dx1-dx2)/time_dilation+dx2*x1-dx1*x2)/(x1-x2)
-                        dmag_u[i_obj] = dm_val
+                        dm_val = ((expmjd-self._agn_walk_start_date)*(dx1-dx2)/time_dilation+dx2*x1-dx1*x2)/(x1-x2)
+                        d_m_out = dm_val
                     else:
                         for i_time_out in time_dex_map[i_time]:
-                            local_end = (expmjd[i_time_out]-start_date)/time_dilation
+                            local_end = (expmjd[i_time_out]-self._agn_walk_start_date)/time_dilation
                             dm_val = (local_end*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
-                            dmag_u[i_obj][i_time_out] = dm_val
+                            d_m_out[i_time_out] = dm_val
 
-        dMags[0] = dmag_u
-
-        for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
-            for i_obj in valid_dexes[0]:
-                dMags[i_filter+1][i_obj] = dMags[0][i_obj]*params['agn_sf%s' % filter_name][i_obj]/params['agn_sfu'][i_obj]
-
-        return dMags
+            return d_m_out
 
 
 class _VariabilityPointSources(object):
