@@ -1343,13 +1343,7 @@ class ExtraGalacticVariabilityModels(Variability):
             tau = tau_arr[i_obj]
             time_dilation = 1.0+redshift_arr[i_obj]
 
-            sfint = {}
-            sfint['u'] = sfu_arr[i_obj]
-            sfint['g'] = sfg_arr[i_obj]
-            sfint['r'] = sfr_arr[i_obj]
-            sfint['i'] = sfi_arr[i_obj]
-            sfint['z'] = sfz_arr[i_obj]
-            sfint['y'] = sfy_arr[i_obj]
+            sf_u = sfu_arr[i_obj]
 
             rng = np.random.RandomState(seed)
 
@@ -1375,9 +1369,9 @@ class ExtraGalacticVariabilityModels(Variability):
             es = rng.normal(0., 1., nbins)*math.sqrt(dt_over_tau)
             for i_time in range(nbins):
                 #The second term differs from Zeljko's equation by sqrt(2.)
-                #because he assumes stdev = sfint/sqrt(2)
+                #because he assumes stdev = sf_u/sqrt(2)
                 dx1 = dx2
-                dx2 = -dx1*dt_over_tau + sfint['u']*es[i_time] + dx1
+                dx2 = -dx1*dt_over_tau + sf_u*es[i_time] + dx1
                 x1 = x2
                 x2 += dt
 
