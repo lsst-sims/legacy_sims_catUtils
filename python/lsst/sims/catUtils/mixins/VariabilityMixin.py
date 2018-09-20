@@ -69,6 +69,7 @@ import os
 import gzip
 import copy
 import numbers
+import multiprocessing
 import json as json
 from lsst.utils import getPackageDir
 from lsst.sims.catalogs.decorators import register_method, compound
@@ -1298,6 +1299,7 @@ class ExtraGalacticVariabilityModels(Variability):
     """
 
     _agn_walk_start_date = 58580.0
+    _agn_threads = 1
 
     @register_method('applyAgn')
     def applyAgn(self, valid_dexes, params, expmjd,
@@ -1339,13 +1341,37 @@ class ExtraGalacticVariabilityModels(Variability):
                                "expmjd: %e should be > start_date: %e  " % (min_mjd, self._agn_walk_start_date) +
                                "in applyAgn variability method")
 
-        for i_obj in valid_dexes[0]:
-
-            seed = seed_arr[i_obj]
-            tau = tau_arr[i_obj]
-            time_dilation = 1.0+redshift_arr[i_obj]
-            sf_u = sfu_arr[i_obj]
-            dmag_u[i_obj] = self._simulate_agn(expmjd, tau, time_dilation, sf_u, seed)
+        if self._agn_threads == 1:
+            for i_obj in valid_dexes[0]:
+                seed = seed_arr[i_obj]
+                tau = tau_arr[i_obj]
+                time_dilation = 1.0+redshift_arr[i_obj]
+                sf_u = sfu_arr[i_obj]
+                dmag_u[i_obj] = self._simulate_agn(expmjd, tau, time_dilation, sf_u, seed)
+        else:
+            n_per_thread = len(valid_dexes[0])//self._agn_threads
+            p_list = []
+            i_start_arr = range(0, len(valid_dexes[0]), n_per_thread)
+            mgr = multiprocessing.Manager()
+            out_dict = mgr.dict()
+            for i_meta, i_start in enumerate(i_start_arr):
+                i_end = i_start+n_per_thread
+                if i_meta == len(i_start_arr)-1:
+                    i_end = len(valid_dexes[0])
+                dexes = valid_dexes[0][i_start:i_end]
+                p = multiprocessing.Process(target=self._threaded_simulate_agn,
+                                            args=(expmjd, tau_arr[dexes],
+                                                  1.0+redshift_arr[dexes],
+                                                  sfu_arr[dexes],
+                                                  seed_arr[dexes],
+                                                  dexes,
+                                                  out_dict))
+                p.start()
+                p_list.append(p)
+            for p in p_list:
+                p.join()
+            for i_obj in out_dict.keys():
+                dmag_u[i_obj] = out_dict[i_obj]
 
         dMags[0] = dmag_u
 
@@ -1354,6 +1380,16 @@ class ExtraGalacticVariabilityModels(Variability):
                 dMags[i_filter+1][i_obj] = dMags[0][i_obj]*params['agn_sf%s' % filter_name][i_obj]/params['agn_sfu'][i_obj]
 
         return dMags
+
+    def _threaded_simulate_agn(self, expmjd, tau_arr,
+                               time_dilation_arr, sf_u_arr,
+                               seed_arr, dex_arr, out_dict):
+
+        print('running thread')
+        for tau, time_dilation, sf_u, seed, dex in \
+        zip(tau_arr, time_dilation_arr, sf_u_arr, seed_arr, dex_arr):
+            out_dict[dex] = self._simulate_agn(expmjd, tau, time_dilation,
+                                               sf_u, seed)
 
     def _simulate_agn(self, expmjd, tau, time_dilation, sf_u, seed):
             """
