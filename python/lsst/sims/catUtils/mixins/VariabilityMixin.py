@@ -1351,7 +1351,7 @@ class ExtraGalacticVariabilityModels(Variability):
         else:
             n_per_thread = len(valid_dexes[0])//self._agn_threads
             p_list = []
-            i_start_arr = range(0, len(valid_dexes[0]), n_per_thread)
+            i_start_arr = range(0, len(valid_dexes[0]), n_per_thread)[:self._agn_threads]
             mgr = multiprocessing.Manager()
             out_dict = mgr.dict()
             for i_meta, i_start in enumerate(i_start_arr):
