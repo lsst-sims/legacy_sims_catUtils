@@ -1313,10 +1313,12 @@ class ExtraGalacticVariabilityModels(Variability):
 
         if isinstance(expmjd, numbers.Number):
             dMags = np.zeros((6, self.num_variable_obj(params)))
-            expmjd_arr = np.array([expmjd])
+            max_mjd = expmjd
+            min_mjd = expmjd
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
-            expmjd_arr = expmjd
+            max_mjd = max(expmjd)
+            min_mjd = min(expmjd)
 
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
@@ -1329,12 +1331,12 @@ class ExtraGalacticVariabilityModels(Variability):
 
         start_date = self._agn_walk_start_date
 
-        duration_observer_frame = expmjd_arr.max() - start_date
+        duration_observer_frame = max_mjd - start_date
 
-        if duration_observer_frame < 0 or expmjd_arr.min() < start_date:
+        if duration_observer_frame < 0 or min_mjd < start_date:
             raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
                                "Not applying variability. "+
-                               "expmjd: %e should be > start_date: %e  " % (expmjd.min(), start_date) +
+                               "expmjd: %e should be > start_date: %e  " % (min_mjd, start_date) +
                                "in applyAgn variability method")
 
         for i_obj in valid_dexes[0]:
@@ -1351,7 +1353,7 @@ class ExtraGalacticVariabilityModels(Variability):
             duration_rest_frame = duration_observer_frame/time_dilation
             nbins = int(math.ceil(duration_rest_frame/dt))+1
 
-            time_dexes = np.round((expmjd_arr-start_date)/(time_dilation*dt)).astype(int)
+            time_dexes = np.round((expmjd-start_date)/(time_dilation*dt)).astype(int)
             time_dex_map = {}
             ct_dex = 0
             for i_t_dex, t_dex in enumerate(time_dexes):
@@ -1381,7 +1383,7 @@ class ExtraGalacticVariabilityModels(Variability):
                         dMags[0][i_obj] = dm_val
                     else:
                         for i_time_out in time_dex_map[i_time]:
-                            local_end = (expmjd_arr[i_time_out]-start_date)/time_dilation
+                            local_end = (expmjd[i_time_out]-start_date)/time_dilation
                             dm_val = (local_end*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
                             dMags[0][i_obj][i_time_out] = dm_val
 
