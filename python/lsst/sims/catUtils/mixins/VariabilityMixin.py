@@ -1315,8 +1315,10 @@ class ExtraGalacticVariabilityModels(Variability):
             dMags = np.zeros((6, self.num_variable_obj(params)))
             max_mjd = expmjd
             min_mjd = expmjd
+            dmag_u = np.zeros(self.num_variable_obj(params))
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            dmag_u = np.zeros((self.num_variable_obj(params), len(expmjd)))
             max_mjd = max(expmjd)
             min_mjd = min(expmjd)
 
@@ -1380,12 +1382,14 @@ class ExtraGalacticVariabilityModels(Variability):
                 if i_time in time_dexes:
                     if isinstance(expmjd, numbers.Number):
                         dm_val = ((expmjd-start_date)*(dx1-dx2)/time_dilation+dx2*x1-dx1*x2)/(x1-x2)
-                        dMags[0][i_obj] = dm_val
+                        dmag_u[i_obj] = dm_val
                     else:
                         for i_time_out in time_dex_map[i_time]:
                             local_end = (expmjd[i_time_out]-start_date)/time_dilation
                             dm_val = (local_end*(dx1-dx2)+dx2*x1-dx1*x2)/(x1-x2)
-                            dMags[0][i_obj][i_time_out] = dm_val
+                            dmag_u[i_obj][i_time_out] = dm_val
+
+        dMags[0] = dmag_u
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
