@@ -1370,8 +1370,11 @@ class ExtraGalacticVariabilityModels(Variability):
                 p_list.append(p)
             for p in p_list:
                 p.join()
+            t_start = time.time()
             for i_obj in out_dict.keys():
                 dmag_u[i_obj] = out_dict[i_obj]
+            print('reading from dict took %.2e' %
+            ((time.time()-t_start)/3600.0))
 
         dMags[0] = dmag_u
 
