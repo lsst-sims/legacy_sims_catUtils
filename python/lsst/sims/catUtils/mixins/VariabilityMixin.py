@@ -1426,12 +1426,16 @@ class ExtraGalacticVariabilityModels(Variability):
             time_dexes = np.round((expmjd-self._agn_walk_start_date)/(time_dilation*dt)).astype(int)
             time_dex_map = {}
             ct_dex = 0
-            for i_t_dex, t_dex in enumerate(time_dexes):
-                if t_dex in time_dex_map:
-                    time_dex_map[t_dex].append(i_t_dex)
-                else:
-                    time_dex_map[t_dex] = [i_t_dex]
-            time_dexes = set(time_dexes)
+            if not isinstance(time_dexes, numbers.Number):
+                for i_t_dex, t_dex in enumerate(time_dexes):
+                    if t_dex in time_dex_map:
+                        time_dex_map[t_dex].append(i_t_dex)
+                    else:
+                        time_dex_map[t_dex] = [i_t_dex]
+                time_dexes = set(time_dexes)
+            else:
+                time_dex_map[time_dexes] = [0]
+                time_dexes = set([time_dexes])
 
             dx2 = 0.0
             x1 = 0.0
