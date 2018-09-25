@@ -1381,6 +1381,7 @@ class ExtraGalacticVariabilityModels(Variability):
                         current_batch = n_steps[ii]
 
             assert len(i_start_arr) == len(i_end_arr)
+            assert len(i_start_arr) <= self._agn_threads
 
             for i_start, i_end in zip(i_start_arr, i_end_arr):
                 dexes = valid_dexes[0][i_start:i_end]
