@@ -1317,11 +1317,9 @@ class ExtraGalacticVariabilityModels(Variability):
             dMags = np.zeros((6, self.num_variable_obj(params)))
             max_mjd = expmjd
             min_mjd = expmjd
-            dmag_u = np.zeros(self.num_variable_obj(params))
             mjd_is_number = True
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
-            dmag_u = np.zeros((self.num_variable_obj(params), len(expmjd)))
             max_mjd = max(expmjd)
             min_mjd = min(expmjd)
             mjd_is_number = False
@@ -1353,7 +1351,7 @@ class ExtraGalacticVariabilityModels(Variability):
                 tau = tau_arr[i_obj]
                 time_dilation = 1.0+redshift_arr[i_obj]
                 sf_u = sfu_arr[i_obj]
-                dmag_u[i_obj] = self._simulate_agn(expmjd, tau, time_dilation, sf_u, seed)
+                dMags[0][i_obj] = self._simulate_agn(expmjd, tau, time_dilation, sf_u, seed)
         else:
             p_list = []
 
@@ -1417,10 +1415,10 @@ class ExtraGalacticVariabilityModels(Variability):
                 p.join()
             t_before_agn_read = time.time()
             if mjd_is_number:
-                dmag_u[valid_dexes] = out_struct[:]
+                dMags[0][valid_dexes] = out_struct[:]
             else:
                 for i_obj in out_struct.keys():
-                    dmag_u[i_obj] = out_dict[i_obj]
+                    dMags[0][i_obj] = out_dict[i_obj]
 
             self._t_agn_reading += (time.time()-t_before_agn_read)/3600.0
             print('reading from dict took %.2e' %
@@ -1429,8 +1427,6 @@ class ExtraGalacticVariabilityModels(Variability):
         self._t_agn_walking += ((time.time()-t_before_walk)/3600.0)
         print('time spent walking %.2e' %
         self._t_agn_walking)
-
-        dMags[0][:] = dmag_u[:]
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
