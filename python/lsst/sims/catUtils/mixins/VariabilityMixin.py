@@ -1341,7 +1341,7 @@ class ExtraGalacticVariabilityModels(Variability):
                                "expmjd: %e should be > start_date: %e  " % (min_mjd, self._agn_walk_start_date) +
                                "in applyAgn variability method")
 
-        if self._agn_threads == 1:
+        if self._agn_threads == 1 or len(valid_dexes[0])==1:
             for i_obj in valid_dexes[0]:
                 seed = seed_arr[i_obj]
                 tau = tau_arr[i_obj]
