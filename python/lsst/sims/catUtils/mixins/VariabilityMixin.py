@@ -1380,7 +1380,11 @@ class ExtraGalacticVariabilityModels(Variability):
                         i_start_arr.append(ii)
                         current_batch = n_steps[ii]
 
-            assert len(i_start_arr) == len(i_end_arr)
+            if len(i_start_arr) != len(i_end_arr):
+                raise RuntimeError('len i_start %d len i_end %d; dexes %d' %
+                                   (len(i_start_arr),
+                                    len(i_end_arr),
+                                    len(valid_dexes[0])))
             assert len(i_start_arr) <= self._agn_threads
             print('batch target',batch_target)
 
