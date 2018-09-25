@@ -1349,15 +1349,39 @@ class ExtraGalacticVariabilityModels(Variability):
                 sf_u = sfu_arr[i_obj]
                 dmag_u[i_obj] = self._simulate_agn(expmjd, tau, time_dilation, sf_u, seed)
         else:
-            n_per_thread = len(valid_dexes[0])//self._agn_threads
             p_list = []
-            i_start_arr = range(0, len(valid_dexes[0]), n_per_thread)[:self._agn_threads]
+
             mgr = multiprocessing.Manager()
             out_dict = mgr.dict()
-            for i_meta, i_start in enumerate(i_start_arr):
-                i_end = i_start+n_per_thread
-                if i_meta == len(i_start_arr)-1:
-                    i_end = len(valid_dexes[0])
+
+            tot_steps = 0
+            n_steps = []
+            for tt, zz in zip(tau_arr[valid_dexes], redshift_arr[valid_dexes]):
+                dilation = 1.0+zz
+                dt = tt/100.0
+                dur = (duration_observer_frame/dilation)
+                nt = dur/dt
+                tot_steps += nt
+                n_steps.append(nt)
+
+            batch_target = tot_steps/self._agn_threads
+            i_start_arr = [0]
+            i_end_arr = []
+            current_batch = n_steps[0]
+            for ii in range(1,len(n_steps),1):
+                if ii == len(n_steps)-1:
+                    i_end_arr.append(len(n_steps))
+                else:
+                    current_batch += n_steps[ii]
+                    if current_batch>=batch_target:
+                        print('batch ',current_batch,ii-i_start_arr[-1])
+                        i_end_arr.append(ii)
+                        i_start_arr.append(ii)
+                        current_batch = n_steps[ii]
+
+            assert len(i_start_arr) == len(i_end_arr)
+
+            for i_start, i_end in zip(i_start_arr, i_end_arr):
                 dexes = valid_dexes[0][i_start:i_end]
                 p = multiprocessing.Process(target=self._threaded_simulate_agn,
                                             args=(expmjd, tau_arr[dexes],
