@@ -1369,11 +1369,11 @@ class ExtraGalacticVariabilityModels(Variability):
             i_end_arr = []
             current_batch = n_steps[0]
             for ii in range(1,len(n_steps),1):
+                current_batch += n_steps[ii]
                 if ii == len(n_steps)-1:
                     print('batch ',current_batch,ii-i_start_arr[-1])
                     i_end_arr.append(len(n_steps))
                 elif len(i_start_arr)<self._agn_threads:
-                    current_batch += n_steps[ii]
                     if current_batch>=batch_target:
                         print('batch ',current_batch,ii-i_start_arr[-1])
                         i_end_arr.append(ii)
