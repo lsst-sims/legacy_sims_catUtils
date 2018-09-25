@@ -1341,6 +1341,10 @@ class ExtraGalacticVariabilityModels(Variability):
                                "expmjd: %e should be > start_date: %e  " % (min_mjd, self._agn_walk_start_date) +
                                "in applyAgn variability method")
 
+        if not hasattr(self, '_t_agn_walking'):
+            self._t_agn_walking = 0.0
+            self._t_agn_reading = 0.0
+        t_before_walk = time.time()
         if self._agn_threads == 1 or len(valid_dexes[0])==1:
             for i_obj in valid_dexes[0]:
                 seed = seed_arr[i_obj]
@@ -1388,6 +1392,7 @@ class ExtraGalacticVariabilityModels(Variability):
             assert len(i_start_arr) <= self._agn_threads
             print('batch target',batch_target)
 
+            t_before_walk = time.time()
             for i_start, i_end in zip(i_start_arr, i_end_arr):
                 dexes = valid_dexes[0][i_start:i_end]
                 p = multiprocessing.Process(target=self._threaded_simulate_agn,
@@ -1401,11 +1406,16 @@ class ExtraGalacticVariabilityModels(Variability):
                 p_list.append(p)
             for p in p_list:
                 p.join()
-            t_start = time.time()
+            t_before_agn_read = time.time()
             for i_obj in out_dict.keys():
                 dmag_u[i_obj] = out_dict[i_obj]
+            self._t_agn_reading += (time.time()-t_before_agn_read)/3600.0
             print('reading from dict took %.2e' %
-            ((time.time()-t_start)/3600.0))
+            self._t_agn_reading)
+
+        self._t_agn_walking += ((time.time()-t_before_walk)/3600.0)
+        print('time spent walking %.2e' %
+        self._t_agn_walking)
 
         dMags[0] = dmag_u
 
