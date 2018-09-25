@@ -1318,11 +1318,13 @@ class ExtraGalacticVariabilityModels(Variability):
             max_mjd = expmjd
             min_mjd = expmjd
             dmag_u = np.zeros(self.num_variable_obj(params))
+            mjd_is_number = True
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
             dmag_u = np.zeros((self.num_variable_obj(params), len(expmjd)))
             max_mjd = max(expmjd)
             min_mjd = min(expmjd)
+            mjd_is_number = False
 
         seed_arr = params['seed']
         tau_arr = params['agn_tau'].astype(float)
@@ -1356,7 +1358,10 @@ class ExtraGalacticVariabilityModels(Variability):
             p_list = []
 
             mgr = multiprocessing.Manager()
-            out_dict = mgr.dict()
+            if mjd_is_number:
+                out_struct = mgr.Array('d', [0]*len(valid_dexes[0]))
+            else:
+                out_struct = mgr.dict()
 
             tot_steps = 0
             n_steps = []
@@ -1395,20 +1400,28 @@ class ExtraGalacticVariabilityModels(Variability):
             t_before_walk = time.time()
             for i_start, i_end in zip(i_start_arr, i_end_arr):
                 dexes = valid_dexes[0][i_start:i_end]
+                if mjd_is_number:
+                    out_dexes = range(i_start,i_end,1)
+                else:
+                    out_dexes = dexes
                 p = multiprocessing.Process(target=self._threaded_simulate_agn,
                                             args=(expmjd, tau_arr[dexes],
                                                   1.0+redshift_arr[dexes],
                                                   sfu_arr[dexes],
                                                   seed_arr[dexes],
-                                                  dexes,
-                                                  out_dict))
+                                                  out_dexes,
+                                                  out_struct))
                 p.start()
                 p_list.append(p)
             for p in p_list:
                 p.join()
             t_before_agn_read = time.time()
-            for i_obj in out_dict.keys():
-                dmag_u[i_obj] = out_dict[i_obj]
+            if mjd_is_number:
+                dmag_u[valid_dexes] = out_struct[:]
+            else:
+                for i_obj in out_struct.keys():
+                    dmag_u[i_obj] = out_dict[i_obj]
+
             self._t_agn_reading += (time.time()-t_before_agn_read)/3600.0
             print('reading from dict took %.2e' %
             self._t_agn_reading)
@@ -1417,7 +1430,7 @@ class ExtraGalacticVariabilityModels(Variability):
         print('time spent walking %.2e' %
         self._t_agn_walking)
 
-        dMags[0] = dmag_u
+        dMags[0][:] = dmag_u[:]
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
@@ -1427,12 +1440,17 @@ class ExtraGalacticVariabilityModels(Variability):
 
     def _threaded_simulate_agn(self, expmjd, tau_arr,
                                time_dilation_arr, sf_u_arr,
-                               seed_arr, dex_arr, out_dict):
+                               seed_arr, dex_arr, out_struct):
+
+        if isinstance(expmjd, numbers.Number):
+            mjd_is_number = True
+        else:
+            mjd_is_number = False
 
         for tau, time_dilation, sf_u, seed, dex in \
         zip(tau_arr, time_dilation_arr, sf_u_arr, seed_arr, dex_arr):
-            out_dict[dex] = self._simulate_agn(expmjd, tau, time_dilation,
-                                               sf_u, seed)
+            out_struct[dex] = self._simulate_agn(expmjd, tau, time_dilation,
+                                                 sf_u, seed)
 
     def _simulate_agn(self, expmjd, tau, time_dilation, sf_u, seed):
             """
