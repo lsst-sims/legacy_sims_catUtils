@@ -1341,10 +1341,6 @@ class ExtraGalacticVariabilityModels(Variability):
                                "expmjd: %e should be > start_date: %e  " % (min_mjd, self._agn_walk_start_date) +
                                "in applyAgn variability method")
 
-        if not hasattr(self, '_t_agn_walking'):
-            self._t_agn_walking = 0.0
-            self._t_agn_reading = 0.0
-        t_before_walk = time.time()
         if self._agn_threads == 1 or len(valid_dexes[0])==1:
             for i_obj in valid_dexes[0]:
                 seed = seed_arr[i_obj]
@@ -1378,11 +1374,9 @@ class ExtraGalacticVariabilityModels(Variability):
             for ii in range(1,len(n_steps),1):
                 current_batch += n_steps[ii]
                 if ii == len(n_steps)-1:
-                    print('batch ',current_batch,ii-i_start_arr[-1])
                     i_end_arr.append(len(n_steps))
                 elif len(i_start_arr)<self._agn_threads:
                     if current_batch>=batch_target:
-                        print('batch ',current_batch,ii-i_start_arr[-1])
                         i_end_arr.append(ii)
                         i_start_arr.append(ii)
                         current_batch = n_steps[ii]
@@ -1393,9 +1387,7 @@ class ExtraGalacticVariabilityModels(Variability):
                                     len(i_end_arr),
                                     len(valid_dexes[0])))
             assert len(i_start_arr) <= self._agn_threads
-            print('batch target',batch_target)
 
-            t_before_walk = time.time()
             for i_start, i_end in zip(i_start_arr, i_end_arr):
                 dexes = valid_dexes[0][i_start:i_end]
                 if mjd_is_number:
@@ -1413,20 +1405,12 @@ class ExtraGalacticVariabilityModels(Variability):
                 p_list.append(p)
             for p in p_list:
                 p.join()
-            t_before_agn_read = time.time()
+
             if mjd_is_number:
                 dMags[0][valid_dexes] = out_struct[:]
             else:
                 for i_obj in out_struct.keys():
                     dMags[0][i_obj] = out_dict[i_obj]
-
-            self._t_agn_reading += (time.time()-t_before_agn_read)/3600.0
-            print('reading from dict took %.2e' %
-            self._t_agn_reading)
-
-        self._t_agn_walking += ((time.time()-t_before_walk)/3600.0)
-        print('time spent walking %.2e' %
-        self._t_agn_walking)
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
