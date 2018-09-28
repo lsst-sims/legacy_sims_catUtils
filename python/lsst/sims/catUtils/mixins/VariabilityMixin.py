@@ -1259,7 +1259,7 @@ class ParametrizedLightCurveMixin(Variability):
             q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc],
                                               variability_cache=variability_cache)
 
-            d_mag = 2.5*np.log10(1.0+d_flux/q_flux)
+            d_mag = -2.5*np.log10(1.0+d_flux/q_flux)
             # t_flux += time.time()-t_before
 
             if isinstance(d_mag, numbers.Number) and not isinstance(expmjd, numbers.Number):
