@@ -1410,7 +1410,7 @@ class ExtraGalacticVariabilityModels(Variability):
                 dMags[0][valid_dexes] = out_struct[:]
             else:
                 for i_obj in out_struct.keys():
-                    dMags[0][i_obj] = out_dict[i_obj]
+                    dMags[0][i_obj] = out_struct[i_obj]
 
         for i_filter, filter_name in enumerate(('g', 'r', 'i', 'z', 'y')):
             for i_obj in valid_dexes[0]:
