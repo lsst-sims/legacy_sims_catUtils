@@ -234,6 +234,52 @@ class AgnModelTestCase(unittest.TestCase):
 
                 self.assertGreater(ct_lags, 10)
 
+    def test_threading(self):
+        """
+        Test that running applyAgn with multithreading does not change the answers
+        """
+        agn_obj = VariabilityAGN()
+        agn_obj_2 = VariabilityAGN()
+        agn_obj_2._agn_threads = 4
+        self.assertEqual(agn_obj._agn_threads, 1)
+        self.assertNotEqual(agn_obj._agn_threads, agn_obj_2._agn_threads)
+
+        rng = np.random.RandomState(61422)
+        n_agn = 11
+        redshift = rng.random_sample(n_agn)*2.0+1.1
+        agn_params = {}
+        agn_params['agn_tau'] = rng.random_sample(n_agn)*10.0+1.0
+        for bp in 'ugrizy':
+            agn_params['agn_sf%s' % bp] = rng.random_sample(n_agn)*2.0+0.1
+        agn_params['seed'] = rng.randint(2, high=100, size=n_agn)
+        mjd = 61923.5
+        dmag_control = agn_obj.applyAgn([np.arange(n_agn, dtype=int)],
+                                        agn_params, mjd, redshift=redshift)
+
+        self.assertEqual(dmag_control.shape, (6,n_agn))
+        n_zero = np.where(np.abs(dmag_control.flatten())<1.0e-10)
+        self.assertEqual(len(n_zero[0]), 0)
+
+        dmag_threaded = agn_obj_2.applyAgn([np.arange(n_agn, dtype=int)],
+                                           agn_params, mjd, redshift=redshift)
+
+        np.testing.assert_array_equal(dmag_control, dmag_threaded)
+
+        ##### now test it on a numpy array of mjd
+
+        mjd = 59580.0+rng.random_sample(13)*2000.0
+        dmag_control = agn_obj.applyAgn([np.arange(n_agn, dtype=int)],
+                                        agn_params, mjd, redshift=redshift)
+
+        self.assertEqual(dmag_control.shape, (6,n_agn, len(mjd)))
+        n_zero = np.where(np.abs(dmag_control.flatten())<1.0e-10)
+        self.assertEqual(len(n_zero[0]), 0)
+
+        dmag_threaded = agn_obj_2.applyAgn([np.arange(n_agn, dtype=int)],
+                                           agn_params, mjd, redshift=redshift)
+
+        np.testing.assert_array_equal(dmag_control, dmag_threaded)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
