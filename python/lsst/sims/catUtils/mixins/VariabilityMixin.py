@@ -1357,6 +1357,9 @@ class ExtraGalacticVariabilityModels(Variability):
             else:
                 out_struct = mgr.dict()
 
+            #################
+            # Try to subdivide the AGN into batches such that the number
+            # of time steps simulated by each thread is close to equal
             tot_steps = 0
             n_steps = []
             for tt, zz in zip(tau_arr[valid_dexes], redshift_arr[valid_dexes]):
@@ -1387,7 +1390,9 @@ class ExtraGalacticVariabilityModels(Variability):
                                     len(i_end_arr),
                                     len(valid_dexes[0])))
             assert len(i_start_arr) <= self._agn_threads
+            ############
 
+            # Actually simulate the AGN on the the number of threads allotted
             for i_start, i_end in zip(i_start_arr, i_end_arr):
                 dexes = valid_dexes[0][i_start:i_end]
                 if mjd_is_number:
