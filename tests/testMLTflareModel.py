@@ -235,8 +235,8 @@ class MLT_flare_test_case(unittest.TestCase):
                 bb_sed = Sed(wavelen=bb_wavelen, flambda=bb_flambda)
                 u_bb_flux = bb_sed.calcFlux(bp_dict['u'])
                 g_bb_flux = bb_sed.calcFlux(bp_dict['g'])
-                a_x, b_x = bb_sed.setupCCMab()
-                bb_sed.addCCMDust(a_x, b_x, A_v=av_list[obj_id])
+                a_x, b_x = bb_sed.setupCCM_ab()
+                bb_sed.addDust(a_x, b_x, A_v=av_list[obj_id])
                 u_bb_dusty_flux = bb_sed.calcFlux(bp_dict['u'])
                 g_bb_dusty_flux = bb_sed.calcFlux(bp_dict['g'])
 
@@ -665,8 +665,8 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
                 bb_sed = Sed(wavelen=bb_wavelen, flambda=bb_flambda)
                 u_bb_flux = bb_sed.calcFlux(bp_dict['u'])
                 g_bb_flux = bb_sed.calcFlux(bp_dict['g'])
-                a_x, b_x = bb_sed.setupCCMab()
-                bb_sed.addCCMDust(a_x, b_x, A_v=av_list[obj_id])
+                a_x, b_x = bb_sed.setupCCM_ab()
+                bb_sed.addDust(a_x, b_x, A_v=av_list[obj_id])
                 u_bb_dusty_flux = bb_sed.calcFlux(bp_dict['u'])
                 g_bb_dusty_flux = bb_sed.calcFlux(bp_dict['g'])
 
@@ -941,8 +941,8 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
                     bb_sed = Sed(wavelen=bb_wavelen, flambda=bb_flambda)
                     u_bb_flux = bb_sed.calcFlux(bp_dict['u'])
                     g_bb_flux = bb_sed.calcFlux(bp_dict['g'])
-                    a_x, b_x = bb_sed.setupCCMab()
-                    bb_sed.addCCMDust(a_x, b_x, A_v=av_list[obj_id])
+                    a_x, b_x = bb_sed.setupCCM_ab()
+                    bb_sed.addDust(a_x, b_x, A_v=av_list[obj_id])
                     u_bb_dusty_flux = bb_sed.calcFlux(bp_dict['u'])
                     g_bb_dusty_flux = bb_sed.calcFlux(bp_dict['g'])
 

@@ -573,7 +573,7 @@ class SNObject(sncosmo.Model):
         or len(wavelen)!=len(_sn_ax_bx_wavelen) \
         or (wavelen!=_sn_ax_bx_wavelen).any():
 
-            ax, bx = SEDfromSNcosmo.setupCCMab()
+            ax, bx = SEDfromSNcosmo.setupCCM_ab()
             _sn_ax_cache = ax
             _sn_bx_cache = bx
             _sn_ax_bx_wavelen = np.copy(wavelen)
@@ -587,7 +587,7 @@ class SNObject(sncosmo.Model):
                              'stage, or by using setcoords followed by'
                              'mwEBVfromMaps\n')
 
-        SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
+        SEDfromSNcosmo.addDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
 
     def SNObjectSourceSED(self, time, wavelen=None):

@@ -831,17 +831,17 @@ class MLTflaringMixin(Variability):
 
             base_fluxes = self.lsstBandpassDict.fluxListForSed(bb_sed)
 
-            a_x, b_x = bb_sed.setupCCMab()
+            a_x, b_x = bb_sed.setupCCM_ab()
             self._mlt_dust_lookup = {}
             self._mlt_dust_lookup['ebv'] = ebv_grid
             list_of_bp = self.lsstBandpassDict.keys()
             for bp in list_of_bp:
                 self._mlt_dust_lookup[bp] = np.zeros(len(ebv_grid))
             for iebv, ebv_val in enumerate(ebv_grid):
-                wv, fl = bb_sed.addCCMDust(a_x, b_x,
-                                           ebv=ebv_val,
-                                           wavelen=bb_wavelen,
-                                           flambda=bb_flambda)
+                wv, fl = bb_sed.addDust(a_x, b_x,
+                                        ebv=ebv_val,
+                                        wavelen=bb_wavelen,
+                                        flambda=bb_flambda)
 
                 dusty_bb = Sed(wavelen=wv, flambda=fl)
                 dusty_fluxes = self.lsstBandpassDict.fluxListForSed(dusty_bb)

@@ -424,8 +424,8 @@ class photometryUnitTest(unittest.TestCase):
                 dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['bulgeName']]))
                 fnorm = dummySed.calcFluxNorm(line['bulgeNorm'], imsimBand)
                 dummySed.multiplyFluxNorm(fnorm)
-                a_int, b_int = dummySed.setupCCMab()
-                dummySed.addCCMDust(a_int, b_int, A_v=line['bulgeAv'])
+                a_int, b_int = dummySed.setupCCM_ab()
+                dummySed.addDust(a_int, b_int, A_v=line['bulgeAv'])
                 dummySed.redshiftSED(line['redshift'], dimming=True)
                 dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
                 for bpName in keys:
@@ -443,8 +443,8 @@ class photometryUnitTest(unittest.TestCase):
                 dummySed.readSED_flambda(os.path.join(sedDir, specMap[line['diskName']]))
                 fnorm = dummySed.calcFluxNorm(line['diskNorm'], imsimBand)
                 dummySed.multiplyFluxNorm(fnorm)
-                a_int, b_int = dummySed.setupCCMab()
-                dummySed.addCCMDust(a_int, b_int, A_v=line['diskAv'])
+                a_int, b_int = dummySed.setupCCM_ab()
+                dummySed.addDust(a_int, b_int, A_v=line['diskAv'])
                 dummySed.redshiftSED(line['redshift'], dimming=True)
                 dummySed.resampleSED(wavelen_match=testBandpasses['u'].wavelen)
                 for bpName in keys:
