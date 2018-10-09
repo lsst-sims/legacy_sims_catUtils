@@ -462,10 +462,13 @@ class StellarVariabilityModels(Variability):
             dMags = np.zeros((6, self.num_variable_obj(params)))
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
-        dmag_vals = -2.5*np.log10(d_fluxes)
-        dMags += np.where(np.logical_not(np.logical_or(np.isnan(dmag_vals), np.isinf(dmag_vals))),
-                          dmag_vals, 0.0)
-        return dMags
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dmag_vals = -2.5*np.log10(d_fluxes)
+            dMags += np.where(np.logical_not(np.logical_or(np.isnan(dmag_vals),
+                                                           np.isinf(dmag_vals))),
+                              dmag_vals, 0.0)
+            return dMags
 
     @register_method('applyMicrolensing')
     def applyMicrolensing(self, valid_dexes, params, expmjd_in,

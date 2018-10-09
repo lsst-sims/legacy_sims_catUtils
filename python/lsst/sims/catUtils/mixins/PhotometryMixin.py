@@ -354,67 +354,67 @@ class PhotometryGalaxies(PhotometryBase):
 
         @param [out] outMag is the total magnitude of the galaxy
         """
+        with np.errstate(divide='ignore', invalid='ignore'):
+            baselineType = type(None)
+            if not isinstance(disk, type(None)):
+                baselineType = type(disk)
+                if baselineType == numpy.ndarray:
+                    elements=len(disk)
 
-        baselineType = type(None)
-        if not isinstance(disk, type(None)):
-            baselineType = type(disk)
+            if not isinstance(bulge, type(None)):
+                if baselineType == type(None):
+                    baselineType = type(bulge)
+                    if baselineType == numpy.ndarray:
+                        elements = len(bulge)
+                elif not isinstance(bulge, baselineType):
+                    raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
+                                       "of the same type (float or numpy array)")
+
+            elif not isinstance(agn, type(None)):
+                if baseLineType == type(None):
+                    baselineType = type(agn)
+                    if baselineType == numpy.ndarray:
+                        elements = len(agn)
+                elif not isinstance(agn, baselineType):
+                    raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
+                                       "of the same type (float or numpy array)")
+
+            if baselineType is not float and \
+               baselineType is not numpy.ndarray and \
+               baselineType is not numpy.float and \
+               baselineType is not numpy.float64:
+
+                raise RuntimeError("Arguments of sum_magnitudes need to be " +
+                                   "either floats or numpy arrays; you appear to have passed %s " % baselineType)
+
+            mm_0 = 22.
+            tol = 1.0e-30
+
             if baselineType == numpy.ndarray:
-                elements=len(disk)
-
-        if not isinstance(bulge, type(None)):
-            if baselineType == type(None):
-                baselineType = type(bulge)
-                if baselineType == numpy.ndarray:
-                    elements = len(bulge)
-            elif not isinstance(bulge, baselineType):
-                raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
-                                   "of the same type (float or numpy array)")
-
-        elif not isinstance(agn, type(None)):
-            if baseLineType == type(None):
-                baselineType = type(agn)
-                if baselineType == numpy.ndarray:
-                    elements = len(agn)
-            elif not isinstance(agn, baselineType):
-                raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
-                                   "of the same type (float or numpy array)")
-
-        if baselineType is not float and \
-           baselineType is not numpy.ndarray and \
-           baselineType is not numpy.float and \
-           baselineType is not numpy.float64:
-
-            raise RuntimeError("Arguments of sum_magnitudes need to be " +
-                               "either floats or numpy arrays; you appear to have passed %s " % baselineType)
-
-        mm_0 = 22.
-        tol = 1.0e-30
-
-        if baselineType == numpy.ndarray:
-            nn = numpy.zeros(elements)
-        else:
-            nn = 0.0
-
-        if disk is not None:
-            nn += numpy.where(numpy.isnan(disk), 0.0, numpy.power(10, -0.4*(disk - mm_0)))
-
-        if bulge is not None:
-            nn += numpy.where(numpy.isnan(bulge), 0.0, numpy.power(10, -0.4*(bulge - mm_0)))
-
-        if agn is not None:
-            nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, -0.4*(agn - mm_0)))
-
-        if baselineType == numpy.ndarray:
-            # according to this link
-            # http://stackoverflow.com/questions/25087769/runtimewarning-divide-by-zero-error-how-to-avoid-python-numpy
-            # we will still get a divide by zero error from log10, but numpy.where will be
-            # circumventing the offending value, so it is probably okay
-            return numpy.where(nn>tol, -2.5*numpy.log10(nn) + mm_0, numpy.NaN)
-        else:
-            if nn>tol:
-                return -2.5*numpy.log10(nn) + mm_0
+                nn = numpy.zeros(elements)
             else:
-                return numpy.NaN
+                nn = 0.0
+
+            if disk is not None:
+                nn += numpy.where(numpy.isnan(disk), 0.0, numpy.power(10, -0.4*(disk - mm_0)))
+
+            if bulge is not None:
+                nn += numpy.where(numpy.isnan(bulge), 0.0, numpy.power(10, -0.4*(bulge - mm_0)))
+
+            if agn is not None:
+                nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, -0.4*(agn - mm_0)))
+
+            if baselineType == numpy.ndarray:
+                # according to this link
+                # http://stackoverflow.com/questions/25087769/runtimewarning-divide-by-zero-error-how-to-avoid-python-numpy
+                # we will still get a divide by zero error from log10, but numpy.where will be
+                # circumventing the offending value, so it is probably okay
+                return numpy.where(nn>tol, -2.5*numpy.log10(nn) + mm_0, numpy.NaN)
+            else:
+                if nn>tol:
+                    return -2.5*numpy.log10(nn) + mm_0
+                else:
+                    return numpy.NaN
 
 
     def _quiescentMagnitudeGetter(self, componentName, bandpassDict, columnNameList):
