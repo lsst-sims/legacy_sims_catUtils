@@ -742,7 +742,8 @@ class SNObject(sncosmo.Model):
         if noNan:
             if fluxinMaggies <= 0.:
                 return 200.0
-        return -2.5 * np.log10(fluxinMaggies)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return -2.5 * np.log10(fluxinMaggies)
 
     def catsimBandFluxError(self, time, bandpassobject, m5,
                             fluxinMaggies=None,
@@ -909,7 +910,8 @@ class SNObject(sncosmo.Model):
                                       bandpassDict,
                                       observedBandPassInd)
 
-        return -2.5 * np.log10(f)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            return -2.5 * np.log10(f)
 
 
     def catsimManyBandADUs(self, time, bandpassDict,
