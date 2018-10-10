@@ -462,10 +462,13 @@ class StellarVariabilityModels(Variability):
             dMags = np.zeros((6, self.num_variable_obj(params)))
         else:
             dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
-        dmag_vals = -2.5*np.log10(d_fluxes)
-        dMags += np.where(np.logical_not(np.logical_or(np.isnan(dmag_vals), np.isinf(dmag_vals))),
-                          dmag_vals, 0.0)
-        return dMags
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dmag_vals = -2.5*np.log10(d_fluxes)
+            dMags += np.where(np.logical_not(np.logical_or(np.isnan(dmag_vals),
+                                                           np.isinf(dmag_vals))),
+                              dmag_vals, 0.0)
+            return dMags
 
     @register_method('applyMicrolensing')
     def applyMicrolensing(self, valid_dexes, params, expmjd_in,
@@ -563,7 +566,7 @@ class StellarVariabilityModels(Variability):
             adds = 0.0
             for o in np.linspace(t0[i_burst] + burst_freq[i_burst],\
                                  t0[i_burst] + maxyears*365.25, \
-                                 np.ceil(maxyears*365.25/burst_freq[i_burst])):
+                                 np.ceil(maxyears*365.25/burst_freq[i_burst]).astype(np.int64)):
                 tmp = np.exp( -1*(epoch - o)/burst_scale[i_burst])/np.exp(-1.)
                 adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
             ## add some blue excess during the outburst
@@ -831,17 +834,17 @@ class MLTflaringMixin(Variability):
 
             base_fluxes = self.lsstBandpassDict.fluxListForSed(bb_sed)
 
-            a_x, b_x = bb_sed.setupCCMab()
+            a_x, b_x = bb_sed.setupCCM_ab()
             self._mlt_dust_lookup = {}
             self._mlt_dust_lookup['ebv'] = ebv_grid
             list_of_bp = self.lsstBandpassDict.keys()
             for bp in list_of_bp:
                 self._mlt_dust_lookup[bp] = np.zeros(len(ebv_grid))
             for iebv, ebv_val in enumerate(ebv_grid):
-                wv, fl = bb_sed.addCCMDust(a_x, b_x,
-                                           ebv=ebv_val,
-                                           wavelen=bb_wavelen,
-                                           flambda=bb_flambda)
+                wv, fl = bb_sed.addDust(a_x, b_x,
+                                        ebv=ebv_val,
+                                        wavelen=bb_wavelen,
+                                        flambda=bb_flambda)
 
                 dusty_bb = Sed(wavelen=wv, flambda=fl)
                 dusty_fluxes = self.lsstBandpassDict.fluxListForSed(dusty_bb)

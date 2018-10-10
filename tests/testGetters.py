@@ -148,8 +148,8 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             starSed.multiplyFluxNorm(fNorm)
 
             aV = np.float(line[16])
-            a_int, b_int = starSed.setupCCMab()
-            starSed.addCCMDust(a_int, b_int, A_v=aV)
+            a_int, b_int = starSed.setupCCM_ab()
+            starSed.addDust(a_int, b_int, A_v=aV)
 
             for i in range(len(self.bandpasses)):
                 controlSigma = calcMagError_sed(starSed, self.totalBandpasses[i],
@@ -202,11 +202,11 @@ class testPhotometricUncertaintyGetters(unittest.TestCase):
             fNorm = agnSed.calcFluxNorm(magNormAgn, imsimband)
             agnSed.multiplyFluxNorm(fNorm)
 
-            a_int, b_int = bulgeSed.setupCCMab()
-            bulgeSed.addCCMDust(a_int, b_int, A_v=avBulge)
+            a_int, b_int = bulgeSed.setupCCM_ab()
+            bulgeSed.addDust(a_int, b_int, A_v=avBulge)
 
-            a_int, b_int = diskSed.setupCCMab()
-            diskSed.addCCMDust(a_int, b_int, A_v=avDisk)
+            a_int, b_int = diskSed.setupCCM_ab()
+            diskSed.addDust(a_int, b_int, A_v=avDisk)
 
             bulgeSed.redshiftSED(redshift, dimming=True)
             diskSed.redshiftSED(redshift, dimming=True)

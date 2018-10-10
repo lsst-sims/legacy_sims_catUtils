@@ -573,7 +573,7 @@ class SNObject(sncosmo.Model):
         or len(wavelen)!=len(_sn_ax_bx_wavelen) \
         or (wavelen!=_sn_ax_bx_wavelen).any():
 
-            ax, bx = SEDfromSNcosmo.setupCCMab()
+            ax, bx = SEDfromSNcosmo.setupCCM_ab()
             _sn_ax_cache = ax
             _sn_bx_cache = bx
             _sn_ax_bx_wavelen = np.copy(wavelen)
@@ -587,7 +587,7 @@ class SNObject(sncosmo.Model):
                              'stage, or by using setcoords followed by'
                              'mwEBVfromMaps\n')
 
-        SEDfromSNcosmo.addCCMDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
+        SEDfromSNcosmo.addDust(a_x=ax, b_x=bx, ebv=self.ebvofMW)
         return SEDfromSNcosmo
 
     def SNObjectSourceSED(self, time, wavelen=None):
@@ -742,7 +742,8 @@ class SNObject(sncosmo.Model):
         if noNan:
             if fluxinMaggies <= 0.:
                 return 200.0
-        return -2.5 * np.log10(fluxinMaggies)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return -2.5 * np.log10(fluxinMaggies)
 
     def catsimBandFluxError(self, time, bandpassobject, m5,
                             fluxinMaggies=None,
@@ -909,7 +910,8 @@ class SNObject(sncosmo.Model):
                                       bandpassDict,
                                       observedBandPassInd)
 
-        return -2.5 * np.log10(f)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            return -2.5 * np.log10(f)
 
 
     def catsimManyBandADUs(self, time, bandpassDict,

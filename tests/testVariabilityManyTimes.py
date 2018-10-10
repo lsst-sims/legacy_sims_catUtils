@@ -52,7 +52,7 @@ def applyAmcvn_original(valid_dexes, params, expmjd_in):
         adds = 0.0
         for o in np.linspace(t0[i_burst] + burst_freq[i_burst],\
                                 t0[i_burst] + maxyears*365.25, \
-                                np.ceil(maxyears*365.25/burst_freq[i_burst])):
+                                np.ceil(maxyears*365.25/burst_freq[i_burst]).astype(np.int64)):
             tmp = np.exp( -1*(epoch - o)/burst_scale[i_burst])/np.exp(-1.)
             adds -= amp_burst[i_burst]*tmp*(tmp < 1.0)  ## kill the contribution
         ## add some blue excess during the outburst
