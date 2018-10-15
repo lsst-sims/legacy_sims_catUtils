@@ -223,14 +223,25 @@ class LightCurveGenerator(object):
 
     opsimdriver (optional; default 'sqlite') indicates the database driver to
     be used when connecting to opsimdb.
+
+    opsim_version (optional: default=3) is an int indicating the version of
+    OpSim used to create the database of pointings.  The OpSim database
+    schema changed between version 3.5 and 4.
     """
 
     _lightCurveCatalogClass = None
     _brightness_name = 'mag'
 
-    def __init__(self, catalogdb, opsimdb, opsimdriver="sqlite"):
-        self._generator = ObservationMetaDataGenerator(database=opsimdb,
-                                                       driver=opsimdriver)
+    def __init__(self, catalogdb, opsimdb, opsimdriver="sqlite", opsim_version=3):
+        if opsim_version == 3:
+            self._generator = ObservationMetaDataGenerator(database=opsimdb,
+                                                           driver=opsimdriver)
+        elif opsim_version == 4:
+            self._generator = ObservationMetaDataGeneratorV4(database=opsimdb,
+                                                             driver=opsimdriver)
+        else:
+            raise RuntimeError("LightCurveGenerator does not know how "
+                               "to handle opsim_version == %d" % opsim_version)
 
         self._catalogdb = catalogdb
 
