@@ -29,6 +29,13 @@ class ObservationMetaDataGenerator(object):
     bounds.
     """
 
+    @property
+    def table_name(self):
+        """
+        Return the name of the table in the OpSim database that we are querying
+        """
+        return 'Summary'
+
     def _set_seeing_column(self, input_summary_columns):
         """
         input_summary_columns is a list of columns in the OpSim database schema
@@ -144,7 +151,7 @@ class ObservationMetaDataGenerator(object):
         # Detect whether the OpSim db you are connecting to uses 'finSeeing'
         # as its seeing column (deprecated), or FWHMeff, which is the modern
         # standard
-        self._summary_columns = self.opsimdb.get_column_names('Summary')
+        self._summary_columns = self.opsimdb.get_column_names(self.table_name)
         self._set_seeing_column(self._summary_columns)
 
         # Set up self.dtype containg the dtype of the recarray we expect back from the SQL query.
@@ -232,7 +239,7 @@ class ObservationMetaDataGenerator(object):
 
         self._set_seeing_column(self._summary_columns)
 
-        query = self.baseQuery + ' FROM SUMMARY'
+        query = self.baseQuery + ' FROM %s' % self.table_name
 
         nConstraints = 0  # the number of constraints in this query
 
