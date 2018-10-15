@@ -58,7 +58,7 @@ DefaultPhoSimInstanceCatalogCols = ('object', 'uniqueID', 'RA', 'DEC'\
                                     , 'source_pars', 'DUST_REST_NAME'\
                                     , 'dust_pars_1a', 'dust_pars_1b'\
                                     , 'DUST_LAB_NAME', 'dust_pars_2a'\
-                                    , 'dust_pars_2b') 
+                                    , 'dust_pars_2b')
 
 def evaluate_phosim_header(param, phosim_header_map, obs):
     """
