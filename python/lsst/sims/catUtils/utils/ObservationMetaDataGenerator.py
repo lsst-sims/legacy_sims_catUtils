@@ -111,6 +111,8 @@ class ObservationMetaDataGenerator(object):
 
         if 'FWHMeff' in input_summary_columns:
             self._seeing_column = 'FWHMeff'
+        elif 'seeingFwhmEff' in input_summary_columns:
+            self._seeing_column = 'seeingFwhmEff'
         else:
             self._seeing_column = 'finSeeing'
 
