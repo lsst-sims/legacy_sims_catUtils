@@ -5,7 +5,8 @@ import numbers
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["ObservationMetaDataGenerator"]
+__all__ = ["ObservationMetaDataGenerator",
+           "ObservationMetaDataGeneratorV4"]
 
 
 class ObservationMetaDataGenerator(object):
@@ -539,3 +540,47 @@ class ObservationMetaDataGenerator(object):
                                                            boundType=boundType,
                                                            boundLength=boundLength)
         return output
+
+
+class ObservationMetaDataGeneratorV4(ObservationMetaDataGenerator):
+
+    @property
+    def table_name(self):
+        return 'SummaryAllProps'
+
+    @property
+    def user_interface_to_opsim(self):
+        if not hasattr(self, '_user_interface_to_opsim'):
+            self._user_interface_to_opsim = {'obsHistID': ('observationId', None, np.int64),
+                                             'fieldRA': ('fieldRA', None, float),
+                                             'fieldDec': ('fieldDec', None, float),
+                                             'moonRA': ('moonRA', None, float),
+                                             'moonDec': ('moonDec', None, float),
+                                             'rotSkyPos': ('rotSkyPos', None, float),
+                                             'telescopeFilter':
+                                                 ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
+                                             'sunAlt': ('sunAlt', None, float),
+                                             'moonAlt': ('moonAlt', None, float),
+                                             'moonPhase': ('moonPhase', None, float),
+                                             'expMJD': ('observationStartMJD', None, float),
+                                             'altitude': ('altitude', None, float),
+                                             'azimuth': ('azimuth', None, float),
+                                             'visitExpTime': ('visitExposureTime', None, float),
+                                             'airmass': ('airmass', None, float),
+                                             'm5': ('fiveSigmaDepth', None, float),
+                                             'skyBrightness': ('skyBrightness', None, float),
+                                             'fieldID': ('fieldId', None, int),
+                                             'night': ('night', None, int),
+                                             'visitTime': ('visitTime', None, float),
+                                             'FWHMgeom': ('seeingFWHMgeom', None, float),
+                                             # do not include FWHMeff; that is detected by
+                                             # self._set_seeing_column()
+                                             'rotTelPos': ('rotTelPos', None, float),
+                                             'lst': ('observationStartLST', None, float),
+                                             'solarElong': ('solarElong', None, float),
+                                             'moonAz': ('moonAz', None, float),
+                                             'sunAz': ('sunAz', None, float),
+                                             'slewDist': ('slewDistance', None, float),
+                                             'slewTime': ('slewTime', None, float)}
+
+        return self._user_interface_to_opsim
