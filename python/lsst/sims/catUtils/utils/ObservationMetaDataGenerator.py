@@ -371,10 +371,10 @@ class ObservationMetaDataGenerator(object):
         # check to make sure the OpSim pointings being supplied contain
         # the minimum required information
 
-        for required_column in ('fieldRA', 'fieldDec', 'expMJD', 'filter'):
+        for required_column in (ra_name, dec_name, mjd_name, filter_name):
             if required_column not in OpSimColumns:
                 raise RuntimeError("ObservationMetaDataGenerator requires that the database of "
-                                   "pointings include the coluns:\nfieldRA"
+                                   "pointings include data for:\nfieldRA"
                                    "\nfieldDec\nexpMJD\nfilter")
 
         # construct a raw dict of all of the OpSim columns associated with this pointing
