@@ -38,7 +38,7 @@ class ObservationMetaDataGenerator(object):
 
     @property
     def user_interface_to_opsim(self):
-        # a dict keyed on the user interface names of the OpSimdata columns
+        # a dict keyed on the user interface names of the ObservationMetaData columns
         # (i.e. the args to getObservationMetaData).  Returns a tuple that is the
         # (name of data column in OpSim, transformation to go from user interface to OpSim units,
         # dtype in OpSim)
