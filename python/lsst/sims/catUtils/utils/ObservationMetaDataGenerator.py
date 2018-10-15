@@ -355,32 +355,61 @@ class ObservationMetaDataGenerator(object):
 
         self._set_seeing_column(OpSimColumns)
 
+        # get the names of the columns that contain the minimal schema
+        # for an ObservationMetaData
+        mjd_name = self.user_interface_to_opsim['expMJD'][0]
+        ra_name = self.user_interface_to_opsim['fieldRA'][0]
+        dec_name = self.user_interface_to_opsim['fieldDec'][0]
+        filter_name = self.user_interface_to_opsim['telescopeFilter'][0]
+
+        # check to see if angles are in degrees or radians
+        if self.user_interface_to_opsim['fieldRA'][1] is None:
+            in_degrees = True
+        else:
+            in_degrees = False
+
         # check to make sure the OpSim pointings being supplied contain
         # the minimum required information
+
         for required_column in ('fieldRA', 'fieldDec', 'expMJD', 'filter'):
             if required_column not in OpSimColumns:
                 raise RuntimeError("ObservationMetaDataGenerator requires that the database of "
-                                   "pointings include the coluns:\nfieldRA (in radians)"
-                                   "\nfieldDec (in radians)\nexpMJD\nfilter")
+                                   "pointings include the coluns:\nfieldRA"
+                                   "\nfieldDec\nexpMJD\nfilter")
 
         # construct a raw dict of all of the OpSim columns associated with this pointing
         raw_dict = dict([(col, pointing[col]) for col in pointing_column_names])
 
-        obs = ObservationMetaData(pointingRA=np.degrees(pointing['fieldRA']),
-                                  pointingDec=np.degrees(pointing['fieldDec']),
-                                  mjd=pointing['expMJD'],
-                                  bandpassName=pointing['filter'],
+        if in_degrees:
+            ra_val = pointing[ra_name]
+            dec_val = pointing[dec_name]
+        else:
+            ra_val = np.degrees(pointing[ra_name])
+            dec_val = np.degrees(pointing[dec_name])
+        mjd_val = pointing[mjd_name]
+        filter_val = pointing[filter_name]
+
+        obs = ObservationMetaData(pointingRA=ra_val,
+                                  pointingDec=dec_val,
+                                  mjd=mjd_val,
+                                  bandpassName=filter_val,
                                   boundType=boundType,
                                   boundLength=boundLength)
 
-        if 'fiveSigmaDepth' in pointing_column_names:
-            obs.m5 = pointing['fiveSigmaDepth']
+        m5_name = self.user_interface_to_opsim['m5'][0]
+        rotSky_name = self.user_interface_to_opsim['rotSkyPos'][0]
+
+        if m5_name in pointing_column_names:
+            obs.m5 = pointing[m5_name]
         if 'filtSkyBrightness' in pointing_column_names:
             obs.skyBrightness = pointing['filtSkyBrightness']
         if self._seeing_column in pointing_column_names:
             obs.seeing = pointing[self._seeing_column]
-        if 'rotSkyPos' in pointing_column_names:
-            obs.rotSkyPos = np.degrees(pointing['rotSkyPos'])
+        if rotSky_name in pointing_column_names:
+            if in_degrees:
+                obs.rotSkyPos = pointing[rotSky_name]
+            else:
+                obs.rotSkyPos = np.degrees(pointing[rotSky_name])
 
         obs.OpsimMetaData = raw_dict
 
