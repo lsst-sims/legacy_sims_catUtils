@@ -94,7 +94,7 @@ class SNObject(sncosmo.Model):
             source class to define the model
         """
 
-        dust = sncosmo.OD94Dust()
+        dust = sncosmo.CCM89Dust()
         sncosmo.Model.__init__(self, source=source, effects=[dust, dust],
                                effect_names=['host', 'mw'],
                                effect_frames=['rest', 'obs'])
@@ -183,7 +183,7 @@ class SNObject(sncosmo.Model):
 
         """
         # Separate into SNCosmo parameters and SNObject parameters
-        dust = sncosmo.OD94Dust()
+        dust = sncosmo.CCM89Dust()
         sncosmoModel = sncosmo.Model(source=snState['ModelSource'],
                                      effects=[dust, dust],
                                      effect_names=['host', 'mw'],
@@ -234,7 +234,7 @@ class SNObject(sncosmo.Model):
         returns an SNCosmo Model which is equivalent to SNObject
         """
         snState = self.SNstate
-        dust = sncosmo.OD94Dust()
+        dust = sncosmo.CCM89Dust()
         sncosmoModel = sncosmo.Model(source=snState['ModelSource'],
                                      effects=[dust, dust],
                                      effect_names=['host', 'mw'],
