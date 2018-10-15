@@ -447,7 +447,7 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
                                              telescopeFilter='i')
         testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
-        testCat.phoSimHeaderMap = {}
+        testCat.phoSimHeaderMap = {'obshistid': ('obsHistID', None)}
         with lsst.utils.tests.getTempFilePath('.txt') as catName:
             testCat.write_catalog(catName)
 
@@ -515,7 +515,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
                                          driver='sqlite')
 
         self.assertEqual(context.exception.args[0],
-                         '%s does not exist' % test_name)
+                         '%s is not a file' % test_name)
 
         self.assertFalse(os.path.exists(test_name))
 

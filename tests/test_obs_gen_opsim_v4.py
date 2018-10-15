@@ -3,7 +3,7 @@ import os
 import sqlite3
 import lsst.utils.tests
 from lsst.utils import getPackageDir
-from lsst.sims.catUtils.utils import ObservationMetaDataGeneratorV4
+from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 
 
 def setup_module(module):
@@ -19,7 +19,7 @@ class ObsGenV4TestCase(unittest.TestCase):
         db_dir = os.path.join(getPackageDir('sims_data'), 'OpSimData')
         assert os.path.isdir(db_dir)
         db_file = os.path.join(db_dir, 'astro-lsst-01_2014.db')
-        obs_gen = ObservationMetaDataGeneratorV4(db_file)
+        obs_gen = ObservationMetaDataGenerator(db_file)
         obs_list = obs_gen.getObservationMetaData(fieldRA=(20.0, 40.0),
                                                   fieldDec=(-30.0, -10.0))
         self.assertGreater(len(obs_list), 10)

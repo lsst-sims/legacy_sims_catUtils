@@ -5,8 +5,7 @@ import numbers
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
-__all__ = ["ObservationMetaDataGenerator",
-           "ObservationMetaDataGeneratorV4"]
+__all__ = ["ObservationMetaDataGenerator"]
 
 
 class ObservationMetaDataGenerator(object):
@@ -37,8 +36,7 @@ class ObservationMetaDataGenerator(object):
         """
         return 'Summary'
 
-    @property
-    def user_interface_to_opsim(self):
+    def _make_opsim_v3_interface(self):
         # a dict keyed on the user interface names of the ObservationMetaData columns
         # (i.e. the args to getObservationMetaData).  Returns a tuple that is the
         # (name of data column in OpSim, transformation to go from user interface to OpSim units,
@@ -50,56 +48,90 @@ class ObservationMetaDataGenerator(object):
         # records of the values of all of the associated OpSim Summary columns so that users
         # can pass those values on to PhoSim/other tools and thier own discretion.
 
-        if not hasattr(self, '_user_interface_to_opsim'):
-            self._user_interface_to_opsim = {'obsHistID': ('obsHistID', None, np.int64),
-                                             'expDate': ('expDate', None, int),
-                                             'fieldRA': ('fieldRA', np.radians, float),
-                                             'fieldDec': ('fieldDec', np.radians, float),
-                                             'moonRA': ('moonRA', np.radians, float),
-                                             'moonDec': ('moonDec', np.radians, float),
-                                             'rotSkyPos': ('rotSkyPos', np.radians, float),
-                                             'telescopeFilter':
-                                                 ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
-                                             'rawSeeing': ('rawSeeing', None, float),
-                                             'sunAlt': ('sunAlt', np.radians, float),
-                                             'moonAlt': ('moonAlt', np.radians, float),
-                                             'dist2Moon': ('dist2Moon', np.radians, float),
-                                             'moonPhase': ('moonPhase', None, float),
-                                             'expMJD': ('expMJD', None, float),
-                                             'altitude': ('altitude', np.radians, float),
-                                             'azimuth': ('azimuth', np.radians, float),
-                                             'visitExpTime': ('visitExpTime', None, float),
-                                             'airmass': ('airmass', None, float),
-                                             'm5': ('fiveSigmaDepth', None, float),
-                                             'skyBrightness': ('filtSkyBrightness', None, float),
-                                             'sessionID': ('sessionID', None, int),
-                                             'fieldID': ('fieldID', None, int),
-                                             'night': ('night', None, int),
-                                             'visitTime': ('visitTime', None, float),
-                                             'finRank': ('finRank', None, float),
-                                             'FWHMgeom': ('FWHMgeom', None, float),
-                                             # do not include FWHMeff; that is detected by
-                                             # self._set_seeing_column()
-                                             'transparency': ('transparency', None, float),
-                                             'vSkyBright': ('vSkyBright', None, float),
-                                             'rotTelPos': ('rotTelPos', None, float),
-                                             'lst': ('lst', None, float),
-                                             'solarElong': ('solarElong', None, float),
-                                             'moonAz': ('moonAz', None, float),
-                                             'sunAz': ('sunAz', None, float),
-                                             'phaseAngle': ('phaseAngle', None, float),
-                                             'rScatter': ('rScatter', None, float),
-                                             'mieScatter': ('mieScatter', None, float),
-                                             'moonBright': ('moonBright', None, float),
-                                             'darkBright': ('darkBright', None, float),
-                                             'wind': ('wind', None, float),
-                                             'humidity': ('humidity', None, float),
-                                             'slewDist': ('slewDist', None, float),
-                                             'slewTime': ('slewTime', None, float),
-                                             'ditheredRA': ('ditheredRA', None, float),
-                                             'ditheredDec': ('ditheredDec', None, float)}
+        interface_dict = {'obsHistID': ('obsHistID', None, np.int64),
+                          'expDate': ('expDate', None, int),
+                          'fieldRA': ('fieldRA', np.radians, float),
+                          'fieldDec': ('fieldDec', np.radians, float),
+                          'moonRA': ('moonRA', np.radians, float),
+                          'moonDec': ('moonDec', np.radians, float),
+                          'rotSkyPos': ('rotSkyPos', np.radians, float),
+                          'telescopeFilter':
+                              ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
+                          'rawSeeing': ('rawSeeing', None, float),
+                          'sunAlt': ('sunAlt', np.radians, float),
+                          'moonAlt': ('moonAlt', np.radians, float),
+                          'dist2Moon': ('dist2Moon', np.radians, float),
+                          'moonPhase': ('moonPhase', None, float),
+                          'expMJD': ('expMJD', None, float),
+                          'altitude': ('altitude', np.radians, float),
+                          'azimuth': ('azimuth', np.radians, float),
+                          'visitExpTime': ('visitExpTime', None, float),
+                          'airmass': ('airmass', None, float),
+                          'm5': ('fiveSigmaDepth', None, float),
+                          'skyBrightness': ('filtSkyBrightness', None, float),
+                          'sessionID': ('sessionID', None, int),
+                          'fieldID': ('fieldID', None, int),
+                          'night': ('night', None, int),
+                          'visitTime': ('visitTime', None, float),
+                          'finRank': ('finRank', None, float),
+                          'FWHMgeom': ('FWHMgeom', None, float),
+                          # do not include FWHMeff; that is detected by
+                          # self._set_seeing_column()
+                          'transparency': ('transparency', None, float),
+                          'vSkyBright': ('vSkyBright', None, float),
+                          'rotTelPos': ('rotTelPos', None, float),
+                          'lst': ('lst', None, float),
+                          'solarElong': ('solarElong', None, float),
+                          'moonAz': ('moonAz', None, float),
+                          'sunAz': ('sunAz', None, float),
+                          'phaseAngle': ('phaseAngle', None, float),
+                          'rScatter': ('rScatter', None, float),
+                          'mieScatter': ('mieScatter', None, float),
+                          'moonBright': ('moonBright', None, float),
+                          'darkBright': ('darkBright', None, float),
+                          'wind': ('wind', None, float),
+                          'humidity': ('humidity', None, float),
+                          'slewDist': ('slewDist', None, float),
+                          'slewTime': ('slewTime', None, float),
+                          'ditheredRA': ('ditheredRA', None, float),
+                          'ditheredDec': ('ditheredDec', None, float)}
 
-        return self._user_interface_to_opsim
+        return interface_dict
+
+    def _make_opsim_v4_interface(self):
+        interface_dict = {'obsHistID': ('observationId', None, np.int64),
+                          'fieldRA': ('fieldRA', None, float),
+                          'fieldDec': ('fieldDec', None, float),
+                          'moonRA': ('moonRA', None, float),
+                          'moonDec': ('moonDec', None, float),
+                          'rotSkyPos': ('rotSkyPos', None, float),
+                          'telescopeFilter':
+                              ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
+                          'sunAlt': ('sunAlt', None, float),
+                          'moonAlt': ('moonAlt', None, float),
+                          'moonPhase': ('moonPhase', None, float),
+                          'expMJD': ('observationStartMJD', None, float),
+                          'altitude': ('altitude', None, float),
+                          'azimuth': ('azimuth', None, float),
+                          'visitExpTime': ('visitExposureTime', None, float),
+                          'airmass': ('airmass', None, float),
+                          'm5': ('fiveSigmaDepth', None, float),
+                          'skyBrightness': ('skyBrightness', None, float),
+                          'fieldID': ('fieldId', None, int),
+                          'night': ('night', None, int),
+                          'visitTime': ('visitTime', None, float),
+                          'FWHMgeom': ('seeingFWHMgeom', None, float),
+                          # do not include FWHMeff; that is detected by
+                          # self._set_seeing_column()
+                          'rotTelPos': ('rotTelPos', None, float),
+                          'lst': ('observationStartLST', None, float),
+                          'solarElong': ('solarElong', None, float),
+                          'moonAz': ('moonAz', None, float),
+                          'sunAz': ('sunAz', None, float),
+                          'slewDist': ('slewDistance', None, float),
+                          'slewTime': ('slewTime', None, float)}
+
+        return interface_dict
 
     def _set_seeing_column(self, input_summary_columns):
         """
@@ -118,6 +150,29 @@ class ObservationMetaDataGenerator(object):
             self._seeing_column = 'finSeeing'
 
         self.user_interface_to_opsim['seeing'] = (self._seeing_column, None, float)
+
+    @property
+    def opsim_version(self):
+        return self._opsim_version
+
+    @property
+    def user_interface_to_opsim(self):
+        if not hasattr(self, '_user_interface_to_opsim'):
+            if self.opsim_version == 3:
+                self._user_interface_to_opsim = self._make_opsim_v3_interface()
+            elif self.opsim_version == 4:
+                self._user_interface_to_opsim = self._make_opsim_v4_interface()
+            else:
+                raise RuntimeError("Unsure how to handle opsim_version ",self.opsim_version)
+        return self._user_interface_to_opsim
+
+    @property
+    def table_name(self):
+        if self.opsim_version == 3:
+            return 'Summary'
+        elif self.opsim_version == 4:
+            return 'SummaryAllProps'
+        raise RuntimeError("Unsure how to handle opsim_version ",self.opsim_version)
 
     def __init__(self, database=None, driver='sqlite', host=None, port=None):
         """
@@ -141,6 +196,7 @@ class ObservationMetaDataGenerator(object):
         ..notes : For testing purposes a small OpSim database is available at
         `os.path.join(getPackageDir('sims_data'), 'OpSimData/opsimblitz1_1133_sqlite.db')`
         """
+        self._opsim_version = None
         self.driver = driver
         self.host = host
         self.port = port
@@ -160,6 +216,13 @@ class ObservationMetaDataGenerator(object):
         # Detect whether the OpSim db you are connecting to uses 'finSeeing'
         # as its seeing column (deprecated), or FWHMeff, which is the modern
         # standard
+
+        list_of_tables = self.opsimdb.get_table_names()
+        if 'Summary' in list_of_tables:
+            self._opsim_version = 3
+        else:
+            self._opsim_version = 4
+
         self._summary_columns = self.opsimdb.get_column_names(self.table_name)
         self._set_seeing_column(self._summary_columns)
 
@@ -443,6 +506,17 @@ class ObservationMetaDataGenerator(object):
         if OpSimColumns is None:
             OpSimColumns = OpSimPointingRecords.dtype.names
 
+        if self.opsim_version is None:
+            if 'obsHistID' in OpSimColumns:
+                self._opsim_version = 3
+            elif 'observationId' in OpSimColumns:
+                self._opsim_version = 4
+            else:
+                raise RuntimeError("Unable to determine which OpSim version your "
+                                   "OpSimPointingRecords correspond to; make sure "
+                                   "obsHistID (v3) or observationId (v4) are in the "
+                                   "records.")
+
         out = list(self.ObservationMetaDataFromPointing(OpSimPointingRecord,
                                                         OpSimColumns=OpSimColumns,
                                                         boundLength=boundLength,
@@ -540,47 +614,3 @@ class ObservationMetaDataGenerator(object):
                                                            boundType=boundType,
                                                            boundLength=boundLength)
         return output
-
-
-class ObservationMetaDataGeneratorV4(ObservationMetaDataGenerator):
-
-    @property
-    def table_name(self):
-        return 'SummaryAllProps'
-
-    @property
-    def user_interface_to_opsim(self):
-        if not hasattr(self, '_user_interface_to_opsim'):
-            self._user_interface_to_opsim = {'obsHistID': ('observationId', None, np.int64),
-                                             'fieldRA': ('fieldRA', None, float),
-                                             'fieldDec': ('fieldDec', None, float),
-                                             'moonRA': ('moonRA', None, float),
-                                             'moonDec': ('moonDec', None, float),
-                                             'rotSkyPos': ('rotSkyPos', None, float),
-                                             'telescopeFilter':
-                                                 ('filter', lambda x: '\'{}\''.format(x), (str, 1)),
-                                             'sunAlt': ('sunAlt', None, float),
-                                             'moonAlt': ('moonAlt', None, float),
-                                             'moonPhase': ('moonPhase', None, float),
-                                             'expMJD': ('observationStartMJD', None, float),
-                                             'altitude': ('altitude', None, float),
-                                             'azimuth': ('azimuth', None, float),
-                                             'visitExpTime': ('visitExposureTime', None, float),
-                                             'airmass': ('airmass', None, float),
-                                             'm5': ('fiveSigmaDepth', None, float),
-                                             'skyBrightness': ('skyBrightness', None, float),
-                                             'fieldID': ('fieldId', None, int),
-                                             'night': ('night', None, int),
-                                             'visitTime': ('visitTime', None, float),
-                                             'FWHMgeom': ('seeingFWHMgeom', None, float),
-                                             # do not include FWHMeff; that is detected by
-                                             # self._set_seeing_column()
-                                             'rotTelPos': ('rotTelPos', None, float),
-                                             'lst': ('observationStartLST', None, float),
-                                             'solarElong': ('solarElong', None, float),
-                                             'moonAz': ('moonAz', None, float),
-                                             'sunAz': ('sunAz', None, float),
-                                             'slewDist': ('slewDistance', None, float),
-                                             'slewTime': ('slewTime', None, float)}
-
-        return self._user_interface_to_opsim
