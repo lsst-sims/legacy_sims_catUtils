@@ -150,8 +150,8 @@ class ObservationMetaDataGenerator(object):
         if self.database is None:
             return
 
-        if not os.path.exists(self.database):
-            raise RuntimeError('%s does not exist' % self.database)
+        if not os.path.isfile(self.database):
+            raise RuntimeError('%s is not a file' % self.database)
 
         self.opsimdb = DBObject(driver=self.driver, database=self.database,
                                 host=self.host, port=self.port)
