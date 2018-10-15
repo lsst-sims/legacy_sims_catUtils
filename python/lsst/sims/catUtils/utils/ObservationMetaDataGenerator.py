@@ -305,7 +305,8 @@ class ObservationMetaDataGenerator(object):
 
                 nConstraints += 1
 
-        query += ' GROUP BY expMJD ORDER BY expMJD'
+        mjd_name = self.user_interface_to_opsim['expMJD'][0]
+        query += ' GROUP BY %s ORDER BY %s' % (mjd_name, mjd_name)
 
         if limit is not None:
             query += ' LIMIT %d' % limit
