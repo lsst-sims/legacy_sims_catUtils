@@ -188,6 +188,25 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
     sorted_header_keys = list(phosim_header_map.keys())
     sorted_header_keys.sort()
 
+    if obs.OpsimMetaData is not None:
+        if ('observationId' in obs.OpsimMetaData and
+            phosim_header_map['obshistid'][0] == 'obsHistID'):
+
+            raise RuntimeWarning('Your ObservationMetaData was built from '
+                                 'a v4 OpSim database, but your phosim_header_map '
+                                 'is expecting a v3 OpSim database.  Your InstanceCatalog '
+                                 'header is not going to make any sense if you proceed, so '
+                                 'we are throwing this error.')
+
+        elif ('obsHistID' in obs.OpsimMetaData and
+              phosim_header_map['obshistid'][0] == 'observationId'):
+
+            raise RuntimeWarning('Your ObservationMetaData was built from '
+                                 'a v3 OpSim database, but your phosim_header_map '
+                                 'is expecting a v4 OpSim database.  Your InstanceCatalog '
+                                 'header is not going to make any sense if you proceed, so '
+                                 'we are throwing this error.')
+
     for name in sorted_header_keys:
         val = evaluate_phosim_header(name, phosim_header_map, obs)
         if val is not None:
