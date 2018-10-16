@@ -443,6 +443,7 @@ class ObservationMetaDataGenerator(object):
 
         # construct a raw dict of all of the OpSim columns associated with this pointing
         raw_dict = dict([(col, pointing[col]) for col in pointing_column_names])
+        raw_dict['opsim_version'] = self.opsim_version
 
         if in_degrees:
             ra_val = pointing[ra_name]
