@@ -11,6 +11,7 @@ from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.exampleCatalogDefinitions import PhoSimCatalogSersic2D
+from lsst.sims.catUtils.exampleCatalogDefinitions import DefaultPhoSimHeaderMap
 from lsst.sims.catUtils.utils import testGalaxyBulgeDBObj
 from lsst.sims.catUtils.utils import makePhoSimTestDB
 from lsst.utils import getPackageDir
@@ -454,6 +455,63 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
         if os.path.exists(dbName):
             os.unlink(dbName)
 
+    def testCreationOfPhoSimCatalog_2(self):
+        """
+        Make sure that we can create PhoSim input catalogs using the returned
+        ObservationMetaData.
+
+        Use the actual DefaultPhoSimHeader map; make sure that opsim_version
+        does not make it into the header.
+        """
+
+        dbName = tempfile.mktemp(dir=ROOT, prefix='obsMetaDataGeneratorTest-', suffix='.db')
+        makePhoSimTestDB(filename=dbName)
+        bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=dbName)
+        gen = self.gen
+        results = gen.getObservationMetaData(fieldRA=np.degrees(1.370916),
+                                             telescopeFilter='i')
+        testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
+        testCat.phoSimHeaderMap = DefaultPhoSimHeaderMap
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            testCat.write_catalog(catName)
+            ct_lines = 0
+            with open(catName, 'r') as in_file:
+                for line in in_file:
+                    ct_lines += 1
+                    self.assertNotIn('opsim_version', line)
+                self.assertGreater(ct_lines, 10)  # check that some lines did get written
+
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+
+    def testCreationOfPhoSimCatalog_3(self):
+        """
+        Make sure that we can create PhoSim input catalogs using the returned
+        ObservationMetaData.
+
+        Test that an error is actually raised if we try to build a PhoSim catalog
+        with a v3 header map using a v4 ObservationMetaData
+        """
+
+        dbName = tempfile.mktemp(dir=ROOT, prefix='obsMetaDataGeneratorTest-', suffix='.db')
+        makePhoSimTestDB(filename=dbName)
+        bulgeDB = testGalaxyBulgeDBObj(driver='sqlite', database=dbName)
+        opsim_db = os.path.join(getPackageDir('sims_data'), 'OpSimData',
+                                'astro-lsst-01_2014.db')
+        assert os.path.isfile(opsim_db)
+        gen = ObservationMetaDataGenerator(opsim_db, driver='sqlite')
+        results = gen.getObservationMetaData(fieldRA=(70.0, 85.0),
+                                             telescopeFilter='i')
+        self.assertGreater(len(results), 0)
+        testCat = PhoSimCatalogSersic2D(bulgeDB, obs_metadata=results[0])
+        testCat.phoSimHeaderMap = DefaultPhoSimHeaderMap
+        with lsst.utils.tests.getTempFilePath('.txt') as catName:
+            with self.assertRaises(RuntimeError):
+                testCat.write_catalog(catName)
+
+        if os.path.exists(dbName):
+            os.unlink(dbName)
+
 
 class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
     """
@@ -515,7 +573,7 @@ class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
                                          driver='sqlite')
 
         self.assertEqual(context.exception.args[0],
-                         '%s does not exist' % test_name)
+                         '%s is not a file' % test_name)
 
         self.assertFalse(os.path.exists(test_name))
 

@@ -46,7 +46,8 @@ DefaultPhoSimHeaderMap = {'rottelpos': ('rotTelPos', np.degrees),
                           'seeing': ('rawSeeing', None),
                           'vistime': ('visitExpTime', lambda x: x + 3.0),
                           'nsnap': 2,
-                          'seed': ('obsHistID', None)}
+                          'seed': ('obsHistID', None),
+                          'opsim_version': 3}
 
 # This variable contains all of the columns in a phosim Instance Catalog
 # Can be used to reconstruct the information encoded in a phosim instance
@@ -58,7 +59,7 @@ DefaultPhoSimInstanceCatalogCols = ('object', 'uniqueID', 'RA', 'DEC'\
                                     , 'source_pars', 'DUST_REST_NAME'\
                                     , 'dust_pars_1a', 'dust_pars_1b'\
                                     , 'DUST_LAB_NAME', 'dust_pars_2a'\
-                                    , 'dust_pars_2b') 
+                                    , 'dust_pars_2b')
 
 def evaluate_phosim_header(param, phosim_header_map, obs):
     """
@@ -188,7 +189,18 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
     sorted_header_keys = list(phosim_header_map.keys())
     sorted_header_keys.sort()
 
+    if (obs.OpsimMetaData is not None and 'opsim_version' in obs.OpsimMetaData and
+        'opsim_version' in phosim_header_map):
+        if obs.OpsimMetaData['opsim_version'] != phosim_header_map['opsim_version']:
+            raise RuntimeError('Your ObservationMetaData was built from '
+                                + 'a v%d OpSim database, but your phosim_header_map ' % obs.OpsimMetaData['opsim_version']
+                                + 'is expecting a v%d OpSim database.  Your InstanceCatalog ' % phosim_header_map['opsim_version']
+                                + 'header is not going to make any sense if you proceed, so '
+                                + 'we are throwing this error.')
+
     for name in sorted_header_keys:
+        if name == 'opsim_version':
+            continue
         val = evaluate_phosim_header(name, phosim_header_map, obs)
         if val is not None:
             if isinstance(val, float) or isinstance(val, np.float):
