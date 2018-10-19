@@ -159,6 +159,32 @@ class StellarLightCurveTest(unittest.TestCase):
                 if ix > 0:
                     self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
 
+    def test_get_pointings_v4(self):
+        """
+        Test that the get_pointings method runs on an OpSim v4 database
+        """
+
+        v4_db = os.path.join(getPackageDir('sims_data'), 'OpSimData',
+                             'astro-lsst-01_2014.db')
+
+        raRange = (78.0, 89.0)
+        decRange = (-74.0, -60.0)
+        bandpass = 'y'
+
+        lc_gen = StellarLightCurveGenerator(self.stellar_db, v4_db)
+
+        pointings = lc_gen.get_pointings(raRange, decRange, bandpass=bandpass)
+
+        self.assertGreater(len(pointings), 1)
+
+        for group in pointings:
+            for ix, obs in enumerate(group):
+                self.assertAlmostEqual(obs.pointingRA, group[0].pointingRA, 12)
+                self.assertAlmostEqual(obs.pointingDec, group[0].pointingDec, 12)
+                self.assertEqual(obs.bandpass, bandpass)
+                if ix > 0:
+                    self.assertGreater(obs.mjd.TAI, group[ix-1].mjd.TAI)
+
     def test_get_pointings_multiband(self):
         """
         Test that the get_pointings method does, in fact, return ObservationMetaData
