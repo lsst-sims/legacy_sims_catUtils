@@ -529,7 +529,8 @@ class AlertDataGenerator(object):
         The baseline_astrometry table is indexed on uniqueId
 
     """
-
+    _output_columns = ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
+                       'chipNum', 'xPix', 'yPix')
     def __init__(self,
                  testing=False):
         """
@@ -1354,9 +1355,7 @@ class AlertDataGenerator(object):
                         cache_tag = '%d_%d' % (obshistid, i_chunk)
                         output_data_cache[cache_tag] = {}
 
-                        for col_name in ('uniqueId', 'raICRS', 'decICRS', 'flux', 'dflux', 'SNR',
-                                         'chipNum', 'xPix', 'yPix'):
-
+                        for col_name in self._output_columns:
                             output_data_cache[cache_tag][col_name] = valid_chunk[chunk_map[col_name]]
 
                         n_rows_cached += length_of_chunk
