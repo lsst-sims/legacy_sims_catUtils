@@ -304,9 +304,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             os.unlink(cls.star_db_name)
         if os.path.exists(cls.input_dir):
             shutil.rmtree(cls.input_dir)
-        for file_name in os.listdir(cls.output_dir):
-            os.unlink(os.path.join(cls.output_dir, file_name))
-        shutil.rmtree(cls.output_dir)
 
         clean_up_lsst_camera()
 
