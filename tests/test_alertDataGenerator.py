@@ -766,7 +766,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                                  pm_dec=self.pmdec_truth[obj_dex],
                                                  parallax=self.px_truth[obj_dex],
                                                  v_rad=self.vrad_truth[obj_dex],
-                                                 obs_metadata=obs)
+                                                 obs_metadata=obs,
+                                                 band=obs.bandpass)
 
                 chipnum = int(chipname.replace('R', '').replace('S', '').
                               replace(' ', '').replace(';', '').replace(',', '').
@@ -779,7 +780,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                                       pm_dec=self.pmdec_truth[obj_dex],
                                                       parallax=self.px_truth[obj_dex],
                                                       v_rad=self.vrad_truth[obj_dex],
-                                                      obs_metadata=obs)
+                                                      obs_metadata=obs,
+                                                      band=obs.bandpass)
 
                 self.assertAlmostEqual(alert_data['xPix'][i_obj], xpix, 4)
                 self.assertAlmostEqual(alert_data['yPix'][i_obj], ypix, 4)
