@@ -604,6 +604,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         obs_dict = {}
         max_obshistid = -1
         n_total_observations = 0
+
+        true_alert_dict = {}  # keyed on uniqueID; lists obsHistID that produce alerts
         for obs in self.obs_list:
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
@@ -629,6 +631,13 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 true_lc_tot_snr_dict[line[0]][obshistid] = line[6]
                 true_lc_obshistid_dict[line[0]].append(obshistid)
 
+                is_visible = False
+                makes_snr_cut = False
+                if line[3] <= self.obs_mag_cutoff[mag_name_to_int[obs.bandpass]]:
+                    is_visible = True
+                if line[4] > snr_cutoff:
+                    makes_snr_cut = True
+
                 if line[0] not in is_visible_dict:
                     is_visible_dict[line[0]] = False
 
@@ -640,6 +649,12 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 if line[4] > snr_cutoff:
                     makes_snr_cut_dict[line[0]] = True
+
+                if is_visible and makes_snr_cut:
+                    if line[0] not in true_alert_dict:
+                        true_alert_dict[line[0]] = []
+                    true_alert_dict[line[0]].append(obshistid)
+
 
         obshistid_bits = int(np.ceil(np.log(max_obshistid)/np.log(2)))
 
@@ -723,6 +738,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
         n_tot_simulated = 0
         obshistid_unqid_simulated_set = set()
+        simulated_alert_dict = {}
         for file_name in sqlite_file_list:
             if not file_name.endswith('db'):
                 continue
@@ -740,6 +756,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                                                   alert_data['obshistId'][i_obj])
 
                 unq = alert_data['uniqueId'][i_obj]
+                if unq not in simulated_alert_dict:
+                    simulated_alert_dict[unq] = []
                 obj_dex = (unq//1024)-1
                 self.assertAlmostEqual(self.pmra_truth[obj_dex], 0.001*alert_data['pmRA'][i_obj], 4)
                 self.assertAlmostEqual(self.pmdec_truth[obj_dex], 0.001*alert_data['pmDec'][i_obj], 4)
@@ -760,6 +778,7 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
                 self.assertLess(distance_arcsec, 0.0005, msg=msg)
 
                 obs = obs_dict[alert_data['obshistId'][i_obj]]
+                simulated_alert_dict[unq].append(alert_data['obshistId'][i_obj])
 
                 chipname = chipNameFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
                                                  pm_ra=self.pmra_truth[obj_dex],
@@ -873,6 +892,18 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         self.assertGreater(len(obshistid_unqid_simulated_set), 10)
         self.assertLess(len(obshistid_unqid_simulated_set), n_total_observations)
         self.assertGreater(n_tot_ast_simulated, 0)
+
+        # verify that correct uniqueId, obsHistID combinations were simulated
+        for unq in simulated_alert_dict:
+            self.assertIn(unq, true_alert_dict)
+        for unq in true_alert_dict:
+            self.assertIn(unq, simulated_alert_dict)
+        for unq in true_alert_dict:
+            truth = true_alert_dict[unq]
+            truth.sort()
+            sim = simulated_alert_dict[unq]
+            sim.sort()
+            self.assertEqual(truth, sim)
 
         out_file_list = os.listdir(output_dir)
         for file_name in out_file_list:
