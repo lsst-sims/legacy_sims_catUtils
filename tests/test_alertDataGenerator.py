@@ -904,6 +904,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             sim = simulated_alert_dict[unq]
             sim.sort()
             self.assertEqual(truth, sim)
+            self.assertGreater(len(truth), 0)
+            self.assertGreater(len(sim), 0)
 
         out_file_list = os.listdir(output_dir)
         for file_name in out_file_list:
