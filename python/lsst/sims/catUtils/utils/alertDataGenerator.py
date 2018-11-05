@@ -442,7 +442,7 @@ class AlertDataGenerator(object):
 
     prefix_NNNN_sqlite.db
 
-    where prefix is specified by theuser and NNNN is the htmid, the
+    where prefix is specified by the user and NNNN is the htmid, the
     unique identifying integer, corresponding to each simulated trixel.
 
     The proper way to run this class is to instantiate it, run
