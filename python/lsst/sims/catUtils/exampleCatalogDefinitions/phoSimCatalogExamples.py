@@ -215,7 +215,7 @@ def write_phoSim_header(obs, file_handle, phosim_header_map):
 
 class PhosimInputBase(InstanceCatalog):
 
-    override_formats = {'raPhoSim': '%.16g', 'decPhoSim': '%.16g'}
+    override_formats = {'raPhoSim': '%.12g', 'decPhoSim': '%.12g'}
 
     filtMap = dict([(c, i) for i, c in enumerate('ugrizy')])
 
