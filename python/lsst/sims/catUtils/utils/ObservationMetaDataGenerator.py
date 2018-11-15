@@ -1,11 +1,78 @@
 from builtins import object
 import numpy as np
+import sqlite3
 import os
 import numbers
 from lsst.sims.catalogs.db import DBObject
 from lsst.sims.utils import ObservationMetaData
 
 __all__ = ["ObservationMetaDataGenerator"]
+
+
+class _ReadOnlySqliteDBObject(object):
+    """
+    A class meant to mirror DBObject, but which will open
+    an sqlite database in read-only mode
+    """
+
+    def __init__(self, db_path):
+        """
+        db_path is the path to the sqlite database
+        """
+        if not os.path.isfile(db_path):
+            raise RuntimeError("%s is not a file" % db_path)
+        self._connection = sqlite3.connect('file:%s?mode=ro' % db_path, uri=True)
+        self._cursor = self._connection.cursor()
+
+    def __del__(self):
+        del self._cursor
+        self._connection.close()
+
+    def get_table_names(self):
+        out_list = []
+        query = "SELECT name FROM sqlite_master WHERE type='table' or type='view'"
+        data = self._cursor.execute(query).fetchall()
+        for rec in data:
+            out_list.append(rec[0])
+        return out_list
+
+    def _column_names_from_view(self, data):
+        data_str = data.strip().split('FROM')
+        data_str = data_str[0].strip().replace(',','').replace('"','').split()
+        out_list = []
+        for i_word, word in enumerate(data_str):
+            if word == 'AS':
+                val = data_str[i_word+1]
+                if val == 'SELECT':
+                    continue
+                out_list.append(val)
+        return out_list
+
+    def _column_names_from_table(self, data):
+        for ii in range(len(data)):
+            if data[ii] == '(':
+                start_dex = ii
+                break
+
+        column_data = data[ii:]
+        column_data = column_data.replace(')','').replace(',','').replace('(','')
+        column_data = column_data.strip().split()
+        assert len(column_data) % 2 == 0
+        out_list = []
+        for ii in range(len(column_data)//2):
+            out_list.append(column_data[ii*2])
+        return out_list
+
+    def get_column_names(self, table_name):
+        query = "SELECT sql, type FROM sqlite_master WHERE name='%s'" % table_name
+        data = self._cursor.execute(query).fetchall()
+        if data[0][1] == 'table':
+            return self._column_names_from_table(data[0][0])
+        return self._column_names_from_view(data[0][0])
+
+    def execute_arbitrary(self, query, dtype=None):
+        data = self._cursor.execute(query).fetchall()
+        return np.rec.fromrecords(data, dtype=dtype)
 
 
 class ObservationMetaDataGenerator(object):
@@ -209,8 +276,13 @@ class ObservationMetaDataGenerator(object):
         if not os.path.isfile(self.database):
             raise RuntimeError('%s is not a file' % self.database)
 
-        self.opsimdb = DBObject(driver=self.driver, database=self.database,
-                                host=self.host, port=self.port)
+        if ((self.host is None) and (self.port is None) and
+            (self.driver == "sqlite" or self.driver is None)):
+
+            self.opsimdb = _ReadOnlySqliteDBObject(self.database)
+        else:
+            self.opsimdb = DBObject(driver=self.driver, database=self.database,
+                                    host=self.host, port=self.port)
 
         # 27 January 2016
         # Detect whether the OpSim db you are connecting to uses 'finSeeing'
