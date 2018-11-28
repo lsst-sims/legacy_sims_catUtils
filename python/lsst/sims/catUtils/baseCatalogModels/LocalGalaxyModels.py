@@ -4,6 +4,7 @@ import json
 from lsst.utils import getPackageDir
 from lsst.sims.utils import halfSpaceFromRaDec
 from lsst.sims.utils import halfSpaceFromPoints
+from lsst.sims.utils import intersectHalfSpaces
 from lsst.sims.utils import cartesianFromSpherical, sphericalFromCartesian
 from lsst.sims.catUtils.baseCatalogModels import GalaxyTileObj
 
@@ -95,11 +96,38 @@ class FatboyTiles(object):
         center_pt = cartesianFromSpherical(np.radians(ra), np.radians(dec))
         for tile_id in self._tile_half_spaces:
             hs_list = self._tile_half_spaces[tile_id]
-            is_contained = True
+            gross_is_contained = True
             for hs in hs_list:
                 if not hs.intersects_circle(center_pt, radius_rad):
-                    is_contained = False
+                    gross_is_contained = False
                     break
+            if not gross_is_contained:
+                continue
+
+            is_contained = True
+            hs_interest = halfSpaceFromRaDec(ra, dec, radius)
+            for i_h1 in range(len(hs_list)):
+                hs1 = hs_list[i_h1]
+                roots = intersectHalfSpaces(hs1, hs_interest)
+                if len(roots) == 0:
+                    continue
+
+                for i_h2 in range(len(hs_list)):
+                    if i_h1 == i_h2:
+                        continue
+                    hs2 = hs_list[i_h2]
+                    local_contained = False
+                    for rr in roots:
+                        if hs2.contains_pt(rr):
+                            local_contained = True
+                            break
+                    if not local_contained:
+                        is_contained = False
+                        break
+                if not is_contained:
+                    break
+
             if is_contained:
                 valid_id.append(tile_id)
+
         return np.array(valid_id)
