@@ -2,6 +2,7 @@ import os
 import numpy as np
 import json
 from lsst.utils import getPackageDir
+from lsst.sims.utils import HalfSpace
 from lsst.sims.utils import halfSpaceFromRaDec
 from lsst.sims.utils import halfSpaceFromPoints
 from lsst.sims.utils import intersectHalfSpaces
@@ -68,6 +69,14 @@ class Tile(object):
     def half_space_list(self):
         return self._hs_list
 
+    def rotate(self, matrix):
+        new_tile = Tile([])
+        for hs in self.half_space_list:
+            vv = np.dot(matrix, hs.vector)
+            new_hs = HalfSpace(vv, hs.dd)
+            new_tile._hs_list.append(new_hs)
+        return new_tile
+
 
 class FatboyTiles(object):
     """
@@ -98,6 +107,9 @@ class FatboyTiles(object):
 
     def tile_dec(self, tile_idx):
         return self._tile_dec[tile_idx]
+
+    def tile(self, tile_idx):
+        return self._tile_dict[tile_idx]
 
     def find_all_tiles(self, ra, dec, radius):
         """
