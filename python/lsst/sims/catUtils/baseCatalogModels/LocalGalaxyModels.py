@@ -77,6 +77,35 @@ class Tile(object):
             new_tile._hs_list.append(new_hs)
         return new_tile
 
+    def intersects_circle(self, center_pt, radius_rad):
+        gross_is_contained = True
+        for hs in self.half_space_list:
+            if not hs.intersects_circle(center_pt, radius_rad):
+                gross_is_contained = False
+                break
+        if not gross_is_contained:
+            return False
+
+        hs_interest = HalfSpace(center_pt, np.cos(radius_rad))
+        for i_h1 in range(len(self.half_space_list)):
+            hs1 = self.half_space_list[i_h1]
+            roots = intersectHalfSpaces(hs1, hs_interest)
+            if len(roots) == 0:
+                continue
+
+            for i_h2 in range(len(self.half_space_list)):
+                if i_h1 == i_h2:
+                    continue
+                hs2 = self.half_space_list[i_h2]
+                local_contained = False
+                for rr in roots:
+                    if hs2.contains_pt(rr):
+                        local_contained = True
+                        break
+                if not local_contained:
+                    return False
+        return True
+
 
 class FatboyTiles(object):
     """
@@ -121,38 +150,8 @@ class FatboyTiles(object):
         radius_rad = np.radians(radius)
         center_pt = cartesianFromSpherical(np.radians(ra), np.radians(dec))
         for tile_id in self._tile_dict:
-            hs_list = self._tile_dict[tile_id].half_space_list
-            gross_is_contained = True
-            for hs in hs_list:
-                if not hs.intersects_circle(center_pt, radius_rad):
-                    gross_is_contained = False
-                    break
-            if not gross_is_contained:
-                continue
-
-            is_contained = True
-            hs_interest = halfSpaceFromRaDec(ra, dec, radius)
-            for i_h1 in range(len(hs_list)):
-                hs1 = hs_list[i_h1]
-                roots = intersectHalfSpaces(hs1, hs_interest)
-                if len(roots) == 0:
-                    continue
-
-                for i_h2 in range(len(hs_list)):
-                    if i_h1 == i_h2:
-                        continue
-                    hs2 = hs_list[i_h2]
-                    local_contained = False
-                    for rr in roots:
-                        if hs2.contains_pt(rr):
-                            local_contained = True
-                            break
-                    if not local_contained:
-                        is_contained = False
-                        break
-                if not is_contained:
-                    break
-
+            tile = self._tile_dict[tile_id]
+            is_contained = tile.intersects_circle(center_pt, radius_rad)
             if is_contained:
                 valid_id.append(tile_id)
 
