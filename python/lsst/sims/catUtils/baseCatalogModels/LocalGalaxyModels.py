@@ -106,6 +106,16 @@ class Tile(object):
                     return False
         return True
 
+    def find_all_trixels(self, level):
+        output = None
+        for hs in self.half_space_list:
+            local_limits = hs.findAllTrixels(level)
+            if output is None:
+                output = local_limits
+            else:
+                output = HalfSpace.join_trixel_bound_sets(output, local_limits)
+        return output
+
 
 class FatboyTiles(object):
     """
