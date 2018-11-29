@@ -15,6 +15,8 @@ __all__ = ["FatboyTiles"]
 class Tile(object):
 
     def __init__(self, box_corners):
+        self._trixel_bounds = None
+        self._trixel_bound_level = None
         self._hs_list = []
         if len(box_corners) == 0:
             return
@@ -106,7 +108,7 @@ class Tile(object):
                     return False
         return True
 
-    def find_all_trixels(self, level):
+    def _generate_all_trixels(self, level):
         output = None
         for hs in self.half_space_list:
             local_limits = hs.findAllTrixels(level)
@@ -114,7 +116,22 @@ class Tile(object):
                 output = local_limits
             else:
                 output = HalfSpace.join_trixel_bound_sets(output, local_limits)
-        return output
+        self._trixel_bounds = output
+        self._trixel_bound_level = level
+        return None
+
+    @property
+    def trixel_bound_level(self):
+        return self._trixel_bound_level
+
+    @property
+    def trixel_bounds(self):
+        return self._trixel_bounds
+
+    def find_all_trixels(self, level):
+        if self._trixel_bounds is None or self.trixel_bound_level != level:
+            self._generate_all_trixels(level)
+        return self._trixel_bounds
 
 
 class FatboyTiles(object):
