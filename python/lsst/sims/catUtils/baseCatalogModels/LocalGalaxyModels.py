@@ -122,20 +122,38 @@ class FatboyTiles(object):
         self._tile_id = tile_data['id']
         self._tile_ra = {}
         self._tile_dec = {}
+        self._rotation_matrix_dict = {}
         for ii, rr, dd, in zip(tile_data['id'], tile_data['ra'], tile_data['dec']):
             self._tile_ra[ii] = rr
             self._tile_dec[ii] = dd
+            ra_rad = np.radians(rr)
+            dec_rad = np.radians(dd)
+
+            ra_mat = np.array([[np.cos(ra_rad), -np.sin(ra_rad), 0.0],
+                               [np.sin(ra_rad), np.cos(ra_rad), 0.0],
+                               [0.0, 0.0, 1.0]])
+
+            dec_mat = np.array([[np.cos(dec_rad), 0.0, np.sin(dec_rad)],
+                                [0.0, 1.0, 0.0],
+                                [-np.sin(dec_rad), 0.0, np.cos(dec_rad)]])
+
+            full_mat = np.dot(dec_mat, ra_mat)
+            self._rotation_matrix_dict[ii] = full_mat
 
         self._tile_dict = {}
         for tile_id, box in zip(tile_data['id'], tile_data['box']):
             box_corners = json.loads(box)
             self._tile_dict[tile_id] = Tile(box_corners)
 
+
     def tile_ra(self, tile_idx):
         return self._tile_ra[tile_idx]
 
     def tile_dec(self, tile_idx):
         return self._tile_dec[tile_idx]
+
+    def rotation_matrix(self, tile_idx):
+        return self._rotation_matrix_dict[tile_idx]
 
     def tile(self, tile_idx):
         return self._tile_dict[tile_idx]
