@@ -327,6 +327,8 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             else:
                 raise StopIteration
             self._galaxy_cache = self.dbobj._convert_results_to_numpy_recarray_dbobj(results)
+            if len(self._galaxy_cache) == 0:
+                raise StopIteration
 
         print("galaxy_cache is ",type(self._galaxy_cache),self._galaxy_cache['htmid'].min())
         current_chunk = copy.deepcopy(self._galaxy_cache)
