@@ -156,8 +156,8 @@ class FatboyTiles(object):
             ra_rad = np.radians(rr)
             dec_rad = np.radians(dd)
 
-            ra_mat = np.array([[np.cos(ra_rad), -np.sin(ra_rad), 0.0],
-                               [np.sin(ra_rad), np.cos(ra_rad), 0.0],
+            ra_mat = np.array([[np.cos(ra_rad), np.sin(ra_rad), 0.0],
+                               [-np.sin(ra_rad), np.cos(ra_rad), 0.0],
                                [0.0, 0.0, 1.0]])
 
             dec_mat = np.array([[np.cos(dec_rad), 0.0, np.sin(dec_rad)],
