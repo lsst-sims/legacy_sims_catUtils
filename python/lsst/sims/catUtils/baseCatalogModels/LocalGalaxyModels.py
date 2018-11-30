@@ -314,7 +314,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
 
     def __next__(self):
-        print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
+        #print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
         if self._tile_to_do == 0:
             if self.chunk_size is None and not self._galaxy_query.closed:
                 results = self._galaxy_query.fetchall()
@@ -326,7 +326,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             if len(self._galaxy_cache) == 0:
                 raise StopIteration
 
-        print("galaxy_cache is ",type(self._galaxy_cache),self._galaxy_cache['htmid'].min())
+        #print("galaxy_cache is ",type(self._galaxy_cache),self._galaxy_cache['htmid'].min())
         current_chunk = copy.deepcopy(self._galaxy_cache)
         rot_mat = self._rotate_to_sky[self._tile_to_do]
         bounds = self._00_bounds[self._tile_to_do]
@@ -376,7 +376,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             current_chunk['ra'] = np.degrees(ra_dec_sky[0])
             current_chunk['dec'] = np.degrees(ra_dec_sky[1])
 
-        print('current_chunk is ',type(current_chunk))
+        #print('current_chunk is ',type(current_chunk))
 
         #>>> r2 = recfunc.append_fields(r,['d','e'],d,dtypes=[float, int], usemask=False, asrecarray=True)
 
