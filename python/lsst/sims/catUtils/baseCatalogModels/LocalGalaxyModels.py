@@ -232,9 +232,9 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         self._sky_tile = []
 
         # construct a HalfSpace based on obs_metadata
-        obs_hs = halfSpaceFromRaDec(obs_metadata.pointingRA,
-                                    obs_metadata.pointingDec,
-                                    obs_metadata.boundLength)
+        self.obs_hs = halfSpaceFromRaDec(obs_metadata.pointingRA,
+                                         obs_metadata.pointingDec,
+                                         obs_metadata.boundLength)
 
         for tile_idx in tile_idx_list:
             print('formatting tile %d' % tile_idx)
@@ -242,8 +242,8 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
             # find the bounds for trixels contained by the field of view
             # when rotated from the current tile to RA=Dec=0
-            new_vv = np.dot(rotate_to_00, obs_hs.vector)
-            obs_hs_00 = HalfSpace(new_vv, obs_hs.dd)
+            new_vv = np.dot(rotate_to_00, self.obs_hs.vector)
+            obs_hs_00 = HalfSpace(new_vv, self.obs_hs.dd)
             obs_hs_00_trixels = obs_hs_00.findAllTrixels(self._trixel_search_level)
 
             # find the trixels in the current tile when it is rotated
@@ -347,16 +347,23 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         if self._tile_to_do >= len(self._rotate_to_sky):
             self._tile_to_do = 0
 
+        if len(current_chunk) == 0:
+            return self.__next__()
+
+        #print(current_chunk)
         xyz = cartesianFromSpherical(np.radians(current_chunk[self._ra_name]),
                                      np.radians(current_chunk[self._dec_name]))
 
         xyz_sky = np.dot(rot_mat, xyz.transpose()).transpose()
 
         final_cut = sky_tile.contains_many_pts(xyz_sky)
+        final_cut &= self.obs_hs.contains_many_pts(xyz_sky)
         final_cut = np.where(final_cut)
 
         xyz_sky = xyz_sky[final_cut]
         current_chunk = current_chunk[final_cut]
+        if len(current_chunk) == 0:
+            return self.__next__()
 
         ra_dec_sky = sphericalFromCartesian(xyz_sky)
         current_chunk[self._ra_name] = np.degrees(ra_dec_sky[0])
