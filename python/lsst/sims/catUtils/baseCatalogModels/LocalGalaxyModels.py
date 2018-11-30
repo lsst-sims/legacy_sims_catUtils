@@ -230,14 +230,32 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         self._00_bounds = []
         self._rotate_to_sky = []
         self._sky_tile = []
+
+        # construct a HalfSpace based on obs_metadata
+        obs_hs = halfSpaceFromRaDec(obs_metadata.pointingRA,
+                                    obs_metadata.pointingDec,
+                                    obs_metadata.boundLength)
+
         for tile_idx in tile_idx_list:
             print('formatting tile %d' % tile_idx)
             rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
+
+            # find the bounds for trixels contained by the field of view
+            # when rotated from the current tile to RA=Dec=0
+            new_vv = np.dot(rotate_to_00, obs_hs.vector)
+            obs_hs_00 = HalfSpace(new_vv, obs_hs.dd)
+            obs_hs_00_trixels = obs_hs_00.findAllTrixels(self._trixel_search_level)
+
+            # find the trixels in the current tile when it is rotated
+            # to RA=Dec=0
             sky_tile = self.fatboy_tiles.tile(tile_idx)
-            self._sky_tile.append(sky_tile)
             single_tile = sky_tile.rotate(rotate_to_00)
             local_bounds = single_tile.find_all_trixels(self._trixel_search_level)
+            local_bounds = HalfSpace.join_trixel_bound_sets(local_bounds, obs_hs_00_trixels)
+
             total_trixel_bounds += local_bounds
+
+            self._sky_tile.append(sky_tile)
             self._00_bounds.append(local_bounds)
             self._rotate_to_sky.append(np.linalg.inv(rotate_to_00))
 
