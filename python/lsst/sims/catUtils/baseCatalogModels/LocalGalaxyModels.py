@@ -67,6 +67,16 @@ class Tile(object):
                     raise RuntimeError("Somehow Half Space == None")
                 self._hs_list.append(hs)
 
+    def contains_many_pts(self, pts):
+        result = None
+        for hs in self.half_space_list:
+            valid = hs.contains_many_pts(pts)
+            if result is None:
+                result = valid
+            else:
+                result &= valid
+        return result
+
     @property
     def half_space_list(self):
         return self._hs_list
