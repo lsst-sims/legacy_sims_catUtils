@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import numpy.lib.recfunctions as np_recfn
 import json
 import copy
 from sqlalchemy import text
@@ -230,6 +231,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         self._00_bounds = []
         self._rotate_to_sky = []
         self._sky_tile = []
+        self._tile_idx = []
 
         # construct a HalfSpace based on obs_metadata
         self.obs_hs = halfSpaceFromRaDec(obs_metadata.pointingRA,
@@ -258,6 +260,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             self._sky_tile.append(sky_tile)
             self._00_bounds.append(local_bounds)
             self._rotate_to_sky.append(np.linalg.inv(rotate_to_00))
+            self._tile_idx.append(tile_idx)
 
         print('last pass on trixel_bounds')
         total_trixel_bounds = HalfSpace.merge_trixel_bounds(total_trixel_bounds)
@@ -328,6 +331,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         rot_mat = self._rotate_to_sky[self._tile_to_do]
         bounds = self._00_bounds[self._tile_to_do]
         sky_tile = self._sky_tile[self._tile_to_do]
+        tile_idx = self._tile_idx[self._tile_to_do]
 
         make_the_cut = None
         for bb in bounds:
@@ -373,6 +377,13 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             current_chunk['dec'] = np.degrees(ra_dec_sky[1])
 
         print('current_chunk is ',type(current_chunk))
+
+        #>>> r2 = recfunc.append_fields(r,['d','e'],d,dtypes=[float, int], usemask=False, asrecarray=True)
+
+        galtileid = tile_idx*100000000+current_chunk['id']
+        current_chunk = np_recfn.append_fields(current_chunk, ['galtileid'], [galtileid],
+                                               dtypes=[int], usemask=False, asrecarray=True)
+
         return self._postprocess_results(current_chunk)
 
     @property
