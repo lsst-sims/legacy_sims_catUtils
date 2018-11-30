@@ -315,15 +315,8 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         if self._tile_to_do == 0:
             if self.chunk_size is None and not self._galaxy_query.closed:
                 results = self._galaxy_query.fetchall()
-                #self._htmid_arr = np.array([r['htmid'] for r in self._galaxy_cache]).astype(int)
             elif self.chunk_size is not None:
                 results = self._galaxy_query.fetchmany(self.chunk_size)
-                #self._htmid_arr = np.array([r['htmid'] for r in self._galaxy_cache]).astype(int)
-                #print('got chunk')
-                #print(self._galaxy_cache)
-                #print(self._galaxy_cache[0].keys())
-                #exit()
-                #print(self._galaxy_cache[0].keys())
             else:
                 raise StopIteration
             self._galaxy_cache = self.dbobj._convert_results_to_numpy_recarray_dbobj(results)
