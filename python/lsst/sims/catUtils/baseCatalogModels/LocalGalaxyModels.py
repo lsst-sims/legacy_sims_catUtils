@@ -1,12 +1,15 @@
 import os
 import numpy as np
 import json
+import copy
+from sqlalchemy import text
 from lsst.utils import getPackageDir
-from lsst.sims.utils import HalfSpace
+from lsst.sims.utils import HalfSpace, levelFromHtmid
 from lsst.sims.utils import halfSpaceFromRaDec
 from lsst.sims.utils import halfSpaceFromPoints
 from lsst.sims.utils import intersectHalfSpaces
 from lsst.sims.utils import cartesianFromSpherical, sphericalFromCartesian
+from lsst.sims.catalogs.db import ChunkIterator
 from lsst.sims.catUtils.baseCatalogModels import GalaxyTileObj
 
 __all__ = ["FatboyTiles"]
@@ -211,3 +214,233 @@ class FatboyTiles(object):
                 valid_id.append(tile_id)
 
         return np.array(valid_id)
+
+
+class LocalGalaxyChunkIterator(ChunkIterator):
+
+    def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint):
+        self.arbitrarySQL = False
+        self.dbobj = dbobj
+        self._column_query = dbobj._get_column_query(['htmid', 'galid'] + colnames)
+        self.chunk_size = chunk_size
+        tile_idx_list = np.sort(self._find_tiles(obs_metadata))
+        self._trixel_search_level = 9
+        self.obs_metadata = obs_metadata
+        total_trixel_bounds = []
+        self._00_bounds = []
+        self._rotate_to_sky = []
+        self._sky_tile = []
+        for tile_idx in tile_idx_list:
+            print('formatting tile %d' % tile_idx)
+            rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
+            sky_tile = self.fatboy_tiles.tile(tile_idx)
+            self._sky_tile.append(sky_tile)
+            single_tile = sky_tile.rotate(rotate_to_00)
+            local_bounds = single_tile.find_all_trixels(self._trixel_search_level)
+            total_trixel_bounds += local_bounds
+            self._00_bounds.append(local_bounds)
+            self._rotate_to_sky.append(np.linalg.inv(rotate_to_00))
+
+        print('last pass on trixel_bounds')
+        total_trixel_bounds = HalfSpace.merge_trixel_bounds(total_trixel_bounds)
+        print('time to write where clause')
+
+        where_clause = "("
+        for bound in total_trixel_bounds:
+            if where_clause != "(":
+                where_clause += " OR "
+            htmid_min = bound[0] << 2*(21-self._trixel_search_level)
+            htmid_max = (bound[1]+1) << 2*(21-self._trixel_search_level)
+            assert levelFromHtmid(htmid_min) == 21
+            assert levelFromHtmid(htmid_max) == 21
+            assert htmid_min<htmid_max
+            where_clause += "(htmid>=%d AND htmid<=%d)" % (htmid_min, htmid_max)
+        where_clause += ")"
+        print('got where clause')
+
+        if constraint is not None:
+            where_clause += "AND (%s)" % constraint
+
+        #query = "SELECT htmid, galid, "
+        #for i_colname, colname in enumerate(colnames):
+        #    query += colname
+        #    if i_colname < len(colnames)-1:
+        #        query +=", "
+        #query += " FROM [LSSTCATSIM].[dbo].[galaxy]"
+        #query += " WHERE %s" % where_clause
+        query = self._column_query
+        #query = query.filter(text('(htmid>=8796093024918 AND htmid<=9796093024918)'))
+        query = query.filter(text(where_clause))
+        #query += ", @WhereClause='%s'" % where_clause
+        print(query)
+        self._galaxy_query = dbobj.connection.session.execute(query)
+        self._tile_to_do = 0
+
+        self._use_J2000 = False
+        self._ra_name = None
+        self._dec_name = None
+        if 'raJ2000' in colnames:
+            self._use_J2000 = True
+            self._ra_name = 'raJ2000'
+            self._dec_name = 'decJ2000'
+
+        self._use_radec = False
+        if 'ra' in colnames:
+            self._use_radec = True
+            if self._ra_name is None:
+                self._ra_name = 'ra'
+                self._dec_name = 'dec'
+
+
+    def __next__(self):
+        print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
+        if self._tile_to_do == 0:
+            if self.chunk_size is None and not self._galaxy_query.closed:
+                results = self._galaxy_query.fetchall()
+                #self._htmid_arr = np.array([r['htmid'] for r in self._galaxy_cache]).astype(int)
+            elif self.chunk_size is not None:
+                results = self._galaxy_query.fetchmany(self.chunk_size)
+                #self._htmid_arr = np.array([r['htmid'] for r in self._galaxy_cache]).astype(int)
+                #print('got chunk')
+                #print(self._galaxy_cache)
+                #print(self._galaxy_cache[0].keys())
+                #exit()
+                #print(self._galaxy_cache[0].keys())
+            else:
+                raise StopIteration
+            self._galaxy_cache = self.dbobj._convert_results_to_numpy_recarray_dbobj(results)
+
+        print("galaxy_cache is ",type(self._galaxy_cache),self._galaxy_cache['htmid'].min())
+        current_chunk = copy.deepcopy(self._galaxy_cache)
+        rot_mat = self._rotate_to_sky[self._tile_to_do]
+        bounds = self._00_bounds[self._tile_to_do]
+        sky_tile = self._sky_tile[self._tile_to_do]
+
+        make_the_cut = None
+        for bb in bounds:
+            htmid_min = bb[0] << 2*(21-self._trixel_search_level)
+            htmid_max = (bb[1]+1) << 2*(21-self._trixel_search_level)
+            valid = ((current_chunk['htmid']>=htmid_min) & (current_chunk['htmid']<=htmid_max))
+            if make_the_cut is None:
+                make_the_cut = valid
+            else:
+                make_the_cut |= valid
+
+        good_dexes = np.where(make_the_cut)[0]
+        if len(good_dexes) < len(current_chunk):
+            current_chunk = [current_chunk[ii] for ii in good_dexes]
+
+        self._tile_to_do += 1
+        if self._tile_to_do >= len(self._rotate_to_sky):
+            self._tile_to_do = 0
+
+        xyz = cartesianFromSpherical(np.radians(current_chunk[self._ra_name]),
+                                     np.radians(current_chunk[self._dec_name]))
+
+        xyz_sky = np.dot(rot_mat, xyz.transpose()).transpose()
+
+        final_cut = sky_tile.contains_many_pts(xyz_sky)
+        final_cut = np.where(final_cut)
+
+        xyz_sky = xyz_sky[final_cut]
+        current_chunk = current_chunk[final_cut]
+
+        ra_dec_sky = sphericalFromCartesian(xyz_sky)
+        current_chunk[self._ra_name] = np.degrees(ra_dec_sky[0])
+        current_chunk[self._dec_name] = np.degrees(ra_dec_sky[1])
+        if self._ra_name == 'raJ2000' and self._use_radec:
+            current_chunk['ra'] = np.degrees(ra_dec_sky[0])
+            current_chunk['dec'] = np.degrees(ra_dec_sky[1])
+
+        print('current_chunk is ',type(current_chunk))
+        return self._postprocess_results(current_chunk)
+
+    @property
+    def fatboy_tiles(self):
+        if not hasattr(self, '_fatboy_tiles'):
+            self._fatboy_tiles = FatboyTiles()
+        return self._fatboy_tiles
+
+    def _find_tiles(self, obs_metadata):
+
+        if obs_metadata.boundType != 'circle':
+            raise RuntimeError("Cannot use ObservationMetaData with "
+                               "boundType == %s in LocalGalaxyTileObj" % obs_metadata.boundType)
+
+        return self.fatboy_tiles.find_all_tiles(obs_metadata.pointingRA,
+                                                obs_metadata.pointingDec,
+                                                obs_metadata.boundLength)
+
+
+
+class LocalGalaxyTileObj(GalaxyTileObj):
+
+    def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None,
+                      limit=None):
+        """Execute a query
+
+        **Parameters**
+
+            * colnames : list or None
+              a list of valid column names, corresponding to entries in the
+              `columns` class attribute.  If not specified, all columns are
+              queried.
+            * chunksize : int (optional)
+              if specified, then return an iterator object to query the database,
+              each time returning the next `chunksize` elements.  If not
+              specified, all matching results will be returned.
+            * obs_metadata : object (optional)
+              object containing information on the observation including the region of the sky
+              to query and time of the observation.
+            * constraint : string (optional)
+              if specified, the predicate is added to the query verbatim using AND
+            * limit:
+              This kwarg is not actually used.  It exists to preserve the same interface
+              as other definitions of query_columns elsewhere in CatSim.  If not None,
+              a warning will be emitted, pointing out to the user that 'limit' is not used.
+
+        **Returns**
+
+            * result : structured array or iterator
+              If chunksize is not specified, then result is a structured array of all
+              items which match the specified query with columns named by the column
+              names in the columns class attribute.  If chunksize is specified,
+              then result is an iterator over structured arrays of the given size.
+
+        """
+
+        if colnames is None:
+            colnames = [k for k in self.columnMap.keys()]
+
+        # We know that galtileid comes back with the query, but we don't want
+        # to add it to the query since it's generated on the fly.
+        #
+        # 25 August 2015
+        # The code below has been modified to remove all column names
+        # that contain 'galtileid.'  This is to accommodate the
+        # CompoundInstanceCatalog and CompoundDBObject classes, which
+        # mangle column names such that they include the objid of the
+        # specific CatalogDBObject that is asking for them.
+        for name in colnames:
+            if 'galtileid' in name:
+                colnames.remove(name)
+
+        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
+        mappedcolnames = ",".join(mappedcolnames)
+
+        tile_id_list = self._find_tiles(obs_metadata)
+
+        #if constraint is not None:
+        #    query += ", @WhereClause = '%s'"%(constraint)
+
+        if limit is not None:
+            warnings.warn("You specified a row number limit in your query of a GalaxyTileObj "
+                          "daughter class.  Because of the way GalaxyTileObj is searched, row "
+                          "number limits are not possible.  If you really want to limit the number "
+                          "of rows returned by you query, consider using GalaxyObj (note that you "
+                          "will have to you limit your search to -2.5<RA<2.5 -2.25<Dec<2.25 -- both in "
+                          "degrees -- as this is the only region where galaxies exist in GalaxyObj).")
+
+        # should probably write a new ChunkIterator that will do the query once
+        # and then selectively munge the outputs per relevant tile
+        return LocalGalaxyChunkIterator(self, query, chunk_size, constraint)
