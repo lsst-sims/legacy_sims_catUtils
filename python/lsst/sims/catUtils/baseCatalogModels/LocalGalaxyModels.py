@@ -341,7 +341,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
         good_dexes = np.where(make_the_cut)[0]
         if len(good_dexes) < len(current_chunk):
-            current_chunk = [current_chunk[ii] for ii in good_dexes]
+            current_chunk = current_chunk[good_dexes]
 
         self._tile_to_do += 1
         if self._tile_to_do >= len(self._rotate_to_sky):
