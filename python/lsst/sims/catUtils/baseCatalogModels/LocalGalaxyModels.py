@@ -282,18 +282,11 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         if constraint is not None:
             where_clause += "AND (%s)" % constraint
 
-        #query = "SELECT htmid, galid, "
-        #for i_colname, colname in enumerate(colnames):
-        #    query += colname
-        #    if i_colname < len(colnames)-1:
-        #        query +=", "
-        #query += " FROM [LSSTCATSIM].[dbo].[galaxy]"
-        #query += " WHERE %s" % where_clause
         query = self._column_query
-        #query = query.filter(text('(htmid>=8796093024918 AND htmid<=9796093024918)'))
         query = query.filter(text(where_clause))
-        #query += ", @WhereClause='%s'" % where_clause
+
         print(query)
+
         self._galaxy_query = dbobj.connection.session.execute(query)
         self._tile_to_do = 0
 
