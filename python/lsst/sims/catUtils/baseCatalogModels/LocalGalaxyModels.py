@@ -363,11 +363,11 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             return self.__next__()
 
         ra_dec_sky = sphericalFromCartesian(xyz_sky)
-        current_chunk[self._ra_name] = np.degrees(ra_dec_sky[0])
-        current_chunk[self._dec_name] = np.degrees(ra_dec_sky[1])
+        current_chunk[self._ra_name] = np.degrees(ra_dec_sky[0]) % 360.0
+        current_chunk[self._dec_name] = np.degrees(ra_dec_sky[1]) % 360.0
         if self._ra_name == 'raJ2000' and self._use_radec:
-            current_chunk['ra'] = np.degrees(ra_dec_sky[0])
-            current_chunk['dec'] = np.degrees(ra_dec_sky[1])
+            current_chunk['ra'] = np.degrees(ra_dec_sky[0]) % 360.0
+            current_chunk['dec'] = np.degrees(ra_dec_sky[1]) % 360.0
 
         #print('current_chunk is ',type(current_chunk))
 
