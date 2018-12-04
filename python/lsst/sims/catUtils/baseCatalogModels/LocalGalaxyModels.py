@@ -220,6 +220,17 @@ class FatboyTiles(object):
 class LocalGalaxyChunkIterator(ChunkIterator):
 
     def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint):
+        """
+        Parameters
+        ----------
+        dbobj -- a CatalogDBObject connected to the 'galaxies' table on fatboy
+
+        colnames -- a list of the columns to query
+
+        chunk_size -- size of chunks to return
+
+        constraint -- a string specifying a SQL 'WHERE' clause
+        """
         self.arbitrarySQL = False
         self.dbobj = dbobj
         if 'ra' not in colnames:
