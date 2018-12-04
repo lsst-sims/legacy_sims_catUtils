@@ -243,7 +243,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
                                          obs_metadata.boundLength)
 
         for tile_idx in tile_idx_list:
-            print('formatting tile %d' % tile_idx)
             rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
 
             # find the bounds for trixels contained by the field of view
