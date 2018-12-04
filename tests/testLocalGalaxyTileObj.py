@@ -38,85 +38,17 @@ class ChunkIteratorTestCase(unittest.TestCase):
     def setUp(self):
         self.tiles = LocalGalaxy.FatboyTiles()
 
-    def test_ra_dec_galtileid(self):
-        """
-        Test that the LocalGalaxyChunkIterator selects the correct galaxies
-        and assigns them the correct RA, Dec
-        """
-        ra_list = [112.0, 154.2, 54.2]
-        dec_list = [31.0, -89.7, 89.8]
-        radius = 0.4
-        chunk_size = 100000
-        for ra, dec in zip(ra_list, dec_list):
-            obs = sims_utils.ObservationMetaData(pointingRA=ra,
-                                                 pointingDec=dec,
-                                                 boundType='circle',
-                                                 boundLength=radius)
-
-
-            local_ra = []
-            local_dec = []
-            local_galtileid = []
-            t_start = time.time()
-            local_iter = LocalGalaxy.LocalGalaxyChunkIterator(_fatboy_galaxies,
-                                                  ['raJ2000', 'decJ2000',
-                                                   'ra', 'dec'], obs,
-                                                  chunk_size, None)
-
-            ct_chunk = 0
-            for chunk in local_iter:
-                ct_chunk += 1
-                dd = sims_utils.angularSeparation(chunk['ra'], chunk['dec'],
-                                                  np.degrees(chunk['raJ2000']),
-                                                  np.degrees(chunk['decJ2000']))
-                self.assertLess(dd.max(), 0.0005/3600.0)
-
-                local_ra.append(chunk['ra'])
-                local_dec.append(chunk['dec'])
-                local_galtileid.append(chunk['galtileid'])
-            t_local = time.time()-t_start
-
-            self.assertGreater(ct_chunk, 2)
-            local_ra = np.concatenate(local_ra)
-            local_dec = np.concatenate(local_dec)
-            local_galtileid = np.concatenate(local_galtileid)
-            sorted_dex = np.argsort(local_galtileid)
-            local_galtileid = local_galtileid[sorted_dex]
-            local_ra = local_ra[sorted_dex]
-            local_dec = local_dec[sorted_dex]
-            local_tileidx = local_galtileid//100000000
-
-            fatboy_ra = []
-            fatboy_dec = []
-            fatboy_galtileid = []
-            t_start = time.time()
-            fatboy_iter = _fatboy_tileobj.query_columns(colnames=['raJ2000',
-                                                                 'decJ2000'],
-                                                        obs_metadata=obs,
-                                                        chunk_size=chunk_size)
-
-            for chunk in fatboy_iter:
-                fatboy_ra.append(np.degrees(chunk['raJ2000']))
-                fatboy_dec.append(np.degrees(chunk['decJ2000']))
-                fatboy_galtileid.append(chunk['galtileid'])
-            t_fatboy = time.time()-t_start
-            print("t_local %e t_fatboy %e" % (t_local, t_fatboy))
-
-            fatboy_ra = np.concatenate(fatboy_ra)
-            fatboy_dec = np.concatenate(fatboy_dec)
-            fatboy_galtileid = np.concatenate(fatboy_galtileid)
-            sorted_dex = np.argsort(fatboy_galtileid)
-
-            fatboy_ra = fatboy_ra[sorted_dex]
-            fatboy_dec = fatboy_dec[sorted_dex]
-            fatboy_galtileid = fatboy_galtileid[sorted_dex]
-            fatboy_tileidx = fatboy_galtileid//100000000
-
+    def _validate_fatboy_v_local(self, local_galtileid, local_ra, local_dec,
+                                 fatboy_galtileid, fatboy_ra, fatboy_dec,
+                                 obs):
             # Because of floating point errors, there are going to be some
             # galaxies that fatboy returns which the local classes do not
             # return.  Verify that these are a small fraction of the total
             # galaxies and that they are just barely outside of the relevant
             # sky tiles, according to the local implementation.
+
+            fatboy_tileidx = fatboy_galtileid//100000000
+            local_tileidx = local_galtileid//100000000
 
             local_in_fatboy = np.in1d(local_galtileid,
                                       fatboy_galtileid,
@@ -213,6 +145,86 @@ class ChunkIteratorTestCase(unittest.TestCase):
             # Cartesian coordinates and take the dot product of those vectors, you get
             # exactly 1.0
             self.assertLess(dd.max(), 0.002/3600.0)
+
+    def test_ra_dec_galtileid_chunkIterator(self):
+        """
+        Test that the LocalGalaxyChunkIterator selects the correct galaxies
+        and assigns them the correct RA, Dec
+        """
+        ra_list = [112.0, 154.2, 54.2]
+        dec_list = [31.0, -89.7, 89.8]
+        radius = 0.4
+        chunk_size = 100000
+        for ra, dec in zip(ra_list, dec_list):
+            obs = sims_utils.ObservationMetaData(pointingRA=ra,
+                                                 pointingDec=dec,
+                                                 boundType='circle',
+                                                 boundLength=radius)
+
+
+            local_ra = []
+            local_dec = []
+            local_galtileid = []
+            t_start = time.time()
+            local_iter = LocalGalaxy.LocalGalaxyChunkIterator(_fatboy_galaxies,
+                                                  ['raJ2000', 'decJ2000',
+                                                   'ra', 'dec'], obs,
+                                                  chunk_size, None)
+
+            ct_chunk = 0
+            for chunk in local_iter:
+                ct_chunk += 1
+                dd = sims_utils.angularSeparation(chunk['ra'], chunk['dec'],
+                                                  np.degrees(chunk['raJ2000']),
+                                                  np.degrees(chunk['decJ2000']))
+                self.assertLess(dd.max(), 0.0005/3600.0)
+
+                local_ra.append(chunk['ra'])
+                local_dec.append(chunk['dec'])
+                local_galtileid.append(chunk['galtileid'])
+            t_local = time.time()-t_start
+
+            self.assertGreater(ct_chunk, 2)
+            local_ra = np.concatenate(local_ra)
+            local_dec = np.concatenate(local_dec)
+            local_galtileid = np.concatenate(local_galtileid)
+            sorted_dex = np.argsort(local_galtileid)
+            local_galtileid = local_galtileid[sorted_dex]
+            local_ra = local_ra[sorted_dex]
+            local_dec = local_dec[sorted_dex]
+
+            fatboy_ra = []
+            fatboy_dec = []
+            fatboy_galtileid = []
+            t_start = time.time()
+            fatboy_iter = _fatboy_tileobj.query_columns(colnames=['raJ2000',
+                                                                 'decJ2000'],
+                                                        obs_metadata=obs,
+                                                        chunk_size=chunk_size)
+
+            for chunk in fatboy_iter:
+                fatboy_ra.append(np.degrees(chunk['raJ2000']))
+                fatboy_dec.append(np.degrees(chunk['decJ2000']))
+                fatboy_galtileid.append(chunk['galtileid'])
+            t_fatboy = time.time()-t_start
+            print("t_local %e t_fatboy %e" % (t_local, t_fatboy))
+
+            fatboy_ra = np.concatenate(fatboy_ra)
+            fatboy_dec = np.concatenate(fatboy_dec)
+            fatboy_galtileid = np.concatenate(fatboy_galtileid)
+            sorted_dex = np.argsort(fatboy_galtileid)
+
+            fatboy_ra = fatboy_ra[sorted_dex]
+            fatboy_dec = fatboy_dec[sorted_dex]
+            fatboy_galtileid = fatboy_galtileid[sorted_dex]
+
+            self._validate_fatboy_v_local(local_galtileid,
+                                          local_ra,
+                                          local_dec,
+                                          fatboy_galtileid,
+                                          fatboy_ra,
+                                          fatboy_dec,
+                                          obs)
 
 
 if __name__ == "__main__":
