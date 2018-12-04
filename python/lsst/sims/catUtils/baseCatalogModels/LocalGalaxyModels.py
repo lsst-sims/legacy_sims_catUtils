@@ -222,7 +222,11 @@ class LocalGalaxyChunkIterator(ChunkIterator):
     def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint):
         self.arbitrarySQL = False
         self.dbobj = dbobj
-        self._column_query = dbobj._get_column_query(['htmid', 'galid'] + colnames)
+        if 'ra' not in colnames:
+            query_colnames = ['htmid', 'galid', 'ra', 'dec'] + colnames
+        else:
+            query_colnames = ['htmid', 'galid'] + colnames
+        self._column_query = dbobj._get_column_query(query_colnames)
         self.chunk_size = chunk_size
         tile_idx_list = np.sort(self._find_tiles(obs_metadata))
         self._trixel_search_level = 9
@@ -290,20 +294,9 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         self._galaxy_query = dbobj.connection.session.execute(query)
         self._tile_to_do = 0
 
-        self._use_J2000 = False
-        self._ra_name = None
-        self._dec_name = None
+        self._has_J2000 = False
         if 'raJ2000' in colnames:
-            self._use_J2000 = True
-            self._ra_name = 'raJ2000'
-            self._dec_name = 'decJ2000'
-
-        self._use_radec = False
-        if 'ra' in colnames:
-            self._use_radec = True
-            if self._ra_name is None:
-                self._ra_name = 'ra'
-                self._dec_name = 'dec'
+            self._has_J2000 = True
 
 
     def __next__(self):
@@ -348,8 +341,8 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             return self.__next__()
 
         #print(current_chunk)
-        xyz = cartesianFromSpherical(np.radians(current_chunk[self._ra_name]),
-                                     np.radians(current_chunk[self._dec_name]))
+        xyz = cartesianFromSpherical(np.radians(current_chunk['ra']),
+                                     np.radians(current_chunk['dec']))
 
         xyz_sky = np.dot(rot_mat, xyz.transpose()).transpose()
 
@@ -363,11 +356,24 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             return self.__next__()
 
         ra_dec_sky = sphericalFromCartesian(xyz_sky)
-        current_chunk[self._ra_name] = np.degrees(ra_dec_sky[0]) % 360.0
-        current_chunk[self._dec_name] = np.degrees(ra_dec_sky[1]) % 360.0
-        if self._ra_name == 'raJ2000' and self._use_radec:
-            current_chunk['ra'] = np.degrees(ra_dec_sky[0]) % 360.0
-            current_chunk['dec'] = np.degrees(ra_dec_sky[1]) % 360.0
+        current_chunk['ra'] = np.degrees(ra_dec_sky[0]) % 360.0
+        current_chunk['dec'] = np.degrees(ra_dec_sky[1]) % 360.0
+        current_chunk['dec'] = np.where(current_chunk['dec']<270.0,
+                                        current_chunk['dec'],
+                                        current_chunk['dec']-360.0)
+        current_chunk['dec'] = np.where(np.abs(current_chunk['dec'])<=90.0,
+                                        current_chunk['dec'],
+                                        180.0-current_chunk['dec'])
+        if self._has_J2000:
+            current_chunk['raJ2000'] = ra_dec_sky[0] % (2.0*np.pi)
+            _dec = ra_dec_sky[1] % (2.0*np.pi)
+            current_chunk['decJ2000'] = np.where(_dec<1.5*np.pi,
+                                                 _dec,
+                                                 _dec-2.0*np.pi)
+            current_chunk['decJ2000'] = np.where(np.abs(current_chunk['decJ2000'])<=0.5*np.pi,
+                                                 current_chunk['decJ2000'],
+                                                 np.pi-current_chunk['decJ2000'])
+
 
         #print('current_chunk is ',type(current_chunk))
 
