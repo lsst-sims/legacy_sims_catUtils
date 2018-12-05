@@ -470,14 +470,6 @@ class LocalGalaxyTileObj(GalaxyTileObj):
             if 'galtileid' in name:
                 colnames.remove(name)
 
-        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
-        mappedcolnames = ",".join(mappedcolnames)
-
-        tile_id_list = self._find_tiles(obs_metadata)
-
-        #if constraint is not None:
-        #    query += ", @WhereClause = '%s'"%(constraint)
-
         if limit is not None:
             warnings.warn("You specified a row number limit in your query of a GalaxyTileObj "
                           "daughter class.  Because of the way GalaxyTileObj is searched, row "
@@ -488,4 +480,4 @@ class LocalGalaxyTileObj(GalaxyTileObj):
 
         # should probably write a new ChunkIterator that will do the query once
         # and then selectively munge the outputs per relevant tile
-        return LocalGalaxyChunkIterator(self, query, chunk_size, constraint)
+        return LocalGalaxyChunkIterator(self, colnames, chunk_size, constraint)

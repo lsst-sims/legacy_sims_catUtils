@@ -226,6 +226,12 @@ class ChunkIteratorTestCase(unittest.TestCase):
                                           fatboy_dec,
                                           obs)
 
+    def test_local_galaxy_tile_obj(self):
+        """
+        Test that LocalGalaxyTileObj returns correct quantities.
+        """
+        pass
+
 
 if __name__ == "__main__":
     unittest.main()
