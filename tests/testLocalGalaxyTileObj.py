@@ -118,7 +118,7 @@ class ChunkIteratorTestCase(unittest.TestCase):
                                     msg="Not 'just barely' outside of tile")
 
             overlap = np.where(overlap)
-            self.assertLess(len(overlap[0]), len(fatboy_galtileid))
+            self.assertLessEqual(len(overlap[0]), len(fatboy_galtileid))
             self.assertLess(len(offenders[0]), len(fatboy_galtileid)/1000)
             np.testing.assert_array_equal(fatboy_galtileid[overlap],
                                           local_galtileid)
