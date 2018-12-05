@@ -447,6 +447,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
 
 class LocalGalaxyTileObj(GalaxyObj):
+    _class_constraint = None
 
     def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None,
                       limit=None):
@@ -494,9 +495,11 @@ class LocalGalaxyTileObj(GalaxyObj):
         # CompoundInstanceCatalog and CompoundDBObject classes, which
         # mangle column names such that they include the objid of the
         # specific CatalogDBObject that is asking for them.
-        for name in colnames:
+        query_colnames = copy.deepcopy(colnames)
+
+        for name in query_colnames:
             if 'galtileid' in name:
-                colnames.remove(name)
+                query_colnames.remove(name)
 
         if limit is not None:
             warnings.warn("You specified a row number limit in your query of a LocalGalaxyTileObj "
@@ -509,4 +512,10 @@ class LocalGalaxyTileObj(GalaxyObj):
         # should probably write a new ChunkIterator that will do the query once
         # and then selectively munge the outputs per relevant tile
 
-        return LocalGalaxyChunkIterator(self, colnames, obs_metadata, chunk_size, constraint)
+        if constraint is not None and self._class_constraint is not None:
+            constraint = '(%s AND %s)' % (constraint, text(self._class_constraint))
+        elif constraint is None and self._class_constraint is not None:
+            constraint = '(%s)' % text(self._class_constraint)
+
+        return LocalGalaxyChunkIterator(self, query_colnames, obs_metadata,
+                                        chunk_size, constraint)
