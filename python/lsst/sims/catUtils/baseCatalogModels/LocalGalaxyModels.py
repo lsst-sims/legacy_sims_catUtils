@@ -212,6 +212,7 @@ class FatboyTiles(object):
         radius_rad = np.radians(radius)
         center_pt = cartesianFromSpherical(np.radians(ra), np.radians(dec))
         for tile_id in self._tile_dict:
+            #print('tile_id %d' % tile_id)
             tile = self._tile_dict[tile_id]
             is_contained = tile.intersects_circle(center_pt, radius_rad)
             if is_contained:
@@ -256,6 +257,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
                                          obs_metadata.pointingDec,
                                          obs_metadata.boundLength)
 
+        #print('tile_idx list %s' % str(tile_idx_list))  #1245 1290
         for tile_idx in tile_idx_list:
             rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
 
