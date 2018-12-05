@@ -92,7 +92,7 @@ class ChunkIteratorTestCase(unittest.TestCase):
                 # the np.min(delta_tile_dotproducts) condition has us ignore
                 # points that the local implementation thinks are just outside
                 # of the tile, likely a result of floating point roundoff errors
-                if in_tile and np.min(delta_tile_dotproducts)>1.0e-10:                        
+                if in_tile and np.min(delta_tile_dotproducts)>1.0e-10:
                     # If in_tile is True, check that the angular separation between
                     # the boresite and the galaxy is within the requested bounds;
                     # fatboy returns things that are just barely outside the requested
