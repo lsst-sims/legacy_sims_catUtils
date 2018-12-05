@@ -118,7 +118,7 @@ class Tile(object):
                 hs2 = self.half_space_list[i_h2]
                 local_contained = False
                 for rr in roots:
-                    if hs2.contains_pt(rr):
+                    if hs2.contains_pt(rr, tol=1.0e-10):
                         local_contained = True
                         break
                 if not local_contained:
