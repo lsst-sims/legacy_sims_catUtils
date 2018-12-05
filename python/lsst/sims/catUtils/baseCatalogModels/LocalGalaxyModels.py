@@ -317,7 +317,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         print('got where clause')
 
         if constraint is not None:
-            where_clause += "AND (%s)" % constraint
+            where_clause += "AND (%s)" % text(constraint)
 
         query = self._column_query
         query = query.filter(text(where_clause))
