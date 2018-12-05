@@ -525,14 +525,15 @@ class LocalGalaxyTileObj(GalaxyObj):
 
 
 class LocalGalaxyBulgeObj(LocalGalaxyTileObj):
-    _class_constraint = 'magnorm_bulge IS NOT NULL'
     columns = GalaxyBulgeObj.columns
+    tableid = 'galaxy_disk'
+
 
 class LocalGalaxyDiskObj(LocalGalaxyTileObj):
-    _class_constraint = 'magnorm_disk IS NOT NULL'
     columns = GalaxyDiskObj.columns
+    tableid = 'galaxy_disk'
 
 
 class LocalGalaxyAgnObj(LocalGalaxyTileObj):
-    _class_constraint = 'isagn = 1'
     columns = GalaxyAgnObj.columns
+    tableid = 'galaxy_agn'
