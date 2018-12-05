@@ -145,6 +145,7 @@ class ChunkIteratorTestCase(unittest.TestCase):
             # Cartesian coordinates and take the dot product of those vectors, you get
             # exactly 1.0
             self.assertLess(dd.max(), 0.002/3600.0)
+            return overlap
 
     def test_ra_dec_galtileid_chunkIterator(self):
         """
@@ -230,7 +231,92 @@ class ChunkIteratorTestCase(unittest.TestCase):
         """
         Test that LocalGalaxyTileObj returns correct quantities.
         """
-        pass
+        colnames = ['raJ2000', 'decJ2000', 'galtileid',
+                    'magNormBulge', 'magNormDisk']
+
+        constraint = 'magnorm_bulge IS NOT NULL AND magnorm_disk IS NOT NULL'
+
+        chunk_size = 100000
+        ra = 237.0
+        dec = -89.8
+        radius = 0.5
+        obs = sims_utils.ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                             boundType='circle', boundLength=radius)
+
+        local_ra = []
+        local_dec = []
+        local_galtileid = []
+        local_magnorm_bulge = []
+        local_magnorm_disk = []
+        local_tile = LocalGalaxy.LocalGalaxyTileObj(database='LSSTCATSIM',
+                                                    host='fatboy.phys.washington.edu',
+                                                    port=1433,
+                                                    driver='mssql+pymssql')
+
+        local_iter = local_tile.query_columns(colnames=colnames,
+                                              chunk_size=chunk_size,
+                                              obs_metadata=obs,
+                                              constraint=constraint)
+
+        for chunk in local_iter:
+            local_ra.append(np.degrees(chunk['raJ2000']))
+            local_dec.append(np.degrees(chunk['decJ2000']))
+            local_galtileid.append(chunk['galtileid'])
+            local_magnorm_bulge.append(chunk['magNormBulge'])
+            local_magnorm_disk.append(chunk['magNormDisk'])
+        local_ra = np.concatenate(local_ra)
+        local_dec = np.concatenate(local_dec)
+        local_galtileid = np.concatenate(local_galtileid)
+        local_magnorm_bulge = np.concatenate(local_magnorm_bulge)
+        local_magnorm_disk = np.concatenate(local_magnorm_disk)
+        sorted_dex = np.argsort(local_galtileid)
+        local_galtileid = local_galtileid[sorted_dex]
+        local_ra = local_ra[sorted_dex]
+        local_dec = local_dec[sorted_dex]
+        local_magnorm_bulge = local_magnorm_bulge[sorted_dex]
+        local_magnorm_disk = local_magnorm_disk[sorted_dex]
+
+        fatboy_ra = []
+        fatboy_dec = []
+        fatboy_galtileid = []
+        fatboy_magnorm_disk = []
+        fatboy_magnorm_bulge = []
+        fatboy_iter = _fatboy_tileobj.query_columns(colnames=colnames,
+                                                    chunk_size = chunk_size,
+                                                    obs_metadata=obs,
+                                                    constraint=constraint)
+
+        for chunk in fatboy_iter:
+            fatboy_ra.append(np.degrees(chunk['raJ2000']))
+            fatboy_dec.append(np.degrees(chunk['decJ2000']))
+            fatboy_galtileid.append(chunk['galtileid'])
+            fatboy_magnorm_disk.append(chunk['magNormDisk'])
+            fatboy_magnorm_bulge.append(chunk['magNormBulge'])
+        fatboy_ra = np.concatenate(fatboy_ra)
+        fatboy_dec = np.concatenate(fatboy_dec)
+        fatboy_galtileid = np.concatenate(fatboy_galtileid)
+        fatboy_magnorm_disk = np.concatenate(fatboy_magnorm_disk)
+        fatboy_magnorm_bulge = np.concatenate(fatboy_magnorm_bulge)
+        sorted_dex = np.argsort(fatboy_galtileid)
+        fatboy_galtileid = fatboy_galtileid[sorted_dex]
+        fatboy_ra = fatboy_ra[sorted_dex]
+        fatboy_dec = fatboy_dec[sorted_dex]
+        fatboy_magnorm_bulge = fatboy_magnorm_bulge[sorted_dex]
+        fatboy_magnorm_disk = fatboy_magnorm_disk[sorted_dex]
+
+        overlap = self._validate_fatboy_v_local(local_galtileid,
+                                                local_ra,
+                                                local_dec,
+                                                fatboy_galtileid,
+                                                fatboy_ra,
+                                                fatboy_dec,
+                                                obs)
+
+        np.testing.assert_array_equal(fatboy_magnorm_bulge[overlap],
+                                      local_magnorm_bulge)
+
+        np.testing.assert_array_equal(fatboy_magnorm_disk[overlap],
+                                      local_magnorm_disk)
 
 
 if __name__ == "__main__":

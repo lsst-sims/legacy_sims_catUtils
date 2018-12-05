@@ -12,7 +12,7 @@ from lsst.sims.utils import halfSpaceFromPoints
 from lsst.sims.utils import intersectHalfSpaces
 from lsst.sims.utils import cartesianFromSpherical, sphericalFromCartesian
 from lsst.sims.catalogs.db import ChunkIterator
-from lsst.sims.catUtils.baseCatalogModels import GalaxyTileObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyObj
 
 __all__ = ["FatboyTiles"]
 
@@ -446,7 +446,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
 
 
-class LocalGalaxyTileObj(GalaxyTileObj):
+class LocalGalaxyTileObj(GalaxyObj):
 
     def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None,
                       limit=None):
@@ -499,8 +499,8 @@ class LocalGalaxyTileObj(GalaxyTileObj):
                 colnames.remove(name)
 
         if limit is not None:
-            warnings.warn("You specified a row number limit in your query of a GalaxyTileObj "
-                          "daughter class.  Because of the way GalaxyTileObj is searched, row "
+            warnings.warn("You specified a row number limit in your query of a LocalGalaxyTileObj "
+                          "daughter class.  Because of the way LocalGalaxyTileObj is searched, row "
                           "number limits are not possible.  If you really want to limit the number "
                           "of rows returned by you query, consider using GalaxyObj (note that you "
                           "will have to you limit your search to -2.5<RA<2.5 -2.25<Dec<2.25 -- both in "
@@ -508,4 +508,5 @@ class LocalGalaxyTileObj(GalaxyTileObj):
 
         # should probably write a new ChunkIterator that will do the query once
         # and then selectively munge the outputs per relevant tile
-        return LocalGalaxyChunkIterator(self, colnames, chunk_size, constraint)
+
+        return LocalGalaxyChunkIterator(self, colnames, obs_metadata, chunk_size, constraint)
