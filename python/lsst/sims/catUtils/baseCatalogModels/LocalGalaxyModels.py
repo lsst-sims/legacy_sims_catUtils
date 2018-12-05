@@ -5,6 +5,7 @@ import json
 import copy
 from sqlalchemy import text
 from lsst.utils import getPackageDir
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import HalfSpace, levelFromHtmid
 from lsst.sims.utils import halfSpaceFromRaDec
 from lsst.sims.utils import halfSpaceFromPoints
@@ -258,12 +259,26 @@ class LocalGalaxyChunkIterator(ChunkIterator):
                                          obs_metadata.boundLength)
 
         #print('tile_idx list %s' % str(tile_idx_list))  #1245 1290
+        obs_where_clause = "("
         for tile_idx in tile_idx_list:
             rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
 
             # find the bounds for trixels contained by the field of view
             # when rotated from the current tile to RA=Dec=0
             new_vv = np.dot(rotate_to_00, self.obs_hs.vector)
+            new_ra, new_dec = sphericalFromCartesian(new_vv)
+            new_obs = ObservationMetaData(pointingRA=np.degrees(new_ra),
+                                          pointingDec=np.degrees(new_dec),
+                                          boundType='circle',
+                                          boundLength=self.obs_metadata.boundLength)
+
+            if obs_where_clause != "(":
+                obs_where_clause += " OR ("
+            else:
+                obs_where_clause += "("
+            obs_where_clause += new_obs.bounds.to_SQL('ra', 'dec')
+            obs_where_clause += ")"
+
             obs_hs_00 = HalfSpace(new_vv, self.obs_hs.dd)
             obs_hs_00_trixels = obs_hs_00.findAllTrixels(self._trixel_search_level)
 
@@ -280,14 +295,15 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             self._00_bounds.append(local_bounds)
             self._rotate_to_sky.append(np.linalg.inv(rotate_to_00))
             self._tile_idx.append(tile_idx)
+        obs_where_clause += ")"
 
         print('last pass on trixel_bounds')
         total_trixel_bounds = HalfSpace.merge_trixel_bounds(total_trixel_bounds)
         print('time to write where clause')
 
         where_clause = "("
-        for bound in total_trixel_bounds:
-            if where_clause != "(":
+        for i_bound, bound in enumerate(total_trixel_bounds):
+            if i_bound>0:
                 where_clause += " OR "
             htmid_min = bound[0] << 2*(21-self._trixel_search_level)
             htmid_max = (bound[1]+1) << 2*(21-self._trixel_search_level)
@@ -296,6 +312,8 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             assert htmid_min<htmid_max
             where_clause += "(htmid>=%d AND htmid<=%d)" % (htmid_min, htmid_max)
         where_clause += ")"
+        where_clause += " AND "
+        where_clause += obs_where_clause
         print('got where clause')
 
         if constraint is not None:
