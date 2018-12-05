@@ -61,6 +61,7 @@ class ChunkIteratorTestCase(unittest.TestCase):
             overlap = np.in1d(fatboy_galtileid, local_galtileid,
                               assume_unique=True)
             offenders = np.where(np.logical_not(overlap))
+            print('\noffenders %e out of %e' % (len(offenders[0]), len(fatboy_galtileid)))
 
             for oo in offenders[0]:
                 tile_idx = fatboy_tileidx[oo]
@@ -119,7 +120,6 @@ class ChunkIteratorTestCase(unittest.TestCase):
             overlap = np.where(overlap)
             self.assertLess(len(overlap[0]), len(fatboy_galtileid))
             self.assertLess(len(offenders[0]), len(fatboy_galtileid)/1000)
-            print('\noffenders %e out of %e' % (len(offenders[0]), len(fatboy_galtileid)))
             np.testing.assert_array_equal(fatboy_galtileid[overlap],
                                           local_galtileid)
 
