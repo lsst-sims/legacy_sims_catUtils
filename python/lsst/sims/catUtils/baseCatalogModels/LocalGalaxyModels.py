@@ -312,11 +312,20 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         self._has_J2000 = False
         if 'raJ2000' in colnames:
             self._has_J2000 = True
+        self._valid_tiles = 0
+        self._n_chunks = 0
+        self._n_rows = 0
+        self._rows_kept = 0
 
 
     def __next__(self):
         #print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
         if self._tile_to_do == 0:
+            print('valid tiles %d; chunks %d; rows %e; kept %e; ratio %e' %
+            (self._valid_tiles,self._n_chunks,self._n_rows, self._rows_kept,
+             self._rows_kept/(1.0+self._n_rows)))
+            self._valid_tiles = 0
+            self._n_chunks += 1
             if self.chunk_size is None and not self._galaxy_query.closed:
                 results = self._galaxy_query.fetchall()
             elif self.chunk_size is not None:
@@ -324,6 +333,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             else:
                 raise StopIteration
             self._galaxy_cache = self.dbobj._convert_results_to_numpy_recarray_dbobj(results)
+            self._n_rows += len(self._galaxy_cache)
             if len(self._galaxy_cache) == 0:
                 raise StopIteration
 
@@ -398,6 +408,8 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         current_chunk = np_recfn.append_fields(current_chunk, ['galtileid'], [galtileid],
                                                dtypes=[int], usemask=False, asrecarray=True)
 
+        self._valid_tiles += 1
+        self._rows_kept += len(current_chunk)
         return self._postprocess_results(current_chunk)
 
     @property
