@@ -417,6 +417,7 @@ class ChunkIteratorTestCase(unittest.TestCase):
         local_results = {}
         fatboy_results = {}
 
+        t_start = time.time()
         local_iter = local_obj.query_columns(colnames=colnames,
                                              obs_metadata=obs,
                                              chunk_size=100000)
@@ -428,6 +429,8 @@ class ChunkIteratorTestCase(unittest.TestCase):
         for chunk in local_iter:
             for name in colnames:
                 local_results[name].append(chunk[name])
+        t_local = time.time() - t_start
+
         for name in colnames:
             local_results[name] = np.concatenate(local_results[name])
         sorted_dex = np.argsort(local_results['galtileid'])
@@ -436,12 +439,16 @@ class ChunkIteratorTestCase(unittest.TestCase):
         local_results['raJ2000'] = np.degrees(local_results['raJ2000'])
         local_results['decJ2000'] = np.degrees(local_results['decJ2000'])
 
+        t_start = time.time()
         fatboy_iter = fatboy_obj.query_columns(colnames=colnames,
                                                obs_metadata=obs,
                                                chunk_size=100000)
         for chunk in fatboy_iter:
             for name in colnames:
                 fatboy_results[name].append(chunk[name])
+        t_fatboy = time.time()-t_start
+        print('t_local %e t_fatboy %e' % (t_local, t_fatboy))
+
         for name in colnames:
             fatboy_results[name] = np.concatenate(fatboy_results[name])
         sorted_dex = np.argsort(fatboy_results['galtileid'])
