@@ -534,5 +534,5 @@ class LocalGalaxyDiskObj(LocalGalaxyTileObj):
 
 
 class LocalGalaxyAgnObj(LocalGalaxyTileObj):
-    _class_constraint = 'magnorm_agn IS NOT NULL'
+    _class_constraint = 'isagn = 1'
     columns = GalaxyAgnObj.columns
