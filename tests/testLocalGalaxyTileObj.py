@@ -15,6 +15,9 @@ import time
 
 import lsst.sims.utils as sims_utils
 from lsst.sims.catUtils.baseCatalogModels import GalaxyTileObj, GalaxyObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyDiskObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyAgnObj
 import lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels as LocalGalaxy
 
 _can_access_fatboy = True
@@ -317,6 +320,78 @@ class ChunkIteratorTestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(fatboy_magnorm_disk[overlap],
                                       local_magnorm_disk)
+
+    def test_bulge_obj(self):
+        ra = 172.0
+        dec = -25.0
+        radius = 0.5
+        obs = sims_utils.ObservationMetaData(pointingRA=ra,
+                                             pointingDec=dec,
+                                             boundType='circle',
+                                             boundLength=radius)
+
+        colnames = ['raJ2000', 'decJ2000', 'galtileid', 'magNorm', 'majorAxis']
+
+        fatboy_obj = GalaxyBulgeObj(database='LSSTCATSIM',
+                                    host='fatboy.phys.washington.edu',
+                                    port=1433,
+                                    driver='mssql+pymssql')
+
+        local_obj = LocalGalaxy.LocalGalaxyBulgeObj(database='LSSTCATSIM',
+                                                    host='fatboy.phys.washington.edu',
+                                                    port=1433,
+                                                    driver='mssql+pymssql')
+
+        local_results = {}
+        fatboy_results = {}
+
+        local_iter = local_obj.query_columns(colnames=colnames,
+                                             obs_metadata=obs,
+                                             chunk_size=100000)
+
+        for name in colnames:
+            local_results[name] = []
+            fatboy_results[name] = []
+
+        for chunk in local_iter:
+            for name in colnames:
+                local_results[name].append(chunk[name])
+        for name in colnames:
+            local_results[name] = np.concatenate(local_results[name])
+        sorted_dex = np.argsort(local_results['galtileid'])
+        for name in colnames:
+            local_results[name] = local_results[name][sorted_dex]
+        local_results['raJ2000'] = np.degrees(local_results['raJ2000'])
+        local_results['decJ2000'] = np.degrees(local_results['decJ2000'])
+
+        fatboy_iter = fatboy_obj.query_columns(colnames=colnames,
+                                               obs_metadata=obs,
+                                               chunk_size=100000)
+        for chunk in fatboy_iter:
+            for name in colnames:
+                fatboy_results[name].append(chunk[name])
+        for name in colnames:
+            fatboy_results[name] = np.concatenate(fatboy_results[name])
+        sorted_dex = np.argsort(fatboy_results['galtileid'])
+        for name in colnames:
+            fatboy_results[name] = fatboy_results[name][sorted_dex]
+        fatboy_results['raJ2000'] = np.degrees(fatboy_results['raJ2000'])
+        fatboy_results['decJ2000'] = np.degrees(fatboy_results['decJ2000'])
+        self.assertGreater(len(fatboy_results['galtileid']), 0)
+
+        overlap = self._validate_fatboy_v_local(local_results['galtileid'],
+                                                local_results['raJ2000'],
+                                                local_results['decJ2000'],
+                                                fatboy_results['galtileid'],
+                                                fatboy_results['raJ2000'],
+                                                fatboy_results['decJ2000'],
+                                                obs)
+
+        np.testing.assert_array_equal(fatboy_results['magNorm'][overlap],
+                                      local_results['magNorm'])
+
+        np.testing.assert_array_equal(fatboy_results['majorAxis'][overlap],
+                                      local_results['majorAxis'])
 
 
 if __name__ == "__main__":

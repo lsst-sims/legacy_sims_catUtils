@@ -13,6 +13,9 @@ from lsst.sims.utils import intersectHalfSpaces
 from lsst.sims.utils import cartesianFromSpherical, sphericalFromCartesian
 from lsst.sims.catalogs.db import ChunkIterator
 from lsst.sims.catUtils.baseCatalogModels import GalaxyObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyDiskObj
+from lsst.sims.catUtils.baseCatalogModels import GalaxyAgnObj
 
 __all__ = ["FatboyTiles"]
 
@@ -519,3 +522,17 @@ class LocalGalaxyTileObj(GalaxyObj):
 
         return LocalGalaxyChunkIterator(self, query_colnames, obs_metadata,
                                         chunk_size, constraint)
+
+
+class LocalGalaxyBulgeObj(LocalGalaxyTileObj):
+    _class_constraint = 'magnorm_bulge IS NOT NULL'
+    columns = GalaxyBulgeObj.columns
+
+class LocalGalaxyDiskObj(LocalGalaxyTileObj):
+    _class_constraint = 'magnorm_disk IS NOT NULL'
+    columns = GalaxyDiskObj.columns
+
+
+class LocalGalaxyAgnObj(LocalGalaxyTileObj):
+    _class_constraint = 'magnorm_agn IS NOT NULL'
+    columns = GalaxyAgnObj.columns
