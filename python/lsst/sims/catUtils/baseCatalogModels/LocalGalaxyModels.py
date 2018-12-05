@@ -322,8 +322,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         query = self._column_query
         query = query.filter(text(where_clause))
 
-        print(query)
-
         self._galaxy_query = dbobj.connection.session.execute(query)
         self._tile_to_do = 0
 
