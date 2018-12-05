@@ -348,7 +348,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
                 results = self._galaxy_query.fetchmany(self.chunk_size)
             else:
                 raise StopIteration
-            self._galaxy_cache = self.dbobj._convert_results_to_numpy_recarray_dbobj(results)
+            self._galaxy_cache = self.dbobj._convert_results_to_numpy_recarray_catalogDBObj(results)
             self._n_rows += len(self._galaxy_cache)
             if len(self._galaxy_cache) == 0:
                 raise StopIteration
