@@ -109,6 +109,9 @@ class Tile(object):
             if len(roots) == 0:
                 continue
 
+            if len(roots.shape)==1:
+                roots = [roots]
+
             for i_h2 in range(len(self.half_space_list)):
                 if i_h1 == i_h2:
                     continue
