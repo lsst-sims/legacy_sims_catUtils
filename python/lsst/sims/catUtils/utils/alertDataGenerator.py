@@ -569,7 +569,7 @@ class AlertDataGenerator(object):
                 script_name = os.path.join(getPackageDir('sims_catUtils'), 'support_scripts',
                                            'get_kepler_dmag.sh')
                 raise RuntimeError('\n%s does not exist; run the script\n\n%s\n\n' %
-                                   script_name)
+                                   (self._dmag_lookup_file, script_name))
             else:
                 self._dmag_lookup_file_exists = False
 
