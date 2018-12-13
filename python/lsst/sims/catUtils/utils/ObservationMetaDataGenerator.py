@@ -683,6 +683,10 @@ class ObservationMetaDataGenerator(object):
             if hs.contains_trixel(tx) != 'outside':
                 valid.append(likely_idx)
         valid = np.array(valid)
+
+        if len(valid) == 0:
+            return []
+
         valid_obs_id = obs_id[valid]
 
         assert valid_obs_id.min() == valid_obs_id[0]
