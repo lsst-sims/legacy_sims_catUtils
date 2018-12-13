@@ -32,7 +32,6 @@ try:
 
 except:
     _can_access_fatboy = False
-    raise
 
 
 @unittest.skipIf(not _can_access_fatboy, 'No connection to fatboy')
