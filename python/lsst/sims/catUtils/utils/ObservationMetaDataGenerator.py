@@ -3,7 +3,9 @@ import numpy as np
 import os
 import numbers
 from lsst.sims.catalogs.db import DBObject
+from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import ObservationMetaData
+import lsst.sims.utils.htmModule as htm
 
 __all__ = ["ObservationMetaDataGenerator"]
 
@@ -615,3 +617,90 @@ class ObservationMetaDataGenerator(object):
                                                            boundType=boundType,
                                                            boundLength=boundLength)
         return output
+
+
+    def obsFromHtmid(self, htmid, boundLength=1.75,
+                     raColName='fieldRA', decColName='fieldDec',
+                     transform_to_degrees=np.degrees):
+        """
+        Get all of the pointings overlapping a specified trixel
+
+        Parameters
+        ----------
+        htmid -- an int; the ID of the trixel
+
+        boundLength -- the radius of the pointings' fields of view
+        in degrees (default=1.75).  Note: this method only returns
+        circular fields of view.
+
+        raColName -- the name of the RA column to be used when
+        deciding if a pointing overlaps the trixel (default='fieldRA')
+
+        decColName -- the name of the Dec column to be used when
+        deciding if a pointing overlaps the trixel (default='fieldDec')
+
+        transform_to_degrees -- the callable (if any) needed to transform
+        raColName, decColName into degrees (default=np.degrees; if you are
+        querying a v4 OpSim database, this should be set to None)
+
+        Returns
+        -------
+        a list of ObservationMetaData characterizing all of the pointings
+        in the OpSim database that overlap the specified trixel
+        """
+
+        tx = htm.trixelFromHtmid(htmid)
+
+        self._set_seeing_column(self._summary_columns)
+
+        obs_id_name = self.user_interface_to_opsim['obsHistID'][0]
+        ra_dec_query = 'SELECT %s, %s, %s FROM %s' % (raColName, decColName,
+                                                      obs_id_name, self.table_name)
+        mjd_name = self.user_interface_to_opsim['expMJD'][0]
+        ra_dec_query += ' GROUP BY %s ORDER BY %s' % (mjd_name, mjd_name)
+        ra_dec_dtype = np.dtype([('ra', float), ('dec', float), (obs_id_name, int)])
+
+        ra_dec_results = self.opsimdb.execute_arbitrary(ra_dec_query, dtype=ra_dec_dtype)
+        obs_id = ra_dec_results[obs_id_name]
+        if transform_to_degrees is not None:
+            ra = transform_to_degrees(ra_dec_results['ra'])
+            dec = transform_to_degrees(ra_dec_results['dec'])
+        else:
+            ra = ra_dec_results['ra']
+            dec = ra_dec_results['dec']
+
+        ra_c, dec_c = tx.get_center()
+
+        # first do a rough cut approximating the trixel as a circle
+        dd = angularSeparation(ra, dec, ra_c, dec_c)
+        likely = np.where(dd<boundLength+tx.get_radius())[0]
+
+        # now select only the ObservationMetaData that actually overlap
+        # the trixel
+        valid = []
+        for likely_idx in likely:
+            hs = htm.halfSpaceFromRaDec(ra[likely_idx], dec[likely_idx], boundLength)
+            if hs.contains_trixel(tx) != 'outside':
+                valid.append(likely_idx)
+        valid = np.array(valid)
+        valid_obs_id = obs_id[valid]
+
+        assert valid_obs_id.min() == valid_obs_id[0]
+        assert valid_obs_id.max() == valid_obs_id[-1]
+
+        query = self.baseQuery + ' FROM %s' % self.table_name
+        query += ' WHERE %s>=%d AND %s<=%d' % (obs_id_name, valid_obs_id[0],
+                                               obs_id_name, valid_obs_id[-1])
+        query += ' GROUP BY %s ORDER BY %s' % (mjd_name, mjd_name)
+
+        out_list = []
+        full_results = self.opsimdb.get_arbitrary_chunk_iterator(query, dtype=self.dtype, chunk_size=10000)
+        for chunk in full_results:
+            local_valid = np.where(np.in1d(chunk[obs_id_name], valid_obs_id, assume_unique=True))
+            if len(local_valid[0])>0:
+                out_list += self.ObservationMetaDataFromPointingArray(chunk[local_valid],
+                                                                      OpSimColumns=None,
+                                                                      boundType='circle',
+                                                                       boundLength=boundLength)
+
+        return out_list
