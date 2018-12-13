@@ -31,13 +31,6 @@ class ObservationMetaDataGenerator(object):
     bounds.
     """
 
-    @property
-    def table_name(self):
-        """
-        Return the name of the table in the OpSim database that we are querying
-        """
-        return 'Summary'
-
     def _make_opsim_v3_interface(self):
         # a dict keyed on the user interface names of the ObservationMetaData columns
         # (i.e. the args to getObservationMetaData).  Returns a tuple that is the
