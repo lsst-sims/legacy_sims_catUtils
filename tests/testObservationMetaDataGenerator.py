@@ -6,6 +6,7 @@ import sqlite3
 import tempfile
 import numpy as np
 import lsst.utils.tests
+import lsst.sims.utils.htmModule as htm
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils import CircleBounds, BoxBounds, altAzPaFromRaDec
@@ -511,6 +512,75 @@ class ObservationMetaDataGeneratorTest(unittest.TestCase):
 
         if os.path.exists(dbName):
             os.unlink(dbName)
+
+    def test_htmid_query(self):
+        """
+        Test that queries on HTMID work
+        """
+        obs_gen = self.gen
+
+        boundLength = 0.7
+        htmid  = 33937
+
+        tx = htm.trixelFromHtmid(htmid)
+        radius = tx.get_radius()
+        ra_c, dec_c = tx.get_center()
+
+        # construct a set of rectangular bounds
+        # that will encompass the entire trixel
+        # plus extra pointings.  This will be our
+        # "control" list
+        d_ra_dec = 3.50+2.0*(radius+boundLength)
+        ra_min = ra_c - d_ra_dec
+        ra_max = ra_c + d_ra_dec
+        dec_min = dec_c - d_ra_dec
+        dec_max = dec_c + d_ra_dec
+
+        obs_control_list = obs_gen.getObservationMetaData(fieldRA=(ra_min, ra_max),
+                                                          fieldDec=(dec_min, dec_max),
+                                                          boundLength=boundLength,
+                                                          boundType='circle')
+
+        control_id_list = [obs.OpsimMetaData['obsHistID']
+                           for obs in obs_control_list]
+        obs_control_dict = {}
+        for obs in obs_control_list:
+            obs_control_dict[obs.OpsimMetaData['obsHistID']] = obs
+
+        obs_htmid_list = obs_gen.obsFromHtmid(htmid,
+                                              boundLength=boundLength,
+                                              transform_to_degrees=np.degrees)
+
+        htmid_id_list = [obs.OpsimMetaData['obsHistID']
+                         for obs in obs_htmid_list]
+
+
+        obs_htmid_dict = {}
+        for obs in obs_htmid_list:
+            obs_htmid_dict[obs.OpsimMetaData['obsHistID']] = obs
+
+        self.assertGreater(len(htmid_id_list), 5)
+        self.assertGreater(len(control_id_list), len(htmid_id_list))
+
+        # make sure that every pointing selected on htmid is
+        # in the control set
+        control_id_set = set(control_id_list)
+        for hh in htmid_id_list:
+            self.assertIn(hh, control_id_set)
+
+        htmid_id_set = set(htmid_id_list)
+        for cc in control_id_list:
+            obs = obs_control_dict[cc]
+            hs = htm.halfSpaceFromRaDec(obs.pointingRA, obs.pointingDec, obs.boundLength)
+            if cc not in htmid_id_set:
+                # if a control pointing is not in the set selected on htmid,
+                # make sure it does not overlap the trixel
+                self.assertEqual(hs.contains_trixel(tx), 'outside')
+            else:
+                # make sure that pointings in both sets overlap the trixel
+                # and are identical
+                self.assertNotEqual(hs.contains_trixel(tx), 'outside')
+                self.assertEqual(obs_control_dict[cc], obs_htmid_dict[cc])
 
 
 class ObsMetaDataGenMockOpsimTest(unittest.TestCase):
