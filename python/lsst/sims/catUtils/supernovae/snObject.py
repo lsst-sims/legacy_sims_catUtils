@@ -621,7 +621,10 @@ class SNObject(sncosmo.Model):
             if `self.rectifySED = True`
         3. If the `flambda` values of the SALT model are negative which happens
             in the less sampled phases of the model, these values are set to 0,
-            if `self.rectifySED` = True.
+            if `self.rectifySED` = True.  (Note: if `self.rectifySED` = True, then
+            care will be taken to make sure that the flux at 500nm is not exactly
+            zero, since that will cause PhoSim normalization of the SED to be
+            NaN).
         """
         phase = (time - self.get('t0')) / (1. + self.get('z'))
         source = self.source
@@ -674,6 +677,20 @@ class SNObject(sncosmo.Model):
         flux *= 10.0
         # convert ang to nm
         wavelen = wavelen / 10.
+
+        # If there is zero flux at 500nm, set
+        # the flux in the slot closest to 500nm
+        # equal to 0.01*minimum_non_zero_flux
+        # (this is so SEDs used in PhoSim can have
+        # finite normalization)
+        if self.rectifySED:
+            closest_to_500nm = np.argmin(np.abs(wavelen-500.0))
+            if flux[closest_to_500nm] == 0.0:
+                non_zero_flux = np.where(flux>0.0)
+                if len(non_zero_flux[0])>0:
+                    min_non_zero = np.min(flux[non_zero_flux])
+                    flux[closest_to_500nm] = 0.01*min_non_zero
+
         sed = Sed(wavelen=wavelen, flambda=flux)
         # This has the cosmology built in.
         return sed
