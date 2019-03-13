@@ -117,6 +117,8 @@ class LocalStarChunkIterator(ChunkIterator):
                 elif min_21<=part[0] and max_21>part[1]:
                     self._tables_to_query.add(part[2])
 
+        print('need to query')
+        print(self._tables_to_query)
         self._htmid_where_clause += ')'
         self._active_query = None
 
