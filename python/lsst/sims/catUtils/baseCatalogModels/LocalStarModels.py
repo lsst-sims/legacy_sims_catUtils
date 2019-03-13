@@ -1,0 +1,148 @@
+from sqlalchemy import text
+from lsst.utils import getPackageDir
+import lsst.pex.config as pexConfig
+from lsst.sims.utils import htmModule as htm
+from lsst.sims.catalogs.db import CatalogDBObject, ChunkIterator
+
+__all__ = ["LocalStarCatalogObj"]
+
+
+class LocalStarCatalogConfig(pexConfig.Config):
+    host = pexConfig.Field(
+        dtype = str,
+        doc = "Name of the host",
+        default = "localhost",
+    )
+    port = pexConfig.Field(
+        dtype = str,
+        doc = "Port number of database",
+        default = "1433",
+    )
+    database = pexConfig.Field(
+        dtype = str,
+        doc = "Name of database. For 'sqlite', the filename is the database name",
+        default = "LSST",
+    )
+    driver = pexConfig.Field(
+        dtype = str,
+        doc = "Name of the database backend. Takes format of dialect+driver ",
+        default = "mssql+pymssql",
+    )
+
+
+class _HiddenStarCatalogObj(CatalogDBobject):
+    config = LocalBaseCatalogConfig()
+
+    #load $SIMS_CATUTILS_DIR/config/db.py
+    config.load(os.path.join(getPackageDir("sims_catUtils"), "config", "db.py"))
+
+    host = config.host
+    port = config.port
+    database = config.database
+    driver = config.driver
+
+    objid = 'hiddenstar'
+    tableid = None
+    idColKey = 'id'
+    raColName = 'ra'
+    decColName = 'decl'
+    objectTypeId = 4
+
+
+class LocalStarChunkIterator(ChunkIterator):
+
+    _partition_lim = ((0,11000000000000,8700000000000),
+                      (11000000000000, 11600000000000, 11000000000000),
+                      (11600000000000, 11800000000000, 11600000000000),
+                      (11800000000000, 12000000000000, 11800000000000),
+                      (12000000000000, 12200000000000, 12000000000000),
+                      (12200000000000, 12500000000000, 12200000000000),
+                      (12500000000000, 14000000000000, 12500000000000),
+                      (14000000000000, 100000000000000000000, 14000000000000))
+
+    def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint):
+        """
+        Parameters
+        ----------
+        dbobj -- a CatalogDBObject connected to the 'galaxies' table on fatboy
+
+        colnames -- a list of the columns to query
+
+        chunk_size -- size of chunks to return
+
+        constraint -- a string specifying a SQL 'WHERE' clause
+        """
+        self._chunk_size = chunk_size
+        self._obs_metadata = obs_metadata
+        self._constraint = constraint
+        self._colnames = colnames
+
+        half_space = htm.halfSpaceFromRaDec(obs_metadata.pointingRA,
+                                            obs_metadata.pointingDec,
+                                            obs_metadata.boundLength)
+
+        self._trixel_search_level = 9
+        self._trixel_bounds = half_space.findAllTrixels(self._trixel_search_level)
+
+        self._tables_to_query = set()
+        self._htmid_where_clause = '('
+        for bound in self._trixel_bounds:
+            min_21 = bound[0] << 2*(21-self._trixel_search_level)
+            max_21 = (bound[1]+1) << 2*(21-self._trixel_search_level)
+
+            if self._htmid_where_clause != '(':
+                self._htmid_where_clause += ' OR '
+
+            if min_21 == max_21:
+                self._htmid_where_clause += 'htmid==%d' % min_21
+            else:
+                self._htmid_where_clause += '(htmid>=%d AND htmid<=%d)' % (min_21, max_21)
+
+            for part in partition_lim:
+                if min_21>=part[0] and min_21<part[1]:
+                    self._tables_to_query.add(part[2])
+                elif max_21>=part[0] and max_21<part[1]:
+                    self._tables_to_query.add(part[2])
+                elif min_21<=part[0] and max_21>part[1]:
+                    self._tables_to_query.add(part[2])
+
+        self._htmid_where_clause += ')'
+        self._active_query = None
+
+    def _load_next_star_db(self, colnames):
+        table_tag = self._tables_to_query.pop()
+        table_name = 'stars_partition_%.14' % table_tag
+        db = _HiddenStarCatalogObj(table=table_name)
+        column_query = db._get_column_query(colnames)
+        column_query = column_query.filter(text(self._htmid_where_clause))
+        column_query = column_query.filter(text(self._constraint))
+        exec_query = db.connection.session.execute(column_query)
+        return exec_query
+
+    def __next__(self):
+
+        if self._active_query is None or self._active_query.closed:
+            if len(self._tables_to_query) == 0:
+                raise StopIteration
+            self._active_query = self._load_next_star_db(self._colnames)
+
+        if self._chunk_size is None:
+            chunk = self._active_query.fetchall()
+        elif self._chunk_size is not None:
+            chunk = self._active_query.fetchall(self._chunk_size)
+
+        return self._postprocess_results(chunk)
+
+
+class LocalStarCatalogObj(object):
+
+    def query_columns(self, colnames=None, chunk_size=None,
+                      obs_metadata=None, constraint=None,
+                      limit=None):
+
+        if obs_metadata.boundType != 'circle':
+            raise RuntimeError("Cannot use boundType %s in this catalog; only 'circle'"
+                               % str(obs_metadata.boundType))
+
+        return LocalStarChunkIterator(self, colnames, obs_metadata, chunk_size,
+                                      constraint)
