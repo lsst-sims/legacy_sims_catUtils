@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import text
 from lsst.utils import getPackageDir
 import lsst.pex.config as pexConfig
