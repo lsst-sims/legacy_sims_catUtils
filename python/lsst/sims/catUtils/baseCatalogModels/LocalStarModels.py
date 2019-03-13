@@ -1,4 +1,3 @@
-import os
 from sqlalchemy import text
 from lsst.utils import getPackageDir
 import lsst.pex.config as pexConfig
@@ -33,9 +32,6 @@ class LocalStarCatalogConfig(pexConfig.Config):
 
 class _HiddenStarCatalogObj(CatalogDBObject):
     config = LocalStarCatalogConfig()
-
-    #load $SIMS_CATUTILS_DIR/config/db.py
-    config.load(os.path.join(getPackageDir("sims_catUtils"), "config", "db.py"))
 
     host = config.host
     port = config.port
