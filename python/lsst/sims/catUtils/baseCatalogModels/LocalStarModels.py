@@ -143,7 +143,7 @@ class LocalStarChunkIterator(ChunkIterator):
         if self._chunk_size is None:
             chunk = self._active_query.fetchall()
         elif self._chunk_size is not None:
-            chunk = self._active_query.fetchall(self._chunk_size)
+            chunk = self._active_query.fetchmany(self._chunk_size)
 
         return self._postprocess_results(chunk)
 
