@@ -31,7 +31,7 @@ class LocalStarCatalogConfig(pexConfig.Config):
 
 
 class _HiddenStarCatalogObj(CatalogDBObject):
-    config = LocalBaseCatalogConfig()
+    config = LocalStarCatalogConfig()
 
     #load $SIMS_CATUTILS_DIR/config/db.py
     config.load(os.path.join(getPackageDir("sims_catUtils"), "config", "db.py"))
