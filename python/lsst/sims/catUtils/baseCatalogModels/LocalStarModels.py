@@ -126,7 +126,7 @@ class LocalStarChunkIterator(ChunkIterator):
 
     def _load_next_star_db(self, colnames):
         table_tag = self._tables_to_query.pop()
-        table_name = 'stars_partition_%.14' % table_tag
+        table_name = 'stars_partition_%.14d' % table_tag
         db = _HiddenStarCatalogObj(table=table_name)
         column_query = db._get_column_query(colnames)
         column_query = column_query.filter(text(self._htmid_where_clause))
