@@ -128,7 +128,8 @@ class LocalStarChunkIterator(ChunkIterator):
         db = _HiddenStarCatalogObj(table=table_name)
         column_query = db._get_column_query(colnames)
         column_query = column_query.filter(text(self._htmid_where_clause))
-        column_query = column_query.filter(text(self._constraint))
+        if self._constraint is not None:
+            column_query = column_query.filter(text(self._constraint))
         exec_query = db.connection.session.execute(column_query)
         return exec_query
 
