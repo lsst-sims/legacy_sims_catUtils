@@ -93,7 +93,7 @@ class LocalStarChunkIterator(ChunkIterator):
                                             obs_metadata.pointingDec,
                                             obs_metadata.boundLength)
 
-        self._trixel_search_level = 9
+        self._trixel_search_level = 12
         self._trixel_bounds = half_space.findAllTrixels(self._trixel_search_level)
 
         self._tables_to_query = set()
