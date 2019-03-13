@@ -83,6 +83,7 @@ class LocalStarChunkIterator(ChunkIterator):
 
         constraint -- a string specifying a SQL 'WHERE' clause
         """
+        self.arbitrarySQL = False
         self._chunk_size = chunk_size
         self._obs_metadata = obs_metadata
         self._constraint = constraint
