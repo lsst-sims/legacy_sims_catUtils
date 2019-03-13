@@ -113,7 +113,7 @@ class LocalStarChunkIterator(ChunkIterator):
             else:
                 self._htmid_where_clause += '(htmid>=%d AND htmid<=%d)' % (min_21, max_21)
 
-            for part in partition_lim:
+            for part in self._partition_lim:
                 if min_21>=part[0] and min_21<part[1]:
                     self._tables_to_query.add(part[2])
                 elif max_21>=part[0] and max_21<part[1]:
