@@ -338,11 +338,11 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
 
     def __next__(self):
-        #print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
+        print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
         if self._tile_to_do == 0:
-            print('valid tiles %d; chunks %d; rows %e; kept %e; ratio %e' %
-            (self._valid_tiles,self._n_chunks,self._n_rows, self._rows_kept,
-             self._rows_kept/(1.0+self._n_rows)))
+            #print('valid tiles %d; chunks %d; rows %e; kept %e; ratio %e' %
+            #(self._valid_tiles,self._n_chunks,self._n_rows, self._rows_kept,
+            # self._rows_kept/(1.0+self._n_rows)))
             self._valid_tiles = 0
             self._n_chunks += 1
             if self.chunk_size is None and not self._galaxy_query.closed:
