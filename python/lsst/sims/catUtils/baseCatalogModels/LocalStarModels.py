@@ -97,18 +97,24 @@ class LocalStarChunkIterator(ChunkIterator):
         self._trixel_bounds = half_space.findAllTrixels(self._trixel_search_level)
 
         self._tables_to_query = set()
-        self._htmid_where_clause = '('
+        where_clause = '('
+        global_min_21 = None
+        global_max_21 = None
         for bound in self._trixel_bounds:
             min_21 = bound[0] << 2*(21-self._trixel_search_level)
             max_21 = (bound[1]+1) << 2*(21-self._trixel_search_level)
+            if global_min_21 is None or min_21<global_min_21:
+                global_min_21 = min_21
+            if global_max_21 is None or max_21>global_max_21:
+                global_max_21 = max_21
 
-            if self._htmid_where_clause != '(':
-                self._htmid_where_clause += ' OR '
+            if where_clause != '(':
+                where_clause += ' OR '
 
             if min_21 == max_21:
-                self._htmid_where_clause += 'htmid==%d' % min_21
+                where_clause += 'htmid==%d' % min_21
             else:
-                self._htmid_where_clause += '(htmid>=%d AND htmid<=%d)' % (min_21, max_21)
+                where_clause += '(htmid>=%d AND htmid<=%d)' % (min_21, max_21)
 
             for part in self._partition_lim:
                 if min_21>=part[0] and min_21<part[1]:
@@ -118,9 +124,13 @@ class LocalStarChunkIterator(ChunkIterator):
                 elif min_21<=part[0] and max_21>part[1]:
                     self._tables_to_query.add(part[2])
 
-        print('need to query')
-        print(self._tables_to_query)
+        where_clause += ')'
+        self._htmid_where_clause = '(htmid>=%d AND htmid<=%d AND ' % (global_min_21, global_max_21)
+        self._htmid_where_clause += where_clause
         self._htmid_where_clause += ')'
+
+        print('need to query')
+        print(self._tables_to_query,global_min_21,global_max_21)
         self._active_query = None
 
     def _load_next_star_db(self, colnames):
