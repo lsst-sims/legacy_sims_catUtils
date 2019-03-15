@@ -80,6 +80,14 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         get returned
         """
 
+        # select all of the galaxies that should be in the tile
+        with sqlite3.connect(self._temp_gal_db) as db_conn:
+            c = db_conn.cursor()
+            results = c.execute("SELECT galtag FROM galaxy WHERE ra>=-2.0 AND ra<=2.0 "
+                                "AND dec>=-2.0 AND dec<=2.0")
+
+            expected_galtag = set(int(r[0]) for r in results)
+
         dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
         obs = ObservationMetaData(pointingRA=34.0, pointingDec=0.0,
                                   boundType='circle',
@@ -109,6 +117,10 @@ class GalaxyTileObjTestCase(unittest.TestCase):
             tag_shld = 100*np.round(45+(valid_data['ra']-obs.pointingRA)/self._d_ra).astype(int)
             tag_shld += np.round(45+(valid_data['dec']-obs.pointingDec)/self._d_ra).astype(int)
             np.testing.assert_array_equal(tag_shld, valid_data['galtag'])
+            for tag in valid_data['galtag']:
+                self.assertIn(tag, expected_galtag)
+            for tag in expected_galtag:
+                self.assertIn(tag, valid_data['galtag'])
 
         self.assertGreater(n_data, 10)
         self.assertGreater(n_valid, 1000)
