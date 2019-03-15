@@ -125,6 +125,77 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         self.assertGreater(n_data, 10)
         self.assertGreater(n_valid, 1000)
 
+    def test_two_equatorial_tiles(self):
+        """
+        Query a field of view directly between two equatorial tiles and make sure that
+        all expected galaxies are returned where we think they ought to be
+        """
+        radius = 1.0
+        expected_galaxies_left = []  # galaxies that come from left edge of original tile
+        expected_galaxies_right = []  # galaxies that come from right edge of original tile
+        with sqlite3.connect(self._temp_gal_db) as db_conn:
+            c = db_conn.cursor()
+            query = "SELECT ra, dec, galtag FROM galaxy "
+            query += "WHERE ra>=-2.0 AND ra<=2.0 "
+            query += "AND dec>=-2.0 AND dec<=2.0"
+            results = c.execute(query).fetchall()
+            for gal in results:
+                dd_left = angularSeparation(-2.0, 0.0, gal[0], gal[1])
+                if dd_left <= radius:
+                    expected_galaxies_left.append(gal)
+                dd_right = angularSeparation(2.0, 0.0, gal[0], gal[1])
+                if dd_right <= radius:
+                    expected_galaxies_right.append(gal)
+
+        # create sets of the expected galtag values
+        gal_tag_left = set(g[2] for g in expected_galaxies_left)
+        gal_tag_right = set(g[2] for g in expected_galaxies_right)
+        self.assertGreater(len(gal_tag_left), 100)
+        self.assertGreater(len(gal_tag_right), 100)
+
+        # construct field of view on the border between two equatorial tiles
+        ra1 = 34.0
+        ra2 = 38.0
+        obs = ObservationMetaData(pointingRA=0.5*(ra1+ra2), pointingDec=0.0,
+                                  boundType='circle', boundLength=radius)
+
+        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+        data_iter = dbobj.query_columns(['galtileid', 'ra', 'dec', 'galtag'],
+                                        obs_metadata=obs)
+
+        found_left = set()
+        found_right = set()
+        for chunk in data_iter:
+            valid_left = np.where(chunk['ra']>obs.pointingRA)
+            valid_right = np.where(chunk['ra']<obs.pointingRA)
+            self.assertEqual(len(valid_left[0])+len(valid_right[0]), len(chunk))
+            data_left = chunk[valid_left]
+            tag_left = 100*np.round(45+(data_left['ra']-ra2)/self._d_ra)
+            tag_left += np.round(45+(data_left['dec']-obs.pointingDec)/self._d_ra)
+            tag_left = tag_left.astype(int)
+            for tag in tag_left:
+                self.assertIn(tag, gal_tag_left)
+                found_left.add(tag)
+
+            data_right = chunk[valid_right]
+            tag_right = 100*np.round(45+(data_right['ra']-ra1)/self._d_ra)
+            tag_right += np.round(45+(data_right['dec']-obs.pointingDec)/self._d_ra)
+            tag_right = tag_right.astype(int)
+            for tag in tag_right:
+                self.assertIn(tag, gal_tag_right)
+                found_right.add(tag)
+
+        # make sure that the galaxies returned by the query
+        # match what we expected
+        for tag in found_left:
+            self.assertIn(tag, gal_tag_left)
+        for tag in gal_tag_left:
+            self.assertIn(tag, found_left)
+        for tag in found_right:
+            self.assertIn(tag, gal_tag_right)
+        for tag in gal_tag_right:
+            self.assertIn(tag, found_right)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
