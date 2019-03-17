@@ -473,7 +473,7 @@ class PhoSimAstrometryTestCase(unittest.TestCase):
         dd = np.sqrt((x_focal_icrs-x_focal_deprecessed)**2
                      +(y_focal_icrs-y_focal_deprecessed)**2)
 
-        self.assertLess(dd.max(), 1.0e-8)
+        self.assertLess(dd.max(), 5.0e-8)
 
     def test_against_catalog(self):
         """
