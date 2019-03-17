@@ -196,6 +196,33 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         for tag in gal_tag_right:
             self.assertIn(tag, found_right)
 
+    def test_four_corners(self):
+        """
+        Test field of view centered at a corner between four tiles
+        (not on the equator)
+        """
+        ra = 44.0
+        dec = 34.0
+        radius = 1.4  # this should be enough to get galaxies to appear
+                      # in more than one tile
+
+
+        #once we go off the equator, the corners won't line up
+
+        gal_tag_1st_quad = set()
+        gal_tag_2nd_quad = set()
+        gal_tag_3rd_quad = set()
+        gal_tag_4th_quad = set()
+        n_multiple_quad = 0
+        with sqlite3.connect(self._temp_gal_db) as db_conn:
+            c = db_conn.cursor()
+            query = "SELECT ra, dec, galtag FROM galaxy "
+            query += "WHERE ra>=-2.0 AND ra<=2.0 "
+            query += "AND dec>=-2.0 AND dec<=2.0"
+            results = c.execute(query).fetchall()
+            for gal in results:
+                pass
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
