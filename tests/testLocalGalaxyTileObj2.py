@@ -211,7 +211,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
 
         # construct bounding half spaces for the four quadrants
         hs_quad_list = []
-        ra_arr = []
+        ra_arr = []  # will store the RA of the center field when rotated to prime tile
         dec_arr = []
         for ra_q, dec_q, sgn in zip([46.0, 42.0, 42.0, 46.0],
                                     [36.0, 36.0, 32.0, 32.0],
