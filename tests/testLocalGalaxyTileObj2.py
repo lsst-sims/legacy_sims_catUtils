@@ -47,7 +47,8 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         dec_grid += 1.0e-5*(rng.random_sample(len(dec_grid))-0.5)
 
 
-        galtag = (100*np.round(45 + ra_grid/0.05) + np.round(45+dec_grid/0.05)).astype(int)
+        galtag = (100*np.round(45 + ra_grid/cls._d_ra) +
+                  np.round(45+dec_grid/cls._d_ra)).astype(int)
         assert len(galtag) == len(np.unique(galtag))
         htmid_grid = htm.findHtmid(ra_grid, dec_grid, 21)
         print('got htmid %d' % len(htmid_grid))
