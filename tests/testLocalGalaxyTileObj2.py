@@ -209,26 +209,10 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         radius = 2.8  # this should be enough to get galaxies to appear
                       # in more than one tile
 
-        # figure out where the center of the field of view will
-        # be when it is rotated to the base tile
-        cos_ratio = np.cos(np.radians(dec_obs))/np.cos(np.radians(2.0))
-        ra_1st_quad = -2.0*cos_ratio
-        dec_1st_quad = -2.0
-        ra_2nd_quad = 2.0*cos_ratio
-        dec_2nd_quad = -2.0
-        ra_3rd_quad = 2.0*cos_ratio
-        dec_3rd_quad = 2.0
-        ra_4th_quad = -2.0*cos_ratio
-        dec_4th_quad = 2.0
-
-        ra_arr = np.array([ra_1st_quad, ra_2nd_quad,
-                           ra_3rd_quad, ra_4th_quad])
-        dec_arr = np.array([dec_1st_quad, dec_2nd_quad,
-                            dec_3rd_quad, dec_4th_quad])
-
-
         # construct bounding half spaces for the four quadrants
         hs_quad_list = []
+        ra_arr = []
+        dec_arr = []
         for ra_q, dec_q, sgn in zip([46.0, 42.0, 42.0, 46.0],
                                     [36.0, 36.0, 32.0, 32.0],
                                     [1, -1, -1, 1]):
@@ -260,6 +244,19 @@ class GalaxyTileObjTestCase(unittest.TestCase):
 
             hs = htm.halfSpaceFromRaDec(rot_ra, rot_dec, 90.0)
             hs_quad_list.append(hs)
+
+            corner = xyz_from_ra_dec(44.0, 34.0)
+            rot_corner = np.dot(m_dec,
+                                np.dot(m_ra, corner))
+            ra_c, dec_c = ra_dec_from_xyz(rot_corner[0],
+                                          rot_corner[1],
+                                          rot_corner[2])
+            ra_arr.append(ra_c)
+            dec_arr.append(dec_c)
+        ra_arr = np.array(ra_arr)
+        dec_arr = np.array(dec_arr)
+        print(ra_arr)
+        print(dec_arr)
 
         gal_tag_1st_quad = set()
         gal_tag_2nd_quad = set()
