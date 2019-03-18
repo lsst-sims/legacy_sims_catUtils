@@ -211,8 +211,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
 
         # construct bounding half spaces for the four quadrants
         hs_quad_list = []
-        ra_arr = []  # will store the RA of the center field when rotated to prime tile
-        dec_arr = []
+        quadrant_centers = []  # prime tile coords of tile corners
         for ra_q, dec_q, sgn in zip([46.0, 42.0, 42.0, 46.0],
                                     [36.0, 36.0, 32.0, 32.0],
                                     [1, -1, -1, 1]):
@@ -248,16 +247,12 @@ class GalaxyTileObjTestCase(unittest.TestCase):
             corner = xyz_from_ra_dec(44.0, 34.0)
             rot_corner = np.dot(m_dec,
                                 np.dot(m_ra, corner))
-            ra_c, dec_c = ra_dec_from_xyz(rot_corner[0],
-                                          rot_corner[1],
-                                          rot_corner[2])
-            ra_arr.append(ra_c)
-            dec_arr.append(dec_c)
-        ra_arr = np.array(ra_arr)
-        dec_arr = np.array(dec_arr)
-        print(ra_arr)
-        print(dec_arr)
+            quadrant_centers.append(ra_dec_from_xyz(rot_corner[0],
+                                                    rot_corner[1],
+                                                    rot_corner[2]))
 
+
+        print(quadrant_centers)
         gal_tag_1st_quad = set()
         gal_tag_2nd_quad = set()
         gal_tag_3rd_quad = set()
@@ -272,8 +267,9 @@ class GalaxyTileObjTestCase(unittest.TestCase):
             for gal in results:
                 n_quad = 0
                 vv = xyz_from_ra_dec(gal[0], gal[1])
-                dd = angularSeparation(ra_arr, dec_arr,
-                                       gal[0], gal[1])
+                dd = list([angularSeparation(c[0], c[1], gal[0], gal[1])
+                           for c in quadrant_centers])
+
                 if dd[0] <= radius and hs_quad_list[0].contains_pt(vv):
                     n_quad += 1
                     gal_tag_1st_quad.add(gal[2])
