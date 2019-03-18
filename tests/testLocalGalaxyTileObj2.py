@@ -9,6 +9,8 @@ import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 import lsst.sims.utils.htmModule as htm
+from lsst.sims.utils import xyz_from_ra_dec
+from lsst.sims.utils import ra_dec_from_xyz
 from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import LocalGalaxyModels as LocGal
@@ -202,13 +204,62 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         Test field of view centered at a corner between four tiles
         (not on the equator)
         """
-        ra = 44.0
-        dec = 34.0
-        radius = 1.4  # this should be enough to get galaxies to appear
+        ra_obs = 44.0
+        dec_obs = 34.0
+        radius = 2.8  # this should be enough to get galaxies to appear
                       # in more than one tile
 
+        # figure out where the center of the field of view will
+        # be when it is rotated to the base tile
+        cos_ratio = np.cos(np.radians(dec_obs))/np.cos(np.radians(2.0))
+        ra_1st_quad = -2.0*cos_ratio
+        dec_1st_quad = -2.0
+        ra_2nd_quad = 2.0*cos_ratio
+        dec_2nd_quad = -2.0
+        ra_3rd_quad = 2.0*cos_ratio
+        dec_3rd_quad = 2.0
+        ra_4th_quad = -2.0*cos_ratio
+        dec_4th_quad = 2.0
 
-        #once we go off the equator, the corners won't line up
+        ra_arr = np.array([ra_1st_quad, ra_2nd_quad,
+                           ra_3rd_quad, ra_4th_quad])
+        dec_arr = np.array([dec_1st_quad, dec_2nd_quad,
+                            dec_3rd_quad, dec_4th_quad])
+
+
+        # construct bounding half spaces for the four quadrants
+        hs_quad_list = []
+        for ra_q, dec_q, sgn in zip([46.0, 42.0, 42.0, 46.0],
+                                    [36.0, 36.0, 32.0, 32.0],
+                                    [1, -1, -1, 1]):
+
+            cos_ra = np.cos(np.radians(ra_q))
+            sin_ra = np.sin(np.radians(ra_q))
+            cos_dec = np.cos(np.radians(dec_q))
+            sin_dec = np.sin(np.radians(dec_q))
+
+            m_ra = np.array([[cos_ra, sin_ra, 0.0],
+                             [-sin_ra, cos_ra, 0.0],
+                             [0.0, 0.0, 1.0]])
+
+            m_dec = np.array([[cos_dec, 0.0, sin_dec],
+                              [0.0, 1.0, 0.0],
+                              [-sin_dec, 0.0, cos_dec]])
+
+            # half space that defines the great circle in RA at
+            # the center of the field of view
+            half_space_center = xyz_from_ra_dec(ra_q-sgn*2.0+sgn*90.0, 0.0)
+
+            # construct that half space as it will be rotated down to
+            # the prime tile at RA==Dec==0
+            rotated_half_space_center = np.dot(m_dec,
+                                        np.dot(m_ra, half_space_center))
+            rot_ra, rot_dec = ra_dec_from_xyz(rotated_half_space_center[0],
+                                              rotated_half_space_center[1],
+                                              rotated_half_space_center[2])
+
+            hs = htm.halfSpaceFromRaDec(rot_ra, rot_dec, 90.0)
+            hs_quad_list.append(hs)
 
         gal_tag_1st_quad = set()
         gal_tag_2nd_quad = set()
@@ -222,7 +273,97 @@ class GalaxyTileObjTestCase(unittest.TestCase):
             query += "AND dec>=-2.0 AND dec<=2.0"
             results = c.execute(query).fetchall()
             for gal in results:
-                pass
+                n_quad = 0
+                vv = xyz_from_ra_dec(gal[0], gal[1])
+                dd = angularSeparation(ra_arr, dec_arr,
+                                       gal[0], gal[1])
+                if dd[0] <= radius and hs_quad_list[0].contains_pt(vv):
+                    n_quad += 1
+                    gal_tag_1st_quad.add(gal[2])
+
+                if dd[1] <= radius and hs_quad_list[1].contains_pt(vv):
+                    n_quad += 1
+                    gal_tag_2nd_quad.add(gal[2])
+
+                if dd[2] <= radius and hs_quad_list[2].contains_pt(vv):
+                    n_quad += 1
+                    gal_tag_3rd_quad.add(gal[2])
+
+                if dd[3] <= radius and hs_quad_list[3].contains_pt(vv):
+                    n_quad += 1
+                    gal_tag_4th_quad.add(gal[2])
+
+                if n_quad>1:
+                    n_multiple_quad += 1
+
+        print(len(gal_tag_1st_quad))
+        print(len(gal_tag_2nd_quad))
+        print(len(gal_tag_3rd_quad))
+        print(len(gal_tag_4th_quad))
+        self.assertGreater(n_multiple_quad, 0)
+        print('n_mult %d' % n_multiple_quad)
+
+        gal_found_1st_quad = set()
+        gal_found_2nd_quad = set()
+        gal_found_3rd_quad = set()
+        gal_found_4th_quad = set()
+
+        obs = ObservationMetaData(pointingRA=ra_obs, pointingDec=dec_obs,
+                                  boundType='circle', boundLength=radius)
+
+        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+        data_iter = dbobj.query_columns(['galtileid', 'ra', 'dec', 'galtag'],
+                                        obs_metadata=obs)
+
+        for chunk in data_iter:
+            for gal in chunk:
+                if gal['ra'] >= ra_obs and gal['dec'] >= dec_obs:
+                    quad_set = gal_found_1st_quad
+                elif gal['ra'] < ra_obs and gal['dec'] >= dec_obs:
+                    quad_set = gal_found_2nd_quad
+                elif gal['ra'] < ra_obs and gal['dec'] < dec_obs:
+                    quad_set = gal_found_3rd_quad
+                elif gal['ra'] >= ra_obs and gal['dec'] < dec_obs:
+                    quad_set = gal_found_4th_quad
+                else:
+                    raise RuntimeError("Unsure what quadrant galaxy belongs in")
+                quad_set.add(gal['galtag'])
+
+        test_sum = 0
+        control_sum = 0
+        for test, control in zip([gal_found_1st_quad, gal_found_2nd_quad,
+                                  gal_found_3rd_quad, gal_found_4th_quad],
+                                 [gal_tag_1st_quad, gal_tag_2nd_quad,
+                                  gal_tag_3rd_quad, gal_tag_4th_quad]):
+
+            n_erroneous_test = 0
+            for tag in test:
+                if tag not in control:
+                    n_erroneous_test += 1
+            n_erroneous_control = 0
+            for tag in control:
+                if tag not in test:
+                    n_erroneous_control += 1
+            print('n_test %d bad %d' % (len(test), n_erroneous_test))
+            print('n_control %d bad %d\n' % (len(control), n_erroneous_control))
+            test_sum += len(test)
+            control_sum += len(control)
+        print('test_sum %d' % test_sum)
+        print('control_sum %d' % control_sum)
+
+        #self.assertEqual(len(gal_found_1st_quad), len(gal_tag_1st_quad))
+        #self.assertEqual(len(gal_found_2nd_quad), len(gal_tag_2nd_quad))
+        #self.assertEqual(len(gal_found_3rd_quad), len(gal_tag_3rd_quad))
+        #self.assertEqual(len(gal_found_4th_quad), len(gal_tag_4th_quad))
+
+        #for tag in gal_found_1st_quad:
+        #    self.assertIn(tag, gal_tag_1st_quad)
+        #for tag in gal_found_2nd_quad:
+        #    self.assertIn(tag, gal_tag_2nd_quad)
+        #for tag in gal_found_3rd_quad:
+        #    self.assertIn(tag, gal_tag_3rd_quad)
+        #for tag in gal_found_4th_quad:
+        #    self.assertIn(tag, gal_tag_4th_quad)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
