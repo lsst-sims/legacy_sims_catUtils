@@ -454,6 +454,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
             os.unlink(cat_name)
         shutil.rmtree(scratch_dir)
 
+
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
