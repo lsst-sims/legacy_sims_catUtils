@@ -15,6 +15,12 @@ from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import LocalGalaxyModels as LocGal
 
+from lsst.sims.catalogs.definitions import InstanceCatalog
+from lsst.sims.catalogs.decorators import cached
+
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -399,6 +405,54 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         for tag in gal_found_4th_quad:
             self.assertIn(tag, gal_tag_4th_quad)
 
+    def test_local_instance_catalog(self):
+        """
+        Test that the local galaxy obj can interface with the
+        InstanceCatalog as expected
+        """
+
+        class LocalGalDummyICat(InstanceCatalog):
+            column_outputs=['raJ2000', 'decJ2000',
+                            'ra', 'dec', 'galtag',
+                            'someFloat']
+
+            delimiter = ' '
+            default_formats = {'f': '%.9g'}
+
+            @cached
+            def get_someFloat(self):
+                t = self.column_by_name('galtag')
+                r = self.column_by_name('ra')
+                d = self.column_by_name('dec')
+                return r**2+d+0.5*t
+
+        obs = ObservationMetaData(pointingRA=34.0, pointingDec=44.0,
+                                  boundType='circle', boundLength=3.0)
+
+        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+
+        cat = LocalGalDummyICat(dbobj, obs_metadata=obs)
+        scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='local_gal')
+        cat_name = tempfile.mktemp(dir=scratch_dir,
+                                   prefix='local_gal',
+                                   suffix='.txt')
+
+        cat.write_catalog(cat_name)
+        dt = np.dtype([('raJ2000', float), ('decJ2000', float),
+                       ('ra', float), ('dec', float), ('galtag', int),
+                       ('someFloat', float)])
+
+        data = np.genfromtxt(cat_name, dtype=dt)
+        dd = angularSeparation(data['ra'], data['dec'],
+                               np.degrees(data['raJ2000']),
+                               np.degrees(data['decJ2000']))
+        self.assertLess(dd.max(), 0.001/3600.0)
+        ff = data['ra']**2+data['dec']+0.5*data['galtag']
+        np.testing.assert_array_almost_equal(ff, data['someFloat'], decimal=5)
+
+        if os.path.exists(cat_name):
+            os.unlink(cat_name)
+        shutil.rmtree(scratch_dir)
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
