@@ -178,7 +178,7 @@ class LocalStarChunkIterator(ChunkIterator):
         return self._postprocess_results(chunk)
 
 
-class LocalStarCatalogObj(object):
+class LocalStarCatalogObj(CatalogDBObject):
 
     config = LocalStarCatalogConfig()
 
@@ -187,18 +187,30 @@ class LocalStarCatalogObj(object):
     port = config.port
     driver = config.driver
 
-    def __init__(self, database=None, host=None, port=None, driver=None):
+    idColKey = 'id'
+    objid = 'epycStarBase'
+    tableid = 'stars_partition_8700000000000'  # just a placeholder
 
-        self.verbose = False
+    columns = [('id','simobjid', int),
+               ('raJ2000', 'ra*PI()/180.'),
+               ('decJ2000', 'decl*PI()/180.'),
+               ('glon', 'gal_l*PI()/180.'),
+               ('glat', 'gal_b*PI()/180.'),
+               ('magNorm', '(-2.5*log(flux_scale)/log(10.)) - 18.402732642'),
+               ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
+               ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
+               ('parallax', 'parallax*PI()/648000000.'),
+               ('galacticAv', 'CONVERT(float, ebv*3.1)'),
+               ('radialVelocity', 'vrad'),
+               ('variabilityParameters', 'varParamStr', str, 256),
+               ('sedFilename', 'sedfilename', str, 40)]
 
-        if database is not None:
-            self.database = database
-        if host is not None:
-            self.host = host
-        if port is not None:
-            self.port = port
-        if driver is not None:
-            self.driver = driver
+    def get_table(self):
+        """
+        We don't actually want this to do anything, since this CatalogDBObject
+        does its own search over all of the available star tables
+        """
+        pass
 
     def query_columns(self, colnames=None, chunk_size=None,
                       obs_metadata=None, constraint=None,
