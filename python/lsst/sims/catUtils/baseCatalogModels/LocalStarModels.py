@@ -145,6 +145,7 @@ class LocalStarChunkIterator(ChunkIterator):
         table_tag = self._tables_to_query.pop()
         table_name = 'stars_partition_%d' % table_tag
         print('loading %s' % table_name)
+        print('still need ',self._tables_to_query)
         db = _HiddenStarCatalogObj(table=table_name,
                                    database=self.database,
                                    host=self.host,
@@ -162,6 +163,7 @@ class LocalStarChunkIterator(ChunkIterator):
 
         if self._active_query is None or self._active_query.closed:
             if len(self._tables_to_query) == 0:
+                print('nothing more to query')
                 raise StopIteration
             self._active_query = self._load_next_star_db(self._colnames)
 
