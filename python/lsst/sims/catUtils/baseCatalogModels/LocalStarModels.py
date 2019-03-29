@@ -31,12 +31,6 @@ class LocalStarCatalogConfig(pexConfig.Config):
 
 
 class _HiddenStarCatalogObj(CatalogDBObject):
-    config = LocalStarCatalogConfig()
-
-    host = config.host
-    port = config.port
-    database = config.database
-    driver = config.driver
 
     objid = 'hiddenstar'
     tableid = None
@@ -71,7 +65,8 @@ class LocalStarChunkIterator(ChunkIterator):
                       (12500000000000, 14000000000000, 12500000000000),
                       (14000000000000, 100000000000000000000, 14000000000000))
 
-    def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint):
+    def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint,
+                 database, host, port, driver):
         """
         Parameters
         ----------
@@ -82,7 +77,20 @@ class LocalStarChunkIterator(ChunkIterator):
         chunk_size -- size of chunks to return
 
         constraint -- a string specifying a SQL 'WHERE' clause
+
+        database -- the name of the database to connect to
+
+        host -- the name of the host to connect to
+
+        port -- the port to connect to
+
+        driver -- the sqlalchemy driver to use
         """
+        self.database = database
+        self.host = host
+        self.port = port
+        self.driver = driver
+
         self.arbitrarySQL = False
         self._chunk_size = chunk_size
         self._obs_metadata = obs_metadata
@@ -136,7 +144,12 @@ class LocalStarChunkIterator(ChunkIterator):
     def _load_next_star_db(self, colnames):
         table_tag = self._tables_to_query.pop()
         table_name = 'stars_partition_%d' % table_tag
-        db = _HiddenStarCatalogObj(table=table_name)
+        print('loading %s' % table_name)
+        db = _HiddenStarCatalogObj(table=table_name,
+                                   database=self.database,
+                                   host=self.host,
+                                   port=self.port,
+                                   driver=self.driver)
         self.dbobj = db
         column_query = db._get_column_query(colnames)
         column_query = column_query.filter(text(self._htmid_where_clause))
@@ -162,6 +175,23 @@ class LocalStarChunkIterator(ChunkIterator):
 
 class LocalStarCatalogObj(object):
 
+    config = LocalStarCatalogConfig()
+
+    database = config.database
+    host = config.host
+    port = config.port
+    driver = config.driver
+
+    def __init__(self, database=None, host=None, port=None, driver=None):
+        if database is not None:
+            self.database = database
+        if host is not None:
+            self.host = host
+        if port is not None:
+            self.port = port
+        if driver is not None:
+            self.driver = driver
+
     def query_columns(self, colnames=None, chunk_size=None,
                       obs_metadata=None, constraint=None,
                       limit=None):
@@ -171,4 +201,8 @@ class LocalStarCatalogObj(object):
                                % str(obs_metadata.boundType))
 
         return LocalStarChunkIterator(self, colnames, obs_metadata, chunk_size,
-                                      constraint)
+                                      constraint,
+                                      self.database,
+                                      self.host,
+                                      self.port,
+                                      self.driver)
