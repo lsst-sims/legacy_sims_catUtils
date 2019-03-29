@@ -186,6 +186,9 @@ class LocalStarCatalogObj(object):
     driver = config.driver
 
     def __init__(self, database=None, host=None, port=None, driver=None):
+
+        self.verbose = False
+
         if database is not None:
             self.database = database
         if host is not None:
