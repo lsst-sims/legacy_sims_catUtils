@@ -46,11 +46,11 @@ for rr in results:
     m5.append(float(rr[6]))
 
 with h5py.File('data/obs_params.h5', 'w') as out_file:
-    out_file.create_dataset('ra', data=np.array(ra))
-    out_file.create_dataset('dec', data=np.array(dec))
+    out_file.create_dataset('ra', data=np.degrees(np.array(ra)))
+    out_file.create_dataset('dec', data=np.degrees(np.array(dec)))
     out_file.create_dataset('mjd', data=np.array(mjd))
     out_file.create_dataset('obsHistID', data=np.array(obs_id))
-    out_file.create_dataset('rotSkyPos', data=np.array(rotsky))
+    out_file.create_dataset('rotSkyPos', data=np.degrees(np.array(rotsky)))
     out_file.create_dataset('filter', data=np.array(bp))
     out_file.create_dataset('m5', data = np.array(m5))
 
