@@ -105,6 +105,7 @@ class LocalStarChunkIterator(ChunkIterator):
         self._trixel_bounds = half_space.findAllTrixels(self._trixel_search_level)
 
         self._tables_to_query = set()
+        self._tables_to_query.add('starsRRLy')
         where_clause = '('
         global_min_21 = None
         global_max_21 = None
@@ -125,12 +126,13 @@ class LocalStarChunkIterator(ChunkIterator):
                 where_clause += '(htmid>=%d AND htmid<=%d)' % (min_21, max_21)
 
             for part in self._partition_lim:
+                part_name = 'stars_partition_%d' % part[2]
                 if min_21>=part[0] and min_21<part[1]:
-                    self._tables_to_query.add(part[2])
+                    self._tables_to_query.add(part_name)
                 elif max_21>=part[0] and max_21<part[1]:
-                    self._tables_to_query.add(part[2])
+                    self._tables_to_query.add(part_name)
                 elif min_21<=part[0] and max_21>part[1]:
-                    self._tables_to_query.add(part[2])
+                    self._tables_to_query.add(part_name)
 
         where_clause += ')'
         self._htmid_where_clause = '(htmid>=%d AND htmid<=%d AND ' % (global_min_21, global_max_21)
@@ -142,8 +144,7 @@ class LocalStarChunkIterator(ChunkIterator):
         self._active_query = None
 
     def _load_next_star_db(self, colnames):
-        table_tag = self._tables_to_query.pop()
-        table_name = 'stars_partition_%d' % table_tag
+        table_name = self._tables_to_query.pop()
         print('loading %s' % table_name)
         print('still need ',self._tables_to_query)
         db = _HiddenStarCatalogObj(table=table_name,
