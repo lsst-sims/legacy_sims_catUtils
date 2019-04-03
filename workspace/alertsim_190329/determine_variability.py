@@ -133,7 +133,7 @@ if __name__ == "__main__":
         os.unlink(out_name)
         #raise RuntimeError("\n%s\nexists\n" % out_name)
 
-    query = "SELECT top 1000000 "
+    query = "SELECT top 10000 "
     query += "htmid, simobjid, umag, gmag, rmag, imag, zmag, ymag, "
     query += "parallax, ebv, lc_id, var_type "
     query += "FROM %s" % table_name
@@ -153,21 +153,30 @@ if __name__ == "__main__":
     ct_kplr = 0
     ct_mlt = 0
     with open(out_name, 'w') as out_file:
+        out_file.write('# u g r i z y parallax ebv lc_id var_type is_var\n')
         for chunk in data_iter:
+            is_var = np.zeros(len(chunk), dtype=int)
             is_kplr = np.where(chunk['var_type'] == 1)
             is_mlt = np.where(chunk['var_type'] == 2)
 
-            #print('is_kplr %d' % len(is_kplr[0]))
-            #print('is_mlt %d' % len(is_mlt[0]))
             assert len(is_kplr[0])+len(is_mlt[0])==len(chunk)
-            is_var = parse_mlt(chunk[is_mlt])
-            ct_var += is_var.sum()
-            ct_mlt += is_var.sum()
-            kplr_is_var = parse_kplr(chunk[is_kplr])
-            ct_var += kplr_is_var.sum()
             ct_tot += len(chunk)
-            ct_kplr += kplr_is_var.sum()
+
+            if len(is_mlt[0])>0:
+                is_var_mlt = parse_mlt(chunk[is_mlt])
+                is_var[is_mlt] = is_var_mlt
+            if len(is_kplr[0])>0:
+                is_var_kplr =parse_kplr(chunk[is_kplr])
+                is_var[is_kplr] = is_var_kplr
+
+            ct_var += is_var.sum()
+            for ii in range(len(chunk)):
+                out_file.write('%e %e %e %e %e %e %e %e %d %d %d\n' %
+                (chunk['u'][ii], chunk['g'][ii], chunk['r'][ii],
+                 chunk['i'][ii], chunk['z'][ii], chunk['y'][ii],
+                 chunk['parallax'][ii], chunk['ebv'][ii],
+                 chunk['lc_id'][ii], chunk['var_type'][ii],
+                 is_var[ii]))
 
     print('is_var %d of %d' % (ct_var, ct_tot))
     print('took %e' % (time.time()-t_start))
-    print('mlt %d kplr %d' % (ct_mlt, ct_kplr))
