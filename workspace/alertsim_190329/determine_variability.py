@@ -133,7 +133,7 @@ if __name__ == "__main__":
         os.unlink(out_name)
         #raise RuntimeError("\n%s\nexists\n" % out_name)
 
-    query = "SELECT top 10000 "
+    query = "SELECT top 2000000 "
     query += "htmid, simobjid, umag, gmag, rmag, imag, zmag, ymag, "
     query += "parallax, ebv, lc_id, var_type "
     query += "FROM %s" % table_name
@@ -153,7 +153,6 @@ if __name__ == "__main__":
     ct_kplr = 0
     ct_mlt = 0
     with open(out_name, 'w') as out_file:
-        out_file.write('# u g r i z y parallax ebv lc_id var_type is_var\n')
         for chunk in data_iter:
             is_var = np.zeros(len(chunk), dtype=int)
             is_kplr = np.where(chunk['var_type'] == 1)
@@ -171,12 +170,8 @@ if __name__ == "__main__":
 
             ct_var += is_var.sum()
             for ii in range(len(chunk)):
-                out_file.write('%e %e %e %e %e %e %e %e %d %d %d\n' %
-                (chunk['u'][ii], chunk['g'][ii], chunk['r'][ii],
-                 chunk['i'][ii], chunk['z'][ii], chunk['y'][ii],
-                 chunk['parallax'][ii], chunk['ebv'][ii],
-                 chunk['lc_id'][ii], chunk['var_type'][ii],
-                 is_var[ii]))
+                out_file.write('%d;%d;%d\n' %
+                               (chunk['simobjid'][ii],chunk['htmid'][ii],is_var[ii]))
 
     print('is_var %d of %d' % (ct_var, ct_tot))
     print('took %e' % (time.time()-t_start))
