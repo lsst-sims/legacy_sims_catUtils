@@ -1,4 +1,5 @@
 import numpy as np
+import h5py
 import os
 
 from lsst.sims.utils import radiansFromArcsec
@@ -77,10 +78,13 @@ for lc_name_root in lc_name_list:
             mag_base = dmag_base+quiet_mag
             flux1 = dummy_sed.fluxFromMag(mag_base)
             flux0 = dummy_sed.fluxFromMag(quiet_mag)
-            dflux = flux1-flux0
+            dflux = np.abs(flux1-flux0)
             for ii, bp in enumerate('ugrizy'):
                 dflux_name = '%s_ebv_%.2f_%s' % (lc_name, ebv_val, bp)
                 assert dflux_name not in out_cache
                 out_cache[dflux_name] = dflux[ii]
 
-np.savez('mlt_dflux_lookup.npz', **out_cache)
+out_name = 'data/mlt_dflux_lookup.h5'
+with h5py.File(out_name, 'w') as out_file:
+    for name in out_cache:
+        out_file.create_dataset(name, data=out_cache[name])
