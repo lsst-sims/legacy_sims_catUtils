@@ -61,7 +61,7 @@ sky_brightness = lsst_bp.magListForSed(sky_sed)
 print(sky_brightness)
 
 
-m5_single = 25.239
+m5_single = 26.0
 mag_grid = np.arange(10.0, 33.0, 0.05)
 dummy_sed = Sed()
 
