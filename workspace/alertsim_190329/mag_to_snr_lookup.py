@@ -62,7 +62,7 @@ print(sky_brightness)
 
 
 m5_single = 25.239
-mag_grid = np.arange(15.0, 29.0, 0.05)
+mag_grid = np.arange(10.0, 33.0, 0.05)
 dummy_sed = Sed()
 
 phot_params_single = PhotometricParameters(nexp=1, exptime=30.0)
