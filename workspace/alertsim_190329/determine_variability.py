@@ -113,7 +113,13 @@ if __name__ == "__main__":
     parser.add_argument('--partition', type=str, default=None,
                         help='htmid tag of stars_partition_* table to run')
 
+    parser.add_argument('--outdir', type=str, default=None,
+                        help='dir to write output to')
     args = parser.parse_args()
+
+    assert args.partition is not None
+    assert args.outdir is not None
+    assert os.path.isdir(args.outdir)
 
     try:
         db = DBObject(database='LSST',
@@ -128,7 +134,7 @@ if __name__ == "__main__":
 
 
     table_name = 'stars_partition_%s' % args.partition
-    out_name = 'data/isvar_lookup_%s.txt' % args.partition
+    out_name = os.path.join(args.outdir,'isvar_lookup_%s.txt' % args.partition)
     if os.path.isfile(out_name):
         os.unlink(out_name)
         #raise RuntimeError("\n%s\nexists\n" % out_name)
