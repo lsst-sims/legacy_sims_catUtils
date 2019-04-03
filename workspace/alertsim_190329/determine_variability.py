@@ -139,7 +139,7 @@ if __name__ == "__main__":
         os.unlink(out_name)
         #raise RuntimeError("\n%s\nexists\n" % out_name)
 
-    query = "SELECT top 2000000 "
+    query = "SELECT "
     query += "htmid, simobjid, umag, gmag, rmag, imag, zmag, ymag, "
     query += "parallax, ebv, lc_id, var_type "
     query += "FROM %s" % table_name
