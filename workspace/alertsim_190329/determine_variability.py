@@ -31,6 +31,8 @@ def parse_mlt(chunk):
     with h5py.File(mlt_dflux_name, 'r') as mlt_dflux_file:
         px_grid = mlt_dflux_file['parallax_grid(mas)'].value
         ebv_01 = np.round(chunk['ebv'], decimals=2)
+        ebv_01 = np.where(ebv_01>0.005, ebv_01, 0.01)
+        ebv_01 = np.where(ebv_01<7.005, ebv_01, 7.00)
         unq_ebv_01 = np.unique(ebv_01)
         unq_lc_id = np.unique(chunk['lc_id'])
 
