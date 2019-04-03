@@ -3,6 +3,7 @@ import numpy as np
 import h5py
 
 from lsst.sims.catalogs.db import DBObject
+from lsst.sims.photUtils import Sed
 
 import argparse
 import time
@@ -69,6 +70,43 @@ def parse_mlt(chunk):
     return is_var
 
 
+def parse_kplr(chunk):
+
+    if not hasattr(parse_kplr, 'dmag_lookup'):
+        fname = os.path.join(os.environ['SIMS_DATA_DIR'], 'catUtilsData',
+                             'kplr_dmag_171204.txt')
+        if not os.path.isfile(fname):
+            raise RuntimeError('\n\n%s\nis not a file\n' % fname)
+        dtype = np.dtype([('lc_id', int), ('dmag', float)])
+        parse_kplr.dmag_lookup = np.genfromtxt(fname, dtype=dtype)
+        sorted_dex = np.argsort(parse_kplr.dmag_lookup['lc_id'])
+        parse_kplr.dmag_lookup = parse_kplr.dmag_lookup[sorted_dex]
+
+        parse_kplr.dflux_lookup = {}
+        with h5py.File('data/dflux_SNR5_lookup.h5','r') as snr_dflux_file:
+            for kk in snr_dflux_file.keys():
+                parse_kplr.dflux_lookup[kk] = snr_dflux_file[kk].value
+
+
+    dummy_sed = Sed()
+
+    is_var = np.zeros(len(chunk), dtype=int)
+    dmag_dex = np.searchsorted(parse_kplr.dmag_lookup['lc_id'], chunk['lc_id'])
+    np.testing.assert_array_equal(chunk['lc_id'], parse_kplr.dmag_lookup['lc_id'][dmag_dex])
+    dmag_max = parse_kplr.dmag_lookup['dmag'][dmag_dex]
+    for bp in 'ugrizy':
+        dflux_threshold = np.interp(chunk[bp],
+                                    parse_kplr.dflux_lookup['mag_grid'],
+                                    parse_kplr.dflux_lookup['%s_dflux' % bp])
+
+        flux0 = dummy_sed.fluxFromMag(chunk[bp])
+        flux1 = dummy_sed.fluxFromMag(chunk[bp]+dmag_max)
+        dflux = np.abs(flux0-flux1)
+        local_is_var = (dflux>=dflux_threshold)
+        is_var[local_is_var] = 1
+    return is_var
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -111,6 +149,8 @@ if __name__ == "__main__":
                                                 chunk_size=100000)
 
     ct_var = 0
+    ct_tot = 0
+    ct_kplr = 0
     ct_mlt = 0
     with open(out_name, 'w') as out_file:
         for chunk in data_iter:
@@ -119,9 +159,15 @@ if __name__ == "__main__":
 
             #print('is_kplr %d' % len(is_kplr[0]))
             #print('is_mlt %d' % len(is_mlt[0]))
+            assert len(is_kplr[0])+len(is_mlt[0])==len(chunk)
             is_var = parse_mlt(chunk[is_mlt])
             ct_var += is_var.sum()
-            ct_mlt += len(is_mlt[0])
+            ct_mlt += is_var.sum()
+            kplr_is_var = parse_kplr(chunk[is_kplr])
+            ct_var += kplr_is_var.sum()
+            ct_tot += len(chunk)
+            ct_kplr += kplr_is_var.sum()
 
-    print('is_var %d of %d' % (ct_var, ct_mlt))
+    print('is_var %d of %d' % (ct_var, ct_tot))
     print('took %e' % (time.time()-t_start))
+    print('mlt %d kplr %d' % (ct_mlt, ct_kplr))
