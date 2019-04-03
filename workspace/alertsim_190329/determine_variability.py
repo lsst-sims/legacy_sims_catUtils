@@ -19,10 +19,10 @@ def parse_mlt(chunk):
             parse_mlt.lc_id_lookup[40+iii] = 'mid_active_%s' % ii
             parse_mlt.lc_id_lookup[50+iii] = 'late_active_%s' % ii
 
-            parse_mlt.dflux_lookup = {}
-            with h5py.File('data/dflux_SNR5_lookup.h5','r') as snr_dflux_file:
-                for kk in snr_dflux_file.keys():
-                    parse_mlt.dflux_lookup[kk] = snr_dflux_file[kk].value
+        parse_mlt.dflux_lookup = {}
+        with h5py.File('data/dflux_SNR5_lookup.h5','r') as snr_dflux_file:
+            for kk in snr_dflux_file.keys():
+                parse_mlt.dflux_lookup[kk] = snr_dflux_file[kk].value
 
     mlt_dflux_name = 'data/mlt_dflux_lookup.h5'
     assert os.path.isfile(mlt_dflux_name)
