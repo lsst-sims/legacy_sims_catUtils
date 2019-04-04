@@ -481,6 +481,31 @@ class MLT_flare_test_case(unittest.TestCase):
                     else:
                         self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
 
+        # test that delta_flux is correctly calculated
+        delta_flux_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                    parallax=parallax,
+                                                    ebv=ebv,
+                                                    quiescent_mags=quiescent_mags,
+                                                    do_mags=False)
+
+        self.assertEqual(delta_flux_vector.shape, delta_mag_vector.shape)
+
+        dummy_sed = Sed()
+        for i_band in range(6):
+            if i_band>=2:
+                # because we only implemented models of variability for u, g
+                np.testing.assert_array_equal(delta_flux_vector[i_band],
+                                              np.zeros(delta_flux_vector[i_band].shape, dtype=float))
+                continue
+            for i_obj in range(n_obj):
+                mag0 = quiescent_mags['ug'[i_band]][i_obj]
+                flux0 = dummy_sed.fluxFromMag(mag0)
+                delta_flux_control = dummy_sed.fluxFromMag(mag0 + delta_mag_vector[i_band][i_obj])-flux0
+                denom = np.abs(delta_flux_control)
+                denom = np.where(denom>0.0, denom, 1.0e-20)
+                err = np.abs(delta_flux_vector[i_band][i_obj]-delta_flux_control)/denom
+                self.assertLess(err.max(), 1.0e-10)
+
     def test_mlt_clean_up(self):
         """
         Test that the MLT cache is correctly loaded after sims_clean_up is
