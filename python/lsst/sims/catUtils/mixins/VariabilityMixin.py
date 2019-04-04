@@ -712,7 +712,9 @@ class MLTflaringMixin(Variability):
 
                 flux_arr = flux_arr_dict[mag_name]
 
+                t_pre_interp = time.time()
                 dflux = np.interp(t_interp, time_arr, flux_arr)
+                self.t_spent_interp+=time.time()-t_pre_interp
 
                 if isinstance(expmjd, numbers.Number):
                     dflux *= flux_factor[use_this_lc]
@@ -757,7 +759,7 @@ class MLTflaringMixin(Variability):
         quiescent_mags is a dict keyed on ('u', 'g', 'r', 'i', 'z', 'y')
         with the quiescent magnitudes of the objects
         """
-
+        self.t_spent_interp = 0.0
         t_start = time.time()
         if not hasattr(self, '_total_t_MLT'):
             self._total_t_MLT = 0.0
