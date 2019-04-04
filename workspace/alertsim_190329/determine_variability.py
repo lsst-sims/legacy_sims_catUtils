@@ -12,6 +12,7 @@ import multiprocessing
 
 def parse_mlt(chunk):
     if not hasattr(parse_mlt, 'lc_id_lookup'):
+        t_start = time.time()
         parse_mlt.lc_id_lookup = {}
         for ii in '0123':
             iii = int(ii)
@@ -25,6 +26,7 @@ def parse_mlt(chunk):
         with h5py.File('data/dflux_SNR5_lookup.h5','r') as snr_dflux_file:
             for kk in snr_dflux_file.keys():
                 parse_mlt.dflux_lookup[kk] = snr_dflux_file[kk].value
+        #print('init %e' % (time.time()-t_start))
 
     mlt_dflux_name = 'data/mlt_dflux_lookup.h5'
     assert os.path.isfile(mlt_dflux_name)
@@ -76,6 +78,7 @@ def parse_mlt(chunk):
 def parse_kplr(chunk):
 
     if not hasattr(parse_kplr, 'dmag_lookup'):
+        t_start = time.time()
         fname = os.path.join(os.environ['SIMS_DATA_DIR'], 'catUtilsData',
                              'kplr_dmag_171204.txt')
         if not os.path.isfile(fname):
@@ -89,7 +92,7 @@ def parse_kplr(chunk):
         with h5py.File('data/dflux_SNR5_lookup.h5','r') as snr_dflux_file:
             for kk in snr_dflux_file.keys():
                 parse_kplr.dflux_lookup[kk] = snr_dflux_file[kk].value
-
+        #print('init %e' % (time.time()-t_start))
 
     dummy_sed = Sed()
 
@@ -110,8 +113,8 @@ def parse_kplr(chunk):
     return is_var
 
 
-def process_chunk(chunk, lock, out_file):
-    print('starting chunk %d' % os.getpid())
+def process_chunk(chunk, lock, out_name):
+    #print('starting chunk %d' % os.getpid())
     is_var = np.zeros(len(chunk), dtype=int)
     is_kplr = np.where(chunk['var_type'] == 1)
     is_mlt = np.where(chunk['var_type'] == 2)
@@ -126,9 +129,11 @@ def process_chunk(chunk, lock, out_file):
         is_var[is_kplr] = is_var_kplr
 
     lock.acquire()
-    for ii in range(len(chunk)):
-        out_file.write('%d;%d;%d\n' %
-                       (chunk['simobjid'][ii],chunk['htmid'][ii],is_var[ii]))
+    print('len chunk %d' % len(chunk))
+    with open(out_name, 'a') as out_file:
+        for ii in range(len(chunk)):
+            out_file.write('%d;%d;%d\n' %
+                           (chunk['simobjid'][ii],chunk['htmid'][ii],is_var[ii]))
     print('done with chunk %d' % os.getpid())
     lock.release()
 
@@ -186,19 +191,21 @@ if __name__ == "__main__":
     lock = multiprocessing.Lock()
 
     p_list = []
-    with open(out_name, 'w') as out_file:
-        for chunk in data_iter:
-            p = multiprocessing.Process(target=process_chunk,
-                                        args=(chunk, lock, out_file))
-            p.start()
-            p_list.append(p)
-            if len(p_list)>=args.n_procs:
-                print('joining')
-                for p in p_list:
-                    p.join()
-                p_list = []
+    for chunk in data_iter:
+            #process_chunk(chunk, lock, out_file)
 
-        for p in p_list:
-            p.join()
+        p = multiprocessing.Process(target=process_chunk,
+                                        args=(chunk, lock, out_name))
+        p.start()
+        p_list.append(p)
+        if len(p_list)>=args.n_procs:
+            print('joining')
+            for p in p_list:
+                p.join()
+            p_list = []
+
+    for p in p_list:
+        p.join()
+
 
     print('that took %e' % (time.time()-t_start))
