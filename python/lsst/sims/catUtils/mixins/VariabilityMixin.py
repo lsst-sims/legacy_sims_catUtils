@@ -683,7 +683,7 @@ class MLTflaringMixin(Variability):
 
     def _process_mlt_class(self, lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                            flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
-                           base_mags, mag_name_tuple, output_dict):
+                           base_mags, mag_name_tuple, output_dict, do_mags):
 
         ss = Sed()
 
@@ -733,24 +733,26 @@ class MLTflaringMixin(Variability):
                 else:
                     dflux *= dust_factor
 
+                if do_mags:
+                    if isinstance(expmjd, numbers.Number):
+                        local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                        local_base_mags = base_mags[mag_name][use_this_lc]
+                    else:
+                        local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
 
-                if isinstance(expmjd, numbers.Number):
-                    local_base_fluxes = base_fluxes[mag_name][use_this_lc]
-                    local_base_mags = base_mags[mag_name][use_this_lc]
+                    dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
+
+                    local_output_dict[i_mag]=dmag
                 else:
-                    local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
-                    local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
-
-                dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
-
-                local_output_dict[i_mag]=dmag
+                    local_output_dict[i_mag]=dflux
 
             output_dict[lc_name_raw] = {'dex':use_this_lc, 'dmag':local_output_dict}
 
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
                         parallax=None, ebv=None, quiescent_mags=None,
-                        variability_cache=None):
+                        variability_cache=None, do_mags=True):
         """
         parallax, ebv, and quiescent_mags are optional kwargs for use if you are
         calling this method outside the context of an InstanceCatalog (presumably
@@ -762,6 +764,9 @@ class MLTflaringMixin(Variability):
 
         quiescent_mags is a dict keyed on ('u', 'g', 'r', 'i', 'z', 'y')
         with the quiescent magnitudes of the objects
+
+        do_mags is a boolean; if True, return delta_magnitude;
+        if False, return delta_flux
         """
         self.t_spent_interp = 0.0
         t_start = time.time()
@@ -969,7 +974,7 @@ class MLTflaringMixin(Variability):
 
             self._process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                                     flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
-                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
+                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict, do_mags)
 
             t_work += time.time() - t_before_work
 
