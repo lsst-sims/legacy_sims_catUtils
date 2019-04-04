@@ -8,6 +8,7 @@ from lsst.sims.photUtils import Sed
 import argparse
 import time
 
+import multiprocessing
 
 def parse_mlt(chunk):
     if not hasattr(parse_mlt, 'lc_id_lookup'):
@@ -109,6 +110,29 @@ def parse_kplr(chunk):
     return is_var
 
 
+def process_chunk(chunk, lock, out_file):
+    print('starting chunk %d' % os.getpid())
+    is_var = np.zeros(len(chunk), dtype=int)
+    is_kplr = np.where(chunk['var_type'] == 1)
+    is_mlt = np.where(chunk['var_type'] == 2)
+
+    assert len(is_kplr[0])+len(is_mlt[0])==len(chunk)
+
+    if len(is_mlt[0])>0:
+        is_var_mlt = parse_mlt(chunk[is_mlt])
+        is_var[is_mlt] = is_var_mlt
+    if len(is_kplr[0])>0:
+        is_var_kplr =parse_kplr(chunk[is_kplr])
+        is_var[is_kplr] = is_var_kplr
+
+    lock.acquire()
+    for ii in range(len(chunk)):
+        out_file.write('%d;%d;%d\n' %
+                       (chunk['simobjid'][ii],chunk['htmid'][ii],is_var[ii]))
+    print('done with chunk %d' % os.getpid())
+    lock.release()
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -117,6 +141,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--outdir', type=str, default=None,
                         help='dir to write output to')
+
+    parser.add_argument('--n_procs', type=int, default=20)
     args = parser.parse_args()
 
     assert args.partition is not None
@@ -154,32 +180,24 @@ if __name__ == "__main__":
 
     t_start = time.time()
     data_iter = db.get_arbitrary_chunk_iterator(query, dtype=dtype,
-                                                chunk_size=100000)
+                                                chunk_size=500000)
 
-    ct_var = 0
-    ct_tot = 0
-    ct_kplr = 0
-    ct_mlt = 0
+
+    lock = multiprocessing.Lock()
+
+    p_list = []
     with open(out_name, 'w') as out_file:
         for chunk in data_iter:
-            is_var = np.zeros(len(chunk), dtype=int)
-            is_kplr = np.where(chunk['var_type'] == 1)
-            is_mlt = np.where(chunk['var_type'] == 2)
+            p = multiprocessing.Process(target=process_chunk,
+                                        args=(chunk, lock, out_file))
+            p.start()
+            p_list.append(p)
+            if len(p_list)>=args.n_procs:
+                print('joining')
+                for p in p_list:
+                    p.join()
+                p_list = []
 
-            assert len(is_kplr[0])+len(is_mlt[0])==len(chunk)
-            ct_tot += len(chunk)
-
-            if len(is_mlt[0])>0:
-                is_var_mlt = parse_mlt(chunk[is_mlt])
-                is_var[is_mlt] = is_var_mlt
-            if len(is_kplr[0])>0:
-                is_var_kplr =parse_kplr(chunk[is_kplr])
-                is_var[is_kplr] = is_var_kplr
-
-            ct_var += is_var.sum()
-            for ii in range(len(chunk)):
-                out_file.write('%d;%d;%d\n' %
-                               (chunk['simobjid'][ii],chunk['htmid'][ii],is_var[ii]))
-
-    print('is_var %d of %d' % (ct_var, ct_tot))
-    print('took %e' % (time.time()-t_start))
+        for p in p_list:
+            p.join()
+    print('that took %e' % (time.time()-t_start))
