@@ -383,6 +383,16 @@ class MLT_flare_test_case(unittest.TestCase):
                 err = np.abs(delta_flux_vector[i_band][i_obj]-delta_flux_control)/np.abs(delta_flux_control)
                 self.assertLess(err.max(), 1.0e-10)
 
+        # test fluxes on just one mjd
+        delta_flux_single_time = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr[3],
+                                                         parallax=parallax,
+                                                         ebv=ebv,
+                                                         quiescent_mags=quiescent_mags,
+                                                         do_mags=False)
+
+        self.assertEqual(delta_flux_single_time.shape, (6, n_obj))
+        np.testing.assert_array_equal(delta_flux_single_time, delta_flux_vector[:,:,3])
+
     def test_MLT_many_mjd_some_invalid(self):
         """
         This test will verify that applyMLTflaring responds properly when given
