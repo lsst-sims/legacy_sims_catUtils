@@ -721,7 +721,9 @@ class MLTflaringMixin(Variability):
                 if isinstance(expmjd, numbers.Number):
                     dflux *= flux_factor[use_this_lc]
                 else:
-                    dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+                    flux_factor_subset = flux_factor[use_this_lc]
+                    for i_obj in range(n_obj):
+                        dflux[i_obj,:] *= flux_factor_subset[i_obj]
 
                 dust_factor = np.interp(ebv[use_this_lc],
                                         mlt_dust_lookup['ebv'],
