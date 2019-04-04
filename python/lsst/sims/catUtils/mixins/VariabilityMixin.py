@@ -728,9 +728,11 @@ class MLTflaringMixin(Variability):
                                         mlt_dust_lookup[mag_name])
 
                 if not isinstance(expmjd, numbers.Number):
-                    dust_factor = np.array([dust_factor]*n_time).transpose()
+                    for i_obj in range(n_obj):
+                        dflux[i_obj,:] *= dust_factor[i_obj]
+                else:
+                    dflux *= dust_factor
 
-                dflux *= dust_factor
 
                 if isinstance(expmjd, numbers.Number):
                     local_base_fluxes = base_fluxes[mag_name][use_this_lc]
