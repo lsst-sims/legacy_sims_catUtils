@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     t_start = time.time()
     data_iter = db.get_arbitrary_chunk_iterator(query, dtype=dtype,
-                                                chunk_size=500000)
+                                                chunk_size=5000000)
 
 
     lock = multiprocessing.Lock()
