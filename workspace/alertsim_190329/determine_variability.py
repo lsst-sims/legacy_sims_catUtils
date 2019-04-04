@@ -200,4 +200,5 @@ if __name__ == "__main__":
 
         for p in p_list:
             p.join()
+
     print('that took %e' % (time.time()-t_start))
