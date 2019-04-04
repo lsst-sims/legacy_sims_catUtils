@@ -699,7 +699,9 @@ class MLTflaringMixin(Variability):
             n_obj = len(use_this_lc)
             n_time = len(expmjd)
             t_interp = np.ones(shape=(n_obj, n_time))*expmjd
-            t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+            t0_arr = params['t0'][use_this_lc].astype(float)
+            for i_obj in range(n_obj):
+                t_interp[i_obj,:] += t0_arr[i_obj]
 
         bad_dexes = np.where(t_interp>max_time)
         while len(bad_dexes[0])>0:
