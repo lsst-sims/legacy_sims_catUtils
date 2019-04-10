@@ -44,6 +44,8 @@ if __name__ == "__main__":
     obs_param_name = 'data/obs_params.h5'
     obs_params = h5py.File(obs_param_name, 'r')
 
+    assert np.diff(obs_params['obsHistID']).min()>0
+
     gal_db = LocalGalaxyTileObj(database='LSST',
                                 host='epyc.astro.washington.edu',
                                 port=1433,
