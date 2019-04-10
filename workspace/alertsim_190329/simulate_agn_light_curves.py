@@ -96,10 +96,16 @@ if __name__ == "__main__":
 
         dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
                                   params, mjd_obs,
-                                  redshift=chunk['redshift'])
+                                  redshift=chunk['redshift']).transpose(1,2,0)
+
+        for ii in range(len(chunk)):
+            dmag_obs = np.array([dmag[ii][tt][filter_obs[tt]]
+                                 for tt in range(len(filter_obs))])
 
         print('valid %d -- %e %e' % (len(valid[0]), chunk['ra'].min(),
                                      chunk['ra'].max()))
+
+        print(dmag.shape)
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     obs_params.close()
