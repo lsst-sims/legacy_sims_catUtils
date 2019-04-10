@@ -5,12 +5,17 @@ import os
 
 import time
 
+from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 if __name__ == "__main__":
+
+    fov_radius = 1.75
+
+    agn_model = ExtraGalacticVariabilityModels()
 
     htmid_map_name = 'data/htmid_to_obs_map.pickle'
     assert os.path.isfile(htmid_map_name)
@@ -51,19 +56,50 @@ if __name__ == "__main__":
                                 port=1433,
                                 driver='mssql+pymssql')
 
+    obsid_query = np.array(htmid_to_obs[htmid_query])
+    obs_dex = np.searchsorted(obs_params['obsHistID'].value, obsid_query)
+    np.testing.assert_array_equal(obs_params['obsHistID'].value[obs_dex],
+                                  obsid_query)
+
+    ra_obs = obs_params['ra'].value[obs_dex]
+    dec_obs = obs_params['dec'].value[obs_dex]
+    mjd_obs = obs_params['mjd'].value[obs_dex]
+    rotsky_obs = obs_params['rotSkyPos'].value[obs_dex]
+    filter_obs = obs_params['filter'].value[obs_dex]
 
     chunk_size = 10000
     data_iter = gal_db.query_columns(col_names, obs_metadata=obs_query,
                                      chunk_size=chunk_size,
                                      constraint='isagn=1')
 
+    t_start = time.time()
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
                                     query_level)
 
         valid = np.where(htmid_found==htmid_query)
+        if len(valid[0]) == 0:
+            continue
+
+        chunk = chunk[valid]
+
+        params = {}
+        params['agn_sfu'] = chunk['agn_sfu']
+        params['agn_sfg'] = chunk['agn_sfg']
+        params['agn_sfr'] = chunk['agn_sfr']
+        params['agn_sfi'] = chunk['agn_sfi']
+        params['agn_sfz'] = chunk['agn_sfz']
+        params['agn_sfy'] = chunk['agn_sfy']
+        params['agn_tau'] = chunk['agn_tau']
+        params['seed'] = chunk['id']+1
+
+        dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
+                                  params, mjd_obs,
+                                  redshift=chunk['redshift'])
+
         print('valid %d -- %e %e' % (len(valid[0]), chunk['ra'].min(),
                                      chunk['ra'].max()))
 
+    print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     obs_params.close()
