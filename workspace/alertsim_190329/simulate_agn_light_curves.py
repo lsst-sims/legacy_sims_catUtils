@@ -43,7 +43,7 @@ if __name__ == "__main__":
     with open(htmid_map_name, 'rb') as in_file:
         htmid_to_obs = pickle.load(in_file)
 
-    threshold = 1000
+    threshold = 5000
     for kk in htmid_to_obs:
         n_obs = len(htmid_to_obs[kk])
         if n_obs>threshold and n_obs<2*threshold:
@@ -87,6 +87,8 @@ if __name__ == "__main__":
     mjd_obs = obs_params['mjd'].value[obs_dex]
     rotsky_obs = obs_params['rotSkyPos'].value[obs_dex]
     filter_obs = obs_params['filter'].value[obs_dex]
+
+    print('%d time steps' % len(filter_obs))
 
     chunk_size = 10000
     data_iter = gal_db.query_columns(col_names, obs_metadata=obs_query,
