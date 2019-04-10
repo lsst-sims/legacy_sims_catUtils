@@ -44,6 +44,8 @@ if __name__ == "__main__":
     with open(htmid_map_name, 'rb') as in_file:
         htmid_to_obs = pickle.load(in_file)
 
+    print('%d htmid' % len(htmid_to_obs))
+
     threshold = 5000
     for kk in htmid_to_obs:
         n_obs = len(htmid_to_obs[kk])
