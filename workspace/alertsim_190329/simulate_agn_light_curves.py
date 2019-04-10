@@ -11,11 +11,32 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
+import multiprocessing
+
+def process_agn_chunk(chunk, filter_obs):
+    agn_model = ExtraGalacticVariabilityModels()
+
+    params = {}
+    params['agn_sfu'] = chunk['agn_sfu']
+    params['agn_sfg'] = chunk['agn_sfg']
+    params['agn_sfr'] = chunk['agn_sfr']
+    params['agn_sfi'] = chunk['agn_sfi']
+    params['agn_sfz'] = chunk['agn_sfz']
+    params['agn_sfy'] = chunk['agn_sfy']
+    params['agn_tau'] = chunk['agn_tau']
+    params['seed'] = chunk['id']+1
+
+    dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
+                              params, mjd_obs,
+                              redshift=chunk['redshift']).transpose(1,2,0)
+
+    for ii in range(len(chunk)):
+        dmag_obs = np.array([dmag[ii][tt][filter_obs[tt]]
+                             for tt in range(len(filter_obs))])
+
 if __name__ == "__main__":
 
     fov_radius = 1.75
-
-    agn_model = ExtraGalacticVariabilityModels()
 
     htmid_map_name = 'data/htmid_to_obs_map.pickle'
     assert os.path.isfile(htmid_map_name)
@@ -73,6 +94,7 @@ if __name__ == "__main__":
                                      constraint='isagn=1')
 
     t_start = time.time()
+    p_list = []
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -84,28 +106,21 @@ if __name__ == "__main__":
 
         chunk = chunk[valid]
 
-        params = {}
-        params['agn_sfu'] = chunk['agn_sfu']
-        params['agn_sfg'] = chunk['agn_sfg']
-        params['agn_sfr'] = chunk['agn_sfr']
-        params['agn_sfi'] = chunk['agn_sfi']
-        params['agn_sfz'] = chunk['agn_sfz']
-        params['agn_sfy'] = chunk['agn_sfy']
-        params['agn_tau'] = chunk['agn_tau']
-        params['seed'] = chunk['id']+1
-
-        dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
-                                  params, mjd_obs,
-                                  redshift=chunk['redshift']).transpose(1,2,0)
-
-        for ii in range(len(chunk)):
-            dmag_obs = np.array([dmag[ii][tt][filter_obs[tt]]
-                                 for tt in range(len(filter_obs))])
-
         print('valid %d -- %e %e' % (len(valid[0]), chunk['ra'].min(),
                                      chunk['ra'].max()))
 
-        print(dmag.shape)
+        p = multiprocessing.Process(target=process_agn_chunk,
+                                    args=(chunk, filter_obs))
+        p.start()
+        p_list.append(p)
+        if len(p_list)>30:
+            for p in p_list:
+                p.join()
+            p_list = []
+
+
+    for p in p_list:
+        p.join()
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     obs_params.close()
