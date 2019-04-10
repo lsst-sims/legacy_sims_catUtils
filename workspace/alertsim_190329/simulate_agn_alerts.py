@@ -6,6 +6,7 @@ import os
 import time
 
 from lsst.sims.utils import angularSeparation
+from lsst.sims.photUtils import SignalToNoise as SNR
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
@@ -73,7 +74,11 @@ if __name__ == "__main__":
     col_names = ['agn_sfu', 'agn_sfg', 'agn_sfr',
                  'agn_sfi', 'agn_sfz', 'agn_sfy',
                  'agn_tau', 't0_agn', 'id', 'redshift',
-                 'ra', 'dec']
+                 'ra', 'dec',
+                 'u_ab', 'g_ab', 'r_ab',
+                 'i_ab', 'z_ab', 'y_ab',
+                 'AGNLSSTu', 'AGNLSSTg', 'AGNLSSTr',
+                 'AGNLSSTi', 'AGNLSSTz', 'AGNLSSTy']
 
     obs_param_name = 'data/obs_params.h5'
     obs_params = h5py.File(obs_param_name, 'r')
