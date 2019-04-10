@@ -1,4 +1,3 @@
-#hugh
 import h5py
 import pickle
 import numpy as np
