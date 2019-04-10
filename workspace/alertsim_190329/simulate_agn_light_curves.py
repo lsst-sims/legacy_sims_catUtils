@@ -32,8 +32,13 @@ def process_agn_chunk(chunk, filter_obs, out_data):
 
     for ii in range(len(chunk)):
         unq = chunk['galtileid'][ii]
-        out_data[unq] = np.array([dmag[ii][tt][filter_obs[tt]]
+        dmag_obs = np.array([dmag[ii][tt][filter_obs[tt]]
                                  for tt in range(len(filter_obs))])
+        detected = np.where(np.abs(dmag_obs)>0.001)
+        if len(detected[0])>0:
+            out_data[unq] = detected[0][0]
+        else:
+            out_data[unq] = -1
 
 if __name__ == "__main__":
 
