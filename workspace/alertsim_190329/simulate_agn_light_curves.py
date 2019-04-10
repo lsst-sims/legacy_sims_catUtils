@@ -13,7 +13,7 @@ from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 import multiprocessing
 
-def process_agn_chunk(chunk, filter_obs):
+def process_agn_chunk(chunk, filter_obs, out_data):
     agn_model = ExtraGalacticVariabilityModels()
 
     params = {}
@@ -31,8 +31,9 @@ def process_agn_chunk(chunk, filter_obs):
                               redshift=chunk['redshift']).transpose(1,2,0)
 
     for ii in range(len(chunk)):
-        dmag_obs = np.array([dmag[ii][tt][filter_obs[tt]]
-                             for tt in range(len(filter_obs))])
+        unq = chunk['galtileid'][ii]
+        out_data[unq] = np.array([dmag[ii][tt][filter_obs[tt]]
+                                 for tt in range(len(filter_obs))])
 
 if __name__ == "__main__":
 
@@ -96,7 +97,10 @@ if __name__ == "__main__":
                                      constraint='isagn=1')
 
     t_start = time.time()
+    mgr = multiprocessing.Manager()
+    out_data = mgr.dict()
     p_list = []
+    out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.h5'
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -112,7 +116,8 @@ if __name__ == "__main__":
                                      chunk['ra'].max()))
 
         p = multiprocessing.Process(target=process_agn_chunk,
-                                    args=(chunk, filter_obs))
+                                    args=(chunk, filter_obs,
+                                          out_data))
         p.start()
         p_list.append(p)
         if len(p_list)>30:
@@ -123,6 +128,11 @@ if __name__ == "__main__":
 
     for p in p_list:
         p.join()
+
+    with h5py.File(out_name, 'w') as out_file:
+        print('n_lc %d' % len(out_data))
+        for name in out_data.keys():
+            out_file.create_dataset('%d' % name, data=out_data[name])
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     obs_params.close()
