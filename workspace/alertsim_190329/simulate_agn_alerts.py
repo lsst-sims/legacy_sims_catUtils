@@ -254,6 +254,7 @@ if __name__ == "__main__":
     to_concatenate = []
     n_tot = 0
     n_processed = 0
+    n_threads = 30
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -299,7 +300,7 @@ if __name__ == "__main__":
                                               m5_obs, coadd_m5, out_data))
             p.start()
             p_list.append(p)
-            if len(p_list)>30:
+            if len(p_list)>n_threads:
                 for p in p_list:
                     p.join()
                 p_list = []
@@ -322,7 +323,7 @@ if __name__ == "__main__":
                                               m5_obs, coadd_m5, out_data))
             p.start()
             p_list.append(p)
-            if len(p_list)>30:
+            if len(p_list)>n_threads:
                 for p in p_list:
                     p.join()
                 p_list = []
