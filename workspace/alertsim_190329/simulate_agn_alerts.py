@@ -20,7 +20,7 @@ import multiprocessing
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, out_data):
 
-    print('processing %d' % len(chunk))
+    #print('processing %d' % len(chunk))
     ct_first = 0
     ct_at_all = 0
     ct_tot = 0
@@ -162,8 +162,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
             else:
                 ct_at_all += 1
 
-    print('%d tot %d first %d at all %d ' %
-    (os.getpid(),ct_tot, ct_first, ct_at_all))
+    #print('%d tot %d first %d at all %d ' %
+    #(os.getpid(),ct_tot, ct_first, ct_at_all))
 
 if __name__ == "__main__":
 
