@@ -139,7 +139,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         flux_tot += agn_flux_tot
         mag_tot = dummy_sed.magFromFlux(flux_tot)
 
-        assert len(mag_tot) == n_t
+        assert len(mag_dot) == n_t
         snr_single_val[:] = -1.0
         for i_bp, bp in enumerate('ugrizy'):
             valid = np.where(filter_obs==i_bp)
