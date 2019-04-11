@@ -252,6 +252,8 @@ if __name__ == "__main__":
     out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.h5'
     i_chunk = 0
     to_concatenate = []
+    n_tot = 0
+    n_processed = 0
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -262,6 +264,7 @@ if __name__ == "__main__":
             continue
 
         chunk = chunk[valid]
+        n_tot += len(chunk)
 
         #process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
         #                  out_data)
@@ -284,6 +287,7 @@ if __name__ == "__main__":
                 to_concatenate.append(sub_chunk)
                 continue
 
+            n_processed += len(sub_chunk)
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, out_data))
@@ -297,8 +301,10 @@ if __name__ == "__main__":
     if len(to_concatenate)>0:
         chunk = np.concatenate(to_concatenate)
         for i_min in range(0,len(chunk),1000):
+            sub_chunk = chunk[i_min:i_min+1000]
+            n_processed += len(sub_chunk)
             p = multiprocessing.Process(target=process_agn_chunk,
-                                        args=(chunk[i_min:i_min+1000],
+                                        args=(sub_chunk,
                                               filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, out_data))
             p.start()
@@ -317,4 +323,5 @@ if __name__ == "__main__":
             out_file.create_dataset('%d' % name, data=out_data[name])
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
+    print('shld %d processed %d' % (n_tot, n_processed))
     obs_params.close()
