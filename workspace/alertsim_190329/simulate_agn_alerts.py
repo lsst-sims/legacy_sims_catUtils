@@ -157,7 +157,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         detected = (agn_dflux>=dflux_thresh)
         if detected.any():
             first_dex = np.where(detected)[0].min()
-            out_data[unq] = (mjd_out[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
+            out_data[unq] = (mjd_obs[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
             if detected[0]:
                 ct_first += 1
             else:
