@@ -156,7 +156,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         noise_coadd = np.array([noise_coadd_cache[ii]
                                 for ii in filter_obs])
 
-        out_data[unq] = (noise_single, noise_coadd, agn_dflux)
+        out_data[unq] = (noise_single, flux_tot, snr_single_val)
         continue
 
         noise = np.sqrt(noise_coadd**2+noise_single**2)
