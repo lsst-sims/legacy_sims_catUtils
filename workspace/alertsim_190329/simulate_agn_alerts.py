@@ -274,14 +274,14 @@ if __name__ == "__main__":
         print('assessing')
         if len(chunk)<1000:
             to_concatenate.append(chunk)
-            tot = 0
+            tot_sub = 0
             for sub_chunk in to_concatenate:
-                tot += len(sub_chunk)
+                tot_sub += len(sub_chunk)
 
-            if n_processed+tot != n_tot:
+            if n_processed+tot_sub != n_tot:
                 raise RuntimeError('n_proc+tot %d n_tot %d'
-                                   % (n_processed+tot, n_tot))
-            if tot<1000:
+                                   % (n_processed+tot_sub, n_tot))
+            if tot_sub<1000:
                 print('move on')
                 continue
             else:
