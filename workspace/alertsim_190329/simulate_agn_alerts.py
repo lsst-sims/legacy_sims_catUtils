@@ -17,7 +17,7 @@ from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 import multiprocessing
 
-import argparser
+import argparse
 
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, out_data):
