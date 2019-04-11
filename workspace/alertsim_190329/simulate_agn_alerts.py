@@ -154,19 +154,16 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         noise_coadd = np.array([noise_coadd_cache[ii]
                                 for ii in filter_obs])
 
-        out_data[unq] = (noise_single, noise_coadd, agn_dflux)
-        continue
-
         noise = np.sqrt(noise_coadd**2+noise_single**2)
         dflux_thresh = 5.0*noise
         detected = (agn_dflux>=dflux_thresh)
-        #if detected.any():
-        #    first_dex = np.where(detected)[0].min()
-        #    out_data[unq] = (mjd_obs[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
-        #    if detected[0]:
-        #        ct_first += 1
-        #    else:
-        #        ct_at_all += 1
+        if detected.any():
+            first_dex = np.where(detected)[0].min()
+            out_data[unq] = (mjd_obs[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
+            if detected[0]:
+                ct_first += 1
+            else:
+                ct_at_all += 1
 
     #print('%d tot %d first %d at all %d ' %
     #(os.getpid(),ct_tot, ct_first, ct_at_all))
