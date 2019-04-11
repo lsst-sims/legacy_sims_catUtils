@@ -74,6 +74,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                               redshift=chunk['redshift'])
 
     dmag_mean = np.mean(dmag, axis=2)
+    assert dmag_mean.shape == (6,n_obj)
 
     dummy_sed = Sed()
     lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
