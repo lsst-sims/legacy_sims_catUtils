@@ -154,7 +154,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
         noise = np.sqrt(noise_coadd**2+noise_single**2)
         dflux_thresh = 5.0*noise
-        detected = agn_dflux>=dflux_thresh
+        detected = (agn_dflux>=dflux_thresh)
         if detected.any():
             out_data[unq] = np.where(detected)[0].min()
             if detected[0]:
