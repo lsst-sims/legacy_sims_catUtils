@@ -355,7 +355,8 @@ if __name__ == "__main__":
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk,
                                               filter_obs, mjd_obs,
-                                              m5_obs, coadd_m5, out_data))
+                                              m5_obs, coadd_m5, obs_md_list,
+                                              out_data))
             p.start()
             p_list.append(p)
             if len(p_list)>n_threads:
