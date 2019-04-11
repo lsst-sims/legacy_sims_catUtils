@@ -275,6 +275,10 @@ if __name__ == "__main__":
             tot = 0
             for sub_chunk in to_concatenate:
                 tot += len(sub_chunk)
+
+            if n_processed+tot != n_tot:
+                raise RuntimeError('n_proc+tot %d n_tot %d'
+                                   % (n_processed+tot, n_tot))
             if tot<1000:
                 continue
             else:
