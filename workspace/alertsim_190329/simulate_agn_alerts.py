@@ -141,6 +141,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         flux_tot += agn_flux_tot
         mag_tot = dummy_sed.magFromFlux(flux_tot)
 
+        snr_single_val[:] = -1.0
         for i_bp, bp in enumerate('ugrizy'):
             valid = np.where(filter_obs==i_bp)
             snr_single_val[valid] = np.interp(mag_tot[valid],
@@ -148,6 +149,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                               snr_single[bp])
 
             noise_coadd_cache[i_bp] = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
+
+        assert snr_single_val.min()>0.0
 
         noise_single = flux_tot/snr_single_val
         noise_coadd = np.array([noise_coadd_cache[ii]
