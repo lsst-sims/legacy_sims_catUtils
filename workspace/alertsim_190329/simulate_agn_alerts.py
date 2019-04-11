@@ -271,7 +271,7 @@ if __name__ == "__main__":
         #                  out_data)
 
         # multiprocessing code
-        print('assessing')
+        print('assessing %d' % len(chunk))
         if len(chunk)<1000:
             to_concatenate.append(chunk)
             tot_sub = 0
@@ -286,6 +286,7 @@ if __name__ == "__main__":
                 continue
             else:
                 chunk = np.concatenate(to_concatenate)
+                assert len(chunk)==tot_sub
                 to_concatentate = []
 
         print('processing')
