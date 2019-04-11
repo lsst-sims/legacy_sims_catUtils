@@ -170,6 +170,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 if __name__ == "__main__":
 
+    t_start = time.time()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_name', type=str, default=None)
     args = parser.parse_args()
@@ -254,7 +256,6 @@ if __name__ == "__main__":
                                      chunk_size=q_chunk_size,
                                      constraint=constraint)
 
-    t_start = time.time()
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
     p_list = []
