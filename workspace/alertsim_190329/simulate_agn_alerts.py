@@ -224,9 +224,12 @@ if __name__ == "__main__":
     print('%d time steps' % len(filter_obs))
 
     chunk_size = 10000
+
+    constraint = 'isagn=1 '
+
     data_iter = gal_db.query_columns(col_names, obs_metadata=obs_query,
                                      chunk_size=chunk_size,
-                                     constraint='isagn=1')
+                                     constraint=constraint)
 
     t_start = time.time()
     mgr = multiprocessing.Manager()
