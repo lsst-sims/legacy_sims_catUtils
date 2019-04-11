@@ -288,7 +288,7 @@ if __name__ == "__main__":
                 print('building new chunk')
                 chunk = np.concatenate(to_concatenate)
                 assert len(chunk)==tot_sub
-                to_concatentate = []
+                to_concatenate = []
 
         print('processing')
         for i_min in range(0, len(chunk)+1, 1000):
