@@ -95,8 +95,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                                   exptime=30.0*coadd_visits[bp])
 
         flux_gal[i_bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp])
-        flux_agn_q[i_bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp] +
-                                               dmag_mean[i_bp,:])
+        flux_agn_q[i_bp] = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp] +
+                                                 dmag_mean[i_bp,:])
         flux_coadd[i_bp] = flux_gal[i_bp]+flux_agn_q[i_bp]
         mag_coadd[i_bp] = dummy_sed.magFromFlux(flux_coadd[i_bp])
 
