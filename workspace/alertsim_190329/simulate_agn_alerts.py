@@ -334,7 +334,7 @@ if __name__ == "__main__":
         p.join()
 
     out_data_final = {}
-    for name in out_data:
+    for name in out_data.keys():
         out_data_final[name] = out_data[name]
 
     with open(out_name, 'wb') as out_file:
