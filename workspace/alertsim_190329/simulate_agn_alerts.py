@@ -17,6 +17,8 @@ from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 import multiprocessing
 
+import argparser
+
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, out_data):
 
@@ -168,6 +170,11 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--out_name', type=str, default=None)
+    args = parser.parse_args()
+    assert args.out_name is not None
+
     fov_radius = 1.75
 
     coadd_m5_name = 'data/coadd_m5.txt'
@@ -251,7 +258,6 @@ if __name__ == "__main__":
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
     p_list = []
-    out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.pickle'
     i_chunk = 0
     to_concatenate = []
     n_tot = 0
@@ -337,7 +343,8 @@ if __name__ == "__main__":
     for name in out_data.keys():
         out_data_final[name] = out_data[name]
 
-    with open(out_name, 'wb') as out_file:
+    print('n_lc %d' % len(out_data_final))
+    with open(args.out_name, 'wb') as out_file:
         pickle.dump(out_data_final, out_file)
 
 
