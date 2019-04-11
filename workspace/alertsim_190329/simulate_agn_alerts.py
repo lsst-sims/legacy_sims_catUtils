@@ -63,11 +63,11 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
     dummy_sed = Sed()
     lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
-    flux_gal = {}
-    flux_agn_q = {}
-    flux_coadd = {}
-    mag_coadd = {}
-    snr_coadd = {}
+    flux_gal = np.zeros((6,n_obj), dtype=float)
+    flux_agn_q = np.zeros((6,n_obj), dtype=float)
+    flux_coadd = np.zeros((6,n_obj), dtype=float)
+    mag_coadd = np.zeros((6,n_obj), dtype=float)
+    snr_coadd = np.zeros((6,n_obj), dtype=float)
     snr_single = {}
     snr_single_mag_grid = {}
 
@@ -79,20 +79,20 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         phot_params_coadd = PhotometricParameters(nexp=1,
                                                   exptime=30.0*coadd_visits[bp])
 
-        flux_gal[bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp])
-        flux_agn_q[bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp] +
+        flux_gal[i_bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp])
+        flux_agn_q[i_bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp] +
                                                dmag_mean[i_bp,:])
-        flux_coadd[bp] = flux_gal[bp]+flux_agn_q[bp]
-        mag_coadd[bp] = dummy_sed.magFromFlux(flux_coadd[bp])
+        flux_coadd[i_bp] = flux_gal[i_bp]+flux_agn_q[i_bp]
+        mag_coadd[i_bp] = dummy_sed.magFromFlux(flux_coadd[i_bp])
 
-        (snr_coadd[bp],
-         gamma) = SNR.calcSNR_m5(mag_coadd[bp],
+        (snr_coadd[i_bp],
+         gamma) = SNR.calcSNR_m5(mag_coadd[i_bp],
                                  lsst_bp[bp],
                                  coadd_m5[bp],
                                  phot_params_coadd)
 
-        snr_single_mag_grid[bp] = np.arange(mag_coadd[bp].min()-2.0,
-                                            mag_coadd[bp].max()+2.0,
+        snr_single_mag_grid[bp] = np.arange(mag_coadd[i_bp].min()-2.0,
+                                            mag_coadd[i_bp].max()+2.0,
                                             0.05)
         snr_single[bp] = {}
         for i_t in range(n_t):
@@ -115,27 +115,31 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         unq = chunk['galtileid'][i_obj]
         first_detection = None
 
-        for i_t in range(n_t):
-            bp = 'ugrizy'[filter_obs[i_t]]
+        bp_arr = list(['ugrizy'[filter_obs[i_t]] for i_t in range(n_t)])
+        mag0_arr = np.array([chunk['AGNLSST%s' % bp][i_obj] for bp in bp_arr])
+        dmag_arr = np.array([dmag[filter_obs[i_t]][i_obj][i_t]
+                             for i_t in range(n_t)])
 
-            agn_flux_tot = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp][i_obj]
-                                           + dmag[filter_obs[i_t]][i_obj][i_t])
+        agn_flux_tot = dummy_sed.fluxFromMag(mag0_arr+dmag_arr)
+        q_flux = np.array([flux_agn_q[ii][i_obj] for ii in filter_obs])
+        agn_dflux = np.abs(agn_flux_tot-q_flux)
+        flux_tot = np.array([flux_gal[ii][i_obj] for ii in filter_obs])
+        flux_tot += agn_flux_tot
+        mag_tot = dummy_sed.magFromFlux(flux_tot)
 
-            agn_dflux = np.abs(agn_flux_tot-flux_agn_q[bp][i_obj])
+        for i_t, i_bp in zip(range(n_t), filter_obs):
+            bp = 'ugrizy'[i_bp]
 
-            flux_tot = flux_gal[bp][i_obj]+agn_flux_tot
-            mag_tot = dummy_sed.magFromFlux(flux_tot)
-
-            snr_single_val = np.interp(mag_tot,
+            snr_single_val = np.interp(mag_tot[i_t],
                                        snr_single_mag_grid[bp],
                                        snr_single[bp][i_t])
 
-            noise_coadd = flux_coadd[bp][i_obj]/snr_coadd[bp][i_obj]
-            noise_single = flux_tot/snr_single_val
+            noise_coadd = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
+            noise_single = flux_tot[i_t]/snr_single_val
             noise = np.sqrt(noise_coadd**2+noise_single**2)
             dflux_thresh = 5.0*noise
-            snr_arr.append(agn_dflux/dflux_thresh)
-            if agn_dflux>=dflux_thresh:
+            snr_arr.append(agn_dflux[i_t]/dflux_thresh)
+            if agn_dflux[i_t]>=dflux_thresh:
                 out_data[unq] = mjd_obs[i_t]
                 if i_t==0:
                     ct_first += 1
