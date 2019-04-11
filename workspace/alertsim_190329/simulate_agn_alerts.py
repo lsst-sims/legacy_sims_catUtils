@@ -106,9 +106,11 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 
     snr_arr = []
+    t_start_obj = time.time()
     for i_obj in range(n_obj):
-        if i_obj>100:
-            break
+        if i_obj>0 and i_obj%100==0:
+            duration = (time.time()-t_start_obj)/3600.0
+            print('    %d in %e hrs' % (i_obj,duration))
         ct_tot += 1
         unq = chunk['galtileid'][i_obj]
         first_detection = None
