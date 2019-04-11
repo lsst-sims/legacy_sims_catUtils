@@ -118,7 +118,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     #print('got all snr in %e' % (time.time()-t_start_snr))
 
 
-    snr_arr = []
     t_start_obj = time.time()
     noise_coadd_cache = np.zeros(6, dtype=float)
     snr_single_val = np.zeros(n_t, dtype=float)
@@ -129,7 +128,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
             print('    %d in %e hrs' % (i_obj,duration))
         ct_tot += 1
         unq = chunk['galtileid'][i_obj]
-        first_detection = None
 
         bp_arr = list(['ugrizy'[filter_obs[i_t]] for i_t in range(n_t)])
         mag0_arr = np.array([chunk['AGNLSST%s' % bp][i_obj] for bp in bp_arr])
