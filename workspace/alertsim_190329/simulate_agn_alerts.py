@@ -107,6 +107,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                  phot_params_coadd)
 
         snr_single_mag_grid[bp] = np.arange(14.0, 30.0, 0.05)
+
         (snr_single[bp],
          gamma) = SNR.calcSNR_m5(snr_single_mag_grid[bp],
                                  lsst_bp[bp],
