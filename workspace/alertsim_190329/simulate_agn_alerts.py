@@ -20,6 +20,7 @@ import multiprocessing
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, out_data):
 
+    print('processing %d' % len(chunk))
     ct_first = 0
     ct_at_all = 0
     ct_tot = 0
@@ -237,6 +238,7 @@ if __name__ == "__main__":
     p_list = []
     out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.h5'
     i_chunk = 0
+    to_concatenate = []
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -248,23 +250,50 @@ if __name__ == "__main__":
 
         chunk = chunk[valid]
 
-        print('valid %d -- %e %e' % (len(valid[0]), chunk['ra'].min(),
-                                     chunk['ra'].max()))
-
         #process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
         #                  out_data)
 
         # multiprocessing code
-        p = multiprocessing.Process(target=process_agn_chunk,
-                                   args=(chunk, filter_obs, mjd_obs,
-                                         m5_obs, coadd_m5, out_data))
-        p.start()
-        p_list.append(p)
-        if len(p_list)>30:
-            for p in p_list:
-                p.join()
-            p_list = []
+        if len(chunk)<1000:
+            to_concatenate.append(chunk)
+            tot = 0
+            for sub_chunk in to_concatenate:
+                tot += len(sub_chunk)
+            if tot<1000:
+                continue
+            else:
+                chunk = np.concatenate(to_concatenate)
+                to_concatentate = []
 
+        for i_min in range(0, len(chunk)+1, 1000):
+            sub_chunk = chunk[i_min:i_min+1000]
+            if len(sub_chunk)<1000:
+                to_concatenate.append(sub_chunk)
+                continue
+
+            p = multiprocessing.Process(target=process_agn_chunk,
+                                        args=(sub_chunk, filter_obs, mjd_obs,
+                                              m5_obs, coadd_m5, out_data))
+            p.start()
+            p_list.append(p)
+            if len(p_list)>30:
+                for p in p_list:
+                    p.join()
+                p_list = []
+
+    if len(to_concatenate)>0:
+        chunk = np.concatenate(to_concatenate)
+        for i_min in range(0,len(chunk),1000):
+            p = multiprocessing.Process(target=process_agn_chunk,
+                                        args=(chunk[i_min:i_min+1000],
+                                              filter_obs, mjd_obs,
+                                              m5_obs, coadd_m5, out_data))
+            p.start()
+            p_list.append(p)
+            if len(p_list)>30:
+                for p in p_list:
+                    p.join()
+                p_list = []
 
     for p in p_list:
         p.join()
