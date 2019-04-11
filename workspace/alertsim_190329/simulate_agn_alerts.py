@@ -157,7 +157,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         noise_coadd = np.array([noise_coadd_cache[ii]
                                 for ii in filter_obs])
 
-        out_data[unq] = (mag_tot, agn_flux_tot,
+        out_data[unq] = (snr_single_val, mag_tot, agn_flux_tot,
                          flux_gal[0][i_obj], flux_gal[1][i_obj],
                          flux_gal[2][i_obj], flux_gal[3][i_obj],
                          flux_gal[4][i_obj], flux_gal[5][i_obj])
