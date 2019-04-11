@@ -116,7 +116,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                     ct_first += 1
                 else:
                     ct_at_all += 1
-            break
+                break
 
     snr_arr = np.array(snr_arr)
     print('%d tot %d first %d at all %d -- %e %e' %
