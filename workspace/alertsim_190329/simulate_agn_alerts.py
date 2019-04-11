@@ -102,13 +102,13 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                      m5_obs[i_t],
                                      phot_params_single)
 
-    print('got all snr in %e' % (time.time()-t_start_snr))
+    #print('got all snr in %e' % (time.time()-t_start_snr))
 
 
     snr_arr = []
     t_start_obj = time.time()
     for i_obj in range(n_obj):
-        if i_obj>0 and i_obj%100==0:
+        if i_obj<0 and i_obj%100==0:
             duration = (time.time()-t_start_obj)/3600.0
             print('    %d in %e hrs' % (i_obj,duration))
         ct_tot += 1
@@ -251,19 +251,15 @@ if __name__ == "__main__":
         print('valid %d -- %e %e' % (len(valid[0]), chunk['ra'].min(),
                                      chunk['ra'].max()))
 
-        process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-                          out_data)
-
-        i_chunk += 1
-        if i_chunk >= 5:
-            break
+        #process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+        #                  out_data)
 
         # multiprocessing code
-        # p = multiprocessing.Process(target=process_agn_chunk,
-        #                            args=(chunk, filter_obs, mjd_obs,
-        #                                  m5_obs, coadd_m5, out_data))
-        # p.start()
-        # p_list.append(p)
+        p = multiprocessing.Process(target=process_agn_chunk,
+                                   args=(chunk, filter_obs, mjd_obs,
+                                         m5_obs, coadd_m5, out_data))
+        p.start()
+        p_list.append(p)
         if len(p_list)>30:
             for p in p_list:
                 p.join()
