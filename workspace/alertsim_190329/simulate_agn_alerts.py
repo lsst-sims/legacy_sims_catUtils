@@ -285,7 +285,7 @@ if __name__ == "__main__":
                 print('move on')
                 continue
             else:
-                print('building new chunk')
+                print('building new chunk %d' % tot_sub)
                 chunk = np.concatenate(to_concatenate)
                 assert len(chunk)==tot_sub
                 to_concatenate = []
