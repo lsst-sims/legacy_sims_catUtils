@@ -34,13 +34,16 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     coadd_visits['z'] = 16
     coadd_visits['y'] = 16
 
+    n_t = len(filter_obs)
+    n_obj = len(chunk)
+
     gamma_coadd = {}
     for bp in 'ugrizy':
         gamma_coadd[bp] = None
 
     gamma_single = {}
     for bp in 'ugrizy':
-        gamma_single[bp] = None
+       gamma_single[bp] = [None]*n_t
 
     params = {}
     params['agn_sfu'] = chunk['agn_sfu']
@@ -56,57 +59,77 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                               params, mjd_obs,
                               redshift=chunk['redshift'])
 
-    n_obj = len(chunk)
-    n_t = len(filter_obs)
+    dmag_mean = np.mean(dmag, axis=2)
 
-    phot_params = PhotometricParameters(nexp=1,
-                                        exptime=30.0)
-
+    dummy_sed = Sed()
     lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
+    flux_gal = {}
+    flux_agn_q = {}
+    flux_coadd = {}
+    mag_coadd = {}
+    snr_coadd = {}
+    snr_single = {}
+    snr_single_mag_grid = {}
+
+    phot_params_single = PhotometricParameters(nexp=1,
+                                               exptime=30.0)
+
+    t_start_snr = time.time()
+    for i_bp, bp in enumerate('ugrizy'):
+        phot_params_coadd = PhotometricParameters(nexp=1,
+                                                  exptime=30.0*coadd_visits[bp])
+
+        flux_gal[bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp])
+        flux_agn_q[bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp] +
+                                               dmag_mean[i_bp,:])
+        flux_coadd[bp] = flux_gal[bp]+flux_agn_q[bp]
+        mag_coadd[bp] = dummy_sed.magFromFlux(flux_coadd[bp])
+
+        (snr_coadd[bp],
+         gamma) = SNR.calcSNR_m5(mag_coadd[bp],
+                                 lsst_bp[bp],
+                                 coadd_m5[bp],
+                                 phot_params_coadd)
+
+        snr_single_mag_grid[bp] = np.arange(mag_coadd[bp].min()-2.0,
+                                            mag_coadd[bp].max()+2.0,
+                                            0.05)
+        snr_single[bp] = {}
+        for i_t in range(n_t):
+            (snr_single[bp][i_t],
+             gamma) = SNR.calcSNR_m5(snr_single_mag_grid[bp],
+                                     lsst_bp[bp],
+                                     m5_obs[i_t],
+                                     phot_params_single)
+
+    print('got all snr in %e' % (time.time()-t_start_snr))
+
 
     snr_arr = []
-    dummy_sed = Sed()
     for i_obj in range(n_obj):
+        if i_obj>100:
+            break
         ct_tot += 1
         unq = chunk['galtileid'][i_obj]
         first_detection = None
-        mag_q = {}
-        flux_gal = {}
-        flux_agn_q = {}
-        flux_coadd = {}
-        for bp in 'ugrizy':
-            flux_gal[bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp][i_obj])
-            flux_agn_q[bp] = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp][i_obj])
-            flux_coadd[bp] = flux_gal[bp]+flux_agn_q[bp]
-            mag_q[bp] = dummy_sed.magFromFlux(flux_coadd[bp])
 
         for i_t in range(n_t):
             bp = 'ugrizy'[filter_obs[i_t]]
-            phot_params_coadd = PhotometricParameters(nexp=1,
-                                      exptime=30.0*coadd_visits[bp])
-
-            (snr_coadd,
-             gamma_coadd[bp]) = SNR.calcSNR_m5(mag_q[bp], lsst_bp[bp],
-                                               coadd_m5[bp],
-                                               phot_params_coadd,
-                                               gamma=gamma_coadd[bp])
 
             agn_flux_tot = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp][i_obj]
                                            + dmag[filter_obs[i_t]][i_obj][i_t])
 
-            agn_dflux = np.abs(agn_flux_tot-flux_agn_q[bp])
+            agn_dflux = np.abs(agn_flux_tot-flux_agn_q[bp][i_obj])
 
-            flux_tot = flux_gal[bp]+agn_flux_tot
+            flux_tot = flux_gal[bp][i_obj]+agn_flux_tot
             mag_tot = dummy_sed.magFromFlux(flux_tot)
 
-            (snr_single,
-             gamma_single[bp]) = SNR.calcSNR_m5(mag_tot, lsst_bp[bp],
-                                                m5_obs[i_t],
-                                                phot_params,
-                                                gamma=gamma_single[bp])
+            snr_single_val = np.interp(mag_tot,
+                                       snr_single_mag_grid[bp],
+                                       snr_single[bp][i_t])
 
-            noise_coadd = flux_coadd[bp]/snr_coadd
-            noise_single = flux_tot/snr_single
+            noise_coadd = flux_coadd[bp][i_obj]/snr_coadd[bp][i_obj]
+            noise_single = flux_tot/snr_single_val
             noise = np.sqrt(noise_coadd**2+noise_single**2)
             dflux_thresh = 5.0*noise
             snr_arr.append(agn_dflux/dflux_thresh)
@@ -204,6 +227,7 @@ if __name__ == "__main__":
     out_data = mgr.dict()
     p_list = []
     out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.h5'
+    i_chunk = 0
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -218,11 +242,19 @@ if __name__ == "__main__":
         print('valid %d -- %e %e' % (len(valid[0]), chunk['ra'].min(),
                                      chunk['ra'].max()))
 
-        p = multiprocessing.Process(target=process_agn_chunk,
-                                    args=(chunk, filter_obs, mjd_obs,
-                                          m5_obs, coadd_m5, out_data))
-        p.start()
-        p_list.append(p)
+        process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+                          out_data)
+
+        i_chunk += 1
+        if i_chunk >= 5:
+            break
+
+        # multiprocessing code
+        # p = multiprocessing.Process(target=process_agn_chunk,
+        #                            args=(chunk, filter_obs, mjd_obs,
+        #                                  m5_obs, coadd_m5, out_data))
+        # p.start()
+        # p_list.append(p)
         if len(p_list)>30:
             for p in p_list:
                 p.join()
