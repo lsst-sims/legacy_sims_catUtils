@@ -33,6 +33,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     n_t = len(filter_obs)
     n_obj = len(chunk)
 
+    t_before_masking = time.time()
     chip_mask = np.zeros((n_obj, n_t), dtype=bool)
     for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
         chip_name = chipNameFromRaDecLSST(chunk['ra'], chunk['dec'],
@@ -40,6 +41,9 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                           band='ugrizy'[i_bp])
         valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
         chip_mask[:,i_t] = valid_chip
+
+    duration = (time.time()-t_before_masking)/3600.0
+    print('got chip mask in %e hrs' % duration)
 
     agn_model = ExtraGalacticVariabilityModels()
 
