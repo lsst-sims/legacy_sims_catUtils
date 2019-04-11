@@ -255,6 +255,7 @@ if __name__ == "__main__":
     n_tot = 0
     n_processed = 0
     for chunk in data_iter:
+        print('loading chunk')
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
                                     query_level)
@@ -270,6 +271,7 @@ if __name__ == "__main__":
         #                  out_data)
 
         # multiprocessing code
+        print('assessing')
         if len(chunk)<1000:
             to_concatenate.append(chunk)
             tot = 0
@@ -280,11 +282,13 @@ if __name__ == "__main__":
                 raise RuntimeError('n_proc+tot %d n_tot %d'
                                    % (n_processed+tot, n_tot))
             if tot<1000:
+                print('move on')
                 continue
             else:
                 chunk = np.concatenate(to_concatenate)
                 to_concatentate = []
 
+        print('processing')
         for i_min in range(0, len(chunk)+1, 1000):
             sub_chunk = chunk[i_min:i_min+1000]
             if len(sub_chunk)<1000:
