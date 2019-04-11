@@ -35,6 +35,17 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     coadd_visits['z'] = 16
     coadd_visits['y'] = 16
 
+    # from the overview paper
+    # table 2; take m5 row and add Delta m5 row
+    # to get down to airmass 1.2
+    m5_single = {}
+    m5_single['u'] = 23.57
+    m5_single['g'] = 24.65
+    m5_single['r'] = 24.21
+    m5_single['i'] = 23.79
+    m5_single['z'] = 23.21
+    m5_single['y'] = 22.31
+
     n_t = len(filter_obs)
     n_obj = len(chunk)
 
@@ -95,19 +106,20 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         snr_single_mag_grid[bp] = np.arange(mag_coadd[i_bp].min()-2.0,
                                             mag_coadd[i_bp].max()+2.0,
                                             0.05)
-        snr_single[bp] = {}
-        for i_t in range(n_t):
-            (snr_single[bp][i_t],
-             gamma) = SNR.calcSNR_m5(snr_single_mag_grid[bp],
-                                     lsst_bp[bp],
-                                     m5_obs[i_t],
-                                     phot_params_single)
+        (snr_single[bp],
+         gamma) = SNR.calcSNR_m5(snr_single_mag_grid[bp],
+                                 lsst_bp[bp],
+                                 m5_single[bp],
+                                 phot_params_single)
 
     #print('got all snr in %e' % (time.time()-t_start_snr))
 
 
     snr_arr = []
     t_start_obj = time.time()
+    noise_coadd_cache = np.zeros(6, dtype=float)
+    snr_single_val = np.zeros(n_t, dtype=float)
+
     for i_obj in range(n_obj):
         if i_obj<0 and i_obj%100==0:
             duration = (time.time()-t_start_obj)/3600.0
@@ -128,29 +140,30 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         flux_tot += agn_flux_tot
         mag_tot = dummy_sed.magFromFlux(flux_tot)
 
-        for i_t, i_bp in zip(range(n_t), filter_obs):
-            bp = 'ugrizy'[i_bp]
+        for i_bp, bp in enumerate('ugrizy'):
+            valid = np.where(filter_obs==i_bp)
+            snr_single_val[valid] = np.interp(mag_tot[valid],
+                                              snr_single_mag_grid[bp],
+                                              snr_single[bp])
 
-            snr_single_val = np.interp(mag_tot[i_t],
-                                       snr_single_mag_grid[bp],
-                                       snr_single[bp][i_t])
+            noise_coadd_cache[i_bp] = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
 
-            noise_coadd = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
-            noise_single = flux_tot[i_t]/snr_single_val
-            noise = np.sqrt(noise_coadd**2+noise_single**2)
-            dflux_thresh = 5.0*noise
-            snr_arr.append(agn_dflux[i_t]/dflux_thresh)
-            if agn_dflux[i_t]>=dflux_thresh:
-                out_data[unq] = mjd_obs[i_t]
-                if i_t==0:
-                    ct_first += 1
-                else:
-                    ct_at_all += 1
-                break
+        noise_single = flux_tot/snr_single_val
+        noise_coadd = np.array([noise_coadd_cache[ii]
+                                for ii in filter_obs])
 
-    snr_arr = np.array(snr_arr)
-    print('%d tot %d first %d at all %d -- %e %e' %
-    (os.getpid(),ct_tot, ct_first, ct_at_all,snr_arr.min(),np.mean(snr_arr)))
+        noise = np.sqrt(noise_coadd**2+noise_single**2)
+        dflux_thresh = 5.0*noise
+        detected = agn_dflux>=dflux_thresh
+        if detected.any():
+            out_data[unq] = np.where(detected)[0].min()
+            if detected[0]:
+                ct_first += 1
+            else:
+                ct_at_all += 1
+
+    print('%d tot %d first %d at all %d ' %
+    (os.getpid(),ct_tot, ct_first, ct_at_all))
 
 if __name__ == "__main__":
 
