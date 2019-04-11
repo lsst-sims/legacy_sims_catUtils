@@ -84,7 +84,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     mag_coadd = np.zeros((6,n_obj), dtype=float)
     snr_coadd = np.zeros((6,n_obj), dtype=float)
     snr_single = {}
-    snr_single_mag_grid = {}
+    snr_single_mag_grid = np.arange(14.0, 30.0, 0.05)
 
     phot_params_single = PhotometricParameters(nexp=1,
                                                exptime=30.0)
@@ -106,10 +106,9 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                  coadd_m5[bp],
                                  phot_params_coadd)
 
-        snr_single_mag_grid[bp] = np.arange(14.0, 30.0, 0.05)
 
         (snr_single[bp],
-         gamma) = SNR.calcSNR_m5(snr_single_mag_grid[bp],
+         gamma) = SNR.calcSNR_m5(snr_single_mag_grid,
                                  lsst_bp[bp],
                                  m5_single[bp],
                                  phot_params_single)
@@ -144,7 +143,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         for i_bp, bp in enumerate('ugrizy'):
             valid = np.where(filter_obs==i_bp)
             snr_single_val[valid] = np.interp(mag_tot[valid],
-                                              snr_single_mag_grid[bp],
+                                              snr_single_mag_grid,
                                               snr_single[bp])
 
             noise_coadd_cache[i_bp] = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
