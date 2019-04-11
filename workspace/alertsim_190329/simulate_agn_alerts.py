@@ -156,7 +156,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         dflux_thresh = 5.0*noise
         detected = (agn_dflux>=dflux_thresh)
         if detected.any():
-            out_data[unq] = np.where(detected)[0].min()
+            first_dex = np.where(detected)[0].min()
+            out_data[unq] = (mjd_out[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
             if detected[0]:
                 ct_first += 1
             else:
@@ -250,7 +251,7 @@ if __name__ == "__main__":
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
     p_list = []
-    out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.h5'
+    out_name = '/astro/store/pogo4/danielsf/dummy_agn_lc.pickle'
     i_chunk = 0
     to_concatenate = []
     n_tot = 0
@@ -332,10 +333,18 @@ if __name__ == "__main__":
     for p in p_list:
         p.join()
 
-    with h5py.File(out_name, 'w') as out_file:
-        print('n_lc %d' % len(out_data))
-        for name in out_data.keys():
-            out_file.create_dataset('%d' % name, data=out_data[name])
+    out_data_final = {}
+    for name in out_data:
+        out_data_final[name] = out_data[name]
+
+    with open(out_name, 'wb') as out_file:
+        pickle.dump(out_data_final, out_file)
+
+
+    #with h5py.File(out_name, 'w') as out_file:
+    #    print('n_lc %d' % len(out_data))
+    #    for name in out_data.keys():
+    #        out_file.create_dataset('%d' % name, data=out_data[name])
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     print('shld %d processed %d' % (n_tot, n_processed))
