@@ -12,20 +12,34 @@ from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import SignalToNoise as SNR
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
+
+from lsst.sims.coordUtils import chipNameFromRaDecLSST
 
 import multiprocessing
 
 import argparse
 
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
-                      coadd_m5, out_data):
+                      coadd_m5, obs_md_list, out_data):
 
     #print('processing %d' % len(chunk))
     ct_first = 0
     ct_at_all = 0
     ct_tot = 0
+
+    n_t = len(filter_obs)
+    n_obj = len(chunk)
+
+    chip_mask = np.zeros((n_obj, n_t), dtype=bool)
+    for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
+        chip_name = chipNameFromRaDecLSST(chunk['ra'], chunk['dec'],
+                                          obs_metadata=obs,
+                                          band='ugrizy'[i_bp])
+        valid_chip = (np.char.find(chip_name.astype.str(), 'None') == -1)
+        chip_mask[:,i_t] = valid_chip
 
     agn_model = ExtraGalacticVariabilityModels()
 
@@ -47,9 +61,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     m5_single['i'] = 23.79
     m5_single['z'] = 23.21
     m5_single['y'] = 22.31
-
-    n_t = len(filter_obs)
-    n_obj = len(chunk)
 
     gamma_coadd = {}
     for bp in 'ugrizy':
@@ -156,7 +167,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
         noise = np.sqrt(noise_coadd**2+noise_single**2)
         dflux_thresh = 5.0*noise
-        detected = (agn_dflux>=dflux_thresh)
+        detected = ((agn_dflux>=dflux_thresh) & chip_mask[i_obj])
         if detected.any():
             first_dex = np.where(detected)[0].min()
             out_data[unq] = (mjd_obs[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
@@ -245,6 +256,16 @@ if __name__ == "__main__":
     filter_obs = obs_params['filter'].value[obs_dex]
     m5_obs = obs_params['m5'].value[obs_dex]
 
+    mjd_obj_list = ModifiedJulianDate.get_list(TAI=mjd_obs)
+    obs_md_list = []
+    for ii in range(len(ra_obs)):
+        obs = ObservationMetaData(pointingRA=ra_obs[ii],
+                                  pointingDec=dec_obs[ii],
+                                  mjd=mjd_obj_list[ii],
+                                  rotSkyPos=rotsky_obs[ii],
+                                  bandpassName='ugrizy'[filter_obs[ii]])
+        obs_md_list.append(obs)
+
     print('%d time steps' % len(filter_obs))
 
     q_chunk_size = 10000
@@ -306,7 +327,8 @@ if __name__ == "__main__":
             assert len(sub_chunk)>=p_chunk_size
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
-                                              m5_obs, coadd_m5, out_data))
+                                              m5_obs, coadd_m5, obs_md_list,
+                                              out_data))
             p.start()
             p_list.append(p)
             if len(p_list)>n_threads:
