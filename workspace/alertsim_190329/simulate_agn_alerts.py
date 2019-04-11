@@ -20,7 +20,7 @@ import multiprocessing
 import argparse
 
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
-                      coadd_m5, out_data, lock):
+                      coadd_m5, out_data):
 
     #print('processing %d' % len(chunk))
     ct_first = 0
@@ -113,19 +113,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                  m5_single[bp],
                                  phot_params_single)
 
-    with lock:
-        if 'mag_grid_g' in out_data.keys():
-            print('validating grid')
-            for bp in 'ugrizy':
-                np.testing.assert_array_equal(snr_single_mag_grid[bp],
-                                              out_data['mag_grid_%s' % bp])
-                np.testing.assert_array_equal(snr_single[bp],
-                                              out_data['snr_single_%s' % bp])
-        else:
-            print('assigning grid')
-            for bp in 'ugrizy':
-                out_data['mag_grid_%s' % bp] = snr_single_mag_grid[bp]
-                out_data['snr_single_%s' % bp] = snr_single[bp]
     #print('got all snr in %e' % (time.time()-t_start_snr))
 
 
@@ -283,7 +270,6 @@ if __name__ == "__main__":
     n_tot = 0
     n_processed = 0
     n_threads = 30
-    lock = multiprocessing.Lock()
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -326,7 +312,7 @@ if __name__ == "__main__":
             assert len(sub_chunk)>=p_chunk_size
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
-                                              m5_obs, coadd_m5, out_data, lock))
+                                              m5_obs, coadd_m5, out_data))
             p.start()
             p_list.append(p)
             if len(p_list)>n_threads:
