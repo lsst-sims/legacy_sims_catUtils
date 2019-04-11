@@ -6,6 +6,9 @@ import os
 import time
 
 from lsst.sims.utils import angularSeparation
+from lsst.sims.photUtils import PhotometricParameters
+from lsst.sims.photUtils import BandpassDict
+from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import SignalToNoise as SNR
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.utils import ObservationMetaData
@@ -14,8 +17,30 @@ from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 import multiprocessing
 
-def process_agn_chunk(chunk, filter_obs, out_data):
+def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
+                      coadd_m5, out_data):
+
+    ct_first = 0
+    ct_at_all = 0
+    ct_tot = 0
+
     agn_model = ExtraGalacticVariabilityModels()
+
+    coadd_visits = {}
+    coadd_visits['u'] = 6
+    coadd_visits['g'] = 8
+    coadd_visits['r'] = 18
+    coadd_visits['i'] = 18
+    coadd_visits['z'] = 16
+    coadd_visits['y'] = 16
+
+    gamma_coadd = {}
+    for bp in 'ugrizy':
+        gamma_coadd[bp] = None
+
+    gamma_single = {}
+    for bp in 'ugrizy':
+        gamma_single[bp] = None
 
     params = {}
     params['agn_sfu'] = chunk['agn_sfu']
@@ -29,21 +54,86 @@ def process_agn_chunk(chunk, filter_obs, out_data):
 
     dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
                               params, mjd_obs,
-                              redshift=chunk['redshift']).transpose(1,2,0)
+                              redshift=chunk['redshift'])
 
-    for ii in range(len(chunk)):
-        unq = chunk['galtileid'][ii]
-        dmag_obs = np.array([dmag[ii][tt][filter_obs[tt]]
-                                 for tt in range(len(filter_obs))])
-        detected = np.where(np.abs(dmag_obs)>0.001)
-        if len(detected[0])>0:
-            out_data[unq] = detected[0][0]
-        else:
-            out_data[unq] = -1
+    n_obj = len(chunk)
+    n_t = len(filter_obs)
+
+    phot_params = PhotometricParameters(nexp=1,
+                                        exptime=30.0)
+
+    lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
+
+    snr_arr = []
+    dummy_sed = Sed()
+    for i_obj in range(n_obj):
+        ct_tot += 1
+        unq = chunk['galtileid'][i_obj]
+        first_detection = None
+        mag_q = {}
+        flux_gal = {}
+        flux_agn_q = {}
+        flux_coadd = {}
+        for bp in 'ugrizy':
+            flux_gal[bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp][i_obj])
+            flux_agn_q[bp] = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp][i_obj])
+            flux_coadd[bp] = flux_gal[bp]+flux_agn_q[bp]
+            mag_q[bp] = dummy_sed.magFromFlux(flux_coadd[bp])
+
+        for i_t in range(n_t):
+            bp = 'ugrizy'[filter_obs[i_t]]
+            phot_params_coadd = PhotometricParameters(nexp=1,
+                                      exptime=30.0*coadd_visits[bp])
+
+            (snr_coadd,
+             gamma_coadd[bp]) = SNR.calcSNR_m5(mag_q[bp], lsst_bp[bp],
+                                               coadd_m5[bp],
+                                               phot_params_coadd,
+                                               gamma=gamma_coadd[bp])
+
+            agn_flux_tot = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp][i_obj]
+                                           + dmag[filter_obs[i_t]][i_obj][i_t])
+
+            agn_dflux = np.abs(agn_flux_tot-flux_agn_q[bp])
+
+            flux_tot = flux_gal[bp]+agn_flux_tot
+            mag_tot = dummy_sed.magFromFlux(flux_tot)
+
+            (snr_single,
+             gamma_single[bp]) = SNR.calcSNR_m5(mag_tot, lsst_bp[bp],
+                                                m5_obs[i_t],
+                                                phot_params,
+                                                gamma=gamma_single[bp])
+
+            noise_coadd = flux_coadd[bp]/snr_coadd
+            noise_single = flux_tot/snr_single
+            noise = np.sqrt(noise_coadd**2+noise_single**2)
+            dflux_thresh = 5.0*noise
+            snr_arr.append(agn_dflux/dflux_thresh)
+            if agn_dflux>=dflux_thresh:
+                out_data[unq] = mjd_obs[i_t]
+                if i_t==0:
+                    ct_first += 1
+                else:
+                    ct_at_all += 1
+            break
+
+    snr_arr = np.array(snr_arr)
+    print('%d tot %d first %d at all %d -- %e %e' %
+    (os.getpid(),ct_tot, ct_first, ct_at_all,snr_arr.min(),np.mean(snr_arr)))
 
 if __name__ == "__main__":
 
     fov_radius = 1.75
+
+    coadd_m5_name = 'data/coadd_m5.txt'
+    coadd_m5 = {}
+    with open(coadd_m5_name, 'r') as in_file:
+        for line in in_file:
+            if line.startswith('#'):
+                continue
+            p = line.strip().split()
+            coadd_m5[p[0]] = float(p[1])
 
     htmid_map_name = 'data/htmid_to_obs_map.pickle'
     assert os.path.isfile(htmid_map_name)
@@ -100,6 +190,7 @@ if __name__ == "__main__":
     mjd_obs = obs_params['mjd'].value[obs_dex]
     rotsky_obs = obs_params['rotSkyPos'].value[obs_dex]
     filter_obs = obs_params['filter'].value[obs_dex]
+    m5_obs = obs_params['m5'].value[obs_dex]
 
     print('%d time steps' % len(filter_obs))
 
@@ -128,8 +219,8 @@ if __name__ == "__main__":
                                      chunk['ra'].max()))
 
         p = multiprocessing.Process(target=process_agn_chunk,
-                                    args=(chunk, filter_obs,
-                                          out_data))
+                                    args=(chunk, filter_obs, mjd_obs,
+                                          m5_obs, coadd_m5, out_data))
         p.start()
         p_list.append(p)
         if len(p_list)>30:
