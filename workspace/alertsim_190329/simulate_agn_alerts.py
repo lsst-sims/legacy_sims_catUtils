@@ -38,7 +38,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         chip_name = chipNameFromRaDecLSST(chunk['ra'], chunk['dec'],
                                           obs_metadata=obs,
                                           band='ugrizy'[i_bp])
-        valid_chip = (np.char.find(chip_name.astype.str(), 'None') == -1)
+        valid_chip = (np.char.find(chip_name.astype.(str), 'None') == -1)
         chip_mask[:,i_t] = valid_chip
 
     agn_model = ExtraGalacticVariabilityModels()
