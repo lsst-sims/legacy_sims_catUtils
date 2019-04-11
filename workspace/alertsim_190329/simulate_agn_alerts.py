@@ -296,6 +296,7 @@ if __name__ == "__main__":
                 continue
 
             n_processed += len(sub_chunk)
+            assert len(sub_chunk)>=1000
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, out_data))
