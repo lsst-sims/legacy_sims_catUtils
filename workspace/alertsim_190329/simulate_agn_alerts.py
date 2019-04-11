@@ -309,6 +309,13 @@ if __name__ == "__main__":
                     p.join()
                 p_list = []
 
+        tot_sub = 0
+        for sub_chunk in to_concatenate:
+            tot_sub += len(sub_chunk)
+        if n_processed+tot_sub!=n_tot:
+            raise RuntimeError("sums failed after processing %d %d"
+            % (n_processed+tot_sub,n_tot))
+
     if len(to_concatenate)>0:
         chunk = np.concatenate(to_concatenate)
         for i_min in range(0,len(chunk),1000):
