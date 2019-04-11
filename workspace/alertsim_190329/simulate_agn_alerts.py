@@ -313,8 +313,8 @@ if __name__ == "__main__":
         for sub_chunk in to_concatenate:
             tot_sub += len(sub_chunk)
         if n_processed+tot_sub!=n_tot:
-            raise RuntimeError("sums failed after processing %d %d"
-            % (n_processed+tot_sub,n_tot))
+            raise RuntimeError("sums failed after processing %d %d -- %d"
+            % (n_processed+tot_sub,n_tot,tot_sub))
 
     if len(to_concatenate)>0:
         chunk = np.concatenate(to_concatenate)
