@@ -5,7 +5,6 @@ import os
 
 import time
 
-from lsst.sims.utils import angularSeparation
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.photUtils import BandpassDict
 from lsst.sims.photUtils import Sed
@@ -16,7 +15,7 @@ from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
-from lsst.sims.coordUtils import chipNameFromRaDecLSST
+from alert_focal_plane import apply_focal_plane
 
 import multiprocessing
 
@@ -29,7 +28,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     ct_first = 0
     ct_at_all = 0
     ct_tot = 0
-    fov_radius = 1.75
 
     n_t = len(filter_obs)
     n_obj = len(chunk)
@@ -171,24 +169,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 
     t_before_chip = time.time()
-    chip_mask = np.zeros((n_obj, n_t), dtype=bool)
-    for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
-        if proper_chip:
-            chip_name= chipNameFromRaDecLSST(chunk['ra'][photometry_mask_1d],
-                                             chunk['dec'][photometry_mask_1d],
-                                             obs_metadata=obs,
-                                             band='ugrizy'[i_bp])
-
-            valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
-        else:
-            dd = angularSeparation(chunk['ra'][photometry_mask_1d],
-                                   chunk['dec'][photometry_mask_1d],
-                                   obs.pointingRA, obs.pointingDec)
-
-            valid_chip = (dd<=fov_radius)
-
-        chip_mask[photometry_mask_1d, i_t] = valid_chip
-
+    chip_mask = apply_focal_plane(chunk, photometry_mask_1d, obs_md_list,
+                                  filter_obs, proper_chip)
     duration = (time.time()-t_before_chip)/3600.0
     print('got chip mask in %e hrs' % duration)
 
@@ -219,8 +201,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     proper_chip = not args.circular_fov
     assert args.out_name is not None
-
-    fov_radius = 1.75
 
     coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
