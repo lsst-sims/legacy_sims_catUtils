@@ -163,7 +163,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         noise = np.sqrt(noise_coadd**2+noise_single**2)
         dflux_thresh = 5.0*noise
         detected = (agn_dflux>=dflux_thresh)
-        snr_arr[i_obj, :] = ang_dflux/dflux_thresh
+        snr_arr[i_obj, :] = agn_dflux/dflux_thresh
         if detected.any():
             photometry_mask_1d[i_obj] = True
             photometry_mask[i_obj,:] = detected
