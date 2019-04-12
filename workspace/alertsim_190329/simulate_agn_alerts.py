@@ -33,18 +33,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     n_t = len(filter_obs)
     n_obj = len(chunk)
 
-    t_before_masking = time.time()
-    chip_mask = np.zeros((n_obj, n_t), dtype=bool)
-    for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
-        chip_name = chipNameFromRaDecLSST(chunk['ra'], chunk['dec'],
-                                          obs_metadata=obs,
-                                          band='ugrizy'[i_bp])
-        valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
-        chip_mask[:,i_t] = valid_chip
-
-    duration = (time.time()-t_before_masking)/3600.0
-    print('got chip mask in %e hrs' % duration)
-
     agn_model = ExtraGalacticVariabilityModels()
 
     coadd_visits = {}
@@ -105,6 +93,10 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                                exptime=30.0)
 
     t_start_snr = time.time()
+    photometry_mask = np.zeros((n_obj, n_t), dtype=bool)
+    photometry_mask_1d = np.zeros(n_obj, dtype=bool)
+    snr_arr = np.zeros((n_obj, n_t), dtype=float)
+
     for i_bp, bp in enumerate('ugrizy'):
         phot_params_coadd = PhotometricParameters(nexp=1,
                                                   exptime=30.0*coadd_visits[bp])
@@ -140,7 +132,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
             duration = (time.time()-t_start_obj)/3600.0
             print('    %d in %e hrs' % (i_obj,duration))
         ct_tot += 1
-        unq = chunk['galtileid'][i_obj]
 
         bp_arr = list(['ugrizy'[filter_obs[i_t]] for i_t in range(n_t)])
         mag0_arr = np.array([chunk['AGNLSST%s' % bp][i_obj] for bp in bp_arr])
@@ -171,14 +162,38 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
         noise = np.sqrt(noise_coadd**2+noise_single**2)
         dflux_thresh = 5.0*noise
-        detected = ((agn_dflux>=dflux_thresh) & chip_mask[i_obj])
+        detected = (agn_dflux>=dflux_thresh)
+        snr_arr[i_obj, :] = ang_dflux/dflux_thresh
         if detected.any():
-            first_dex = np.where(detected)[0].min()
-            out_data[unq] = (mjd_obs[first_dex], agn_dflux[first_dex]/dflux_thresh[first_dex])
-            if detected[0]:
-                ct_first += 1
-            else:
-                ct_at_all += 1
+            photometry_mask_1d[i_obj] = True
+            photometry_mask[i_obj,:] = detected
+
+
+    t_before_chip = time.time()
+    chip_mask = np.zeros((n_obj, n_t), dtype=bool)
+    for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
+        chip_name= chipNameFromRaDecLSST(chunk['ra'][photometry_mask_1d],
+                                         chunk['dec'][photometry_mask_1d],
+                                         obs_metadata=obs,
+                                         band='ugrizy'[i_bp])
+
+        valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
+        chip_mask[photometry_mask_1d, i_t] = valid_chip
+    duration = (time.time()-t_before_chip)/3600.0
+    print('got chip mask in %e hrs' % duration)
+
+    for i_obj in range(n_obj):
+        if photometry_mask_1d[i_obj]:
+            detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
+            if detected.any():
+                unq = chunk['galtileid'][i_obj]
+                first_dex = np.where(detected)[0].min()
+                out_data[unq] = (mjd_obs[first_dex],
+                                 snr_arr[i_obj, first_dex])
+                if detected[0]:
+                    ct_first += 1
+                else:
+                    ct_at_all += 1
 
     #print('%d tot %d first %d at all %d ' %
     #(os.getpid(),ct_tot, ct_first, ct_at_all))
