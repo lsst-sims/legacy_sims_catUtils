@@ -29,6 +29,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     ct_first = 0
     ct_at_all = 0
     ct_tot = 0
+    fov_radius = 1.75
 
     n_t = len(filter_obs)
     n_obj = len(chunk)
@@ -172,12 +173,19 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     t_before_chip = time.time()
     chip_mask = np.zeros((n_obj, n_t), dtype=bool)
     for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
-        chip_name= chipNameFromRaDecLSST(chunk['ra'][photometry_mask_1d],
-                                         chunk['dec'][photometry_mask_1d],
-                                         obs_metadata=obs,
-                                         band='ugrizy'[i_bp])
+        #chip_name= chipNameFromRaDecLSST(chunk['ra'][photometry_mask_1d],
+        #                                 chunk['dec'][photometry_mask_1d],
+        #                                 obs_metadata=obs,
+        #                                 band='ugrizy'[i_bp])
 
-        valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
+        #valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
+
+        dd = angularSeparation(chunk['ra'][photometry_mask_1d],
+                               chunk['dec'][photometry_mask_1d],
+                               obs.pointingRA, obs.pointingDec)
+
+        valid_chip = (dd<=fov_radius)
+
         chip_mask[photometry_mask_1d, i_t] = valid_chip
     duration = (time.time()-t_before_chip)/3600.0
     print('got chip mask in %e hrs' % duration)
