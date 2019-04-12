@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
     print('%d htmid' % len(htmid_to_obs))
 
-    threshold = 10000
+    threshold = 5000
     for kk in htmid_to_obs:
         n_obs = len(htmid_to_obs[kk])
         if n_obs>threshold and n_obs<2*threshold:
@@ -350,10 +350,13 @@ if __name__ == "__main__":
                                               out_data))
             p.start()
             p_list.append(p)
-            if len(p_list)>n_threads:
-                for p in p_list:
-                    p.join()
-                p_list = []
+            while len(p_list)>=n_threads:
+                exit_code_list = []
+                for i_p, p in enumerate(p_list):
+                    exit_code_list[i_p] = p.exitcode()
+                for i_p in range(len(exit_code_list)-1, -1, -1):
+                    if exit_code_list[i_p] is not None:
+                        p_list.pop(i_p)
 
         tot_sub = 0
         for sub_chunk in to_concatenate:
@@ -374,10 +377,14 @@ if __name__ == "__main__":
                                               out_data))
             p.start()
             p_list.append(p)
-            if len(p_list)>n_threads:
-                for p in p_list:
-                    p.join()
-                p_list = []
+            while len(p_list)>=n_threads:
+                exit_code_list = []
+                for i_p, p in enumerate(p_list):
+                    exit_code_list[i_p] = p.exitcode()
+                for i_p in range(len(exit_code_list)-1, -1, -1):
+                    if exit_code_list[i_p] is not None:
+                        p_list.pop(i_p)
+
 
     for p in p_list:
         p.join()
