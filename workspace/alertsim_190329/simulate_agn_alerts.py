@@ -23,7 +23,7 @@ import multiprocessing
 import argparse
 
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
-                      coadd_m5, obs_md_list, out_data):
+                      coadd_m5, obs_md_list, proper_chip, out_data):
 
     #print('processing %d' % len(chunk))
     ct_first = 0
@@ -173,20 +173,22 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     t_before_chip = time.time()
     chip_mask = np.zeros((n_obj, n_t), dtype=bool)
     for i_t, (obs, i_bp) in enumerate(zip(obs_md_list, filter_obs)):
-        #chip_name= chipNameFromRaDecLSST(chunk['ra'][photometry_mask_1d],
-        #                                 chunk['dec'][photometry_mask_1d],
-        #                                 obs_metadata=obs,
-        #                                 band='ugrizy'[i_bp])
+        if proper_chip:
+            chip_name= chipNameFromRaDecLSST(chunk['ra'][photometry_mask_1d],
+                                             chunk['dec'][photometry_mask_1d],
+                                             obs_metadata=obs,
+                                             band='ugrizy'[i_bp])
 
-        #valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
+            valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
+        else:
+            dd = angularSeparation(chunk['ra'][photometry_mask_1d],
+                                   chunk['dec'][photometry_mask_1d],
+                                   obs.pointingRA, obs.pointingDec)
 
-        dd = angularSeparation(chunk['ra'][photometry_mask_1d],
-                               chunk['dec'][photometry_mask_1d],
-                               obs.pointingRA, obs.pointingDec)
-
-        valid_chip = (dd<=fov_radius)
+            valid_chip = (dd<=fov_radius)
 
         chip_mask[photometry_mask_1d, i_t] = valid_chip
+
     duration = (time.time()-t_before_chip)/3600.0
     print('got chip mask in %e hrs' % duration)
 
@@ -212,7 +214,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_name', type=str, default=None)
+    parser.add_argument('--circular_fov', type=bool, default=False,
+                        action='store_true')
     args = parser.parse_args()
+    proper_chip = not args.circular_fov
     assert args.out_name is not None
 
     fov_radius = 1.75
@@ -355,7 +360,7 @@ if __name__ == "__main__":
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
-                                              out_data))
+                                              proper_chip, out_data))
             p.start()
             p_list.append(p)
             while len(p_list)>=n_threads:
@@ -382,7 +387,7 @@ if __name__ == "__main__":
                                         args=(sub_chunk,
                                               filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
-                                              out_data))
+                                              proper_chip, out_data))
             p.start()
             p_list.append(p)
             while len(p_list)>=n_threads:
