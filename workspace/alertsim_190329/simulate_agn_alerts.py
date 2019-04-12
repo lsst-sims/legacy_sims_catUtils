@@ -353,7 +353,7 @@ if __name__ == "__main__":
             while len(p_list)>=n_threads:
                 exit_code_list = []
                 for i_p, p in enumerate(p_list):
-                    exit_code_list[i_p] = p.exitcode()
+                    exit_code_list[i_p] = p.exitcode
                 for i_p in range(len(exit_code_list)-1, -1, -1):
                     if exit_code_list[i_p] is not None:
                         p_list.pop(i_p)
@@ -380,7 +380,7 @@ if __name__ == "__main__":
             while len(p_list)>=n_threads:
                 exit_code_list = []
                 for i_p, p in enumerate(p_list):
-                    exit_code_list[i_p] = p.exitcode()
+                    exit_code_list[i_p] = p.exitcode
                 for i_p in range(len(exit_code_list)-1, -1, -1):
                     if exit_code_list[i_p] is not None:
                         p_list.pop(i_p)
