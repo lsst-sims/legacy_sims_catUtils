@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_name', type=str, default=None)
-    parser.add_argument('--circular_fov', type=bool, default=False,
+    parser.add_argument('--circular_fov', default=False,
                         action='store_true')
     args = parser.parse_args()
     proper_chip = not args.circular_fov
