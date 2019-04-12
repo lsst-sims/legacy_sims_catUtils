@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     print('%d htmid' % len(htmid_to_obs))
 
-    threshold = 10000
+    threshold = 5000
     for kk in htmid_to_obs:
         n_obs = len(htmid_to_obs[kk])
         if n_obs>threshold and n_obs<2*threshold:
