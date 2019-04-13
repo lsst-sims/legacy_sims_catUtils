@@ -25,7 +25,7 @@ x1_range = 6.0
 z_range = 1.2
 
 d_c0 = 0.025
-d_x1 = 0.5
+d_x1 = 1.0
 d_z=0.01
 
 bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
