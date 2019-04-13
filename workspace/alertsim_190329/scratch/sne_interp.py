@@ -24,16 +24,16 @@ c0_range = 0.6
 x1_range = 6.0
 z_range = 1.2
 
-d_c0 = 0.1
-d_x1 = 1.0
+d_c0 = 0.05
+d_x1 = 0.5
 d_z=0.01
 
 bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 wav_grid = bp_dict['g'].wavelen
 
-t0_grid = np.arange(-100.0, -25.0, 10.0)
-t1_grid = np.arange(-25.0, 61.0, 5.0)
-t2_grid = np.arange(65.0, 106.0, 10.0)
+t0_grid = np.arange(-100.0, -15.0, 10.0)
+t1_grid = np.arange(-15.0, 41.0, 5.0)
+t2_grid = np.arange(45.0, 106.0, 10.0)
 
 t_grid = np.sort(np.concatenate([t0_grid,t1_grid,t2_grid]))
 assert np.diff(t_grid).min()>1.0
