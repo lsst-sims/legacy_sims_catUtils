@@ -36,7 +36,7 @@ t1_grid = np.arange(-15.0, 41.0, 5.0)
 t2_grid = np.arange(45.0, 106.0, 10.0)
 
 t_grid = np.sort(np.concatenate([t0_grid,t1_grid,t2_grid]))
-assert np.diff(t_grid).min()>1.0
+assert np.diff(t_grid).min()>0.9
 
 z_grid = np.arange(z_min, z_min+z_range+0.1*d_z, d_z)
 c0_grid = np.arange(c0_min, c0_min+c0_range+0.1*d_c0, d_c0)
