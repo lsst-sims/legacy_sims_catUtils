@@ -24,7 +24,6 @@ c0_range = 0.6
 x1_range = 6.0
 z_range = 1.2
 
-d_mag = 0.1
 d_c0 = 0.1
 d_x1 = 1.0
 d_z=0.01
