@@ -26,7 +26,7 @@ z_range = 1.2
 
 d_c0 = 0.025
 d_x1 = 1.0
-d_z=0.01
+d_z=0.02
 
 bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 wav_grid = bp_dict['g'].wavelen
