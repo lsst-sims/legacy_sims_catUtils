@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
     print('%d time steps' % len(filter_obs))
 
-    q_chunk_size = 100000
+    q_chunk_size = 10000
     p_chunk_size = 10000
 
     constraint = 'redshift<=1.2 '
