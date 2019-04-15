@@ -343,6 +343,7 @@ if __name__ == "__main__":
     n_processed = 0
     n_threads = 30
     n_sne = 0
+    t_start = time.time()
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -359,17 +360,17 @@ if __name__ == "__main__":
                              midSurveyTime+0.5/sn_frequency,
                              size=len(chunk))
 
-        t0_matrix = np.zeros((len(chunk), len(mjd_obs)), dtype=float)
-        for ii in range(len(mjd_obs)):
-            t0_matrix[:,ii] = t0_arr
-        dt_matrix = np.abs(t0_matrix-mjd_obs)
-        assert dt_matrix.shape == (len(chunk), len(mjd_obs))
-        dt_min = dt_matrix.min(axis=1)
-        assert dt_min.shape == (len(chunk),)
-        valid = np.where(dt_min<100.0)
+        dt_matrix = mjd_obs-t0_arr[:,None]
+
+        #assert dt_matrix.shape == (len(chunk), len(mjd_obs))
+        #dt_min = np.abs(dt_matrix).min(axis=1)
+        #assert dt_min.shape == (len(chunk),)
+        #valid = np.where(dt_min<100.0)
+
+        valid = np.where((dt_matrix>-34.0).any(axis=1) & (dt_matrix<100.0).any(axis=1))
         n_sne += len(valid[0])
 
-        print('n_tot %e n_sne %e' % (n_tot,n_sne))
+        print('n_tot %e n_sne %e -- %e -- %e' % (n_tot,n_sne,n_sne/n_tot,time.time()-t_start))
         continue
 
         process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
