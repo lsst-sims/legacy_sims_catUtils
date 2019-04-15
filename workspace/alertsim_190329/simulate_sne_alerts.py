@@ -139,7 +139,12 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
         #print('unique tags %d of %d' % (len(np.unique(model_tag)),len(model_tag)))
 
-    return len(unq_tag)
+    ct_detected = 0
+    for sne in photo_detected:
+        if sne.any():
+            ct_detected += 1
+
+    return len(unq_tag), ct_detected
     # hold over AGN code
 
     dummy_sed = Sed()
@@ -372,6 +377,7 @@ if __name__ == "__main__":
     n_threads = 30
     n_sne = 0
     tot_unq = 0
+    tot_det = 0
     t_start = time.time()
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
@@ -409,14 +415,15 @@ if __name__ == "__main__":
         chunk['x1'] = x1_arr
         chunk['abs_mag'] = abs_mag_arr
 
-        n_unq = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+        n_unq, ct_detected = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
                           obs_md_list, proper_chip, out_data)
 
         tot_unq += n_unq
         n_sne += len(chunk)
+        tot_det += ct_detected
 
-        print('n_tot %e n_sne %e -- %e (%e) -- %e' %
-        (n_tot,n_sne,n_sne/n_tot, n_unq/len(chunk), time.time()-t_start))
+        print('n_tot %e n_sne %e (%e) -- %e (%e)  -- %e' %
+        (n_tot,n_sne,tot_det,n_sne/n_tot,n_unq/len(chunk), time.time()-t_start))
 
 
         continue
