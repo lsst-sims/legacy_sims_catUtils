@@ -127,12 +127,14 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                                                      n_t_per_filter[bp]))
 
                 for ii in range(len(valid_obj[0])):
+                    obj_dex = valid_obj[0][ii]
                     sne_mag[ii] += d_abs_mag[ii]
-                    d_mag[ii, valid_obs] = sne_mag[ii]
-                    photo_detected[ii, valid_obs] = sne_mag[ii]<m5_single[bp]
+                    d_mag[obj_dex, valid_obs] = sne_mag[ii]
+                    photo_detected[obj_dex, valid_obs] = sne_mag[ii]<m5_single[bp]
 
     ct_detected = 0
     for sne in photo_detected:
+        assert len(sne) == n_t
         if sne.any():
             ct_detected += 1
 
