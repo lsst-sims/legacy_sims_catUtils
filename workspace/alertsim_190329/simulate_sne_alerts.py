@@ -129,7 +129,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 for ii in range(len(valid_obj[0])):
                     obj_dex = valid_obj[0][ii]
                     sne_mag[ii] += d_abs_mag[ii]
-                    d_mag[obj_dex, valid_obs] = sne_mag[ii]
+                    d_mag[obj_dex, valid_obs] = sne_mag[ii]-m5_single[bp]
                     photo_detected[obj_dex, valid_obs] = sne_mag[ii]<m5_single[bp]
 
     ct_detected = 0
