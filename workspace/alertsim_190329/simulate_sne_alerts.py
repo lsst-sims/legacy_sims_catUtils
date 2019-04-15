@@ -77,6 +77,23 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     for bp in 'ugrizy':
        gamma_single[bp] = [None]*n_t
 
+    n_t_per_filter = {}
+    t_obs_arr = {}
+    for i_bp, bp in enumerate('ugrizy'):
+        valid = np.where(filter_obs==i_bp)
+        n_t_per_filter['bp'] = len(valid[0])
+        if n_t_per_filter['bp'] == 0:
+            continue
+        t_matrix = mjd_obs[valid]-chunk['t0'][:,None]
+        assert t_matrix.shape == (n_obj, len(valid[0]))
+        t_arr = t_matrix.flatten()
+        t_obs_arr[bp] = t_arr
+
+        # some test code
+        #i_r = np.random.randint(0,n_obj)
+        #assert np.array_equal(mjd_obs[valid]-chunk['t0'][i_r],
+        #                      t_arr[i_r*n_t_per_filter['bp']:
+        #                            (i_r+1)*n_t_per_filter['bp']])
 
     # first just need to interpolate some stuff
     with h5py.File(sne_interp_file, 'r') as in_file:
