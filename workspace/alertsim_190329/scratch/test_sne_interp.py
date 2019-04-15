@@ -132,8 +132,13 @@ if __name__ == "__main__":
     for p in p_list:
         p.join()
 
-    mag_truth = np.concatenate([out_dict[kk][1] for kk in dict_key_list])
-    mag_interp = np.concatenate([out_dict[kk][0] for kk in dict_key_list])
+    mag_truth = np.concatenate([out_dict[kk][1] for kk in dict_key_list],
+                               axis=1)
+    mag_interp = np.concatenate([out_dict[kk][0] for kk in dict_key_list],
+                                axis=1)
+
+    assert mag_truth.shape[1] == len(t_vals)
+    assert mag_interp.shape[1]== len(t_vals)
 
     with h5py.File('sne_interp_test_data.h5', 'w') as out_file:
         out_file.create_dataset('t', data=t_vals)
