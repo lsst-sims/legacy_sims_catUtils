@@ -29,6 +29,16 @@ _cosmology_model = CosmologyObject(H0=73.0, Om0=0.25, Ok0=None,
 
 _ct_sne = 0
 
+
+class LocalSNeTileObj(LocalGalaxyTileObj):
+
+    # place holder SNe parameters
+    columns = [('t0', '0.0', float),
+               ('c0', '0.0', float),
+               ('x1', '0.0', float),
+               ('abs_mag', '0.0', float)]
+
+
 def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, obs_md_list, proper_chip, out_data):
 
@@ -277,7 +287,8 @@ if __name__ == "__main__":
     col_names = ['id', 'redshift',
                  'ra', 'dec',
                  'u_ab', 'g_ab', 'r_ab',
-                 'i_ab', 'z_ab', 'y_ab']
+                 'i_ab', 'z_ab', 'y_ab',
+                 't0', 'c0', 'x1', 'abs_mag']
 
     obs_param_name = 'data/obs_params.h5'
     obs_params = h5py.File(obs_param_name, 'r')
@@ -285,15 +296,15 @@ if __name__ == "__main__":
     assert np.diff(obs_params['obsHistID']).min()>0
 
     try:
-        gal_db = LocalGalaxyTileObj(database='LSST',
-                                    host='epyc.astro.washington.edu',
-                                    port=1433,
-                                    driver='mssql+pymssql')
+        gal_db = LocalSNeTileObj(database='LSST',
+                                 host='epyc.astro.washington.edu',
+                                 port=1433,
+                                 driver='mssql+pymssql')
     except:
-        gal_db = LocalGalaxyTileObj(database='LSST',
-                                    host='localhost',
-                                    port=51432,
-                                    driver='mssql+pymssql')
+        gal_db = LocalSNeTileObj(database='LSST',
+                                 host='localhost',
+                                 port=51432,
+                                 driver='mssql+pymssql')
 
 
     obsid_query = np.array(htmid_to_obs[htmid_query])
@@ -327,7 +338,7 @@ if __name__ == "__main__":
 
     sn_frequency = 1.0/(100.0*365.0)
     midSurveyTime = 59580.0+5.0*365.25
-    
+
     rng = np.random.RandomState(htmid_query)
 
     data_iter = gal_db.query_columns(col_names, obs_metadata=obs_query,
@@ -355,7 +366,7 @@ if __name__ == "__main__":
 
         chunk = chunk[valid]
         n_tot += len(chunk)
-        
+
         t0_arr = rng.uniform(midSurveyTime-0.5/sn_frequency,
                              midSurveyTime+0.5/sn_frequency,
                              size=len(chunk))
@@ -370,7 +381,17 @@ if __name__ == "__main__":
         valid = np.where((dt_matrix>-34.0).any(axis=1) & (dt_matrix<100.0).any(axis=1))
         n_sne += len(valid[0])
 
+        chunk['t0'] = t0_arr
         print('n_tot %e n_sne %e -- %e -- %e' % (n_tot,n_sne,n_sne/n_tot,time.time()-t_start))
+
+        chunk = chunk[valid]
+        c0_arr = np.clip(rng.normal(0.0, 0.1, size=len(chunk)), -0.3, 0.3)
+        x1_arr = np.clip(rng.normal(0.0, 1.0, size=len(chunk)), -3.0, 3.0)
+        abs_mag_arr = rng.normal(-19.3, 0.3, size=len(chunk))
+
+        chunk['c0'] = c0_arr
+        chunk['x1'] = x1_arr
+        chunk['abs_mag'] = abs_mag_arr
         continue
 
         process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
