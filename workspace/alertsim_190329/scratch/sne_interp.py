@@ -17,7 +17,7 @@ cosmo = CosmologyObject()
 mag_min = -20.2
 c0_min = -0.3
 x1_min = -3.0
-z_min = 0.0
+z_min = 0.01
 
 mag_range = 1.8
 c0_range = 0.6
@@ -26,13 +26,13 @@ z_range = 1.2
 
 d_c0 = 0.025
 d_x1 = 1.0
-d_z=0.05
+d_z=0.01
 
 bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 wav_grid = bp_dict['g'].wavelen
 
-t0_grid = np.arange(-100.0, -15.0, 10.0)
-t1_grid = np.arange(-15.0, 41.0, 5.0)
+t0_grid = np.arange(-100.0, -21.0, 10.0)
+t1_grid = np.arange(-20.0, 41.0, 2.0)
 t2_grid = np.arange(45.0, 106.0, 10.0)
 
 t_grid = np.sort(np.concatenate([t0_grid,t1_grid,t2_grid]))
