@@ -29,9 +29,9 @@ d_z=0.01
 bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
 wav_grid = bp_dict['g'].wavelen
 
-t0_grid = np.arange(-100.0, -21.0, 10.0)
-t1_grid = np.arange(-20.0, 41.0, 2.0)
-t2_grid = np.arange(45.0, 106.0, 10.0)
+t0_grid = np.arange(-100.0, -41.0, 10.0)
+t1_grid = np.arange(-40.0, 41.0, 2.0)
+t2_grid = np.arange(45.0, 206.0, 10.0)
 
 t_grid = np.sort(np.concatenate([t0_grid,t1_grid,t2_grid]))
 assert np.diff(t_grid).min()>0.9
