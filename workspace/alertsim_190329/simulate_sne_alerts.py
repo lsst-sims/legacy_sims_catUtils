@@ -24,9 +24,6 @@ import multiprocessing
 
 import argparse
 
-_cosmology_model = CosmologyObject(H0=73.0, Om0=0.25, Ok0=None,
-                                   w0=None, wa=None)
-
 _ct_sne = 0
 
 
@@ -42,45 +39,17 @@ class LocalSNeTileObj(LocalGalaxyTileObj):
 def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, obs_md_list, proper_chip, out_data):
 
+    sne_interp_file = 'data/sne_interp_models.h5'
 
     global _ct_sne
 
     n_t = len(filter_obs)
     n_obj = len(chunk)
 
-    distance_modulus = _cosmology_model.distanceModulus(chunk['redshift'])
-    sn_model = SNUniverse()
-    sn_model.suppressDimSN = False
-    sn_model.badvalues = -999.0
-    cval = np.zeros(len(chunk), dtype=float)
-    x1 = np.zeros(len(chunk), dtype=float)
-    x0 = np.zeros(len(chunk), dtype=float)
-    t0 = np.zeros(len(chunk), dtype=float)
-    valid = np.zeros(len(chunk), dtype=bool)
-    seed_mod = 2**32-1
-    ct_valid = 0
-    for i_obj in range(n_obj):
-        (cval[i_obj],
-         x1[i_obj],
-         x0[i_obj],
-         t0[i_obj]) = sn_model.drawSNParams(chunk['id'][i_obj]%seed_mod,
-                                            distance_modulus[i_obj])
-
-        dt = np.abs(t0[i_obj]-mjd_obs)
-        if dt.min()<100.0:
-            valid[i_obj] = True
-            _ct_sne += 1
-
-    print('ct_sne %e' % _ct_sne)
-    return
-
     #print('processing %d' % len(chunk))
     ct_first = 0
     ct_at_all = 0
     ct_tot = 0
-
-    agn_model = ExtraGalacticVariabilityModels()
-
     coadd_visits = {}
     coadd_visits['u'] = 6
     coadd_visits['g'] = 8
@@ -108,22 +77,19 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     for bp in 'ugrizy':
        gamma_single[bp] = [None]*n_t
 
-    params = {}
-    params['agn_sfu'] = chunk['agn_sfu']
-    params['agn_sfg'] = chunk['agn_sfg']
-    params['agn_sfr'] = chunk['agn_sfr']
-    params['agn_sfi'] = chunk['agn_sfi']
-    params['agn_sfz'] = chunk['agn_sfz']
-    params['agn_sfy'] = chunk['agn_sfy']
-    params['agn_tau'] = chunk['agn_tau']
-    params['seed'] = chunk['id']+1
 
-    dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
-                              params, mjd_obs,
-                              redshift=chunk['redshift'])
+    # first just need to interpolate some stuff
+    with h5py.File(sne_interp_file, 'r') as in_file:
+        param_mins = in_file['param_mins'].value
+        d_params = in_file['d_params'].value
+        i_x_arr = np.round((chunk['x1']-param_mins[0])/d_params[0]).astype(int)
+        i_c_arr = np.round((chunk['c0']-param_mins[1])/d_params[1]).astype(int)
+        i_z_arr = np.round((chunk['redshift']-param_mins[2])/d_params[2]).astype(int)
+        model_tag = i_x_arr+100*i_c_arr+10000*i_z_arr
+        print('unique tags %d of %d' % (len(np.unique(model_tag)),len(model_tag)))
 
-    dmag_mean = np.mean(dmag, axis=2)
-    assert dmag_mean.shape == (6,n_obj)
+    return
+    # hold over AGN code
 
     dummy_sed = Sed()
     lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
@@ -331,8 +297,8 @@ if __name__ == "__main__":
 
     print('%d time steps' % len(filter_obs))
 
-    q_chunk_size = 10000
-    p_chunk_size = 1000
+    q_chunk_size = 100000
+    p_chunk_size = 10000
 
     constraint = 'redshift<=1.2 '
 
@@ -392,7 +358,6 @@ if __name__ == "__main__":
         chunk['c0'] = c0_arr
         chunk['x1'] = x1_arr
         chunk['abs_mag'] = abs_mag_arr
-        continue
 
         process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
                           obs_md_list, proper_chip, out_data)
