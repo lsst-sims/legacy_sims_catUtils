@@ -37,7 +37,8 @@ class LocalSNeTileObj(LocalGalaxyTileObj):
 
 
 def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
-                      coadd_m5, obs_md_list, proper_chip, out_data):
+                      coadd_m5, obs_md_list, proper_chip,
+                      invisible_set, out_data):
 
     sne_interp_file = 'data/sne_interp_models.h5'
 
@@ -101,6 +102,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         #                            (i_r+1)*n_t_per_filter['bp']])
 
     # first just need to interpolate some stuff
+    ct_invis = 0
     d_mag = np.zeros((n_obj, n_t), dtype=float)
     photo_detected = np.zeros((n_obj, n_t), dtype=bool)
     with h5py.File(sne_interp_file, 'r') as in_file:
@@ -116,6 +118,9 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         unq_tag = np.unique(model_tag)
         for i_tag in unq_tag:
             valid_obj = np.where(model_tag == i_tag)
+            if i_tag in invisible_set:
+                ct_invis += len(valid_obj[0])
+                continue
             d_abs_mag = chunk['abs_mag'][valid_obj]-abs_mag_0
             #print('valid obj ',valid_obj)
             mag_grid = in_file['%d' % i_tag].value
@@ -144,6 +149,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         if sne.any():
             ct_detected += 1
 
+    print('ct_invis %e (%e)' % (ct_invis, ct_invis/len(chunk)))
     return len(unq_tag), ct_detected
     # hold over AGN code
 
@@ -270,6 +276,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     proper_chip = not args.circular_fov
     assert args.out_name is not None
+
+    invisible_file = 'data/invisible_sn_tags.txt'
+    invisible_tags = set()
+    with open(invisible_file, 'r') as in_file:
+        for line in in_file:
+            invisible_tags.add(int(line.strip()))
 
     coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
@@ -416,7 +428,7 @@ if __name__ == "__main__":
         chunk['abs_mag'] = abs_mag_arr
 
         n_unq, ct_detected = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-                          obs_md_list, proper_chip, out_data)
+                          obs_md_list, proper_chip, invisible_tags, out_data)
 
         tot_unq += n_unq
         n_sne += len(chunk)
