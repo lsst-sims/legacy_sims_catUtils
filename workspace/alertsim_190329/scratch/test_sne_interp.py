@@ -86,7 +86,7 @@ if __name__ == "__main__":
     bp_dict = BandpassDict.loadTotalBandpassesFromFiles()
     cosmo = CosmologyObject()
 
-    grid_name = 'sne_interp_models.h5'
+    grid_name = '../data/sne_interp_models.h5'
     rng = np.random.RandomState(44)
 
     c0_range = 0.6
