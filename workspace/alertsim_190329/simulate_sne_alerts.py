@@ -79,11 +79,17 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
     n_t_per_filter = {}
     t_obs_arr = {}
+    i_obs_per_filter = {}
+    m5_arr = np.zeros(n_t, float)
     for i_bp, bp in enumerate('ugrizy'):
         valid = np.where(filter_obs==i_bp)
-        n_t_per_filter['bp'] = len(valid[0])
-        if n_t_per_filter['bp'] == 0:
+        n_t_per_filter[bp] = len(valid[0])
+        i_obs_per_filter[bp] == valid[0]
+        if n_t_per_filter[bp] == 0:
             continue
+
+        m5_arr[valid] = m5_single[bp]
+
         t_matrix = mjd_obs[valid]-chunk['t0'][:,None]
         assert t_matrix.shape == (n_obj, len(valid[0]))
         t_arr = t_matrix.flatten()
