@@ -80,20 +80,19 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     n_t_per_filter = {}
     t_obs_arr = {}
     i_obs_per_filter = {}
-    m5_arr = np.zeros(n_t, float)
     for i_bp, bp in enumerate('ugrizy'):
         valid = np.where(filter_obs==i_bp)
         n_t_per_filter[bp] = len(valid[0])
-        i_obs_per_filter[bp] == valid[0]
+        i_obs_per_filter[bp] = valid[0]
         if n_t_per_filter[bp] == 0:
             continue
 
-        m5_arr[valid] = m5_single[bp]
+        t_obs_arr [bp] = mjd_obs[valid]
 
-        t_matrix = mjd_obs[valid]-chunk['t0'][:,None]
-        assert t_matrix.shape == (n_obj, len(valid[0]))
-        t_arr = t_matrix.flatten()
-        t_obs_arr[bp] = t_arr
+        #t_matrix = mjd_obs[valid]-chunk['t0'][:,None]
+        #assert t_matrix.shape == (n_obj, len(valid[0]))
+        #t_arr = t_matrix.flatten()
+        #t_obs_arr[bp] = t_arr
 
         # some test code
         #i_r = np.random.randint(0,n_obj)
@@ -102,16 +101,45 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         #                            (i_r+1)*n_t_per_filter['bp']])
 
     # first just need to interpolate some stuff
+    d_mag = np.zeros((n_obj, n_t), dtype=float)
+    photo_detected = np.zeros((n_obj, n_t), dtype=bool)
     with h5py.File(sne_interp_file, 'r') as in_file:
         param_mins = in_file['param_mins'].value
         d_params = in_file['d_params'].value
+        t_grid = in_file['t_grid'].value
+        abs_mag_0 = param_mins[3]
         i_x_arr = np.round((chunk['x1']-param_mins[0])/d_params[0]).astype(int)
         i_c_arr = np.round((chunk['c0']-param_mins[1])/d_params[1]).astype(int)
         i_z_arr = np.round((chunk['redshift']-param_mins[2])/d_params[2]).astype(int)
         model_tag = i_x_arr+100*i_c_arr+10000*i_z_arr
-        print('unique tags %d of %d' % (len(np.unique(model_tag)),len(model_tag)))
 
-    return
+        unq_tag = np.unique(model_tag)
+        for i_tag in unq_tag:
+            valid_obj = np.where(model_tag == i_tag)
+            d_abs_mag = chunk['abs_mag'][valid_obj]-abs_mag_0
+            #print('valid obj ',valid_obj)
+            mag_grid = in_file['%d' % i_tag].value
+            for i_bp, bp in enumerate('ugrizy'):
+                if n_t_per_filter[bp] == 0:
+                    continue
+                valid_obs = i_obs_per_filter[bp]
+                assert len(valid_obs) == len(t_obs_arr[bp])
+
+                t_matrix = t_obs_arr[bp]-chunk['t0'][valid_obj,None]
+                t_arr = t_matrix.flatten()
+
+                sne_mag = np.interp(t_arr,
+                                    t_grid, mag_grid[i_bp]).reshape((len(valid_obj[0]),
+                                                                     n_t_per_filter[bp]))
+
+                for ii in range(len(valid_obj[0])):
+                    sne_mag[ii] += d_abs_mag[ii]
+                    d_mag[ii, valid_obs] = sne_mag[ii]
+                    photo_detected[ii, valid_obs] = sne_mag[ii]<m5_single[bp]
+
+        #print('unique tags %d of %d' % (len(np.unique(model_tag)),len(model_tag)))
+
+    return len(unq_tag)
     # hold over AGN code
 
     dummy_sed = Sed()
