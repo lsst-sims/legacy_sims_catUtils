@@ -88,7 +88,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         if n_t_per_filter[bp] == 0:
             continue
 
-        t_obs_arr [bp] = mjd_obs[valid]
+        t_obs_arr[bp] = mjd_obs[valid]
 
     # first just need to interpolate some stuff
     ct_invis = 0
