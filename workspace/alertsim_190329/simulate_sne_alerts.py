@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
     print('%d time steps' % len(filter_obs))
 
-    q_chunk_size = 10000
+    q_chunk_size = 50000
     p_chunk_size = 10000
 
     constraint = 'redshift<=1.2 '
@@ -371,6 +371,7 @@ if __name__ == "__main__":
     n_processed = 0
     n_threads = 30
     n_sne = 0
+    tot_unq = 0
     t_start = time.time()
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
@@ -396,10 +397,8 @@ if __name__ == "__main__":
         #valid = np.where(dt_min<100.0)
 
         valid = np.where((dt_matrix>-34.0).any(axis=1) & (dt_matrix<100.0).any(axis=1))
-        n_sne += len(valid[0])
 
         chunk['t0'] = t0_arr
-        print('n_tot %e n_sne %e -- %e -- %e' % (n_tot,n_sne,n_sne/n_tot,time.time()-t_start))
 
         chunk = chunk[valid]
         c0_arr = np.clip(rng.normal(0.0, 0.1, size=len(chunk)), -0.3, 0.3)
@@ -410,8 +409,15 @@ if __name__ == "__main__":
         chunk['x1'] = x1_arr
         chunk['abs_mag'] = abs_mag_arr
 
-        process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+        n_unq = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
                           obs_md_list, proper_chip, out_data)
+
+        tot_unq += n_unq
+        n_sne += len(chunk)
+
+        print('n_tot %e n_sne %e -- %e (%e) -- %e' %
+        (n_tot,n_sne,n_sne/n_tot, n_unq/len(chunk), time.time()-t_start))
+
 
         continue
         # multiprocessing code
