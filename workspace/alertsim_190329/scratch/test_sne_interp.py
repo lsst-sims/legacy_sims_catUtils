@@ -20,7 +20,7 @@ z_range = 1.2
 abs_mag_mean = -19.3
 abs_mag_std = 0.3
 
-n_samples = 100000
+n_samples = 1000000
 
 
 with h5py.File(grid_name, 'r') as in_file:
