@@ -14,12 +14,10 @@ import time
 rng = np.random.RandomState(654)
 cosmo = CosmologyObject()
 
-mag_min = -20.2
 c0_min = -0.3
 x1_min = -3.0
 z_min = 0.01
 
-mag_range = 1.8
 c0_range = 0.6
 x1_range = 6.0
 z_range = 1.2
