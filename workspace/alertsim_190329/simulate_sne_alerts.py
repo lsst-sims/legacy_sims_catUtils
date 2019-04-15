@@ -138,7 +138,6 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         if sne.any():
             ct_detected += 1
 
-    print('ct_invis %e (%e)' % (ct_invis, ct_invis/len(chunk)))
     return len(unq_tag), ct_detected
     # hold over AGN code
 
