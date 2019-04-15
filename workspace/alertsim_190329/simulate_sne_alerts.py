@@ -90,17 +90,6 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
         t_obs_arr [bp] = mjd_obs[valid]
 
-        #t_matrix = mjd_obs[valid]-chunk['t0'][:,None]
-        #assert t_matrix.shape == (n_obj, len(valid[0]))
-        #t_arr = t_matrix.flatten()
-        #t_obs_arr[bp] = t_arr
-
-        # some test code
-        #i_r = np.random.randint(0,n_obj)
-        #assert np.array_equal(mjd_obs[valid]-chunk['t0'][i_r],
-        #                      t_arr[i_r*n_t_per_filter['bp']:
-        #                            (i_r+1)*n_t_per_filter['bp']])
-
     # first just need to interpolate some stuff
     ct_invis = 0
     d_mag = np.zeros((n_obj, n_t), dtype=float)
@@ -122,7 +111,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 ct_invis += len(valid_obj[0])
                 continue
             d_abs_mag = chunk['abs_mag'][valid_obj]-abs_mag_0
-            #print('valid obj ',valid_obj)
+
             mag_grid = in_file['%d' % i_tag].value
             for i_bp, bp in enumerate('ugrizy'):
                 if n_t_per_filter[bp] == 0:
@@ -141,8 +130,6 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                     sne_mag[ii] += d_abs_mag[ii]
                     d_mag[ii, valid_obs] = sne_mag[ii]
                     photo_detected[ii, valid_obs] = sne_mag[ii]<m5_single[bp]
-
-        #print('unique tags %d of %d' % (len(np.unique(model_tag)),len(model_tag)))
 
     ct_detected = 0
     for sne in photo_detected:
