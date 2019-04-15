@@ -175,6 +175,8 @@ if __name__ == "__main__":
             vanished = np.where(np.logical_and(truth[i_bp]<25.0,
                                                interp[i_bp]>25.0))
 
+            print('%s vanished %e of %e' % (bp, len(vanished[0]),len(truth[i_bp])))
+
             plt.subplot(3,2,i_bp+1)
             plot_color_mesh(in_file['z'].value[vanished],
                             interp[i_bp][vanished]-truth[i_bp][vanished],
