@@ -51,7 +51,7 @@ t_start = time.time()
 models_generated = 0
 tags_used = set()
 max_tag = 2**32
-with h5py.File('sne_interp_models.h5', 'w') as out_file:
+with h5py.File('data/sne_interp_models.h5', 'w') as out_file:
     out_file.create_dataset('t_grid', data=t_grid)
     out_file.create_dataset('param_mins',
                             data=np.array([x1_min, c0_min, z_min, abs_mag]))
