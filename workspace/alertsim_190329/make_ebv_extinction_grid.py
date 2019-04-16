@@ -30,6 +30,8 @@ for i_ebv, ebv in enumerate(ebv_grid):
     for i_bp, bp in enumerate('ugrizy'):
         ext_grid[i_bp][i_ebv] = mags[i_bp]-unextincted_mags[i_bp]
 
+assert ext_grid.min()>0.0
+
 with h5py.File('data/ebv_grid.h5', 'w') as out_file:
     out_file.create_dataset('ebv_grid', data=ebv_grid)
     out_file.create_dataset('extinction_grid', data=ext_grid)
