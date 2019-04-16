@@ -93,7 +93,8 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     # first just need to interpolate some stuff
     ct_invis = 0
     d_mag = np.zeros((n_obj, n_t), dtype=float)
-    photo_detected = np.zeros((n_obj, n_t), dtype=bool)
+    photometry_mask = np.zeros((n_obj, n_t), dtype=bool)
+    photometry_mask_1d = np.zeros(n_obj, dtype=bool)
     with h5py.File(sne_interp_file, 'r') as in_file:
         param_mins = in_file['param_mins'].value
         d_params = in_file['d_params'].value
@@ -130,106 +131,15 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                     obj_dex = valid_obj[0][ii]
                     sne_mag[ii] += d_abs_mag[ii]
                     d_mag[obj_dex, valid_obs] = sne_mag[ii]-m5_single[bp]
-                    photo_detected[obj_dex, valid_obs] = sne_mag[ii]<m5_single[bp]
-
-    ct_detected = 0
-    for sne in photo_detected:
-        assert len(sne) == n_t
-        if sne.any():
-            ct_detected += 1
-
-    return len(unq_tag), ct_detected
-    # hold over AGN code
-
-    dummy_sed = Sed()
-    lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
-    flux_gal = np.zeros((6,n_obj), dtype=float)
-    flux_agn_q = np.zeros((6,n_obj), dtype=float)
-    flux_coadd = np.zeros((6,n_obj), dtype=float)
-    mag_coadd = np.zeros((6,n_obj), dtype=float)
-    snr_coadd = np.zeros((6,n_obj), dtype=float)
-    snr_single = {}
-    snr_single_mag_grid = np.arange(14.0, 30.0, 0.05)
-
-    phot_params_single = PhotometricParameters(nexp=1,
-                                               exptime=30.0)
-
-    t_start_snr = time.time()
-    photometry_mask = np.zeros((n_obj, n_t), dtype=bool)
-    photometry_mask_1d = np.zeros(n_obj, dtype=bool)
-    snr_arr = np.zeros((n_obj, n_t), dtype=float)
-
-    for i_bp, bp in enumerate('ugrizy'):
-        phot_params_coadd = PhotometricParameters(nexp=1,
-                                                  exptime=30.0*coadd_visits[bp])
-
-        flux_gal[i_bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp])
-        flux_agn_q[i_bp] = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp] +
-                                                 dmag_mean[i_bp,:])
-        flux_coadd[i_bp] = flux_gal[i_bp]+flux_agn_q[i_bp]
-        mag_coadd[i_bp] = dummy_sed.magFromFlux(flux_coadd[i_bp])
-
-        (snr_coadd[i_bp],
-         gamma) = SNR.calcSNR_m5(mag_coadd[i_bp],
-                                 lsst_bp[bp],
-                                 coadd_m5[bp],
-                                 phot_params_coadd)
-
-
-        (snr_single[bp],
-         gamma) = SNR.calcSNR_m5(snr_single_mag_grid,
-                                 lsst_bp[bp],
-                                 m5_single[bp],
-                                 phot_params_single)
-
-    #print('got all snr in %e' % (time.time()-t_start_snr))
-
-
-    t_start_obj = time.time()
-    noise_coadd_cache = np.zeros(6, dtype=float)
-    snr_single_val = np.zeros(n_t, dtype=float)
+                    photometry_mask[obj_dex, valid_obs] = sne_mag[ii]<m5_single[bp]
 
     for i_obj in range(n_obj):
-        if i_obj<0 and i_obj%100==0:
-            duration = (time.time()-t_start_obj)/3600.0
-            print('    %d in %e hrs' % (i_obj,duration))
-        ct_tot += 1
-
-        bp_arr = list(['ugrizy'[filter_obs[i_t]] for i_t in range(n_t)])
-        mag0_arr = np.array([chunk['AGNLSST%s' % bp][i_obj] for bp in bp_arr])
-        dmag_arr = np.array([dmag[filter_obs[i_t]][i_obj][i_t]
-                             for i_t in range(n_t)])
-
-        agn_flux_tot = dummy_sed.fluxFromMag(mag0_arr+dmag_arr)
-        q_flux = np.array([flux_agn_q[ii][i_obj] for ii in filter_obs])
-        agn_dflux = np.abs(agn_flux_tot-q_flux)
-        flux_tot = np.array([flux_gal[ii][i_obj] for ii in filter_obs])
-        flux_tot += agn_flux_tot
-        mag_tot = dummy_sed.magFromFlux(flux_tot)
-
-        snr_single_val[:] = -1.0
-        for i_bp, bp in enumerate('ugrizy'):
-            valid = np.where(filter_obs==i_bp)
-            snr_single_val[valid] = np.interp(mag_tot[valid],
-                                              snr_single_mag_grid,
-                                              snr_single[bp])
-
-            noise_coadd_cache[i_bp] = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
-
-        assert snr_single_val.min()>0.0
-
-        noise_single = flux_tot/snr_single_val
-        noise_coadd = np.array([noise_coadd_cache[ii]
-                                for ii in filter_obs])
-
-        noise = np.sqrt(noise_coadd**2+noise_single**2)
-        dflux_thresh = 5.0*noise
-        detected = (agn_dflux>=dflux_thresh)
-        snr_arr[i_obj, :] = agn_dflux/noise
-        if detected.any():
+        if photometry_mask[i_obj,:].any():
             photometry_mask_1d[i_obj] = True
-            photometry_mask[i_obj,:] = detected
 
+
+    n_unq = len(unq_tag)
+    ct_detected = 0
 
     t_before_chip = time.time()
     chip_mask = apply_focal_plane(chunk, photometry_mask_1d, obs_md_list,
@@ -243,15 +153,15 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
             if detected.any():
                 unq = chunk['galtileid'][i_obj]
                 first_dex = np.where(detected)[0].min()
+                snr = 5.0*10**(-0.4*(d_mag[i_obj,first_dex]))
                 out_data[unq] = (mjd_obs[first_dex],
-                                 snr_arr[i_obj, first_dex])
-                if detected[0]:
-                    ct_first += 1
-                else:
-                    ct_at_all += 1
+                                 snr)
+                ct_detected += 1
 
     #print('%d tot %d first %d at all %d ' %
     #(os.getpid(),ct_tot, ct_first, ct_at_all))
+
+    return n_unq, ct_detected
 
 if __name__ == "__main__":
 
