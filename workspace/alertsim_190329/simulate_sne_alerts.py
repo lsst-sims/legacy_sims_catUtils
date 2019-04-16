@@ -357,9 +357,10 @@ if __name__ == "__main__":
                 to_concatenate.append(sub_chunk)
                 continue
 
+
             n_processed += len(sub_chunk)
             assert len(sub_chunk)>=p_chunk_size
-            p = multiprocessing.Process(target=process_agn_chunk,
+            p = multiprocessing.Process(target=process_sne_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
                                               proper_chip, invisible_tags,
@@ -386,11 +387,13 @@ if __name__ == "__main__":
         for i_min in range(0,len(chunk),p_chunk_size):
             sub_chunk = chunk[i_min:i_min+p_chunk_size]
             n_processed += len(sub_chunk)
-            p = multiprocessing.Process(target=process_agn_chunk,
-                                        args=(sub_chunk,
-                                              filter_obs, mjd_obs,
+
+            p = multiprocessing.Process(target=process_sne_chunk,
+                                        args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
-                                              proper_chip, out_data))
+                                              proper_chip, invisible_tags,
+                                              out_data))
+
             p.start()
             p_list.append(p)
             while len(p_list)>=n_threads:
