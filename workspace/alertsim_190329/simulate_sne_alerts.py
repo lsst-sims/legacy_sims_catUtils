@@ -294,7 +294,6 @@ if __name__ == "__main__":
             continue
 
         chunk = chunk[valid]
-        n_tot += len(chunk)
 
         t0_arr = rng.uniform(midSurveyTime-0.5/sn_frequency,
                              midSurveyTime+0.5/sn_frequency,
@@ -319,6 +318,8 @@ if __name__ == "__main__":
         chunk['c0'] = c0_arr
         chunk['x1'] = x1_arr
         chunk['abs_mag'] = abs_mag_arr
+
+        n_tot += len(chunk)
 
         #n_unq, ct_detected = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
         #                  obs_md_list, proper_chip, invisible_tags, out_data)
