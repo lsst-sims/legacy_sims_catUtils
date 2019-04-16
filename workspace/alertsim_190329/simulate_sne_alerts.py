@@ -281,9 +281,14 @@ if __name__ == "__main__":
     n_processed = 0
     n_threads = 30
     n_sne = 0
+    n_gal = 0
     tot_unq = 0
     tot_det = 0
     t_start = time.time()
+
+    t_lsst_0 = 59580.0
+    t_lsst_1 = t_lsst_0+3652.5
+
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -295,10 +300,16 @@ if __name__ == "__main__":
 
         chunk = chunk[valid]
 
+        n_gal += len(chunk)
+
         t0_arr = rng.uniform(midSurveyTime-0.5/sn_frequency,
                              midSurveyTime+0.5/sn_frequency,
                              size=len(chunk))
 
+        is_sne = np.where(np.logical_and(t0_arr>=t_lsst_0,
+                                         t0_arr<=t_lsst_1))
+
+        n_sne += len(is_sne[0])
         dt_matrix = mjd_obs-t0_arr[:,None]
 
         #assert dt_matrix.shape == (len(chunk), len(mjd_obs))
@@ -323,14 +334,6 @@ if __name__ == "__main__":
 
         #n_unq, ct_detected = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
         #                  obs_md_list, proper_chip, invisible_tags, out_data)
-
-        #tot_unq += n_unq
-        #n_sne += len(chunk)
-        #tot_det += ct_detected
-
-        #print('n_tot %e n_sne %e (%e) -- %e (%e)  -- %e' %
-        #(n_tot,n_sne,tot_det,n_sne/n_tot,n_unq/len(chunk), time.time()-t_start))
-
 
         #continue
 
@@ -413,6 +416,8 @@ if __name__ == "__main__":
         out_data_final[name] = out_data[name]
 
     print('n_lc %d' % len(out_data_final))
+    print('n_sne %e' % n_sne)
+    print('n_gal %e' % n_gal)
     with open(args.out_name, 'wb') as out_file:
         pickle.dump(out_data_final, out_file)
 
