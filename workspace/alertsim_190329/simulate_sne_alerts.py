@@ -156,12 +156,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 snr = 5.0*10**(-0.4*(d_mag[i_obj,first_dex]))
                 out_data[unq] = (mjd_obs[first_dex],
                                  snr)
-                ct_detected += 1
 
-    #print('%d tot %d first %d at all %d ' %
-    #(os.getpid(),ct_tot, ct_first, ct_at_all))
-
-    return n_unq, ct_detected
 
 if __name__ == "__main__":
 
@@ -325,18 +320,19 @@ if __name__ == "__main__":
         chunk['x1'] = x1_arr
         chunk['abs_mag'] = abs_mag_arr
 
-        n_unq, ct_detected = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-                          obs_md_list, proper_chip, invisible_tags, out_data)
+        #n_unq, ct_detected = process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+        #                  obs_md_list, proper_chip, invisible_tags, out_data)
 
-        tot_unq += n_unq
-        n_sne += len(chunk)
-        tot_det += ct_detected
+        #tot_unq += n_unq
+        #n_sne += len(chunk)
+        #tot_det += ct_detected
 
-        print('n_tot %e n_sne %e (%e) -- %e (%e)  -- %e' %
-        (n_tot,n_sne,tot_det,n_sne/n_tot,n_unq/len(chunk), time.time()-t_start))
+        #print('n_tot %e n_sne %e (%e) -- %e (%e)  -- %e' %
+        #(n_tot,n_sne,tot_det,n_sne/n_tot,n_unq/len(chunk), time.time()-t_start))
 
 
-        continue
+        #continue
+
         # multiprocessing code
         if len(chunk)<p_chunk_size:
             to_concatenate.append(chunk)
@@ -365,7 +361,8 @@ if __name__ == "__main__":
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
-                                              proper_chip, out_data))
+                                              proper_chip, invisible_tags,
+                                              out_data))
             p.start()
             p_list.append(p)
             while len(p_list)>=n_threads:
