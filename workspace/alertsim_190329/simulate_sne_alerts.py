@@ -234,7 +234,9 @@ if __name__ == "__main__":
                  'ra', 'dec',
                  'u_ab', 'g_ab', 'r_ab',
                  'i_ab', 'z_ab', 'y_ab',
-                 't0', 'c0', 'x1', 'abs_mag']
+                 't0', 'c0', 'x1', 'abs_mag',
+                 'A_u', 'A_g', 'A_r', 'A_i',
+                 'A_z', 'A_y']
 
     obs_param_name = 'data/obs_params.h5'
     obs_params = h5py.File(obs_param_name, 'r')
