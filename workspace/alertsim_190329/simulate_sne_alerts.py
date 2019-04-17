@@ -17,6 +17,7 @@ from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 from lsst.sims.photUtils import CosmologyObject
 from lsst.sims.catUtils.supernovae import SNUniverse
+from lsst.sims.catUtils.dust import EBVbase
 
 from alert_focal_plane import apply_focal_plane
 
@@ -33,7 +34,13 @@ class LocalSNeTileObj(LocalGalaxyTileObj):
     columns = [('t0', '0.0', float),
                ('c0', '0.0', float),
                ('x1', '0.0', float),
-               ('abs_mag', '0.0', float)]
+               ('abs_mag', '0.0', float),
+               ('A_u', '0.0', float),
+               ('A_g', '0.0', float),
+               ('A_r', '0.0', float),
+               ('A_i', '0.0', float),
+               ('A_z', '0.0', float),
+               ('A_y', '0.0', float)]
 
 
 def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
@@ -46,6 +53,18 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
     n_t = len(filter_obs)
     n_obj = len(chunk)
+
+    with h5py.File('data/ebv_grid.h5', 'r') as in_file:
+       ebv_grid = in_file['ebv_grid'].value
+       extinction_grid = in_file['extinction_grid'].value
+
+    dust_model = EBVbase()
+    ebv = dust_model.calculateEbv(equatorialCoordinates=np.array([np.radians(chunk['ra']),
+                                                                  np.radians(chunk['dec'])]),
+                                  interp=True)
+    for i_bp, bp in enumerate('ugrizy'):
+        vv = np.interp(ebv, ebv_grid, extinction_grid[i_bp])
+        chunk['A_%s' % bp] = vv
 
     #print('processing %d' % len(chunk))
     ct_first = 0
@@ -129,7 +148,7 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
                 for ii in range(len(valid_obj[0])):
                     obj_dex = valid_obj[0][ii]
-                    sne_mag[ii] += d_abs_mag[ii]
+                    sne_mag[ii] += d_abs_mag[ii]+chunk['A_%s' % bp][ii]
                     d_mag[obj_dex, valid_obs] = sne_mag[ii]-m5_single[bp]
                     photometry_mask[obj_dex, valid_obs] = sne_mag[ii]<m5_single[bp]
 
