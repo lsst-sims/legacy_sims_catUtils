@@ -15,6 +15,8 @@ from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
+from lsst.sims.catUtils.dust import EBVbase
+
 from alert_focal_plane import apply_focal_plane
 
 import multiprocessing
@@ -33,6 +35,11 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     n_obj = len(chunk)
 
     agn_model = ExtraGalacticVariabilityModels()
+    dust_model = EBVbase()
+
+    with h5py.File('data/ebv_grid.h5', 'r') as in_file:
+       ebv_grid = in_file['ebv_grid'].value
+       extinction_grid = in_file['extinction_grid'].value
 
     coadd_visits = {}
     coadd_visits['u'] = 6
@@ -70,6 +77,14 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     params['agn_sfy'] = chunk['agn_sfy']
     params['agn_tau'] = chunk['agn_tau']
     params['seed'] = chunk['id']+1
+
+    ebv = dust_model.calculateEbv(equatorialCoordinates=np.array([chunk['ra'], chunk['dec']),
+                                  interp=True)
+
+    for i_bp, bp in enumerate('ugrizy'):
+        extinction_values = np.interp(ebv, ebv_grid, extinction_grid[i_bp])
+        chunk['%s_ab' % bp] += extinction_values
+        chunk['AGNLSST%s' % bp] += extinction_values
 
     dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
                               params, mjd_obs,
