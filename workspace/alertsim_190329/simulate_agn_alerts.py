@@ -78,7 +78,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     params['agn_tau'] = chunk['agn_tau']
     params['seed'] = chunk['id']+1
 
-    ebv = dust_model.calculateEbv(equatorialCoordinates=np.array([chunk['ra'], chunk['dec']),
+    ebv = dust_model.calculateEbv(equatorialCoordinates=np.array([chunk['ra'], chunk['dec']]),
                                   interp=True)
 
     for i_bp, bp in enumerate('ugrizy'):
