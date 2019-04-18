@@ -26,10 +26,10 @@ import multiprocessing
 import argparse
 
 
-def dmag_for_mlt(chunk, mjd_obs, variability_cache, dmag_out):
+def dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag_out):
 
-    valid = np.where(chunk['var_type'] == 2)
-    n_mlt = len(valid[0])
+    valid_obj = np.where(chunk['var_type'] == 2)
+    n_mlt = len(valid_obj[0])
     if n_mlt == 0:
         return
 
@@ -49,25 +49,28 @@ def dmag_for_mlt(chunk, mjd_obs, variability_cache, dmag_out):
         mlt_model._actually_calculated_columns.append('lsst_%s' % bp)
 
     params = {}
-    params['lc'] = np.array([lc_id_map[ii] for ii in chunk['lc_id'][valid]])
-    params['t0'] = chunk['t0'][valid]
+    params['lc'] = np.array([lc_id_map[ii] for ii in chunk['lc_id'][valid_obj]])
+    params['t0'] = chunk['t0'][valid_obj]
     q_mags = {}
     for bp in 'ugrizy':
-        q_mags[bp] = chunk['%smag' % bp][valid]
+        q_mags[bp] = chunk['%smag' % bp][valid_obj]
 
-    dmag_local = mlt_model.applyMLTflaring(np.array([True]*n_mlt),
-                                           params, mjd_obs,
-                                           parallax=chunk['parallax'][valid],
-                                           ebv=chunk['ebv'][valid],
-                                           quiescent_mags=q_mags,
-                                           variability_cache=variability_cache,
-                                           do_mags=False)
+    for i_bp, bp in enumerate('ugrizy'):
+        valid_bp = np.where(filter_obs==i_bp)
+        if len(valid_bp[0]) == 0:
+            continue
 
-    print('dmag_out ',dmag_out.shape)
-    print('with dex ',dmag_out[:,valid[0],:].shape)
-    print('local ',dmag_local.shape)
-    dmag_out[:,valid[0],:] = dmag_local
+        results = mlt_model.applyMLTflaring(np.array([True]*n_mlt),
+                                            params, mjd_obs[valid_bp],
+                                            parallax=chunk['parallax'][valid_obj],
+                                            ebv=chunk['ebv'][valid_obj],
+                                            quiescent_mags=q_mags,
+                                            variability_cache=variability_cache,
+                                            do_mags=False,
+                                            mag_name_tuple=(bp,))
 
+        for i_local, i_global in enumerate(valid_obj[0]):
+            dmag_out[i_local][valid_bp] = results[0][i_local]
 
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                           coadd_m5, obs_md_list, proper_chip,
@@ -108,8 +111,8 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     for bp in 'ugrizy':
        gamma_single[bp] = [None]*n_t
 
-    dmag = np.zeros((6,n_obj,n_t), dtype=float)
-    dmag_for_mlt(chunk, mjd_obs, variability_cache, dmag)
+    dmag = np.zeros((n_obj,n_t), dtype=float)
+    dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag)
     return
 
     dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
