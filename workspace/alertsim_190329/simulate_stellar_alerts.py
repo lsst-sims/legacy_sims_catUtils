@@ -26,7 +26,7 @@ import multiprocessing
 import argparse
 
 
-def dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag_out):
+def dflux_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dflux_out):
 
     valid_obj = np.where(chunk['var_type'] == 2)
     n_mlt = len(valid_obj[0])
@@ -66,14 +66,14 @@ def dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag_out):
                                             ebv=chunk['ebv'][valid_obj],
                                             quiescent_mags=q_mags,
                                             variability_cache=variability_cache,
-                                            do_mags=True,
+                                            do_mags=False,
                                             mag_name_tuple=(bp,))
 
         for i_local, i_global in enumerate(valid_obj[0]):
-            dmag_out[i_global][valid_bp] = results[0][i_local]
+            dflux_out[i_global][valid_bp] = results[0][i_local]
 
 
-def dmag_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dmag_out):
+def dflux_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
     valid_obj = np.where(chunk['var_type']==1)
     n_obj = len(valid_obj[0])
     if n_obj==0:
@@ -84,9 +84,10 @@ def dmag_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dmag_out):
     params['t0'] = chunk['t0'][valid_obj]
 
     plc_model = ParametrizedLightCurveMixin()
-    dmag_out[valid_obj] = plc_model.singleBandParametrizedLightCurve(np.array([True]*n_obj),
-                                                                     params, mjd_obs,
-                                                                     variability_cache=v_cache)
+    dflux_out[valid_obj] = plc_model.singleBandParametrizedLightCurve(np.array([True]*n_obj),
+                                                                      params, mjd_obs,
+                                                                      variability_cache=v_cache,
+                                                                      do_mags=False)
 
 
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
@@ -128,9 +129,9 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     for bp in 'ugrizy':
        gamma_single[bp] = [None]*n_t
 
-    dmag = np.zeros((n_obj,n_t), dtype=float)
-    dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag)
-    dmag_for_kepler(chunk, filter_obs, mjd_obs, variability_cache, dmag)
+    dflux = np.zeros((n_obj,n_t), dtype=float)
+    dflux_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dflux)
+    dflux_for_kepler(chunk, filter_obs, mjd_obs, variability_cache, dflux)
     return
 
     dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
