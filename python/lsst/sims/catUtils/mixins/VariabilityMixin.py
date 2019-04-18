@@ -1199,16 +1199,17 @@ class ParametrizedLightCurveMixin(Variability):
             delta_flux = np.float(delta_flux)
         return quiescent_flux, delta_flux
 
-    @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
-    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
-                                    variability_cache=None):
+    def singleBandParametrizedLightCurve(self, valid_dexes, params, expmjd,
+                                         variability_cache=None):
+        """
+        Apply the parametrized light curve model, but just return one
+        d_magnitude array.  This works because the parametrized
+        light curve model does not cause colors to vary.
+        """
 
         t_start = time.time()
         if not hasattr(self, '_total_t_param_lc'):
             self._total_t_param_lc = 0.0
-
-        if len(params) == 0:
-            return np.array([[], [], [], [], [], []])
 
         n_obj = self.num_variable_obj(params)
 
@@ -1231,12 +1232,12 @@ class ParametrizedLightCurveMixin(Variability):
         if isinstance(expmjd, numbers.Number):
             mjd_is_number = True
             n_t = 1
-            d_mag_out = np.zeros((6, n_obj))
+            d_mag_out = np.zeros(n_obj, dtype=float)
             lc_time = expmjd - params['t0'].astype(float)
         else:
             mjd_is_number = False
             n_t = len(expmjd)
-            d_mag_out = np.zeros((6, n_obj, n_t))
+            d_mag_out = np.zeros((n_obj, n_t), dtype=float)
             t0_float = params['t0'].astype(float)
             lc_time = np.zeros(n_t*n_obj)
             i_start = 0
@@ -1289,14 +1290,12 @@ class ParametrizedLightCurveMixin(Variability):
 
             # t_before = time.time()
             if mjd_is_number:
-                for i_filter in range(6):
-                    d_mag_out[i_filter][use_this_lc] = d_mag
+                d_mag_out[use_this_lc] = d_mag
             else:
                 for i_obj in range(len(use_this_lc)//n_t):
                     i_start = i_obj*n_t
                     obj_dex = use_this_lc_unq[i_obj]
-                    for i_filter in range(6):
-                        d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
+                    d_mag_out[obj_dex] = d_mag[i_start:i_start+n_t]
 
             # t_assign += time.time()-t_before
 
@@ -1308,6 +1307,30 @@ class ParametrizedLightCurveMixin(Variability):
 
         # print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
         self._total_t_param_lc += time.time()-t_start
+
+        return d_mag_out
+
+    @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
+    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
+                                    variability_cache=None):
+
+        if len(params) == 0:
+            return np.array([[], [], [], [], [], []])
+
+        n_obj = self.num_variable_obj(params)
+        if isinstance(expmjd, numbers.Number):
+            mjd_is_number = True
+            d_mag_out = np.zeros((6, n_obj), dtype=float)
+        else:
+            mjd_is_number = False
+            n_t = len(expmjd)
+            d_mag_out = np.zeros((6, n_obj, n_t), dtype=float)
+
+        d_mag = self.singleBandParametrizedLightCurve(valid_dexes, params, expmjd,
+                                                      variability_cache=variability_cache)
+
+        for i_filter in range(6):
+            d_mag_out[i_filter] = np.copy(d_mag)
 
         return d_mag_out
 
