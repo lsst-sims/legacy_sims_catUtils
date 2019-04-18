@@ -753,7 +753,8 @@ class MLTflaringMixin(Variability):
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
                         parallax=None, ebv=None, quiescent_mags=None,
-                        variability_cache=None, do_mags=True):
+                        variability_cache=None, do_mags=True,
+                        mag_name_tuple=('u','g','r','i','z','y')):
         """
         parallax, ebv, and quiescent_mags are optional kwargs for use if you are
         calling this method outside the context of an InstanceCatalog (presumably
@@ -768,6 +769,9 @@ class MLTflaringMixin(Variability):
 
         do_mags is a boolean; if True, return delta_magnitude;
         if False, return delta_flux
+
+        mag_name_tuple is a tuple indicating which magnitudes should actually
+        be simulated
         """
         self.t_spent_interp = 0.0
         t_start = time.time()
@@ -874,12 +878,12 @@ class MLTflaringMixin(Variability):
 
         flux_factor = 1.0/sphere_area
 
+        n_mags = len(mag_name_tuple)
         if isinstance(expmjd, numbers.Number):
-            dMags = np.zeros((6, self.num_variable_obj(params)))
+            dMags = np.zeros((n_mags, self.num_variable_obj(params)))
         else:
-            dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            dMags = np.zeros((n_mags, self.num_variable_obj(params), len(expmjd)))
 
-        mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
         base_mags = {}
         ss = Sed()
