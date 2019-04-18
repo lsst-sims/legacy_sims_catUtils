@@ -70,7 +70,7 @@ def dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag_out):
                                             mag_name_tuple=(bp,))
 
         for i_local, i_global in enumerate(valid_obj[0]):
-            dmag_out[i_local][valid_bp] = results[0][i_local]
+            dmag_out[i_global][valid_bp] = results[0][i_local]
 
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                           coadd_m5, obs_md_list, proper_chip,
