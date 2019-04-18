@@ -72,6 +72,23 @@ def dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag_out):
         for i_local, i_global in enumerate(valid_obj[0]):
             dmag_out[i_global][valid_bp] = results[0][i_local]
 
+
+def dmag_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dmag_out):
+    valid_obj = np.where(chunk['var_type']==1)
+    n_obj = len(valid_obj[0])
+    if n_obj==0:
+        return
+
+    params = {}
+    params['lc'] = chunk['lc_id'][valid_obj]
+    params['t0'] = chunk['t0'][valid_obj]
+
+    plc_model = ParametrizedLightCurveMixin()
+    dmag_out[valid_obj] = plc_model.singleBandParametrizedLightCurve(np.array([True]*n_obj),
+                                                                     params, mjd_obs,
+                                                                     variability_cache=v_cache)
+
+
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                           coadd_m5, obs_md_list, proper_chip,
                           variability_cache, out_data):
@@ -113,6 +130,7 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
     dmag = np.zeros((n_obj,n_t), dtype=float)
     dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag)
+    dmag_for_kepler(chunk, filter_obs, mjd_obs, variability_cache, dmag)
     return
 
     dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
