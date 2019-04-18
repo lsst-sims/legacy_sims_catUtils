@@ -337,7 +337,7 @@ if __name__ == "__main__":
 
     print('%d time steps' % len(filter_obs))
 
-    q_chunk_size = 10000
+    q_chunk_size = 20000
     p_chunk_size = 1000
 
     constraint = 'isvar=1 '
