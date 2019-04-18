@@ -66,7 +66,7 @@ def dmag_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dmag_out):
                                             ebv=chunk['ebv'][valid_obj],
                                             quiescent_mags=q_mags,
                                             variability_cache=variability_cache,
-                                            do_mags=False,
+                                            do_mags=True,
                                             mag_name_tuple=(bp,))
 
         for i_local, i_global in enumerate(valid_obj[0]):
