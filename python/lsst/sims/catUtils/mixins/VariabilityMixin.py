@@ -1200,7 +1200,8 @@ class ParametrizedLightCurveMixin(Variability):
         return quiescent_flux, delta_flux
 
     def singleBandParametrizedLightCurve(self, valid_dexes, params, expmjd,
-                                         variability_cache=None):
+                                         variability_cache=None,
+                                         do_mags=True):
         """
         Apply the parametrized light curve model, but just return one
         d_magnitude array.  This works because the parametrized
@@ -1232,12 +1233,12 @@ class ParametrizedLightCurveMixin(Variability):
         if isinstance(expmjd, numbers.Number):
             mjd_is_number = True
             n_t = 1
-            d_mag_out = np.zeros(n_obj, dtype=float)
+            d_final_out = np.zeros(n_obj, dtype=float)
             lc_time = expmjd - params['t0'].astype(float)
         else:
             mjd_is_number = False
             n_t = len(expmjd)
-            d_mag_out = np.zeros((n_obj, n_t), dtype=float)
+            d_final_out = np.zeros((n_obj, n_t), dtype=float)
             t0_float = params['t0'].astype(float)
             lc_time = np.zeros(n_t*n_obj)
             i_start = 0
@@ -1280,22 +1281,25 @@ class ParametrizedLightCurveMixin(Variability):
             q_flux, d_flux = self._calc_dflux(lc_int, lc_time[use_this_lc],
                                               variability_cache=variability_cache)
 
-            d_mag = -2.5*np.log10(1.0+d_flux/q_flux)
+            if do_mags:
+                d_out = -2.5*np.log10(1.0+d_flux/q_flux)
+            else:
+                d_out = d_flux
             # t_flux += time.time()-t_before
 
-            if isinstance(d_mag, numbers.Number) and not isinstance(expmjd, numbers.Number):
+            if isinstance(d_out, numbers.Number) and not isinstance(expmjd, numbers.Number):
                 # in case you only passed in one expmjd value,
                 # in which case self._calc_dflux will return a scalar
-                d_mag = np.array([d_mag])
+                d_out = np.array([d_out])
 
             # t_before = time.time()
             if mjd_is_number:
-                d_mag_out[use_this_lc] = d_mag
+                d_final_out[use_this_lc] = d_out
             else:
                 for i_obj in range(len(use_this_lc)//n_t):
                     i_start = i_obj*n_t
                     obj_dex = use_this_lc_unq[i_obj]
-                    d_mag_out[obj_dex] = d_mag[i_start:i_start+n_t]
+                    d_final_out[obj_dex] = d_out[i_start:i_start+n_t]
 
             # t_assign += time.time()-t_before
 
@@ -1308,7 +1312,7 @@ class ParametrizedLightCurveMixin(Variability):
         # print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
         self._total_t_param_lc += time.time()-t_start
 
-        return d_mag_out
+        return d_final_out
 
     @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
     def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
