@@ -89,6 +89,39 @@ def dflux_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
                                                                       variability_cache=v_cache,
                                                                       do_mags=False)
 
+def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
+    valid_obj = np.where(chunk['var_type']==3)
+    n_obj = len(valid_obj[0])
+    if n_obj == 0:
+        return
+
+    print('running RRLy')
+    params = {}
+    params['filename'] = np.array([v_cache['rrly_map'][ii]
+                                   for ii in chunk['lc_id'][valid_obj]])
+
+    params['tStartMjd'] = chunk['t0'][valid_obj]
+
+    stellar_model = StellarVariabilityModels()
+    stellar_model.initializeVariability(doCache=True)
+    dmag = stellar_model.applyRRly(np.where(np.array([True]*n_obj)),
+                                   params, mjd_obs,
+                                   variability_cache=v_cache).transpose(0,2,1)
+
+    dummy_sed = Sed()
+    for i_bp, bp in enumerate('ugrizy'):
+        valid_obs = np.where(filter_obs==i_bp)
+        if len(valid_obs[0]) == 0:
+            continue
+        dmag_this_band = dmag[i_bp]
+        dmag_subset = dmag_this_band[valid_obs,:][0]
+        flux_0 = dummy_sed.fluxFromMag(chunk['%smag' % bp][valid_obj])
+        flux_1 = dummy_sed.fluxFromMag(flux_0+dmag_subset).transpose()
+        assert flux_1.shape == (n_obj, len(valid_obs[0]))
+        for i_global, i_local in enumerate(valid_obj[0]):
+            dflux = flux_1[i_local]-flux_0[i_local]
+            dflux_out[i_global][valid_obs] = dflux
+
 
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                           coadd_m5, obs_md_list, proper_chip,
@@ -132,6 +165,7 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     dflux = np.zeros((n_obj,n_t), dtype=float)
     dflux_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dflux)
     dflux_for_kepler(chunk, filter_obs, mjd_obs, variability_cache, dflux)
+    dflux_for_rrly(chunk, filter_obs, mjd_obs, variability_cache, dflux)
     return
 
     dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
@@ -268,6 +302,14 @@ if __name__ == "__main__":
     variability_cache = create_variability_cache()
     plc = ParametrizedLightCurveMixin()
     plc.load_parametrized_light_curves(variability_cache=variability_cache)
+
+    variability_cache['rrly_map'] = {}
+    lc_dir = os.path.join(os.environ['SIMS_SED_LIBRARY_DIR'], 'rrly_lc')
+    assert os.path.isdir(lc_dir)
+    with open('data/rrly_lc_map.txt', 'r') as in_file:
+        for line in in_file:
+            p = line.strip().split(';')
+            variability_cache['rrly_map'][int(p[0])] = os.path.join(lc_dir, p[1])
 
     coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
