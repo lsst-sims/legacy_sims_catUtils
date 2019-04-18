@@ -166,19 +166,10 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     dflux_for_mlt(chunk, filter_obs, mjd_obs, variability_cache, dflux)
     dflux_for_kepler(chunk, filter_obs, mjd_obs, variability_cache, dflux)
     dflux_for_rrly(chunk, filter_obs, mjd_obs, variability_cache, dflux)
-    return
-
-    dmag = agn_model.applyAgn(np.where(np.array([True]*len(chunk))),
-                              params, mjd_obs,
-                              redshift=chunk['redshift'])
-
-    dmag_mean = np.mean(dmag, axis=2)
-    assert dmag_mean.shape == (6,n_obj)
 
     dummy_sed = Sed()
     lsst_bp = BandpassDict.loadTotalBandpassesFromFiles()
-    flux_gal = np.zeros((6,n_obj), dtype=float)
-    flux_agn_q = np.zeros((6,n_obj), dtype=float)
+    flux_q = np.zeros((6,n_obj), dtype=float)
     flux_coadd = np.zeros((6,n_obj), dtype=float)
     mag_coadd = np.zeros((6,n_obj), dtype=float)
     snr_coadd = np.zeros((6,n_obj), dtype=float)
@@ -194,13 +185,16 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     snr_arr = np.zeros((n_obj, n_t), dtype=float)
 
     for i_bp, bp in enumerate('ugrizy'):
+        valid_obs = np.where(filter_obs == i_bp)
         phot_params_coadd = PhotometricParameters(nexp=1,
                                                   exptime=30.0*coadd_visits[bp])
 
-        flux_gal[i_bp] = dummy_sed.fluxFromMag(chunk['%s_ab' % bp])
-        flux_agn_q[i_bp] = dummy_sed.fluxFromMag(chunk['AGNLSST%s' % bp] +
-                                                 dmag_mean[i_bp,:])
-        flux_coadd[i_bp] = flux_gal[i_bp]+flux_agn_q[i_bp]
+        flux_q[i_bp] = dummy_sed.fluxFromMag(chunk['%smag' % bp])
+        dflux_sub = dflux[:,valid_obs[0]]
+        assert dflux_sub.shape == (n_obj, len(valid_obs[0]))
+        dflux_mean = np.mean(dflux_sub, axis=1)
+        assert dflux_mean.shape==(n_obj,)
+        flux_coadd[i_bp] = flux_q[i_bp]+dflux_mean
         mag_coadd[i_bp] = dummy_sed.magFromFlux(flux_coadd[i_bp])
 
         (snr_coadd[i_bp],
@@ -229,17 +223,14 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
             print('    %d in %e hrs' % (i_obj,duration))
         ct_tot += 1
 
-        bp_arr = list(['ugrizy'[filter_obs[i_t]] for i_t in range(n_t)])
-        mag0_arr = np.array([chunk['AGNLSST%s' % bp][i_obj] for bp in bp_arr])
-        dmag_arr = np.array([dmag[filter_obs[i_t]][i_obj][i_t]
-                             for i_t in range(n_t)])
-
-        agn_flux_tot = dummy_sed.fluxFromMag(mag0_arr+dmag_arr)
-        q_flux = np.array([flux_agn_q[ii][i_obj] for ii in filter_obs])
-        agn_dflux = np.abs(agn_flux_tot-q_flux)
-        flux_tot = np.array([flux_gal[ii][i_obj] for ii in filter_obs])
-        flux_tot += agn_flux_tot
+        flux0_arr = np.array([flux_q[i_bp][i_obj] for i_bp in filter_obs])
+        flux_tot = flux0_arr + dflux[i_obj]
         mag_tot = dummy_sed.magFromFlux(flux_tot)
+        print('mag_tot ',mag_tot.min(),mag_tot.max())
+        print('flux_tot ',flux_tot.min(),flux_tot.max())
+        print('dflux ',dflux[i_obj].min(),dflux[i_obj].max())
+        #mindex=np.argmin(dflux[i_obj])
+        #print('offending type %d' % chunk['var_type'][mindex])
 
         snr_single_val[:] = -1.0
         for i_bp, bp in enumerate('ugrizy'):
@@ -258,8 +249,8 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
         noise = np.sqrt(noise_coadd**2+noise_single**2)
         dflux_thresh = 5.0*noise
-        detected = (agn_dflux>=dflux_thresh)
-        snr_arr[i_obj, :] = agn_dflux/noise
+        detected = (dflux[i_obj]>=dflux_thresh)
+        snr_arr[i_obj, :] = dflux[i_obj]/noise
         if detected.any():
             photometry_mask_1d[i_obj] = True
             photometry_mask[i_obj,:] = detected
