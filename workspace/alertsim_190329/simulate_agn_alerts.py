@@ -203,6 +203,13 @@ if __name__ == "__main__":
     parser.add_argument('--out_name', type=str, default=None)
     parser.add_argument('--circular_fov', default=False,
                         action='store_true')
+    parser.add_argument('--q_chunk_size', type=int, default=10000,
+                        help='number of galaxies to query from '
+                             'database at once (default 10**4)')
+    parser.add_argument('--p_chunk_size', type=int, default=1000,
+                        help='number of galaxies to process at once '
+                             '(default 10**3)')
+    parser.add_argument('--n_threads', type=int, default=30)
     args = parser.parse_args()
     proper_chip = not args.circular_fov
     assert args.out_name is not None
@@ -292,13 +299,13 @@ if __name__ == "__main__":
 
     print('%d time steps' % len(filter_obs))
 
-    q_chunk_size = 10000
-    p_chunk_size = 1000
+    args.q_chunk_size = 10000
+    args.p_chunk_size = 1000
 
     constraint = 'isagn=1 '
 
     data_iter = gal_db.query_columns(col_names, obs_metadata=obs_query,
-                                     chunk_size=q_chunk_size,
+                                     chunk_size=args.q_chunk_size,
                                      constraint=constraint)
 
     mgr = multiprocessing.Manager()
@@ -308,7 +315,6 @@ if __name__ == "__main__":
     to_concatenate = []
     n_tot = 0
     n_processed = 0
-    n_threads = 30
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['dec'],
@@ -325,7 +331,7 @@ if __name__ == "__main__":
         #                  out_data)
 
         # multiprocessing code
-        if len(chunk)<p_chunk_size:
+        if len(chunk)<args.p_chunk_size:
             to_concatenate.append(chunk)
             tot_sub = 0
             for sub_chunk in to_concatenate:
@@ -334,28 +340,28 @@ if __name__ == "__main__":
             if n_processed+tot_sub != n_tot:
                 raise RuntimeError('n_proc+tot %d n_tot %d'
                                    % (n_processed+tot_sub, n_tot))
-            if tot_sub<p_chunk_size:
+            if tot_sub<args.p_chunk_size:
                 continue
             else:
                 chunk = np.concatenate(to_concatenate)
                 assert len(chunk)==tot_sub
                 to_concatenate = []
 
-        for i_min in range(0, len(chunk)+1, p_chunk_size):
-            sub_chunk = chunk[i_min:i_min+p_chunk_size]
-            if len(sub_chunk)<p_chunk_size:
+        for i_min in range(0, len(chunk)+1, args.p_chunk_size):
+            sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
+            if len(sub_chunk)<args.p_chunk_size:
                 to_concatenate.append(sub_chunk)
                 continue
 
             n_processed += len(sub_chunk)
-            assert len(sub_chunk)>=p_chunk_size
+            assert len(sub_chunk)>=args.p_chunk_size
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
                                               proper_chip, out_data))
             p.start()
             p_list.append(p)
-            while len(p_list)>=n_threads:
+            while len(p_list)>=args.n_threads:
                 exit_code_list = []
                 for p in p_list:
                     exit_code_list.append(p.exitcode)
@@ -372,8 +378,8 @@ if __name__ == "__main__":
 
     if len(to_concatenate)>0:
         chunk = np.concatenate(to_concatenate)
-        for i_min in range(0,len(chunk),p_chunk_size):
-            sub_chunk = chunk[i_min:i_min+p_chunk_size]
+        for i_min in range(0,len(chunk),args.p_chunk_size):
+            sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
             n_processed += len(sub_chunk)
             p = multiprocessing.Process(target=process_agn_chunk,
                                         args=(sub_chunk,
@@ -382,7 +388,7 @@ if __name__ == "__main__":
                                               proper_chip, out_data))
             p.start()
             p_list.append(p)
-            while len(p_list)>=n_threads:
+            while len(p_list)>=args.n_threads:
                 exit_code_list = []
                 for p in p_list:
                     exit_code_list.append(p.exitcode)
