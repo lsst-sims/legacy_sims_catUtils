@@ -248,6 +248,7 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         noise_single = flux_tot/snr_single_val
         noise = np.sqrt(noise_coadd[:,None]**2+noise_single**2)
         dflux_thresh = 5.0*noise
+        dflux_bp = np.abs(dflux_bp)
         detected = (dflux_bp>=dflux_thresh)
         snr_arr[:,valid_obs[0]] = dflux_bp/noise
         for i_obj in range(n_obj):
