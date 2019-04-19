@@ -185,7 +185,8 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 
     t_before_chip = time.time()
-    chip_mask = apply_focal_plane(chunk, photometry_mask_1d, obs_md_list,
+    chip_mask = apply_focal_plane(chunk['ra'], chunk['dec'],
+                                  photometry_mask_1d, obs_md_list,
                                   filter_obs, proper_chip)
     duration = (time.time()-t_before_chip)/3600.0
     print('got chip mask in %e hrs' % duration)
