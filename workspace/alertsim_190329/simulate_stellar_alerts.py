@@ -425,7 +425,7 @@ if __name__ == "__main__":
             continue
 
         chunk = chunk[valid]
-        #n_tot += len(chunk)
+        n_tot += len(chunk)
         #print('n_tot %e ' % n_tot)
 
         #i_chunk += 1
