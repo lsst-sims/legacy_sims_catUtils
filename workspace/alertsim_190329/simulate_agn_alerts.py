@@ -268,10 +268,17 @@ if __name__ == "__main__":
 
     assert np.diff(obs_params['obsHistID']).min()>0
 
-    gal_db = LocalGalaxyTileObj(database='LSST',
-                                host='epyc.astro.washington.edu',
-                                port=1433,
-                                driver='mssql+pymssql')
+    try:
+        gal_db = LocalGalaxyTileObj(database='LSST',
+                                    host='epyc.astro.washington.edu',
+                                    port=1433,
+                                    driver='mssql+pymssql')
+    except:
+        gal_db = LocalGalaxyTileObj(database='LSST',
+                                    host='localhost',
+                                    port=51432,
+                                    driver='mssql+pymssql')
+
 
     obsid_query = np.array(htmid_to_obs[htmid_query])
     obs_dex = np.searchsorted(obs_params['obsHistID'].value, obsid_query)
