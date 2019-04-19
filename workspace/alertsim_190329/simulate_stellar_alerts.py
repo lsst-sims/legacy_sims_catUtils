@@ -396,7 +396,7 @@ if __name__ == "__main__":
     print('%d time steps' % len(filter_obs))
 
     q_chunk_size = 20000
-    p_chunk_size = 1000
+    p_chunk_size = 10000
 
     constraint = 'isvar=1 '
     htmid_21_min = htmid_query<<2*(21-query_level)
@@ -425,17 +425,17 @@ if __name__ == "__main__":
             continue
 
         chunk = chunk[valid]
-        n_tot += len(chunk)
-        print('n_tot %e ' % n_tot)
+        #n_tot += len(chunk)
+        #print('n_tot %e ' % n_tot)
 
-        i_chunk += 1
-        process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-                              obs_md_list, proper_chip, variability_cache,
-                              out_data)
+        #i_chunk += 1
+        #process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+        #                      obs_md_list, proper_chip, variability_cache,
+        #                      out_data)
 
-        if i_chunk>3:
-            break
-        continue
+        #if i_chunk>3:
+        #    break
+        #continue
 
         # multiprocessing code
         if len(chunk)<p_chunk_size:
@@ -462,10 +462,12 @@ if __name__ == "__main__":
 
             n_processed += len(sub_chunk)
             assert len(sub_chunk)>=p_chunk_size
-            p = multiprocessing.Process(target=process_agn_chunk,
+
+            p = multiprocessing.Process(target=process_stellar_chunk,
                                         args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
-                                              proper_chip, out_data))
+                                              proper_chip, variability_cache,
+                                              out_data))
             p.start()
             p_list.append(p)
             while len(p_list)>=n_threads:
@@ -488,11 +490,11 @@ if __name__ == "__main__":
         for i_min in range(0,len(chunk),p_chunk_size):
             sub_chunk = chunk[i_min:i_min+p_chunk_size]
             n_processed += len(sub_chunk)
-            p = multiprocessing.Process(target=process_agn_chunk,
-                                        args=(sub_chunk,
-                                              filter_obs, mjd_obs,
+            p = multiprocessing.Process(target=process_stellar_chunk,
+                                        args=(sub_chunk, filter_obs, mjd_obs,
                                               m5_obs, coadd_m5, obs_md_list,
-                                              proper_chip, out_data))
+                                              proper_chip, variability_cache,
+                                              out_data))
             p.start()
             p_list.append(p)
             while len(p_list)>=n_threads:
