@@ -79,12 +79,6 @@ def dflux_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
     if n_obj==0:
         return
 
-    mag0 = []
-    for i_obj in range(n_obj):
-        mag0.append([chunk['%smag' % 'ugrizy'[i_bp]] for i_bp in filter_obs])
-    mag0 = np.array(mag0)
-    assert mag0.shape == (n_obj,len(filter_obs))
-
     params = {}
     params['lc'] = chunk['lc_id'][valid_obj]
     params['t0'] = chunk['t0'][valid_obj]
@@ -95,9 +89,18 @@ def dflux_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
                                                       variability_cache=v_cache)
 
     dummy_sed = Sed()
-    flux0 = dummy_sed.fluxFromMag(mag0)
-    flux1 = dummy_sed.fluxFromMag(mag0+dmag)
-    dflux_out[valid_obj] = flux1-flux0
+    for i_bp, bp in enumerate('ugrizy'):
+        valid_obs = np.where(filter_obs==i_bp)
+        n_t = len(valid_obs[0])
+        if n_t==0:
+            continue
+        flux0 = dummy_sed.fluxFromMag(chunk['%smag' % bp][valid_obj])
+        dmag_obs = dmag[:,valid_obs[0]].transpose()
+        assert dmag_obs.shape == (n_t, n_obj)
+        flux1 = dummy_sed.fluxFromMag(chunk['%smag' % bp][valid_obj]
+                                      + dmag_obs)
+
+        dflux_out[valid_obj] = (flux1-flux0).transpose()
 
 def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
     valid_obj = np.where(chunk['var_type']==3)
