@@ -133,7 +133,7 @@ def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
         flux_0 = dummy_sed.fluxFromMag(chunk['%smag' % bp][valid_obj])
         flux_1 = dummy_sed.fluxFromMag(flux_0+dmag_subset).transpose()
         assert flux_1.shape == (n_obj, len(valid_obs[0]))
-        for i_global, i_local in enumerate(valid_obj[0]):
+        for i_local, i_global in enumerate(valid_obj[0]):
             dflux = flux_1[i_local]-flux_0[i_local]
             dflux_out[i_global][valid_obs] = dflux
 
