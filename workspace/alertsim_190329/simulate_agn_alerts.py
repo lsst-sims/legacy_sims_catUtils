@@ -108,9 +108,6 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                                exptime=30.0)
 
     t_start_snr = time.time()
-    photometry_mask = np.zeros((n_obj, n_t), dtype=bool)
-    photometry_mask_1d = np.zeros(n_obj, dtype=bool)
-    snr_arr = np.zeros((n_obj, n_t), dtype=float)
 
     for i_bp, bp in enumerate('ugrizy'):
         phot_params_coadd = PhotometricParameters(nexp=1,
@@ -139,49 +136,38 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 
     t_start_obj = time.time()
-    noise_coadd_cache = np.zeros(6, dtype=float)
-    snr_single_val = np.zeros(n_t, dtype=float)
-
-    for i_obj in range(n_obj):
-        if i_obj<0 and i_obj%100==0:
-            duration = (time.time()-t_start_obj)/3600.0
-            print('    %d in %e hrs' % (i_obj,duration))
-        ct_tot += 1
-
-        bp_arr = list(['ugrizy'[filter_obs[i_t]] for i_t in range(n_t)])
-        mag0_arr = np.array([chunk['AGNLSST%s' % bp][i_obj] for bp in bp_arr])
-        dmag_arr = np.array([dmag[filter_obs[i_t]][i_obj][i_t]
-                             for i_t in range(n_t)])
-
-        agn_flux_tot = dummy_sed.fluxFromMag(mag0_arr+dmag_arr)
-        q_flux = np.array([flux_agn_q[ii][i_obj] for ii in filter_obs])
-        agn_dflux = np.abs(agn_flux_tot-q_flux)
-        flux_tot = np.array([flux_gal[ii][i_obj] for ii in filter_obs])
-        flux_tot += agn_flux_tot
+    photometry_mask = np.zeros((n_obj, n_t), dtype=bool)
+    photometry_mask_1d = np.zeros(n_obj, dtype=bool)
+    snr_arr = np.zeros((n_obj, n_t), dtype=float)
+    for i_bp, bp in enumerate('ugrizy'):
+        valid_obs = np.where(filter_obs==i_bp)
+        n_bp = len(valid_obs[0])
+        if n_bp == 0:
+            continue
+        mag0_arr = chunk['AGNLSST%s' % bp]
+        dmag_bp = dmag[i_bp][:,valid_obs[0]]
+        assert dmag_bp.shape == (n_obj, n_bp)
+        agn_flux_tot = dummy_sed.fluxFromMag(mag0_arr[:,None]+dmag_bp)
+        q_flux = flux_agn_q[i_bp]
+        agn_dflux = np.abs(agn_flux_tot-q_flux[:,None])
+        flux_tot = flux_gal[i_bp][:, None] + agn_flux_tot
+        assert flux_tot.shape == (n_obj, n_bp)
         mag_tot = dummy_sed.magFromFlux(flux_tot)
+        snr_single_val = np.interp(mag_tot,
+                                   snr_single_mag_grid,
+                                   snr_single[bp])
 
-        snr_single_val[:] = -1.0
-        for i_bp, bp in enumerate('ugrizy'):
-            valid = np.where(filter_obs==i_bp)
-            snr_single_val[valid] = np.interp(mag_tot[valid],
-                                              snr_single_mag_grid,
-                                              snr_single[bp])
-
-            noise_coadd_cache[i_bp] = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
-
-        assert snr_single_val.min()>0.0
-
+        noise_coadd = flux_coadd[i_bp]/snr_coadd[i_bp]
         noise_single = flux_tot/snr_single_val
-        noise_coadd = np.array([noise_coadd_cache[ii]
-                                for ii in filter_obs])
-
-        noise = np.sqrt(noise_coadd**2+noise_single**2)
+        noise = np.sqrt(noise_coadd[:,None]**2 + noise_single**2)
         dflux_thresh = 5.0*noise
         detected = (agn_dflux>=dflux_thresh)
-        snr_arr[i_obj, :] = agn_dflux/noise
-        if detected.any():
-            photometry_mask_1d[i_obj] = True
-            photometry_mask[i_obj,:] = detected
+        assert detected.shape == (n_obj, n_bp)
+        snr_arr[:,valid_obs[0]] = agn_dflux/noise
+        for i_obj in range(n_obj):
+            if detected[i_obj].any():
+                photometry_mask_1d[i_obj] = True
+                photometry_mask[i_obj, valid_obs[0]] = detected[i_obj]
 
     print('first pass photometry took %e hrs' % ((time.time()-t_start_obj)/3600.0))
     t_before_chip = time.time()
@@ -194,6 +180,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     for i_obj in range(n_obj):
         if photometry_mask_1d[i_obj]:
             detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
+
             if detected.any():
                 unq = chunk['galtileid'][i_obj]
                 first_dex = np.where(detected)[0].min()
