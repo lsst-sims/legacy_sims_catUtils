@@ -277,7 +277,7 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         if photometry_mask_1d[i_obj]:
             detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
             if detected.any():
-                unq = chunk['galtileid'][i_obj]
+                unq = chunk['simobjid'][i_obj]
                 first_dex = np.where(detected)[0].min()
                 out_data[unq] = (mjd_obs[first_dex],
                                  snr_arr[i_obj, first_dex])
@@ -358,7 +358,8 @@ if __name__ == "__main__":
                  'umag', 'gmag', 'rmag',
                  'imag', 'zmag', 'ymag',
                  'lc_id', 't0', 'var_type',
-                 'ebv', 'parallax']
+                 'ebv', 'parallax',
+                 'simobjid']
 
     obs_param_name = 'data/obs_params.h5'
     obs_params = h5py.File(obs_param_name, 'r')
