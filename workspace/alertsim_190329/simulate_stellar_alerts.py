@@ -198,7 +198,6 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     t_start_snr = time.time()
     photometry_mask = np.zeros((n_obj, n_t), dtype=bool)
     photometry_mask_1d = np.zeros(n_obj, dtype=bool)
-    snr_arr = np.zeros((n_obj, n_t), dtype=float)
 
     for i_bp, bp in enumerate('ugrizy'):
         valid_obs = np.where(filter_obs == i_bp)
@@ -230,41 +229,31 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
 
 
     t_start_obj = time.time()
-    noise_coadd_cache = np.zeros(6, dtype=float)
-    snr_single_val = np.zeros(n_t, dtype=float)
+    snr_arr = np.zeros((n_obj, n_t), dtype=float)
 
-    for i_obj in range(n_obj):
-        if i_obj<0 and i_obj%100==0:
-            duration = (time.time()-t_start_obj)/3600.0
-            print('    %d in %e hrs' % (i_obj,duration))
-        ct_tot += 1
-
-        flux0_arr = np.array([flux_q[i_bp][i_obj] for i_bp in filter_obs])
-        flux_tot = flux0_arr + dflux[i_obj]
+    for i_bp, bp in enumerate('ugrizy'):
+        valid_obs = np.where(filter_obs==i_bp)
+        if len(valid_obs[0])==0:
+            continue
+        n_bp = len(valid_obs[0])
+        dflux_bp = dflux[:,valid_obs[0]]
+        flux0_arr = flux_q[i_bp]
+        flux_tot = flux0_arr[:,None] + dflux_bp
         mag_tot = dummy_sed.magFromFlux(flux_tot)
+        snr_single_val = np.interp(mag_tot,
+                                  snr_single_mag_grid,
+                                  snr_single[bp])
 
-        snr_single_val[:] = -1.0
-        for i_bp, bp in enumerate('ugrizy'):
-            valid = np.where(filter_obs==i_bp)
-            snr_single_val[valid] = np.interp(mag_tot[valid],
-                                              snr_single_mag_grid,
-                                              snr_single[bp])
-
-            noise_coadd_cache[i_bp] = flux_coadd[i_bp][i_obj]/snr_coadd[i_bp][i_obj]
-
-        assert snr_single_val.min()>0.0
-
+        noise_coadd = flux_coadd[i_bp]/snr_coadd[i_bp]
         noise_single = flux_tot/snr_single_val
-        noise_coadd = np.array([noise_coadd_cache[ii]
-                                for ii in filter_obs])
-
-        noise = np.sqrt(noise_coadd**2+noise_single**2)
+        noise = np.sqrt(noise_coadd[:,None]**2+noise_single**2)
         dflux_thresh = 5.0*noise
-        detected = (dflux[i_obj]>=dflux_thresh)
-        snr_arr[i_obj, :] = dflux[i_obj]/noise
-        if detected.any():
-            photometry_mask_1d[i_obj] = True
-            photometry_mask[i_obj,:] = detected
+        detected = (dflux_bp>=dflux_thresh)
+        snr_arr[:,valid_obs[0]] = dflux_bp/noise
+        for i_obj in range(n_obj):
+            if detected[i_obj].any():
+                photometry_mask_1d[i_obj] = True
+                photometry_mask[i_obj,valid_obs[0]] = detected[i_obj]
 
     print('doing first pass of photometry took %e hrs'
     % ((time.time()-t_start_obj)/3600.0))
