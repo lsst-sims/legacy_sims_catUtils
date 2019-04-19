@@ -100,7 +100,9 @@ def dflux_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
         flux1 = dummy_sed.fluxFromMag(chunk['%smag' % bp][valid_obj]
                                       + dmag_obs)
 
-        dflux_out[valid_obj] = (flux1-flux0).transpose()
+        dflux_local = (flux1-flux0).transpose()
+        for i_global, i_local in enumerate(valid_obj[0]):
+            dflux_out[i_global][valid_obs] = dflux_local[i_local]
 
 def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
     valid_obj = np.where(chunk['var_type']==3)
