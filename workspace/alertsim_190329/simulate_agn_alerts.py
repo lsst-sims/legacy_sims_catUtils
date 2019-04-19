@@ -216,7 +216,7 @@ if __name__ == "__main__":
     proper_chip = not args.circular_fov
     assert args.out_name is not None
     assert args.htmid is not None
-    if isinstance(numbers.Number, args.htmid):
+    if isinstance(args.htmid, numbers.Number):
         htmid_list = [args.htmid]
     else:
         htmid_list = args.htmid
