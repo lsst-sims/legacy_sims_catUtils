@@ -241,11 +241,6 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
         flux0_arr = np.array([flux_q[i_bp][i_obj] for i_bp in filter_obs])
         flux_tot = flux0_arr + dflux[i_obj]
         mag_tot = dummy_sed.magFromFlux(flux_tot)
-        print('mag_tot ',mag_tot.min(),mag_tot.max())
-        print('flux_tot ',flux_tot.min(),flux_tot.max())
-        print('dflux ',dflux[i_obj].min(),dflux[i_obj].max())
-        #mindex=np.argmin(dflux[i_obj])
-        #print('offending type %d' % chunk['var_type'][mindex])
 
         snr_single_val[:] = -1.0
         for i_bp, bp in enumerate('ugrizy'):
