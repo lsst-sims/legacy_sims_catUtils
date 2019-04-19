@@ -397,7 +397,7 @@ if __name__ == "__main__":
     q_chunk_size = 20000
     p_chunk_size = 1000
 
-    constraint = 'isvar=1 and var_type<3'
+    constraint = 'isvar=1 '
     htmid_21_min = htmid_query<<2*(21-query_level)
     htmid_21_max = (htmid_query+1)<<2*(21-query_level)
     constraint += 'AND htmid>=%d AND htmid<%d' % (htmid_21_min, htmid_21_max)
@@ -432,7 +432,7 @@ if __name__ == "__main__":
                               obs_md_list, proper_chip, variability_cache,
                               out_data)
 
-        if i_chunk>2:
+        if i_chunk>3:
             break
         continue
 

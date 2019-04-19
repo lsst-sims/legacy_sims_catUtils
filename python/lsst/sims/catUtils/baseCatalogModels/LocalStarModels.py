@@ -155,7 +155,6 @@ class LocalStarChunkIterator(ChunkIterator):
         self.dbobj = db
         column_query = db._get_column_query(colnames)
         column_query = column_query.filter(text(self._htmid_where_clause))
-        column_query = column_query.order_by('simobjid')
         if self._constraint is not None:
             column_query = column_query.filter(text(self._constraint))
         exec_query = db.connection.session.execute(column_query)
