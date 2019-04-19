@@ -332,10 +332,13 @@ if __name__ == "__main__":
 
         chunk = chunk[valid]
         n_tot += len(chunk)
+        i_chunk += 1
 
-        #process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-        #                  out_data)
-
+        process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
+                          obs_md_list, proper_chip, out_data)
+        if i_chunk>3:
+            break
+        continue
         # multiprocessing code
         if len(chunk)<p_chunk_size:
             to_concatenate.append(chunk)
