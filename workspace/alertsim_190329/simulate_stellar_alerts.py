@@ -101,7 +101,7 @@ def dflux_for_kepler(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
                                       + dmag_obs)
 
         dflux_local = (flux1-flux0).transpose()
-        for i_global, i_local in enumerate(valid_obj[0]):
+        for i_local, i_global in enumerate(valid_obj[0]):
             dflux_out[i_global][valid_obs] = dflux_local[i_local]
 
 def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
