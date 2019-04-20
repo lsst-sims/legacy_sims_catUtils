@@ -311,7 +311,6 @@ if __name__ == "__main__":
         n_gal = 0
         tot_unq = 0
         tot_det = 0
-        t_start = time.time()
 
         t_lsst_0 = 59580.0
         t_lsst_1 = t_lsst_0+3652.5
