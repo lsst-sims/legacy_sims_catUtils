@@ -353,164 +353,154 @@ if __name__ == "__main__":
 
 
     obs_param_name = 'data/obs_params.h5'
-    obs_params = h5py.File(obs_param_name, 'r')
 
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
 
-    for htmid_query in htmid_list:
-        print(htmid_query)
-        query_level = htm.levelFromHtmid(htmid_query)
-        trixel_query = htm.trixelFromHtmid(htmid_query)
-        ra_query, dec_query = trixel_query.get_center()
-        radius_query = trixel_query.get_radius()
-        print(ra_query, dec_query, radius_query)
+    with h5py.File(obs_param_name,'r') as obs_params:
+        for htmid_query in htmid_list:
+            print(htmid_query)
+            query_level = htm.levelFromHtmid(htmid_query)
+            trixel_query = htm.trixelFromHtmid(htmid_query)
+            ra_query, dec_query = trixel_query.get_center()
+            radius_query = trixel_query.get_radius()
+            print(ra_query, dec_query, radius_query)
 
-        obs_query = ObservationMetaData(pointingRA=ra_query,
-                                        pointingDec=dec_query,
-                                        boundType='circle',
-                                        boundLength=radius_query)
+            obs_query = ObservationMetaData(pointingRA=ra_query,
+                                            pointingDec=dec_query,
+                                            boundType='circle',
+                                            boundLength=radius_query)
 
-        col_names = ['ra', 'decl',
-                     'umag', 'gmag', 'rmag',
-                     'imag', 'zmag', 'ymag',
-                     'lc_id', 't0', 'var_type',
-                     'ebv', 'parallax',
-                     'simobjid']
+            col_names = ['ra', 'decl',
+                         'umag', 'gmag', 'rmag',
+                         'imag', 'zmag', 'ymag',
+                         'lc_id', 't0', 'var_type',
+                         'ebv', 'parallax',
+                         'simobjid']
 
-        assert np.diff(obs_params['obsHistID']).min()>0
+            assert np.diff(obs_params['obsHistID']).min()>0
 
-        obsid_query = np.array(htmid_to_obs[htmid_query])
-        obs_dex = np.searchsorted(obs_params['obsHistID'].value, obsid_query)
-        np.testing.assert_array_equal(obs_params['obsHistID'].value[obs_dex],
-                                      obsid_query)
+            obsid_query = np.array(htmid_to_obs[htmid_query])
+            obs_dex = np.searchsorted(obs_params['obsHistID'].value, obsid_query)
+            np.testing.assert_array_equal(obs_params['obsHistID'].value[obs_dex],
+                                          obsid_query)
 
-        ra_obs = obs_params['ra'].value[obs_dex]
-        dec_obs = obs_params['dec'].value[obs_dex]
-        mjd_obs = obs_params['mjd'].value[obs_dex]
-        rotsky_obs = obs_params['rotSkyPos'].value[obs_dex]
-        filter_obs = obs_params['filter'].value[obs_dex]
-        m5_obs = obs_params['m5'].value[obs_dex]
+            ra_obs = obs_params['ra'].value[obs_dex]
+            dec_obs = obs_params['dec'].value[obs_dex]
+            mjd_obs = obs_params['mjd'].value[obs_dex]
+            rotsky_obs = obs_params['rotSkyPos'].value[obs_dex]
+            filter_obs = obs_params['filter'].value[obs_dex]
+            m5_obs = obs_params['m5'].value[obs_dex]
 
-        mjd_obj_list = ModifiedJulianDate.get_list(TAI=mjd_obs)
-        obs_md_list = []
-        for ii in range(len(ra_obs)):
-            obs = ObservationMetaData(pointingRA=ra_obs[ii],
-                                      pointingDec=dec_obs[ii],
-                                      mjd=mjd_obj_list[ii],
-                                      rotSkyPos=rotsky_obs[ii],
-                                      bandpassName='ugrizy'[filter_obs[ii]])
-            obs_md_list.append(obs)
+            mjd_obj_list = ModifiedJulianDate.get_list(TAI=mjd_obs)
+            obs_md_list = []
+            for ii in range(len(ra_obs)):
+                obs = ObservationMetaData(pointingRA=ra_obs[ii],
+                                          pointingDec=dec_obs[ii],
+                                          mjd=mjd_obj_list[ii],
+                                          rotSkyPos=rotsky_obs[ii],
+                                          bandpassName='ugrizy'[filter_obs[ii]])
+                obs_md_list.append(obs)
 
-        print('%d time steps' % len(filter_obs))
+            print('%d time steps' % len(filter_obs))
 
-        constraint = 'isvar=1 '
-        htmid_21_min = htmid_query<<2*(21-query_level)
-        htmid_21_max = (htmid_query+1)<<2*(21-query_level)
-        constraint += 'AND htmid>=%d AND htmid<%d' % (htmid_21_min, htmid_21_max)
+            constraint = 'isvar=1 '
+            htmid_21_min = htmid_query<<2*(21-query_level)
+            htmid_21_max = (htmid_query+1)<<2*(21-query_level)
+            constraint += 'AND htmid>=%d AND htmid<%d' % (htmid_21_min, htmid_21_max)
 
-        data_iter = star_db.query_columns(col_names, obs_metadata=obs_query,
-                                          chunk_size=args.q_chunk_size,
-                                          constraint=constraint)
+            data_iter = star_db.query_columns(col_names, obs_metadata=obs_query,
+                                              chunk_size=args.q_chunk_size,
+                                              constraint=constraint)
 
-        p_list = []
-        i_chunk = 0
-        to_concatenate = []
-        n_tot = 0
-        n_processed = 0
-        for chunk in data_iter:
-            htmid_found = htm.findHtmid(chunk['ra'],
-                                        chunk['decl'],
-                                        query_level)
+            p_list = []
+            i_chunk = 0
+            to_concatenate = []
+            n_tot = 0
+            n_processed = 0
+            for chunk in data_iter:
+                htmid_found = htm.findHtmid(chunk['ra'],
+                                            chunk['decl'],
+                                            query_level)
 
-            valid = np.where(htmid_found==htmid_query)
-            if len(valid[0]) == 0:
-                continue
+                valid = np.where(htmid_found==htmid_query)
+                if len(valid[0]) == 0:
+                    continue
 
-            chunk = chunk[valid]
-            n_tot += len(chunk)
-            #print('n_tot %e ' % n_tot)
+                chunk = chunk[valid]
+                n_tot += len(chunk)
 
-            #i_chunk += 1
-            #process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-            #                      obs_md_list, proper_chip, variability_cache,
-            #                      out_data)
+                # multiprocessing code
+                if len(chunk)<args.p_chunk_size:
+                    to_concatenate.append(chunk)
+                    tot_sub = 0
+                    for sub_chunk in to_concatenate:
+                        tot_sub += len(sub_chunk)
 
-            #if i_chunk>3:
-            #    break
-            #continue
+                    if n_processed+tot_sub != n_tot:
+                        raise RuntimeError('n_proc+tot %d n_tot %d'
+                                           % (n_processed+tot_sub, n_tot))
+                    if tot_sub<args.p_chunk_size:
+                        continue
+                    else:
+                        chunk = np.concatenate(to_concatenate)
+                        assert len(chunk)==tot_sub
+                        to_concatenate = []
 
-            # multiprocessing code
-            if len(chunk)<args.p_chunk_size:
-                to_concatenate.append(chunk)
+                for i_min in range(0, len(chunk)+1, args.p_chunk_size):
+                    sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
+                    if len(sub_chunk)<args.p_chunk_size:
+                        to_concatenate.append(sub_chunk)
+                        continue
+
+                    n_processed += len(sub_chunk)
+                    assert len(sub_chunk)>=args.p_chunk_size
+
+                    p = multiprocessing.Process(target=process_stellar_chunk,
+                                                args=(sub_chunk, filter_obs, mjd_obs,
+                                                      m5_obs, coadd_m5, obs_md_list,
+                                                      proper_chip, variability_cache,
+                                                      out_data))
+                    p.start()
+                    p_list.append(p)
+                    while len(p_list)>=args.n_threads:
+                        exit_code_list = []
+                        for p in p_list:
+                            exit_code_list.append(p.exitcode)
+                        for i_p in range(len(exit_code_list)-1, -1, -1):
+                            if exit_code_list[i_p] is not None:
+                                p_list.pop(i_p)
+
                 tot_sub = 0
                 for sub_chunk in to_concatenate:
                     tot_sub += len(sub_chunk)
+                if n_processed+tot_sub!=n_tot:
+                    raise RuntimeError("sums failed after processing %d %d -- %d"
+                    % (n_processed+tot_sub,n_tot,tot_sub))
 
-                if n_processed+tot_sub != n_tot:
-                    raise RuntimeError('n_proc+tot %d n_tot %d'
-                                       % (n_processed+tot_sub, n_tot))
-                if tot_sub<args.p_chunk_size:
-                    continue
-                else:
-                    chunk = np.concatenate(to_concatenate)
-                    assert len(chunk)==tot_sub
-                    to_concatenate = []
-
-            for i_min in range(0, len(chunk)+1, args.p_chunk_size):
-                sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
-                if len(sub_chunk)<args.p_chunk_size:
-                    to_concatenate.append(sub_chunk)
-                    continue
-
-                n_processed += len(sub_chunk)
-                assert len(sub_chunk)>=args.p_chunk_size
-
-                p = multiprocessing.Process(target=process_stellar_chunk,
-                                            args=(sub_chunk, filter_obs, mjd_obs,
-                                                  m5_obs, coadd_m5, obs_md_list,
-                                                  proper_chip, variability_cache,
-                                                  out_data))
-                p.start()
-                p_list.append(p)
-                while len(p_list)>=args.n_threads:
-                    exit_code_list = []
-                    for p in p_list:
-                        exit_code_list.append(p.exitcode)
-                    for i_p in range(len(exit_code_list)-1, -1, -1):
-                        if exit_code_list[i_p] is not None:
-                            p_list.pop(i_p)
-
-            tot_sub = 0
-            for sub_chunk in to_concatenate:
-                tot_sub += len(sub_chunk)
-            if n_processed+tot_sub!=n_tot:
-                raise RuntimeError("sums failed after processing %d %d -- %d"
-                % (n_processed+tot_sub,n_tot,tot_sub))
-
-        if len(to_concatenate)>0:
-            chunk = np.concatenate(to_concatenate)
-            for i_min in range(0,len(chunk),args.p_chunk_size):
-                sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
-                n_processed += len(sub_chunk)
-                p = multiprocessing.Process(target=process_stellar_chunk,
-                                            args=(sub_chunk, filter_obs, mjd_obs,
-                                                  m5_obs, coadd_m5, obs_md_list,
-                                                  proper_chip, variability_cache,
-                                                  out_data))
-                p.start()
-                p_list.append(p)
-                while len(p_list)>=args.n_threads:
-                    exit_code_list = []
-                    for p in p_list:
-                        exit_code_list.append(p.exitcode)
-                    for i_p in range(len(exit_code_list)-1, -1, -1):
-                        if exit_code_list[i_p] is not None:
-                            p_list.pop(i_p)
+            if len(to_concatenate)>0:
+                chunk = np.concatenate(to_concatenate)
+                for i_min in range(0,len(chunk),args.p_chunk_size):
+                    sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
+                    n_processed += len(sub_chunk)
+                    p = multiprocessing.Process(target=process_stellar_chunk,
+                                                args=(sub_chunk, filter_obs, mjd_obs,
+                                                      m5_obs, coadd_m5, obs_md_list,
+                                                      proper_chip, variability_cache,
+                                                      out_data))
+                    p.start()
+                    p_list.append(p)
+                    while len(p_list)>=args.n_threads:
+                        exit_code_list = []
+                        for p in p_list:
+                            exit_code_list.append(p.exitcode)
+                        for i_p in range(len(exit_code_list)-1, -1, -1):
+                            if exit_code_list[i_p] is not None:
+                                p_list.pop(i_p)
 
 
-        for p in p_list:
-            p.join()
+            for p in p_list:
+                p.join()
 
     out_data_final = {}
     for name in out_data.keys():
@@ -528,4 +518,3 @@ if __name__ == "__main__":
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     print('shld %d processed %d' % (n_tot, n_processed))
-    obs_params.close()
