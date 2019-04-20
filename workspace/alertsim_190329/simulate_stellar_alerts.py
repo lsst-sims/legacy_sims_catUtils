@@ -257,9 +257,6 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 photometry_mask_1d[i_obj] = True
                 photometry_mask[i_obj,valid_obs[0]] = detected[i_obj]
 
-    print('doing first pass of photometry took %e hrs'
-    % ((time.time()-t_start_obj)/3600.0))
-
     t_before_chip = time.time()
     chip_mask = apply_focal_plane(chunk['ra'], chunk['decl'],
                                   photometry_mask_1d, obs_md_list,
