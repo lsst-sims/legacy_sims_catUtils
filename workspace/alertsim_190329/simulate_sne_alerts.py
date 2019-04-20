@@ -166,7 +166,6 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                   photometry_mask_1d, obs_md_list,
                                   filter_obs, proper_chip)
     duration = (time.time()-t_before_chip)/3600.0
-    print('got chip mask in %e hrs' % duration)
 
     for i_obj in range(n_obj):
         if photometry_mask_1d[i_obj]:
