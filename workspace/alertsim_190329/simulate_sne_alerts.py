@@ -245,6 +245,9 @@ if __name__ == "__main__":
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
 
+    n_tot = 0
+    n_processed = 0
+
     with h5py.File(obs_param_name, 'r') as obs_params:
         for htmid_query in htmid_list:
             print(htmid_query)
@@ -305,8 +308,7 @@ if __name__ == "__main__":
             p_list = []
             i_chunk = 0
             to_concatenate = []
-            n_tot = 0
-            n_processed = 0
+
             n_sne = 0
             n_gal = 0
             tot_unq = 0
