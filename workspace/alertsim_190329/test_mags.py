@@ -31,7 +31,7 @@ data_iter = db.query_columns(col_names, obs_metadata=obs,
 for chunk in data_iter:
     for star in chunk:
         sed = Sed()
-        sed.readSED_flambda(os.path.join(os.envrion['SIMS_SED_LIBRARY_DIR'],
+        sed.readSED_flambda(os.path.join(os.environ['SIMS_SED_LIBRARY_DIR'],
                                          defaultSpecMap[star['sedFilename']]))
 
         fnorm = getImsimFluxNorm(sed, star['magNorm'])
