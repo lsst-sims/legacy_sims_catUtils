@@ -58,7 +58,7 @@ for chunk in data_iter:
         dy = np.abs(mags[5]-star['ymag'])
 
         print('%.2e %.2e %2e %.2e %.2e %.2e -- %.2e %.2e %2e %.2e %.2e %.2e' %
-        (du_nodust, dg_nodust, dr_dnodust, di_nodust,
+        (du_nodust, dg_nodust, dr_nodust, di_nodust,
          dz_nodust, dy_nodust,
          du,dg,dr,di,dz,dy))
     break
