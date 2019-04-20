@@ -297,6 +297,7 @@ if __name__ == "__main__":
     parser.add_argument('--p_chunk_size', type=int, default=10000,
                         help='number of galaxies to process at once '
                              '(default 10**4)')
+    parser.add_argument('--n_threads', type=int, default=30)
 
     args = parser.parse_args()
     proper_chip = not args.circular_fov
@@ -418,7 +419,6 @@ if __name__ == "__main__":
     to_concatenate = []
     n_tot = 0
     n_processed = 0
-    n_threads = 30
     for chunk in data_iter:
         htmid_found = htm.findHtmid(chunk['ra'],
                                     chunk['decl'],
@@ -474,7 +474,7 @@ if __name__ == "__main__":
                                               out_data))
             p.start()
             p_list.append(p)
-            while len(p_list)>=n_threads:
+            while len(p_list)>=args.n_threads:
                 exit_code_list = []
                 for p in p_list:
                     exit_code_list.append(p.exitcode)
@@ -501,7 +501,7 @@ if __name__ == "__main__":
                                               out_data))
             p.start()
             p_list.append(p)
-            while len(p_list)>=n_threads:
+            while len(p_list)>=args.n_threads:
                 exit_code_list = []
                 for p in p_list:
                     exit_code_list.append(p.exitcode)
