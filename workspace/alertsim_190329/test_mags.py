@@ -1,4 +1,4 @@
-from lsst.sims.catUtils.baseCatalogModels.LocalStarModels import LocalStarCatalogObject
+from lsst.sims.catUtils.baseCatalogModels.LocalStarModels import LocalStarCatalogObj
 from lsst.sims.photUtils import cache_LSST_seds
 from lsst.sims.photUtils import Sed, BandpassDict
 from lsst.sims.photUtils import getImsimFluxNorm
@@ -6,7 +6,7 @@ from lsst.sims.utils import ObservationMetaData
 import os
 from lsst.sims.utils import defaultSpecMap
 
-db = LocalStarCatalogObject(database='LSST',
+db = LocalStarCatalogObj(database='LSST',
                             host='epyc.astro.washington.edu',
                             port=1433,
                             driver='mssql+pymssql')
