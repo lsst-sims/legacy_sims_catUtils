@@ -4,6 +4,7 @@ from lsst.sims.photUtils import Sed, BandpassDict
 from lsst.sims.photUtils import getImsimFluxNorm
 from lsst.sims.utils import ObservationMetaData
 import os
+import numpy as np
 from lsst.sims.utils import defaultSpecMap
 
 db = LocalStarCatalogObj(database='LSST',
