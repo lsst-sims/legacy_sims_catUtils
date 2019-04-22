@@ -130,3 +130,36 @@ with open('data/region_2_trixels.txt', 'w') as out_file:
 print('n_trixels_region_2 %d' % len(region_2_trixels))
 #area = test_area(region_2_trixels, 3000000)
 #print('region 2 area %e' % area)
+
+# Region 3 ##############
+#3) ~600 deg2 towards Galactic center, |b| < 10 deg, 0 < l < 30 deg
+
+# must be inside of both of these trixels for |b|<10
+gal_n_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 100.0)
+gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 100.0)
+
+gal_c_ra, gal_c_dec = equatorialFromGalactic(0.0, 0.0)
+
+# must be inside this
+gal_c_hs = htm.halfSpaceFromRaDec(gal_c_ra, gal_c_dec, 18.0)
+
+region_3_trixels = []
+for tx in tx_list:
+    if gal_n_hs.contains_trixel(tx) != 'full':
+        continue
+    if gal_s_hs.contains_trixel(tx) != 'full':
+        continue
+    if gal_c_hs.contains_trixel(tx) == 'outside':
+        continue
+
+    region_3_trixels.append(tx)
+
+with open('data/region_3_trixels.txt', 'w') as out_file:
+    out_file.write('# htmid ra dec glon glat\n')
+    for tx in region_3_trixels:
+        ra, dec = tx.get_center()
+        glon, glat = galacticFromEquatorial(ra, dec)
+        out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
+
+#area = test_area(region_3_trixels, 3000000)
+#print('region 3 area %e' % area)
