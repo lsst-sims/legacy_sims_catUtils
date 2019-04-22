@@ -8,7 +8,35 @@ import palpy as palpy
 
 import numpy as np
 
-rng = np.random.RandomState(11723)
+def test_area(trixel_list, n_pts):
+
+    rng = np.random.RandomState(11723)
+
+    # test area
+    n_pts = 3000000
+    pts = rng.normal(0.0, 1.0, (3, n_pts))
+    norms = np.sqrt(np.sum(pts**2, axis=0))
+    assert len(norms) == n_pts
+    pts /= norms
+    pts = pts.transpose()
+
+    norms = np.sqrt(np.sum(pts**2, axis=1))
+    assert len(norms) == n_pts
+    assert np.abs(norms.min()-1.0)<1.0e-5
+    assert np.abs(norms.max()-1.0)<1.0e-5
+
+    contains = np.zeros(len(pts), dtype=bool)
+    for tx in trixel_list:
+        outside = np.where(np.logical_not(contains))
+        #print('n_out %e' % len(outside[0]))
+        contains[outside] = tx.contains_pt(pts[outside])
+
+    valid  = np.where(contains)
+    frac = len(valid[0])/n_pts
+
+    area = frac*4.0*np.pi*(180.0/np.pi)**2
+    return area
+
 
 tx_dict = htm.getAllTrixels(6)
 tx_list = []
@@ -77,29 +105,29 @@ with open('data/region_1_trixels.txt', 'w') as out_file:
         out_file.write('%d %e %e %e %e %e %e\n' %
                        (tx.htmid, ra, dec, lon, lat, glon,glat))
 
+#area = test_area(region_1_trixels, 3000000)
+#print('region 1 area %e' % area)
 
-exit()
-# test area
-n_pts = 3000000
-pts = rng.normal(0.0, 1.0, (3, n_pts))
-norms = np.sqrt(np.sum(pts**2, axis=0))
-assert len(norms) == n_pts
-pts /= norms
-pts = pts.transpose()
 
-norms = np.sqrt(np.sum(pts**2, axis=1))
-assert len(norms) == n_pts
-assert np.abs(norms.min()-1.0)<1.0e-5
-assert np.abs(norms.max()-1.0)<1.0e-5
+# Region 2 ##########################
+#2) ~600 deg2 towards the south galactic pole, b < bCut  (where bCut about -75 deg,
+#        but need to compute it more precisely)
+# bcut should be -76.144 (probably)
 
-contains = np.zeros(len(pts), dtype=bool)
-for tx in region_1_trixels:
-    outside = np.where(np.logical_not(contains))
-    #print('n_out %e' % len(outside[0]))
-    contains[outside] = tx.contains_pt(pts[outside])
+gal_s_ra, gal_s_dec = equatorialFromGalactic(0.0, -90.)
+gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 12.5)
+region_2_trixels = []
+for tx in tx_list:
+    if gal_s_hs.contains_trixel(tx) != 'outside':
+        region_2_trixels.append(tx)
 
-valid  = np.where(contains)
-frac = len(valid[0])/n_pts
+with open('data/region_2_trixels.txt', 'w') as out_file:
+    out_file.write('# htmid ra dec glon glat\n')
+    for tx in region_2_trixels:
+        ra, dec = tx.get_center()
+        glon, glat = galacticFromEquatorial(ra, dec)
+        out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
 
-area = frac*4.0*np.pi*(180.0/np.pi)**2
-print('%e -- %e sq degrees' % (n_pts, area))
+print('n_trixels_region_2 %d' % len(region_2_trixels))
+#area = test_area(region_2_trixels, 3000000)
+#print('region 2 area %e' % area)
