@@ -296,15 +296,27 @@ if __name__ == "__main__":
                              '(default 10**4)')
     parser.add_argument('--n_threads', type=int, default=30)
     parser.add_argument('--htmid', type=int, nargs='+', default=None)
+    parser.add_argument('--htmid_file', type=str, default=None)
 
     args = parser.parse_args()
     proper_chip = not args.circular_fov
     assert args.out_name is not None
-    assert args.htmid is not None
-    if isinstance(args.htmid, numbers.Number):
-        htmid_list = [args.htmid]
+    assert ((args.htmid is not None and args.htmid_file is None) or
+            (args.htmid is None and args.htmid_file is not None))
+
+    if args.htmid is not None:
+        if isinstance(args.htmid, numbers.Number):
+            htmid_list = [args.htmid]
+        else:
+            htmid_list = args.htmid
     else:
-        htmid_list = args.htmid
+        htmid_list = []
+        with open(args.htmid_file, 'r') as in_file:
+            for line in in_file:
+                if line.startswith('#'):
+                    continue
+                params = line.strip().split()
+                htmid_list.append(int(params[0]))
 
 
     variability_cache = create_variability_cache()
