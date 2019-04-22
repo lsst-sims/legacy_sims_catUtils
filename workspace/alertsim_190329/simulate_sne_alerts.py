@@ -314,8 +314,8 @@ if __name__ == "__main__":
             tot_unq = 0
             tot_det = 0
 
-            t_lsst_0 = 59580.0
-            t_lsst_1 = t_lsst_0+3652.5
+            t_lsst_0 = 59580.0-34.0
+            t_lsst_1 = t_lsst_0+3652.5+100.0
 
             for chunk in data_iter:
                 htmid_found = htm.findHtmid(chunk['ra'],
@@ -337,6 +337,9 @@ if __name__ == "__main__":
                 is_sne = np.where(np.logical_and(t0_arr>=t_lsst_0,
                                                  t0_arr<=t_lsst_1))
 
+                chunk = chunk[is_sne]
+                t0_arr = t0_arr[is_sne]
+
                 n_sne += len(is_sne[0])
                 dt_matrix = mjd_obs-t0_arr[:,None]
 
@@ -345,6 +348,7 @@ if __name__ == "__main__":
                 chunk['t0'] = t0_arr
 
                 chunk = chunk[valid]
+
                 c0_arr = np.clip(rng.normal(0.0, 0.1, size=len(chunk)), -0.3, 0.3)
                 x1_arr = np.clip(rng.normal(0.0, 1.0, size=len(chunk)), -3.0, 3.0)
                 abs_mag_arr = rng.normal(-19.3, 0.3, size=len(chunk))
