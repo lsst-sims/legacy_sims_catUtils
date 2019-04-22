@@ -270,7 +270,8 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 unq = chunk['simobjid'][i_obj]
                 first_dex = np.where(detected)[0].min()
                 out_data[unq] = (mjd_obs[first_dex],
-                                 snr_arr[i_obj, first_dex])
+                                 snr_arr[i_obj, first_dex],
+                                 chunk['var_type'][i_obj])
                 if detected[0]:
                     ct_first += 1
                 else:

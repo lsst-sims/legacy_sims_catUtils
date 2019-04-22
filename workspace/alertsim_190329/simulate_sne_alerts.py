@@ -175,7 +175,8 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 first_dex = np.where(detected)[0].min()
                 snr = 5.0*10**(-0.4*(d_mag[i_obj,first_dex]))
                 out_data[unq] = (mjd_obs[first_dex],
-                                 snr)
+                                 snr,
+                                 chunk['redshift'][i_obj])
 
 
 if __name__ == "__main__":
