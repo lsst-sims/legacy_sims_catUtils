@@ -37,7 +37,6 @@ class Tile(object):
         dec_range = [c[1] for c in box_corners]
         dec_min = min(dec_range)
         dec_max = max(dec_range)
-        #print(tile_id,dec_min,dec_max)
         tol = 1.0e-10
         for i_c1 in range(len(box_corners)):
             c1 = box_corners[i_c1]
@@ -216,7 +215,6 @@ class FatboyTiles(object):
         radius_rad = np.radians(radius)
         center_pt = cartesianFromSpherical(np.radians(ra), np.radians(dec))
         for tile_id in self._tile_dict:
-            #print('tile_id %d' % tile_id)
             tile = self._tile_dict[tile_id]
             is_contained = tile.intersects_circle(center_pt, radius_rad)
             if is_contained:
@@ -261,7 +259,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
                                          obs_metadata.pointingDec,
                                          obs_metadata.boundLength)
 
-        #print('tile_idx list %s' % str(tile_idx_list))  #1245 1290
         obs_where_clause = "("
         for tile_idx in tile_idx_list:
             rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
@@ -300,9 +297,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             self._tile_idx.append(tile_idx)
         obs_where_clause += ")"
 
-        print('last pass on trixel_bounds')
         total_trixel_bounds = HalfSpace.merge_trixel_bounds(total_trixel_bounds)
-        print('time to write where clause')
 
         where_clause = "("
         for i_bound, bound in enumerate(total_trixel_bounds):
@@ -317,7 +312,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         where_clause += ")"
         where_clause += " AND "
         where_clause += obs_where_clause
-        print('got where clause')
 
         if constraint is not None:
             where_clause += " AND (%s)" % text(constraint)
@@ -339,11 +333,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
 
     def __next__(self):
-        #print('running on tile %d of %d' % (self._tile_to_do, len(self._rotate_to_sky)))
         if self._tile_to_do == 0:
-            #print('valid tiles %d; chunks %d; rows %e; kept %e; ratio %e' %
-            #(self._valid_tiles,self._n_chunks,self._n_rows, self._rows_kept,
-            # self._rows_kept/(1.0+self._n_rows)))
             self._valid_tiles = 0
             self._n_chunks += 1
             if self.chunk_size is None and not self._galaxy_query.closed:
@@ -357,7 +347,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
             if len(self._galaxy_cache) == 0:
                 raise StopIteration
 
-        #print("galaxy_cache is ",type(self._galaxy_cache),self._galaxy_cache['htmid'].min())
         current_chunk = copy.deepcopy(self._galaxy_cache)
         rot_mat = self._rotate_to_sky[self._tile_to_do]
         bounds = self._00_bounds[self._tile_to_do]
@@ -385,7 +374,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         if len(current_chunk) == 0:
             return self.__next__()
 
-        #print(current_chunk)
         xyz = cartesianFromSpherical(np.radians(current_chunk['ra']),
                                      np.radians(current_chunk['dec']))
 
@@ -419,8 +407,6 @@ class LocalGalaxyChunkIterator(ChunkIterator):
                                                  current_chunk['decJ2000'],
                                                  np.pi-current_chunk['decJ2000'])
 
-
-        #print('current_chunk is ',type(current_chunk))
 
         #>>> r2 = recfunc.append_fields(r,['d','e'],d,dtypes=[float, int], usemask=False, asrecarray=True)
 
