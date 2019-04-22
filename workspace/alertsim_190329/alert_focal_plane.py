@@ -25,7 +25,7 @@ def apply_focal_plane(ra, dec, photometry_mask_1d,
 
             valid_chip = (np.char.find(chip_name.astype(str), 'None') == -1)
         else:
-            ra_valid = ra[photomtery_mask_1d]
+            ra_valid = ra[photometry_mask_1d]
             dec_valid = dec[photometry_mask_1d]
             dd = angularSeparation(ra_valid,
                                    dec_valid,
