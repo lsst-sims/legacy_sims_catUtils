@@ -10,7 +10,7 @@ def apply_focal_plane(ra, dec, photometry_mask_1d,
     n_t = len(filter_obs)
 
     if not proper_chip:
-        seed = int(np.round(ra[0]+dec[0]+obs_md_list[0].mjd.TAI))
+        seed = int(np.round(ra[0]*1000.0+dec[0]*1000.0+obs_md_list[0].mjd.TAI))
         rng = np.random.RandomState(seed)
         focal_plane_roll = rng.random_sample(len(ra))
 
