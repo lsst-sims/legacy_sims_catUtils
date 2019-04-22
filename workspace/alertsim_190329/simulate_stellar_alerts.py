@@ -375,6 +375,8 @@ if __name__ == "__main__":
 
     with h5py.File(obs_param_name,'r') as obs_params:
         for htmid_query in htmid_list:
+            if htmid_query not in htmid_to_obs:
+                continue
             print(htmid_query)
             query_level = htm.levelFromHtmid(htmid_query)
             trixel_query = htm.trixelFromHtmid(htmid_query)
