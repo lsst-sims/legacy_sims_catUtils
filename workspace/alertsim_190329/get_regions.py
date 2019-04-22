@@ -114,7 +114,6 @@ with open('data/region_1_trixels.txt', 'w') as out_file:
 #        but need to compute it more precisely)
 # bcut should be -76.144 (probably)
 
-gal_s_ra, gal_s_dec = equatorialFromGalactic(0.0, -90.)
 gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 12.5)
 region_2_trixels = []
 for tx in tx_list:
