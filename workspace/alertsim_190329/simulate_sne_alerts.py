@@ -187,6 +187,10 @@ if __name__ == "__main__":
     parser.add_argument('--out_name', type=str, default=None)
     parser.add_argument('--circular_fov', default=False,
                         action='store_true')
+    parser.add_argument('--fast_t0', default=False,
+                        action='store_true',
+                        help='use an int stored on the database to '
+                        'quickly query for only a random 10% of galaxies')
     parser.add_argument('--q_chunk_size', type=int, default=50000,
                         help='number of galaxies to query from '
                              'database at once (default 5*10**4)')
@@ -216,6 +220,10 @@ if __name__ == "__main__":
                     continue
                 params = line.strip().split()
                 htmid_list.append(int(params[0]))
+
+
+    if args.fast_t0:
+        fast_t0_rng = np.random.RandomSample(max(htmid_list))
 
     invisible_file = 'data/invisible_sn_tags.txt'
     invisible_tags = set()
@@ -316,6 +324,9 @@ if __name__ == "__main__":
             print('%d time steps' % len(filter_obs))
 
             constraint = 'redshift<=1.2 '
+            if args.fast_t0:
+                fast_t0_flag = fast_t0_rng.randint(0,10)
+                constraint += 'AND sne_alert_flag=%d' % fast_t0_flag
 
             sn_frequency = 1.0/(100.0*365.0)
             midSurveyTime = 59580.0+5.0*365.25
@@ -348,9 +359,13 @@ if __name__ == "__main__":
 
                 n_gal += len(chunk)
 
-                t0_arr = rng.uniform(midSurveyTime-0.5/sn_frequency,
-                                     midSurveyTime+0.5/sn_frequency,
-                                     size=len(chunk))
+                if args.fast_t0:
+                    t0_arr = rng.uniform(59580.0, 59580.0+3652.5,
+                                         size=len(chunk))
+                else:
+                    t0_arr = rng.uniform(midSurveyTime-0.5/sn_frequency,
+                                         midSurveyTime+0.5/sn_frequency,
+                                         size=len(chunk))
 
                 is_sne = np.where(np.logical_and(t0_arr>=t_lsst_0,
                                                  t0_arr<=t_lsst_1))
