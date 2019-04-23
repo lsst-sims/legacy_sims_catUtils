@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
 
     if args.fast_t0:
-        fast_t0_rng = np.random.RandomSample(max(htmid_list))
+        fast_t0_rng = np.random.RandomState(max(htmid_list))
 
     invisible_file = 'data/invisible_sn_tags.txt'
     invisible_tags = set()
