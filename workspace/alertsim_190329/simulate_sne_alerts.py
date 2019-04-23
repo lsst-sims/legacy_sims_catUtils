@@ -254,8 +254,12 @@ if __name__ == "__main__":
     obs_param_name = 'data/obs_params.h5'
 
     rng = np.random.RandomState(htmid_list[0])
-    mgr = multiprocessing.Manager()
-    out_data = mgr.dict()
+
+    if args.n_threads>1:
+        mgr = multiprocessing.Manager()
+        out_data = mgr.dict()
+    else:
+        out_data = {}
 
     n_tot = 0
     n_processed = 0
@@ -372,6 +376,11 @@ if __name__ == "__main__":
                 chunk['abs_mag'] = abs_mag_arr
 
                 n_tot += len(chunk)
+                if args.n_threads == 1:
+                    process_sne_chunk(chunk, filter_obs,mjd_obs,
+                                      m5_obs, coadd_m5, obs_md_list,
+                                      proper_chip, invisible_tags, out_data)
+                    continue
 
                 # multiprocessing code
                 if len(chunk)<args.p_chunk_size:
@@ -398,6 +407,7 @@ if __name__ == "__main__":
 
                     n_processed += len(sub_chunk)
                     assert len(sub_chunk)>=args.p_chunk_size
+                    assert args.n_threads>1
                     p = multiprocessing.Process(target=process_sne_chunk,
                                                 args=(sub_chunk, filter_obs, mjd_obs,
                                                       m5_obs, coadd_m5, obs_md_list,
@@ -426,6 +436,7 @@ if __name__ == "__main__":
                     sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
                     n_processed += len(sub_chunk)
 
+                    assert args.n_threads>1
                     p = multiprocessing.Process(target=process_sne_chunk,
                                                 args=(sub_chunk, filter_obs, mjd_obs,
                                                       m5_obs, coadd_m5, obs_md_list,
@@ -446,9 +457,12 @@ if __name__ == "__main__":
             for p in p_list:
                 p.join()
 
-    out_data_final = {}
-    for name in out_data.keys():
-        out_data_final[name] = out_data[name]
+    if args.n_threads>1:
+        out_data_final = {}
+        for name in out_data.keys():
+            out_data_final[name] = out_data[name]
+    else:
+        out_data_final = out_data
 
     print('n_lc %d' % len(out_data_final))
     print('n_sne %e' % n_sne)
