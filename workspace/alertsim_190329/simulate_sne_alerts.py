@@ -360,7 +360,7 @@ if __name__ == "__main__":
                 n_gal += len(chunk)
 
                 if args.fast_t0:
-                    t0_arr = rng.uniform(59580.0, 59580.0+3652.5,
+                    t0_arr = rng.uniform(59580.0-34.0, 59580.0+3652.5+100.0,
                                          size=len(chunk))
                 else:
                     t0_arr = rng.uniform(midSurveyTime-0.5/sn_frequency,
