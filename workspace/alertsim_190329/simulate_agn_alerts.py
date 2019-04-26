@@ -195,6 +195,7 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument('--m5_single', type=str, default='data/single_m5.txt',
                         help='File containing single visit m5 values')
+    parser.add_argument('--coadd_m5', type=str, default='data/coadd_m5.txt')
     parser.add_argument('--q_chunk_size', type=int, default=10000,
                         help='number of galaxies to query from '
                              'database at once (default 10**4)')
@@ -233,9 +234,8 @@ if __name__ == "__main__":
             p = line.strip().split()
             m5_single[p[0]] = float(p[1])
 
-    coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
-    with open(coadd_m5_name, 'r') as in_file:
+    with open(args.coadd_m5, 'r') as in_file:
         for line in in_file:
             if line.startswith('#'):
                 continue

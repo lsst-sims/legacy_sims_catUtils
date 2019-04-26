@@ -186,6 +186,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_name', type=str, default=None)
     parser.add_argument('--m5_single', type=str, default='data/single_m5.txt',
                         help='File containing single visit m5 values')
+    parser.add_argument('--coadd_m5', type=str, default='data/coadd_m5.txt')
     parser.add_argument('--circular_fov', default=False,
                         action='store_true')
     parser.add_argument('--fast_t0', default=False,
@@ -240,9 +241,8 @@ if __name__ == "__main__":
             p = line.strip().split()
             m5_single[p[0]] = float(p[1])
 
-    coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
-    with open(coadd_m5_name, 'r') as in_file:
+    with open(args.coadd_m5, 'r') as in_file:
         for line in in_file:
             if line.startswith('#'):
                 continue
