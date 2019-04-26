@@ -167,16 +167,25 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                   filter_obs, proper_chip)
     duration = (time.time()-t_before_chip)/3600.0
 
+    unq_arr = -1*np.ones(n_obj, dtype=int)
+    mjd_arr = -1.0*np.ones(n_obj, dtype=float)
+    redshift_arr = -1.0*np.ones(n_obj, dtype=float)
+    snr_arr = -1.0*np.ones(n_obj, dtype=float)
+
     for i_obj in range(n_obj):
         if photometry_mask_1d[i_obj]:
             detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
             if detected.any():
-                unq = chunk['galtileid'][i_obj]
+                unq_arr[i_obj] = chunk['galtileid'][i_obj]
                 first_dex = np.where(detected)[0].min()
-                snr = 5.0*10**(-0.4*(d_mag[i_obj,first_dex]))
-                out_data[unq] = (mjd_obs[first_dex],
-                                 snr,
-                                 chunk['redshift'][i_obj])
+                snr_arr[i_obj] = 5.0*10**(-0.4*(d_mag[i_obj,first_dex]))
+                mjd_arr[i_obj] = mjd_obs[first_dex]
+                redshift_arr[i_obj] = chunk['redshift'][i_obj]
+
+    valid = np.where(unq_arr>=0)
+    pid = os.getpid()
+    out_data[pid] = (unq_arr[valid], mjd_arr[valid],
+                     snr_arr[valid], redshift_arr[valid])
 
 
 if __name__ == "__main__":
@@ -482,14 +491,25 @@ if __name__ == "__main__":
     print('n_lc %d' % len(out_data_final))
     print('n_sne %e' % n_sne)
     print('n_gal %e' % n_gal)
-    with open(args.out_name, 'wb') as out_file:
-        pickle.dump(out_data_final, out_file)
+    unq_arr = []
+    mjd_arr = []
+    snr_arr = []
+    redshift_arr = []
+    for name in out_data_final:
+        unq_arr.append(out_data_final[name][0])
+        mjd_arr.append(out_data_final[name][1])
+        snr_arr.append(out_data_final[name][2])
+        redshift_arr.append(out_data_final[name][3])
+    unq_arr = np.concatenate(unq_arr)
+    mjd_arr = np.concatenate(mjd_arr)
+    snr_arr = np.concatenate(snr_arr)
+    redshift_arr = np.concatenate(redshift_arr)
 
-
-    #with h5py.File(out_name, 'w') as out_file:
-    #    print('n_lc %d' % len(out_data))
-    #    for name in out_data.keys():
-    #        out_file.create_dataset('%d' % name, data=out_data[name])
+    with h5py.File(out_name, 'w') as out_file:
+        out_file.create_dataset('unq', data=unq_arr)
+        out_file.create_dataset('mjd', data=mjd_arr)
+        out_file.create_dataset('snr', data=snr_arr)
+        out_file.create_dataset('redshift', data=redshift_arr)
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     print('shld %d processed %d' % (n_tot, n_processed))
