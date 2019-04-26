@@ -197,7 +197,7 @@ if __name__ == "__main__":
         gal_ac_ra, gal_ac_dec = equatorialFromGalactic(180.0, 0.0)
 
         # must be inside this
-        gal_ac_hs = htm.halfSpaceFromRaDec(gal_ac_ra, gal_ac_dec, 17.0)
+        gal_ac_hs = htm.halfSpaceFromRaDec(gal_ac_ra, gal_ac_dec, 25.0)
 
         region_4_trixels = []
         for tx in tx_list:
@@ -221,3 +221,4 @@ if __name__ == "__main__":
 
         area = test_area(region_4_trixels, 3000000)
         print('region 4 area %e' % area)
+        print(gal_ac_ra, gal_ac_dec)
