@@ -199,7 +199,7 @@ if __name__ == "__main__":
     parser.add_argument('--fast_t0', default=False,
                         action='store_true',
                         help='use an int stored on the database to '
-                        'quickly query for only a random 10% of galaxies')
+                        'quickly query for only a random 10 percent of galaxies')
     parser.add_argument('--q_chunk_size', type=int, default=50000,
                         help='number of galaxies to query from '
                              'database at once (default 5*10**4)')
