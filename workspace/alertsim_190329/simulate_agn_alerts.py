@@ -176,22 +176,22 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                   filter_obs, proper_chip)
     duration = (time.time()-t_before_chip)/3600.0
 
+    unq_out = -1*np.ones(n_obj, dtype=int)
+    mjd_out = -1.0*np.ones(n_obj, dtype=float)
+    snr_out = -1.0*np.ones(n_obj, dtype=float)
     for i_obj in range(n_obj):
         if photometry_mask_1d[i_obj]:
             detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
 
             if detected.any():
-                unq = chunk['galtileid'][i_obj]
+                unq_out[i_obj[ = chunk['galtileid'][i_obj]
                 first_dex = np.where(detected)[0].min()
-                out_data[unq] = (mjd_obs[first_dex],
-                                 snr_arr[i_obj, first_dex])
-                if detected[0]:
-                    ct_first += 1
-                else:
-                    ct_at_all += 1
+                mjd_out[i_obj] = mjd_obs[first_dex]
+                snr_out[i_obj] = snr_arr[i_obj, first_dex]
 
-    #print('%d tot %d first %d at all %d ' %
-    #(os.getpid(),ct_tot, ct_first, ct_at_all))
+    pid = os.getpid()
+    out_data[pid] = (unq_out, mjd_out, snr_out)
+
 
 if __name__ == "__main__":
 
@@ -410,19 +410,23 @@ if __name__ == "__main__":
             for p in p_list:
                 p.join()
 
-    out_data_final = {}
+    unq_arr = []
+    mjd_arr = []
+    snr_arr = []
     for name in out_data.keys():
-        out_data_final[name] = out_data[name]
+        unq_arr.append(out_data[name][0])
+        mjd_arr.append(out_data[name][1])
+        snr_arr.append(out_data[name][2])
+    unq_arr = np.concatenate(unq_arr)
+    mjd_arr = np.concatenate(mjd_arr)
+    snr_arr = np.concatenate(snr_arr)
 
-    print('n_lc %d' % len(out_data_final))
-    with open(args.out_name, 'wb') as out_file:
-        pickle.dump(out_data_final, out_file)
+    print('n_lc %d' % len(unq_arr))
 
-
-    #with h5py.File(out_name, 'w') as out_file:
-    #    print('n_lc %d' % len(out_data))
-    #    for name in out_data.keys():
-    #        out_file.create_dataset('%d' % name, data=out_data[name])
+    with h5py.File(args.out_name, 'w') as out_file:
+        out_file.create_dataset('unq', data=unq_arr)
+        out_file.create_dataset('mjd', data=mjd_arr)
+        out_file.create_dataset('snr', data=snr_arr)
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     print('shld %d processed %d' % (n_tot, n_processed))
