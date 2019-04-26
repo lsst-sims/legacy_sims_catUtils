@@ -184,7 +184,7 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
             detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
 
             if detected.any():
-                unq_out[i_obj[ = chunk['galtileid'][i_obj]
+                unq_out[i_obj] = chunk['galtileid'][i_obj]
                 first_dex = np.where(detected)[0].min()
                 mjd_out[i_obj] = mjd_obs[first_dex]
                 snr_out[i_obj] = snr_arr[i_obj, first_dex]
