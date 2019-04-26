@@ -9,6 +9,8 @@ import palpy as palpy
 import numpy as np
 import pickle
 
+import argparse
+
 def test_area(trixel_list, n_pts):
 
     rng = np.random.RandomState(11723)
@@ -40,6 +42,14 @@ def test_area(trixel_list, n_pts):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--do_1', default=False, action='store_true')
+    parser.add_argument('--do_2', default=False, action='store_true')
+    parser.add_argument('--do_3', default=False, action='store_true')
+    parser.add_argument('--do_4', default=False, action='store_true')
+
+    args = parser.parse_args()
+
     with open('data/htmid_to_obs_map.pickle', 'rb') as in_file:
         htmid_map = pickle.load(in_file)
 
@@ -49,163 +59,165 @@ if __name__ == "__main__":
         if htm.levelFromHtmid(htmid) == 6:
             tx_list.append(tx_dict[htmid])
 
-    ######### Region 1
-    #1) ~600 deg2 along ecliptic plane, say |latitude| < 30 and a 100 deg stretch
-    #    in longitude, but with |galactic latitude| > 30 deg
-
     gal_n_ra, gal_n_dec = equatorialFromGalactic(0.0, 90.0)
     gal_s_ra, gal_s_dec = equatorialFromGalactic(0.0, -90.0)
 
-    # must be fully inside one of these two half spaces to have
-    # |galactic latitude| > 30
-    gal_n_30_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 60.0)
-    gal_s_30_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 60.0)
+    if args.do_1:
+        ######### Region 1
+        #1) ~600 deg2 along ecliptic plane, say |latitude| < 30 and a 100 deg stretch
+        #    in longitude, but with |galactic latitude| > 30 deg
 
-    ecl_n_ra, ecl_n_dec = np.degrees(palpy.ecleq(0.0, 0.5*np.pi, 59580.0))
-    ecl_s_ra, ecl_s_dec = np.degrees(palpy.ecleq(0.0, -0.5*np.pi, 59580.0))
+        # must be fully inside one of these two half spaces to have
+        # |galactic latitude| > 30
+        gal_n_30_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 60.0)
+        gal_s_30_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 60.0)
 
-    # must be inside both of these half spaces to have |ecliptic latitude|<30
-    ecl_n_30_hs = htm.halfSpaceFromRaDec(ecl_n_ra, ecl_n_dec, 120.0)
-    ecl_s_30_hs = htm.halfSpaceFromRaDec(ecl_s_ra, ecl_s_dec, 120.0)
+        ecl_n_ra, ecl_n_dec = np.degrees(palpy.ecleq(0.0, 0.5*np.pi, 59580.0))
+        ecl_s_ra, ecl_s_dec = np.degrees(palpy.ecleq(0.0, -0.5*np.pi, 59580.0))
 
-    ecl_e_ra, ecl_e_dec = np.degrees(palpy.ecleq(-0.2*np.pi, 0.0, 59580.0))
+        # must be inside both of these half spaces to have |ecliptic latitude|<30
+        ecl_n_30_hs = htm.halfSpaceFromRaDec(ecl_n_ra, ecl_n_dec, 120.0)
+        ecl_s_30_hs = htm.halfSpaceFromRaDec(ecl_s_ra, ecl_s_dec, 120.0)
 
-    gal_lon, gal_lat = galacticFromEquatorial(ecl_e_ra, ecl_e_dec)
-    print('gal_lon %e gal_lat %e' % (gal_lon, gal_lat))
-    print('ra %e dec %e' % (ecl_e_ra, ecl_e_dec))
+        ecl_e_ra, ecl_e_dec = np.degrees(palpy.ecleq(-0.2*np.pi, 0.0, 59580.0))
 
-    # half space bounding the 10 degree stretch of longitude
-    # must be inside this half space
-    ecl_e_hs = htm.halfSpaceFromRaDec(ecl_e_ra, ecl_e_dec, 12.0)
+        gal_lon, gal_lat = galacticFromEquatorial(ecl_e_ra, ecl_e_dec)
+        print('gal_lon %e gal_lat %e' % (gal_lon, gal_lat))
+        print('ra %e dec %e' % (ecl_e_ra, ecl_e_dec))
 
-    region_1_trixels = []
-    for tx in tx_list:
-        if tx.htmid not in htmid_map:
-            continue
-        lat_30_cut = False
-        if gal_n_30_hs.contains_trixel(tx) == 'full':
-            lat_30_cut = True
-        if gal_s_30_hs.contains_trixel(tx) == 'full':
-            lat_30_cut = True
-        if not lat_30_cut:
-            continue
+        # half space bounding the 10 degree stretch of longitude
+        # must be inside this half space
+        ecl_e_hs = htm.halfSpaceFromRaDec(ecl_e_ra, ecl_e_dec, 12.0)
 
-        if (ecl_n_30_hs.contains_trixel(tx) == 'outside' or
-            ecl_s_30_hs.contains_trixel(tx) == 'outside'):
-            continue
+        region_1_trixels = []
+        for tx in tx_list:
+            if tx.htmid not in htmid_map:
+                continue
+            lat_30_cut = False
+            if gal_n_30_hs.contains_trixel(tx) == 'full':
+                lat_30_cut = True
+            if gal_s_30_hs.contains_trixel(tx) == 'full':
+                lat_30_cut = True
+            if not lat_30_cut:
+                continue
 
-        if ecl_e_hs.contains_trixel(tx) == 'outside':
-            continue
+            if (ecl_n_30_hs.contains_trixel(tx) == 'outside' or
+                ecl_s_30_hs.contains_trixel(tx) == 'outside'):
+                continue
 
-        region_1_trixels.append(tx)
+            if ecl_e_hs.contains_trixel(tx) == 'outside':
+                continue
 
-    print('n_trixels %d' % len(region_1_trixels))
+            region_1_trixels.append(tx)
 
-    with open('data/region_1_trixels.txt', 'w') as out_file:
-        out_file.write('# htmid ra dec ecliptic_lon ecliptic_lat glon glat\n')
-        for tx in region_1_trixels:
-            ra, dec = tx.get_center()
-            lon, lat = np.degrees(palpy.eqecl(np.radians(ra), np.radians(dec),
-                                              59580.0))
+        print('n_trixels %d' % len(region_1_trixels))
 
-            glon, glat = galacticFromEquatorial(ra,dec)
-            out_file.write('%d %e %e %e %e %e %e\n' %
-                           (tx.htmid, ra, dec, lon, lat, glon,glat))
+        with open('data/region_1_trixels.txt', 'w') as out_file:
+            out_file.write('# htmid ra dec ecliptic_lon ecliptic_lat glon glat\n')
+            for tx in region_1_trixels:
+                ra, dec = tx.get_center()
+                lon, lat = np.degrees(palpy.eqecl(np.radians(ra), np.radians(dec),
+                                                  59580.0))
 
-    area = test_area(region_1_trixels, 3000000)
-    print('region 1 area %e' % area)
+                glon, glat = galacticFromEquatorial(ra,dec)
+                out_file.write('%d %e %e %e %e %e %e\n' %
+                               (tx.htmid, ra, dec, lon, lat, glon,glat))
 
+        area = test_area(region_1_trixels, 3000000)
+        print('region 1 area %e' % area)
 
-    # Region 2 ##########################
-    #2) ~600 deg2 towards the south galactic pole, b < bCut  (where bCut about -75 deg,
-    #        but need to compute it more precisely)
-    # bcut should be -76.144 (probably)
+    if args.do_2:
+        # Region 2 ##########################
+        #2) ~600 deg2 towards the south galactic pole, b < bCut  (where bCut about -75 deg,
+        #        but need to compute it more precisely)
+        # bcut should be -76.144 (probably)
 
-    gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 12.5)
-    region_2_trixels = []
-    for tx in tx_list:
-        if tx.htmid not in htmid_map:
-            continue
-        if gal_s_hs.contains_trixel(tx) != 'outside':
-            region_2_trixels.append(tx)
+        gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 12.5)
+        region_2_trixels = []
+        for tx in tx_list:
+            if tx.htmid not in htmid_map:
+                continue
+            if gal_s_hs.contains_trixel(tx) != 'outside':
+                region_2_trixels.append(tx)
 
-    with open('data/region_2_trixels.txt', 'w') as out_file:
-        out_file.write('# htmid ra dec glon glat\n')
-        for tx in region_2_trixels:
-            ra, dec = tx.get_center()
-            glon, glat = galacticFromEquatorial(ra, dec)
-            out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
+        with open('data/region_2_trixels.txt', 'w') as out_file:
+            out_file.write('# htmid ra dec glon glat\n')
+            for tx in region_2_trixels:
+                ra, dec = tx.get_center()
+                glon, glat = galacticFromEquatorial(ra, dec)
+                out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
 
-    print('n_trixels_region_2 %d' % len(region_2_trixels))
-    area = test_area(region_2_trixels, 3000000)
-    print('region 2 area %e' % area)
+        print('n_trixels_region_2 %d' % len(region_2_trixels))
+        area = test_area(region_2_trixels, 3000000)
+        print('region 2 area %e' % area)
 
+    if args.do_3:
+        # Region 3 ##############
+        #3) ~600 deg2 towards Galactic center, |b| < 10 deg, 0 < l < 30 deg
 
-    # Region 3 ##############
-    #3) ~600 deg2 towards Galactic center, |b| < 10 deg, 0 < l < 30 deg
+        # must be inside of both of these trixels for |b|<10
+        gal_n_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 100.0)
+        gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 100.0)
 
-    # must be inside of both of these trixels for |b|<10
-    gal_n_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 100.0)
-    gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 100.0)
+        gal_c_ra, gal_c_dec = equatorialFromGalactic(0.0, 0.0)
 
-    gal_c_ra, gal_c_dec = equatorialFromGalactic(0.0, 0.0)
+        # must be inside this
+        gal_c_hs = htm.halfSpaceFromRaDec(gal_c_ra, gal_c_dec, 18.0)
 
-    # must be inside this
-    gal_c_hs = htm.halfSpaceFromRaDec(gal_c_ra, gal_c_dec, 18.0)
+        region_3_trixels = []
+        for tx in tx_list:
+            if tx.htmid not in htmid_map:
+                continue
+            if gal_n_hs.contains_trixel(tx) != 'full':
+                continue
+            if gal_s_hs.contains_trixel(tx) != 'full':
+                continue
+            if gal_c_hs.contains_trixel(tx) == 'outside':
+                continue
 
-    region_3_trixels = []
-    for tx in tx_list:
-        if tx.htmid not in htmid_map:
-            continue
-        if gal_n_hs.contains_trixel(tx) != 'full':
-            continue
-        if gal_s_hs.contains_trixel(tx) != 'full':
-            continue
-        if gal_c_hs.contains_trixel(tx) == 'outside':
-            continue
+            region_3_trixels.append(tx)
 
-        region_3_trixels.append(tx)
+        with open('data/region_3_trixels.txt', 'w') as out_file:
+            out_file.write('# htmid ra dec glon glat\n')
+            for tx in region_3_trixels:
+                ra, dec = tx.get_center()
+                glon, glat = galacticFromEquatorial(ra, dec)
+                out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
 
-    with open('data/region_3_trixels.txt', 'w') as out_file:
-        out_file.write('# htmid ra dec glon glat\n')
-        for tx in region_3_trixels:
-            ra, dec = tx.get_center()
-            glon, glat = galacticFromEquatorial(ra, dec)
-            out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
+        area = test_area(region_3_trixels, 3000000)
+        print('region 3 area %e' % area)
 
-    area = test_area(region_3_trixels, 3000000)
-    print('region 3 area %e' % area)
+    if args.do_4:
+        # Region 4 #########3
+        # 4) ~600 deg2 towards Galactic anticenter, |b| < 10 deg, about 30 deg in longitude
 
-    # Region 4 #########3
-    # 4) ~600 deg2 towards Galactic anticenter, |b| < 10 deg, about 30 deg in longitude
+        gal_n_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 100.0)
+        gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 100.0)
 
-    gal_n_hs = htm.halfSpaceFromRaDec(gal_n_ra, gal_n_dec, 100.0)
-    gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 100.0)
+        gal_ac_ra, gal_ac_dec = equatorialFromGalactic(180.0, 0.0)
 
-    gal_ac_ra, gal_ac_dec = equatorialFromGalactic(180.0, 0.0)
+        # must be inside this
+        gal_ac_hs = htm.halfSpaceFromRaDec(gal_ac_ra, gal_ac_dec, 17.0)
 
-    # must be inside this
-    gal_ac_hs = htm.halfSpaceFromRaDec(gal_ac_ra, gal_ac_dec, 17.0)
+        region_4_trixels = []
+        for tx in tx_list:
+            if tx.htmid not in htmid_map:
+                continue
+            if gal_n_hs.contains_trixel(tx) != 'full':
+                continue
+            if gal_s_hs.contains_trixel(tx) != 'full':
+                continue
+            if gal_ac_hs.contains_trixel(tx) == 'outside':
+                continue
 
-    region_4_trixels = []
-    for tx in tx_list:
-        if tx.htmid not in htmid_map:
-            continue
-        if gal_n_hs.contains_trixel(tx) != 'full':
-            continue
-        if gal_s_hs.contains_trixel(tx) != 'full':
-            continue
-        if gal_ac_hs.contains_trixel(tx) == 'outside':
-            continue
+            region_4_trixels.append(tx)
 
-        region_4_trixels.append(tx)
+        with open('data/region_4_trixels.txt', 'w') as out_file:
+            out_file.write('# htmid ra dec glon glat\n')
+            for tx in region_4_trixels:
+                ra, dec = tx.get_center()
+                glon, glat = galacticFromEquatorial(ra, dec)
+                out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
 
-    with open('data/region_4_trixels.txt', 'w') as out_file:
-        out_file.write('# htmid ra dec glon glat\n')
-        for tx in region_4_trixels:
-            ra, dec = tx.get_center()
-            glon, glat = galacticFromEquatorial(ra, dec)
-            out_file.write('%d %e %e %e %e\n' % (tx.htmid, ra, dec, glon, glat))
-
-    area = test_area(region_4_trixels, 3000000)
-    print('region 4 area %e' % area)
+        area = test_area(region_4_trixels, 3000000)
+        print('region 4 area %e' % area)
