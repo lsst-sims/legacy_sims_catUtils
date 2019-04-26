@@ -140,7 +140,7 @@ def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
 
 
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
-                          coadd_m5, obs_md_list, proper_chip,
+                          coadd_m5, m5_single, obs_md_list, proper_chip,
                           variability_cache, out_data):
 
     t_start_chunk = time.time()
@@ -159,17 +159,6 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     coadd_visits['i'] = 18
     coadd_visits['z'] = 16
     coadd_visits['y'] = 16
-
-    # from the overview paper
-    # table 2; take m5 row and add Delta m5 row
-    # to get down to airmass 1.2
-    m5_single = {}
-    m5_single['u'] = 23.57
-    m5_single['g'] = 24.65
-    m5_single['r'] = 24.21
-    m5_single['i'] = 23.79
-    m5_single['z'] = 23.21
-    m5_single['y'] = 22.31
 
     gamma_coadd = {}
     for bp in 'ugrizy':
@@ -293,6 +282,8 @@ if __name__ == "__main__":
     parser.add_argument('--out_name', type=str, default=None)
     parser.add_argument('--circular_fov', default=False,
                         action='store_true')
+    parser.add_argument('--m5_single', type=str, default='data/single_m5.txt',
+                        help='File containing single visit m5 values')
     parser.add_argument('--q_chunk_size', type=int, default=20000,
                         help='number of galaxies to query from '
                              'database at once (default 2*10**4)')
@@ -335,6 +326,14 @@ if __name__ == "__main__":
         for line in in_file:
             p = line.strip().split(';')
             variability_cache['rrly_map'][int(p[0])] = os.path.join(lc_dir, p[1])
+
+    m5_single = {}
+    with open(args.m5_single, 'r') as in_file:
+        for line in in_file:
+            if line.startswith('#'):
+                continue
+            p = line.strip().split()
+            m5_single[p[0]] = float(p[1])
 
     coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
@@ -479,7 +478,8 @@ if __name__ == "__main__":
 
                     p = multiprocessing.Process(target=process_stellar_chunk,
                                                 args=(sub_chunk, filter_obs, mjd_obs,
-                                                      m5_obs, coadd_m5, obs_md_list,
+                                                      m5_obs, coadd_m5,
+                                                      m5_single, obs_md_list,
                                                       proper_chip, variability_cache,
                                                       out_data))
                     p.start()
@@ -506,7 +506,8 @@ if __name__ == "__main__":
                     n_processed += len(sub_chunk)
                     p = multiprocessing.Process(target=process_stellar_chunk,
                                                 args=(sub_chunk, filter_obs, mjd_obs,
-                                                      m5_obs, coadd_m5, obs_md_list,
+                                                      m5_obs, coadd_m5,
+                                                      m5_single, obs_md_list,
                                                       proper_chip, variability_cache,
                                                       out_data))
                     p.start()

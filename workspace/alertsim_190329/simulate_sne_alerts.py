@@ -45,7 +45,8 @@ class LocalSNeTileObj(LocalGalaxyTileObj):
 
 
 def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
-                      coadd_m5, obs_md_list, proper_chip,
+                      coadd_m5, m5_single,
+                      obs_md_list, proper_chip,
                       invisible_set, out_data):
 
     sne_interp_file = 'data/sne_interp_models.h5'
@@ -78,17 +79,6 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     coadd_visits['i'] = 18
     coadd_visits['z'] = 16
     coadd_visits['y'] = 16
-
-    # from the overview paper
-    # table 2; take m5 row and add Delta m5 row
-    # to get down to airmass 1.2
-    m5_single = {}
-    m5_single['u'] = 23.57
-    m5_single['g'] = 24.65
-    m5_single['r'] = 24.21
-    m5_single['i'] = 23.79
-    m5_single['z'] = 23.21
-    m5_single['y'] = 22.31
 
     gamma_coadd = {}
     for bp in 'ugrizy':
@@ -194,6 +184,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_name', type=str, default=None)
+    parser.add_argument('--m5_single', type=str, default='data/single_m5.txt',
+                        help='File containing single visit m5 values')
     parser.add_argument('--circular_fov', default=False,
                         action='store_true')
     parser.add_argument('--fast_t0', default=False,
@@ -239,6 +231,14 @@ if __name__ == "__main__":
     with open(invisible_file, 'r') as in_file:
         for line in in_file:
             invisible_tags.add(int(line.strip()))
+
+    m5_single = {}
+    with open(args.m5_single, 'r') as in_file:
+        for line in in_file:
+            if line.startswith('#'):
+                continue
+            p = line.strip().split()
+            m5_single[p[0]] = float(p[1])
 
     coadd_m5_name = 'data/coadd_m5.txt'
     coadd_m5 = {}
@@ -402,7 +402,7 @@ if __name__ == "__main__":
                 n_tot += len(chunk)
                 if args.n_threads == 1:
                     process_sne_chunk(chunk, filter_obs,mjd_obs,
-                                      m5_obs, coadd_m5, obs_md_list,
+                                      m5_obs, coadd_m5, m5_single, obs_md_list,
                                       proper_chip, invisible_tags, out_data)
                     continue
 
@@ -434,7 +434,8 @@ if __name__ == "__main__":
                     assert args.n_threads>1
                     p = multiprocessing.Process(target=process_sne_chunk,
                                                 args=(sub_chunk, filter_obs, mjd_obs,
-                                                      m5_obs, coadd_m5, obs_md_list,
+                                                      m5_obs, coadd_m5, m5_single,
+                                                      obs_md_list,
                                                       proper_chip, invisible_tags,
                                                       out_data))
                     p.start()
@@ -463,7 +464,8 @@ if __name__ == "__main__":
                     assert args.n_threads>1
                     p = multiprocessing.Process(target=process_sne_chunk,
                                                 args=(sub_chunk, filter_obs, mjd_obs,
-                                                      m5_obs, coadd_m5, obs_md_list,
+                                                      m5_obs, coadd_m5, m5_single,
+                                                      obs_md_list,
                                                       proper_chip, invisible_tags,
                                                       out_data))
 
