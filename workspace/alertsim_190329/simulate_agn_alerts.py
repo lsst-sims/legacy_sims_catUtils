@@ -189,8 +189,10 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 mjd_out[i_obj] = mjd_obs[first_dex]
                 snr_out[i_obj] = snr_arr[i_obj, first_dex]
 
+    valid = np.where(unq_out>=0)
     pid = os.getpid()
-    out_data[pid] = (unq_out, mjd_out, snr_out)
+    out_data[pid] = (unq_out[valid], mjd_out[valid],
+                     snr_out[valid])
 
 
 if __name__ == "__main__":
