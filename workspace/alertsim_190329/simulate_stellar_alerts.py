@@ -263,19 +263,24 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                                   filter_obs, proper_chip)
     duration = (time.time()-t_before_chip)/3600.0
 
+    unq_out = -1*np.ones(n_obj, dtype=int)
+    mjd_out = -1.0*np.ones(n_obj, dtype=float)
+    snr_out = -1.0*np.ones(n_obj, dtype=float)
+    var_type_out = -1*np.ones(n_obj, dtype=int)
     for i_obj in range(n_obj):
         if photometry_mask_1d[i_obj]:
             detected = photometry_mask[i_obj,:] & chip_mask[i_obj,:]
             if detected.any():
-                unq = chunk['simobjid'][i_obj]
+                unq_out[i_obj] = chunk['simobjid'][i_obj]
                 first_dex = np.where(detected)[0].min()
-                out_data[unq] = (mjd_obs[first_dex],
-                                 snr_arr[i_obj, first_dex],
-                                 chunk['var_type'][i_obj])
-                if detected[0]:
-                    ct_first += 1
-                else:
-                    ct_at_all += 1
+                mjd_out[i_obj] = mjd_obs[first_dex]
+                snr_out[i_obj] = snr_arr[i_obj, first_dex]
+                var_type_out[i_obj] = chunk['var_type'][i_obj]
+
+    valid = np.where(unq_out>=0)
+    pid = os.getpid()
+    out_data[pid] = (unq_out[valid], mjd_out[valid],
+                     snr_out[valid], var_type_out[valid])
 
     #print('%d tot %d first %d at all %d ' %
     #(os.getpid(),ct_tot, ct_first, ct_at_all))
@@ -518,19 +523,27 @@ if __name__ == "__main__":
             for p in p_list:
                 p.join()
 
-    out_data_final = {}
+    unq_arr = []
+    mjd_arr = []
+    snr_arr = []
+    var_type_arr = []
     for name in out_data.keys():
-        out_data_final[name] = out_data[name]
+        unq_arr.append(out_data[name][0])
+        mjd_arr.append(out_data[name][1])
+        snr_arr.append(out_data[name][2])
+        var_type_arr.append(out_data[name][3])
+    unq_arr = np.concatenate(unq_arr)
+    mjd_arr = np.concatenate(mjd_arr)
+    snr_arr = np.concatenate(snr_arr)
+    var_type_arr = np.concatenate(var_type_arr)
 
-    print('n_lc %d' % len(out_data_final))
-    with open(args.out_name, 'wb') as out_file:
-        pickle.dump(out_data_final, out_file)
+    with h5py.File(args.out_name, 'w') as out_file:
+        out_file.create_dataset('unq', data=unq_arr)
+        out_file.create_dataset('mjd', data=mjd_arr)
+        out_file.create_dataset('snr', data=snr_arr)
+        out_file.create_dataset('var_type', data=var_type_arr)
 
-
-    #with h5py.File(out_name, 'w') as out_file:
-    #    print('n_lc %d' % len(out_data))
-    #    for name in out_data.keys():
-    #        out_file.create_dataset('%d' % name, data=out_data[name])
+    print('n_lc %d' % len(unq_arr))
 
     print('that took %e hrs' % ((time.time()-t_start)/3600.0))
     print('shld %d processed %d' % (n_tot, n_processed))
