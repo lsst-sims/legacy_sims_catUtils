@@ -505,7 +505,7 @@ if __name__ == "__main__":
     snr_arr = np.concatenate(snr_arr)
     redshift_arr = np.concatenate(redshift_arr)
 
-    with h5py.File(out_name, 'w') as out_file:
+    with h5py.File(args.out_name, 'w') as out_file:
         out_file.create_dataset('unq', data=unq_arr)
         out_file.create_dataset('mjd', data=mjd_arr)
         out_file.create_dataset('snr', data=snr_arr)
