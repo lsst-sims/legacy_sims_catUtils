@@ -7,6 +7,7 @@ from lsst.sims.utils import equatorialFromGalactic
 import palpy as palpy
 
 import numpy as np
+import pickle
 
 def test_area(trixel_list, n_pts):
 
@@ -38,6 +39,10 @@ def test_area(trixel_list, n_pts):
     return area
 
 if __name__ == "__main__":
+
+    with open('data/htmid_to_obs_map.pickle', 'rb') as in_file:
+        htmid_map = pickle.load(in_file)
+
     tx_dict = htm.getAllTrixels(6)
     tx_list = []
     for htmid in tx_dict:
@@ -75,6 +80,8 @@ if __name__ == "__main__":
 
     region_1_trixels = []
     for tx in tx_list:
+        if tx.htmid not in htmid_map:
+            continue
         lat_30_cut = False
         if gal_n_30_hs.contains_trixel(tx) == 'full':
             lat_30_cut = True
@@ -117,6 +124,8 @@ if __name__ == "__main__":
     gal_s_hs = htm.halfSpaceFromRaDec(gal_s_ra, gal_s_dec, 12.5)
     region_2_trixels = []
     for tx in tx_list:
+        if tx.htmid not in htmid_map:
+            continue
         if gal_s_hs.contains_trixel(tx) != 'outside':
             region_2_trixels.append(tx)
 
@@ -146,6 +155,8 @@ if __name__ == "__main__":
 
     region_3_trixels = []
     for tx in tx_list:
+        if tx.htmid not in htmid_map:
+            continue
         if gal_n_hs.contains_trixel(tx) != 'full':
             continue
         if gal_s_hs.contains_trixel(tx) != 'full':
@@ -178,6 +189,8 @@ if __name__ == "__main__":
 
     region_4_trixels = []
     for tx in tx_list:
+        if tx.htmid not in htmid_map:
+            continue
         if gal_n_hs.contains_trixel(tx) != 'full':
             continue
         if gal_s_hs.contains_trixel(tx) != 'full':
