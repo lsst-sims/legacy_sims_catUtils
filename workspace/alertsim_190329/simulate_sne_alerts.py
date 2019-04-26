@@ -488,9 +488,7 @@ if __name__ == "__main__":
     else:
         out_data_final = out_data
 
-    print('n_lc %d' % len(out_data_final))
-    print('n_sne %e' % n_sne)
-    print('n_gal %e' % n_gal)
+
     unq_arr = []
     mjd_arr = []
     snr_arr = []
@@ -504,6 +502,10 @@ if __name__ == "__main__":
     mjd_arr = np.concatenate(mjd_arr)
     snr_arr = np.concatenate(snr_arr)
     redshift_arr = np.concatenate(redshift_arr)
+
+    print('n_lc %d' % len(redshift_arr))
+    print('n_sne %e' % n_sne)
+    print('n_gal %e' % n_gal)
 
     with h5py.File(args.out_name, 'w') as out_file:
         out_file.create_dataset('unq', data=unq_arr)
