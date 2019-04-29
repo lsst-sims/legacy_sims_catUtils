@@ -14,7 +14,7 @@ def get_rate(fname, cut=None):
     with h5py.File(fname,'r') as in_file:
         mjd = in_file['mjd'].value
         if cut is not None:
-            valid = np.where(in_file['var_type']==cut)
+            valid = np.where(in_file['var_type'].value==cut)
             mjd = mjd[valid]
         return np.round(mjd).astype(int)
 
