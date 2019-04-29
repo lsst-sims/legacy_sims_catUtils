@@ -6,6 +6,8 @@ import numpy as np
 import os
 import pickle
 
+import argparse
+
 def get_rate(fname, cut=None):
     assert os.path.isfile(fname)
 
@@ -38,6 +40,19 @@ def get_rate(fname, cut=None):
     return date_arr, ct_arr
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_dir', type=str, default='.')
+    parser.add_argument('--sne_dir', type=str, default=None,
+                        help='overrides input_dir')
+    parser.add_argument('--star_dir', type=str, default=None,
+                        help='overrides input_dir')
+    parser.add_argument('--agn_dir', type=str, default=None,
+                        help='overrides input_dir')
+    parser.add_argument('--output_name', type=str, default=None)
+    args = parser.parse_args()
+
+    assert args.output_name is not None
+
     region_list = ['region_1', 'region_2', 'region_3', 'region_4']
 
     region_dict={}
@@ -49,11 +64,26 @@ if __name__ == "__main__":
     plt.figure(figsize=(20,20))
     for i_reg, region_name in enumerate(region_list):
         plt.subplot(2,2,i_reg+1)
-        star_file = '%s_stars.pickle' % region_name
+
+        if args.star_dir is None:
+            star_dir = args.input_dir
+        else:
+            star_dir = args.star_dir
+        star_file = os.path.join(star_dir, '%s_stars.pickle' % region_name)
         assert os.path.isfile(star_file)
-        agn_file = '%s_agn.pickle' % region_name
+
+        if args.agn_dir is None:
+            agn_dir = args.input_dir
+        else:
+            agn_dir = args.agn_dir
+        agn_file = os.path.join(agn_dir, '%s_agn.pickle' % region_name)
         assert os.path.isfile(agn_file)
-        sne_file = '%s_sne.pickle' % region_name
+
+        if args.sne_dir is None:
+            sne_dir = args.input_dir
+        else:
+            sne_dir = args.sne_dir
+        sne_file = os.path.join(sne_dir, '%s_sne.pickle' % region_name)
         assert os.path.isfile(sne_file)
 
 
@@ -103,5 +133,5 @@ if __name__ == "__main__":
         #           ['stars', 'agn', 'SNe'], fontsize=20, loc=0)
 
     plt.tight_layout()
-    plt.savefig('plots/all_regions_avg_rate.png')
+    plt.savefig(args.output_name)
     plt.close()
