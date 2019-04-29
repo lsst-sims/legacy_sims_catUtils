@@ -4,40 +4,19 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import os
-import pickle
+import h5py
 
 import argparse
 
 def get_rate(fname, cut=None):
     assert os.path.isfile(fname)
 
-    with open(fname, 'rb') as in_file:
-        alert_dict = pickle.load(in_file)
-
-    mjd_arr = -1.0*np.ones(len(alert_dict), dtype=float)
-    for ii, name in enumerate(alert_dict):
+    with h5py.File(fname,'r') as in_file:
+        mjd = in_file['mjd'].value
         if cut is not None:
-            if alert_dict[name][2] != cut:
-                continue
-        mjd_arr[ii] = alert_dict[name][0]
-
-    del alert_dict
-    valid = np.where(mjd_arr>0.0)
-    return mjd_arr[valid]
-
-    mjd_arr = np.round(mjd_arr).astype(int)
-
-    raw_date_arr, raw_ct_arr = np.unique(mjd_arr, return_counts=True)
-
-    date_arr = np.arange(59580, 59580+3653, dtype=int)
-    ct_arr = np.zeros(len(date_arr), dtype=int)
-    for ii, date in enumerate(date_arr):
-        if date in raw_date_arr:
-            dex = np.where(raw_date_arr==date)
-            ct_arr[ii] = raw_ct_arr[dex]
-
-    print('processed %s' % fname)
-    return date_arr, ct_arr
+            valid = np.where(in_file['var_type']==cut)
+            mjd = mjd[valid]
+        return np.round(mjd).astype(int)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -69,21 +48,21 @@ if __name__ == "__main__":
             star_dir = args.input_dir
         else:
             star_dir = args.star_dir
-        star_file = os.path.join(star_dir, '%s_stars.pickle' % region_name)
+        star_file = os.path.join(star_dir, '%s_stars.h5' % region_name)
         assert os.path.isfile(star_file)
 
         if args.agn_dir is None:
             agn_dir = args.input_dir
         else:
             agn_dir = args.agn_dir
-        agn_file = os.path.join(agn_dir, '%s_agn.pickle' % region_name)
+        agn_file = os.path.join(agn_dir, '%s_agn.h5' % region_name)
         assert os.path.isfile(agn_file)
 
         if args.sne_dir is None:
             sne_dir = args.input_dir
         else:
             sne_dir = args.sne_dir
-        sne_file = os.path.join(sne_dir, '%s_sne.pickle' % region_name)
+        sne_file = os.path.join(sne_dir, '%s_sne.h5' % region_name)
         assert os.path.isfile(sne_file)
 
 
