@@ -59,7 +59,7 @@ if __name__ == "__main__":
     region_dict['region_1'] = 'ecliptic; 9.7e4 visits'
     region_dict['region_2'] = 'south galactic pole; 9.7e4 visits'
     region_dict['region_3'] = 'galactic center; 3.4e4 visits'
-    region_dict['region_4'] = 'galactic anti-center; 450 deg^2; 2.1e4 visits'
+    region_dict['region_4'] = 'galactic anti-center; 3.1e4 visits'
 
     plt.figure(figsize=(20,20))
     for i_reg, region_name in enumerate(region_list):
