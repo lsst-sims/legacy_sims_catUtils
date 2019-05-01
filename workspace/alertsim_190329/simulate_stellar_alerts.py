@@ -267,13 +267,17 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 var_type_out[i_obj] = chunk['var_type'][i_obj]
 
     valid = np.where(unq_out>=0)
+    unq_out = unq_out[valid]
+    mjd_out = mjd_out[valid]
+    var_type_out = var_type_out[valid]
+    snr_out = snr_out[valid]
     with lock:
         existing_keys = list(out_data.keys())
         key_val = 0
         while key_val in existing_keys:
             key_val += 1
-        out_data[key_val] = (unq_out[valid], mjd_out[valid],
-                             snr_out[valid], var_type_out[valid])
+        out_data[key_val] = (unq_out, mjd_out,
+                             snr_out, var_type_out)
 
     #print('%d tot %d first %d at all %d ' %
     #(os.getpid(),ct_tot, ct_first, ct_at_all))
