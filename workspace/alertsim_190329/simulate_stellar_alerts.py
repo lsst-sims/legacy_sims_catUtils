@@ -381,7 +381,10 @@ if __name__ == "__main__":
         for htmid_query in htmid_list:
             if htmid_query not in htmid_to_obs:
                 continue
-            print(htmid_query)
+            n_lc_so_far = 0
+            for name in out_data.keys():
+                n_lc_so_far += len(out_data[name][0])
+            print('now simulating ',htmid_query,n_lc_so_far)
             query_level = htm.levelFromHtmid(htmid_query)
             trixel_query = htm.trixelFromHtmid(htmid_query)
             ra_query, dec_query = trixel_query.get_center()
