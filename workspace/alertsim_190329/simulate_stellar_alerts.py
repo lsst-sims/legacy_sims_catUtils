@@ -141,7 +141,7 @@ def dflux_for_rrly(chunk, filter_obs, mjd_obs, v_cache, dflux_out):
 
 def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                           coadd_m5, m5_single, obs_md_list, proper_chip,
-                          variability_cache, out_data):
+                          variability_cache, out_data, lock):
 
     t_start_chunk = time.time()
     #print('processing %d' % len(chunk))
@@ -267,9 +267,13 @@ def process_stellar_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 var_type_out[i_obj] = chunk['var_type'][i_obj]
 
     valid = np.where(unq_out>=0)
-    pid = os.getpid()
-    out_data[pid] = (unq_out[valid], mjd_out[valid],
-                     snr_out[valid], var_type_out[valid])
+    with lock:
+        existing_keys = list(out_data.keys())
+        key_val = 0
+        while key_val in existing_keys:
+            key_val += 1
+        out_data[key_val] = (unq_out[valid], mjd_out[valid],
+                             snr_out[valid], var_type_out[valid])
 
     #print('%d tot %d first %d at all %d ' %
     #(os.getpid(),ct_tot, ct_first, ct_at_all))
@@ -373,6 +377,7 @@ if __name__ == "__main__":
 
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
+    lock = multiprocessing.Lock()
 
     n_tot = 0
     n_processed = 0
@@ -483,8 +488,9 @@ if __name__ == "__main__":
                                                 args=(sub_chunk, filter_obs, mjd_obs,
                                                       m5_obs, coadd_m5,
                                                       m5_single, obs_md_list,
-                                                      proper_chip, variability_cache,
-                                                      out_data))
+                                                      proper_chip,
+                                                      variability_cache,
+                                                      out_data, lock))
                     p.start()
                     p_list.append(p)
                     while len(p_list)>=args.n_threads:
@@ -508,11 +514,13 @@ if __name__ == "__main__":
                     sub_chunk = chunk[i_min:i_min+args.p_chunk_size]
                     n_processed += len(sub_chunk)
                     p = multiprocessing.Process(target=process_stellar_chunk,
-                                                args=(sub_chunk, filter_obs, mjd_obs,
+                                                args=(sub_chunk, filter_obs,
+                                                      mjd_obs,
                                                       m5_obs, coadd_m5,
                                                       m5_single, obs_md_list,
-                                                      proper_chip, variability_cache,
-                                                      out_data))
+                                                      proper_chip,
+                                                      variability_cache,
+                                                      out_data, lock))
                     p.start()
                     p_list.append(p)
                     while len(p_list)>=args.n_threads:
