@@ -47,7 +47,8 @@ class LocalSNeTileObj(LocalGalaxyTileObj):
 def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, m5_single,
                       obs_md_list, proper_chip,
-                      invisible_set, out_data):
+                      invisible_set, out_data,
+                      lock):
 
     sne_interp_file = 'data/sne_interp_models.h5'
 
@@ -173,9 +174,17 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 redshift_arr[i_obj] = chunk['redshift'][i_obj]
 
     valid = np.where(unq_arr>=0)
-    pid = os.getpid()
-    out_data[pid] = (unq_arr[valid], mjd_arr[valid],
-                     snr_arr[valid], redshift_arr[valid])
+    unq_arr = unq_arr[valid]
+    mjd_arr = mjd_arr[valid]
+    snr_arr = snr_arr[valid]
+    redshift_arr = redshift_arr[valid]
+    with lock:
+        existing_keys = list(out_data.keys())
+        key_val = 0
+        while key_val in existing_keys:
+            key_val += 1
+        out_data[key_val] = (unq_arr, mjd_arr,
+                             snr_arr, redshift_arr)
 
 
 if __name__ == "__main__":
@@ -277,6 +286,8 @@ if __name__ == "__main__":
         out_data = mgr.dict()
     else:
         out_data = {}
+
+    lock = multiprocessing.Lock()
 
     n_tot = 0
     n_processed = 0
@@ -403,7 +414,8 @@ if __name__ == "__main__":
                 if args.n_threads == 1:
                     process_sne_chunk(chunk, filter_obs,mjd_obs,
                                       m5_obs, coadd_m5, m5_single, obs_md_list,
-                                      proper_chip, invisible_tags, out_data)
+                                      proper_chip, invisible_tags, out_data,
+                                      lock)
                     continue
 
                 # multiprocessing code
@@ -437,7 +449,7 @@ if __name__ == "__main__":
                                                       m5_obs, coadd_m5, m5_single,
                                                       obs_md_list,
                                                       proper_chip, invisible_tags,
-                                                      out_data))
+                                                      out_data, lock))
                     p.start()
                     p_list.append(p)
                     while len(p_list)>=args.n_threads:
@@ -467,7 +479,7 @@ if __name__ == "__main__":
                                                       m5_obs, coadd_m5, m5_single,
                                                       obs_md_list,
                                                       proper_chip, invisible_tags,
-                                                      out_data))
+                                                      out_data, lock))
 
                     p.start()
                     p_list.append(p)
