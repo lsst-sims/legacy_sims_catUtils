@@ -423,7 +423,7 @@ if __name__ == "__main__":
 
             print('%d time steps' % len(filter_obs))
 
-            constraint = 'isvar=1 and var_type=3 '
+            constraint = 'isvar=1 '
             htmid_21_min = htmid_query<<2*(21-query_level)
             htmid_21_max = (htmid_query+1)<<2*(21-query_level)
             constraint += 'AND htmid>=%d AND htmid<%d' % (htmid_21_min, htmid_21_max)

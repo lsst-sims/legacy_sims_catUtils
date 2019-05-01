@@ -135,11 +135,6 @@ class LocalStarChunkIterator(ChunkIterator):
                     self._tables_to_query.add(part_name)
 
         where_clause += ')'
-
-        if 'var_type=3' in constraint:
-            self._tables_to_query = set()
-            self._tables_to_query.add('starsRRLy')
-
         self._htmid_where_clause = '(htmid>=%d AND htmid<=%d AND ' % (global_min_21, global_max_21)
         self._htmid_where_clause += where_clause
         self._htmid_where_clause += ')'
