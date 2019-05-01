@@ -26,7 +26,8 @@ import numbers
 
 def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                       coadd_m5, m5_single,
-                      obs_md_list, proper_chip, out_data):
+                      obs_md_list, proper_chip, out_data,
+                      lock):
     t_start_chunk = time.time()
     #print('processing %d' % len(chunk))
     ct_first = 0
@@ -180,9 +181,15 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
                 snr_out[i_obj] = snr_arr[i_obj, first_dex]
 
     valid = np.where(unq_out>=0)
-    pid = os.getpid()
-    out_data[pid] = (unq_out[valid], mjd_out[valid],
-                     snr_out[valid])
+    unq_out = unq_out[valid]
+    mjd_out = mjd_out[valid]
+    snr_out = snr_out[valid]
+    with lock:
+        existing_keys = list(out_data.keys())
+        key_val = 0
+        while key_val in existing_keys:
+            key_val += 1
+        out_data[key_val] = (unq_out, mjd_out, snr_out)
 
 
 if __name__ == "__main__":
@@ -264,6 +271,7 @@ if __name__ == "__main__":
 
     mgr = multiprocessing.Manager()
     out_data = mgr.dict()
+    lock = multiprocessing.Lock()
     obs_param_name = 'data/obs_params.h5'
     with h5py.File(obs_param_name, 'r') as obs_params:
         for htmid_query in htmid_list:
@@ -340,7 +348,7 @@ if __name__ == "__main__":
                 n_tot += len(chunk)
 
                 #process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs, coadd_m5,
-                #                  out_data)
+                #                  out_data, lock)
 
                 # multiprocessing code
                 if len(chunk)<args.p_chunk_size:
@@ -371,7 +379,8 @@ if __name__ == "__main__":
                                                 args=(sub_chunk, filter_obs, mjd_obs,
                                                       m5_obs, coadd_m5, 
                                                       m5_single, obs_md_list,
-                                                      proper_chip, out_data))
+                                                      proper_chip, out_data,
+                                                      lock))
                     p.start()
                     p_list.append(p)
                     while len(p_list)>=args.n_threads:
@@ -399,7 +408,8 @@ if __name__ == "__main__":
                                                       filter_obs, mjd_obs,
                                                       m5_obs, coadd_m5,
                                                       m5_single, obs_md_list,
-                                                      proper_chip, out_data))
+                                                      proper_chip, out_data,
+                                                      lock))
                     p.start()
                     p_list.append(p)
                     while len(p_list)>=args.n_threads:
