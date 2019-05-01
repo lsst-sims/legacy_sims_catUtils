@@ -31,8 +31,9 @@ def apply_focal_plane(ra, dec, photometry_mask_1d,
                                    dec_valid,
                                    obs.pointingRA, obs.pointingDec)
 
-            focal_plane_roll = rng.random_sample(len(ra_valid))
-            valid_chip = (dd<=fov_radius)&(focal_plane_roll<0.9)
+            #focal_plane_roll = rng.random_sample(len(ra_valid))
+            #valid_chip = (dd<=fov_radius)&(focal_plane_roll<0.9)
+            valid_chip = (dd<=fov_radius)
 
         chip_mask[photometry_mask_1d, i_t] = valid_chip
 
