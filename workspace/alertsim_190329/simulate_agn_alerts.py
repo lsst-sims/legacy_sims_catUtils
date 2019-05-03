@@ -186,10 +186,15 @@ def process_agn_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     snr_out = snr_out[valid]
     with lock:
         existing_keys = list(out_data.keys())
-        key_val = 0
+        if len(existing_keys) == 0:
+            key_val = 0
+        else:
+            key_val = max(existing_keys)
         while key_val in existing_keys:
             key_val += 1
-        out_data[key_val] = (unq_out, mjd_out, snr_out)
+        out_data[key_val] = (None, None, None)
+
+    out_data[key_val] = (unq_out, mjd_out, snr_out)
 
 
 if __name__ == "__main__":
