@@ -180,11 +180,16 @@ def process_sne_chunk(chunk, filter_obs, mjd_obs, m5_obs,
     redshift_arr = redshift_arr[valid]
     with lock:
         existing_keys = list(out_data.keys())
-        key_val = 0
+        if len(existing_keys) == 0:
+            key_val = 0
+        else:
+            key_val = max(existing_keys)
         while key_val in existing_keys:
             key_val += 1
-        out_data[key_val] = (unq_arr, mjd_arr,
-                             snr_arr, redshift_arr)
+        out_data[key_val] = (None, None, None, None)
+
+    out_data[key_val] = (unq_arr, mjd_arr,
+                         snr_arr, redshift_arr)
 
 
 if __name__ == "__main__":
