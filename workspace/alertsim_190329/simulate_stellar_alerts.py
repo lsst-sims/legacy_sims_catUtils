@@ -12,7 +12,7 @@ from lsst.sims.photUtils import SignalToNoise as SNR
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import ModifiedJulianDate
-from lsst.sims.catUtils.baseCatalogModels.LocalStarModels import LocalStarCatalogObj
+from lsst.sims.catUtils.baseCatalogModels.UWStarModels import UWStarCatalogObj
 
 from lsst.sims.catUtils.mixins import create_variability_cache
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
@@ -373,15 +373,15 @@ if __name__ == "__main__":
     #htmid_query = htm.findHtmid(ra, dec, 6)
 
     try:
-        star_db = LocalStarCatalogObj(database='LSST',
-                                      host='epyc.astro.washington.edu',
-                                      port=1433,
-                                      driver='mssql+pymssql')
+        star_db = UWStarCatalogObj(database='LSST',
+                                   host='epyc.astro.washington.edu',
+                                   port=1433,
+                                   driver='mssql+pymssql')
     except:
-        star_db = LocalStarCatalogObj(database='LSST',
-                                      host='localhost',
-                                      port=51432,
-                                      driver='mssql+pymssql')
+        star_db = UWStarCatalogObj(database='LSST',
+                                   host='localhost',
+                                   port=51432,
+                                   driver='mssql+pymssql')
 
 
     obs_param_name = 'data/obs_params.h5'

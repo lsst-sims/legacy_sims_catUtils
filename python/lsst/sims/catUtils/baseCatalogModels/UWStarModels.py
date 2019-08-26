@@ -4,10 +4,10 @@ import lsst.pex.config as pexConfig
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.catalogs.db import CatalogDBObject, ChunkIterator
 
-__all__ = ["LocalStarCatalogObj"]
+__all__ = ["UWStarCatalogObj"]
 
 
-class LocalStarCatalogConfig(pexConfig.Config):
+class UWStarCatalogConfig(pexConfig.Config):
     host = pexConfig.Field(
         dtype = str,
         doc = "Name of the host",
@@ -54,7 +54,7 @@ class _HiddenStarCatalogObj(CatalogDBObject):
                ('sedFilename', 'sedfilename', str, 40)]
 
 
-class LocalStarChunkIterator(ChunkIterator):
+class UWStarChunkIterator(ChunkIterator):
 
     _partition_lim = ((0,11000000000000,8700000000000),
                       (11000000000000, 11600000000000, 11000000000000),
@@ -174,9 +174,9 @@ class LocalStarChunkIterator(ChunkIterator):
         return self._postprocess_results(chunk)
 
 
-class LocalStarCatalogObj(CatalogDBObject):
+class UWStarCatalogObj(CatalogDBObject):
 
-    config = LocalStarCatalogConfig()
+    config = UWStarCatalogConfig()
 
     database = config.database
     host = config.host
@@ -216,9 +216,9 @@ class LocalStarCatalogObj(CatalogDBObject):
             raise RuntimeError("Cannot use boundType %s in this catalog; only 'circle'"
                                % str(obs_metadata.boundType))
 
-        return LocalStarChunkIterator(self, colnames, obs_metadata, chunk_size,
-                                      constraint,
-                                      self.database,
-                                      self.host,
-                                      self.port,
-                                      self.driver)
+        return UWStarChunkIterator(self, colnames, obs_metadata, chunk_size,
+                                   constraint,
+                                   self.database,
+                                   self.host,
+                                   self.port,
+                                   self.driver)

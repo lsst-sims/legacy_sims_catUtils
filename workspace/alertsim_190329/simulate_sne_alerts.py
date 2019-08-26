@@ -12,7 +12,7 @@ from lsst.sims.photUtils import SignalToNoise as SNR
 from lsst.sims.utils import htmModule as htm
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import ModifiedJulianDate
-from lsst.sims.catUtils.baseCatalogModels.LocalGalaxyModels import LocalGalaxyTileObj
+from lsst.sims.catUtils.baseCatalogModels.UWGalaxyModels import UWGalaxyTileObj
 from lsst.sims.catUtils.mixins import ExtraGalacticVariabilityModels
 
 from lsst.sims.photUtils import CosmologyObject
@@ -29,7 +29,7 @@ import argparse
 _ct_sne = 0
 
 
-class LocalSNeTileObj(LocalGalaxyTileObj):
+class UWSNeTileObj(UWGalaxyTileObj):
 
     # place holder SNe parameters
     columns = [('t0', '0.0', float),
@@ -272,15 +272,15 @@ if __name__ == "__main__":
 
 
     try:
-        gal_db = LocalSNeTileObj(database='LSST',
-                                 host='epyc.astro.washington.edu',
-                                 port=1433,
-                                 driver='mssql+pymssql')
+        gal_db = UWSNeTileObj(database='LSST',
+                              host='epyc.astro.washington.edu',
+                              port=1433,
+                              driver='mssql+pymssql')
     except:
-        gal_db = LocalSNeTileObj(database='LSST',
-                                 host='localhost',
-                                 port=51432,
-                                 driver='mssql+pymssql')
+        gal_db = UWSNeTileObj(database='LSST',
+                              host='localhost',
+                              port=51432,
+                              driver='mssql+pymssql')
 
     obs_param_name = 'data/obs_params.h5'
 

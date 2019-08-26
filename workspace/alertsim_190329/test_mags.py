@@ -1,4 +1,4 @@
-from lsst.sims.catUtils.baseCatalogModels.LocalStarModels import LocalStarCatalogObj
+from lsst.sims.catUtils.baseCatalogModels.UWStarModels import UWStarCatalogObj
 from lsst.sims.photUtils import cache_LSST_seds
 from lsst.sims.photUtils import Sed, BandpassDict
 from lsst.sims.photUtils import getImsimFluxNorm
@@ -7,10 +7,10 @@ import os
 import numpy as np
 from lsst.sims.utils import defaultSpecMap
 
-db = LocalStarCatalogObj(database='LSST',
-                            host='epyc.astro.washington.edu',
-                            port=1433,
-                            driver='mssql+pymssql')
+db = UWStarCatalogObj(database='LSST',
+                      host='epyc.astro.washington.edu',
+                      port=1433,
+                      driver='mssql+pymssql')
 
 cache_LSST_seds(wavelen_min=100.0, wavelen_max=1500.0)
 

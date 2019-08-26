@@ -17,7 +17,9 @@ from lsst.sims.catUtils.baseCatalogModels import GalaxyBulgeObj
 from lsst.sims.catUtils.baseCatalogModels import GalaxyDiskObj
 from lsst.sims.catUtils.baseCatalogModels import GalaxyAgnObj
 
-__all__ = ["FatboyTiles"]
+__all__ = ["Tile", "UWGalaxyTiles", "UWGalaxyTileObj",
+           "UWGalaxyDiskObj", "UWGalaxyBulgeObj",
+           "UWGalaxyAgnObj"]
 
 
 class Tile(object):
@@ -154,9 +156,10 @@ class Tile(object):
         return self._trixel_bounds
 
 
-class FatboyTiles(object):
+class UWGalaxyTiles(object):
     """
-    A class to store the fatboy galaxy tiles as a series of Half Spaces
+    A class to store the UW CatSim server galaxy tiles as a series of
+    Half Spaces
     """
 
     def __init__(self):
@@ -223,13 +226,14 @@ class FatboyTiles(object):
         return np.array(valid_id)
 
 
-class LocalGalaxyChunkIterator(ChunkIterator):
+class UWGalaxyChunkIterator(ChunkIterator):
 
     def __init__(self, dbobj, colnames, obs_metadata, chunk_size, constraint):
         """
         Parameters
         ----------
-        dbobj -- a CatalogDBObject connected to the 'galaxies' table on fatboy
+        dbobj -- a CatalogDBObject connected to the 'galaxies' table on
+        the UW CatSim server
 
         colnames -- a list of the columns to query
 
@@ -261,7 +265,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
         obs_where_clause = "("
         for tile_idx in tile_idx_list:
-            rotate_to_00 = self.fatboy_tiles.rotation_matrix(tile_idx)
+            rotate_to_00 = self.uwgalaxy_tiles.rotation_matrix(tile_idx)
 
             # find the bounds for trixels contained by the field of view
             # when rotated from the current tile to RA=Dec=0
@@ -284,7 +288,7 @@ class LocalGalaxyChunkIterator(ChunkIterator):
 
             # find the trixels in the current tile when it is rotated
             # to RA=Dec=0
-            sky_tile = self.fatboy_tiles.tile(tile_idx)
+            sky_tile = self.uwgalaxy_tiles.tile(tile_idx)
             single_tile = sky_tile.rotate(rotate_to_00)
             local_bounds = single_tile.find_all_trixels(self._trixel_search_level)
             local_bounds = HalfSpace.join_trixel_bound_sets(local_bounds, obs_hs_00_trixels)
@@ -419,24 +423,24 @@ class LocalGalaxyChunkIterator(ChunkIterator):
         return self._postprocess_results(current_chunk)
 
     @property
-    def fatboy_tiles(self):
-        if not hasattr(self, '_fatboy_tiles'):
-            self._fatboy_tiles = FatboyTiles()
-        return self._fatboy_tiles
+    def uwgalaxy_tiles(self):
+        if not hasattr(self, '_uwgalaxy_tiles'):
+            self._uwgalaxy_tiles = UWGalaxyTiles()
+        return self._uwgalaxy_tiles
 
     def _find_tiles(self, obs_metadata):
 
         if obs_metadata.boundType != 'circle':
             raise RuntimeError("Cannot use ObservationMetaData with "
-                               "boundType == %s in LocalGalaxyTileObj" % obs_metadata.boundType)
+                               "boundType == %s in UWGalaxyTileObj" % obs_metadata.boundType)
 
-        return self.fatboy_tiles.find_all_tiles(obs_metadata.pointingRA,
-                                                obs_metadata.pointingDec,
-                                                obs_metadata.boundLength)
+        return self.uwgalaxy_tiles.find_all_tiles(obs_metadata.pointingRA,
+                                                  obs_metadata.pointingDec,
+                                                  obs_metadata.boundLength)
 
 
 
-class LocalGalaxyTileObj(GalaxyObj):
+class UWGalaxyTileObj(GalaxyObj):
     _class_constraint = None
 
     def query_columns(self, colnames=None, chunk_size=None, obs_metadata=None, constraint=None,
@@ -492,8 +496,8 @@ class LocalGalaxyTileObj(GalaxyObj):
                 query_colnames.remove(name)
 
         if limit is not None:
-            warnings.warn("You specified a row number limit in your query of a LocalGalaxyTileObj "
-                          "daughter class.  Because of the way LocalGalaxyTileObj is searched, row "
+            warnings.warn("You specified a row number limit in your query of a UWGalaxyTileObj "
+                          "daughter class.  Because of the way UWGalaxyTileObj is searched, row "
                           "number limits are not possible.  If you really want to limit the number "
                           "of rows returned by you query, consider using GalaxyObj (note that you "
                           "will have to you limit your search to -2.5<RA<2.5 -2.25<Dec<2.25 -- both in "
@@ -507,20 +511,20 @@ class LocalGalaxyTileObj(GalaxyObj):
         elif constraint is None and self._class_constraint is not None:
             constraint = '(%s)' % text(self._class_constraint)
 
-        return LocalGalaxyChunkIterator(self, query_colnames, obs_metadata,
-                                        chunk_size, constraint)
+        return UWGalaxyChunkIterator(self, query_colnames, obs_metadata,
+                                     chunk_size, constraint)
 
 
-class LocalGalaxyBulgeObj(LocalGalaxyTileObj):
+class UWGalaxyBulgeObj(UWGalaxyTileObj):
     columns = GalaxyBulgeObj.columns
     tableid = 'galaxy_disk'
 
 
-class LocalGalaxyDiskObj(LocalGalaxyTileObj):
+class UWGalaxyDiskObj(UWGalaxyTileObj):
     columns = GalaxyDiskObj.columns
     tableid = 'galaxy_disk'
 
 
-class LocalGalaxyAgnObj(LocalGalaxyTileObj):
+class UWGalaxyAgnObj(UWGalaxyTileObj):
     columns = GalaxyAgnObj.columns
     tableid = 'galaxy_agn'

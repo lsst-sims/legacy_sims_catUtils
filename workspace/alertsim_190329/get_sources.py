@@ -8,7 +8,7 @@ import numpy as np
 import lsst.sims.utils as sims_utils
 import lsst.sims.utils.htmModule as htm
 import lsst.sims.coordUtils as sims_coord
-from lsst.sims.catUtils.baseCatalogModels import LocalStarCatalogObj
+from lsst.sims.catUtils.baseCatalogModels import UWStarCatalogObj
 
 
 def process_chunk_of_stars(data, obs_md_data):
@@ -21,10 +21,10 @@ def process_chunk_of_stars(data, obs_md_data):
 
 if __name__ == "__main__":
 
-    star_db = LocalStarCatalogObj(database='LSST',
-                                  host='localhost',
-                                  port=51432,
-                                  driver='mssql+pymssql')
+    star_db = UWStarCatalogObj(database='LSST',
+                               host='localhost',
+                               port=51432,
+                               driver='mssql+pymssql')
 
     col_names = ['htmID', 'ra', 'decl',
                  'umag', 'gmag', 'rmag',
