@@ -129,7 +129,8 @@ class ObservationMetaDataGenerator(object):
                           'moonAz': ('moonAz', None, float),
                           'sunAz': ('sunAz', None, float),
                           'slewDist': ('slewDistance', None, float),
-                          'slewTime': ('slewTime', None, float)}
+                          'slewTime': ('slewTime', None, float),
+                          'note': ('note', None, str)}
 
         return interface_dict
 
