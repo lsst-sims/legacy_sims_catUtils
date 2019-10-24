@@ -106,6 +106,7 @@ class UWStarChunkIterator(ChunkIterator):
 
         self._tables_to_query = set()
         self._tables_to_query.add('starsRRLy')
+        self._tables_to_query.add('starsWD')
         where_clause = '('
         global_min_21 = None
         global_max_21 = None
