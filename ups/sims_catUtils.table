@@ -11,7 +11,7 @@ setupRequired(pymssql)
 setupRequired(daf_persistence)
 setupRequired(sncosmo)
 
-setupOptional(obs_lsstSim)
+setupOptional(obs_lsst)
 
 #This is needed by the mssql python module
 envPrepend(TDSVER, 7.0)
