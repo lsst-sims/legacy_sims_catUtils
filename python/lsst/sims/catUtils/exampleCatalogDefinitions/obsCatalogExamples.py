@@ -3,13 +3,13 @@ import numpy
 import lsst.utils
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.mixins import AstrometryStars, CameraCoords, PhotometryStars
-from lsst.obs.lsstSim.utils import loadCamera
+import lsst.obs.lsst.phosim as obs_lsst_phosim
 
 __all__ = ["ObsStarCatalogBase"]
 
 class ObsStarCatalogBase(InstanceCatalog, AstrometryStars, PhotometryStars, CameraCoords):
     comment_char = ''
-    camera = loadCamera(lsst.utils.getPackageDir('obs_lsstSim'))
+    camera = obs_lsst_phosim.PhosimMapper().camera
     catalog_type = 'obs_star_cat'
     column_outputs = ['uniqueId', 'raObserved', 'decObserved', 'lsst_r', 'sigma_lsst_r',
                       'chipName', 'xPix', 'yPix']
