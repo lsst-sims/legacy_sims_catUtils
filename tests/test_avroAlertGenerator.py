@@ -9,6 +9,7 @@ import numbers
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
+import lsst.obs.lsst.phosim as obs_lsst_phosim
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.decorators import register_method
 from lsst.sims.catalogs.db import CatalogDBObject
@@ -19,9 +20,7 @@ from lsst.sims.utils import findHtmid
 from lsst.sims.utils import applyProperMotion, ModifiedJulianDate
 from lsst.sims.photUtils import Sed, calcSNR_m5, BandpassDict
 from lsst.sims.photUtils import PhotometricParameters
-from lsst.sims.coordUtils import lsst_camera
-from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
-from lsst.sims.catUtils.mixins import CameraCoordsLSST
+from lsst.sims.catUtils.mixins import CameraCoords
 from lsst.sims.catUtils.mixins import AstrometryStars
 from lsst.sims.catUtils.mixins import Variability
 from lsst.sims.catalogs.definitions import InstanceCatalog
@@ -30,7 +29,6 @@ from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.catUtils.utils import AlertDataGenerator
 from lsst.sims.catUtils.utils import AvroAlertGenerator
 
-from lsst.sims.coordUtils import clean_up_lsst_camera
 
 _avro_is_installed = True
 try:
@@ -89,10 +87,12 @@ class TestAlertsVarCat_avro(TestAlertsVarCatMixin_avro, AlertStellarVariabilityC
     pass
 
 
-class TestAlertsTruthCat_avro(TestAlertsVarCatMixin_avro, CameraCoordsLSST, AstrometryStars,
+class TestAlertsTruthCat_avro(TestAlertsVarCatMixin_avro, CameraCoords, AstrometryStars,
                               Variability, InstanceCatalog):
     column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert',
                       'raICRS', 'decICRS', 'xPix', 'yPix']
+
+    camera = obs_lsst_phosim.PhosimMapper().camera
 
     @compound('delta_umag', 'delta_gmag', 'delta_rmag',
               'delta_imag', 'delta_zmag', 'delta_ymag')
@@ -269,8 +269,6 @@ class AvroAlertTestCase(unittest.TestCase):
         if os.path.exists(cls.input_dir):
             shutil.rmtree(cls.input_dir)
 
-        clean_up_lsst_camera()
-
     def setUp(self):
         self.alert_data_output_dir = tempfile.mkdtemp(dir=ROOT, prefix='avro_gen_output')
         self.avro_out_dir = tempfile.mkdtemp(dir=ROOT, prefix='avroTestOut')
@@ -304,7 +302,7 @@ class AvroAlertTestCase(unittest.TestCase):
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
             cat = TestAlertsTruthCat_avro(star_db, obs_metadata=obs)
-            cat.camera = lsst_camera()
+            cat.camera = obs_lsst_phosim.PhosimMapper().camera
 
             for line in cat.iter_catalog():
                 if line[1] is None:
@@ -475,7 +473,7 @@ class AvroAlertTestCase(unittest.TestCase):
             obs_dict[obs.OpsimMetaData['obsHistID']] = obs
             obshistid = obs.OpsimMetaData['obsHistID']
             cat = TestAlertsTruthCat_avro(star_db, obs_metadata=obs)
-            cat.camera = lsst_camera()
+            cat.camera = obs_lsst_phosim.PhosimMapper().camera
 
             for line in cat.iter_catalog():
                 if line[1] is None:

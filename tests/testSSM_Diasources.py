@@ -22,7 +22,7 @@ from lsst.sims.catUtils.baseCatalogModels import SolarSystemObj
 from lsst.sims.catUtils.mixins import PhotometrySSM, AstrometrySSM, CameraCoords, ObsMetadataBase
 from lsst.sims.catalogs.definitions import InstanceCatalog
 # For camera.
-from lsst.obs.lsstSim import LsstSimMapper
+import lsst.obs.lsst.phosim as obs_lsst_phosim
 
 import time
 
@@ -60,7 +60,7 @@ class ssmCatCamera(ssmCat):
     catalog_type = __file__ + 'ssm_cat_camera'
 
     column_outputs = basic_columns + ['chipName']
-    camera = LsstSimMapper().camera
+    camera = obs_lsst_phosim.PhosimMapper().camera
     cannot_be_null = ['visibility', 'chipName']
     transformations = {'raJ2000': np.degrees, 'decJ2000': np.degrees,
                        'velRa': np.degrees, 'velDec': np.degrees}

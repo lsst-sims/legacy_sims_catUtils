@@ -9,12 +9,11 @@ import gc
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
+import lsst.obs.lsst.phosim as obs_lsst_phosim
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.decorators import register_method
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.db import DBObject
-from lsst.sims.coordUtils import lsst_camera
-from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.catUtils.utils import AlertStellarVariabilityCatalog
 from lsst.sims.catUtils.utils import AlertDataGenerator
@@ -25,21 +24,16 @@ from lsst.sims.utils import ModifiedJulianDate
 from lsst.sims.utils import findHtmid
 from lsst.sims.utils import angularSeparation
 from lsst.sims.photUtils import Sed
-from lsst.sims.coordUtils import chipNameFromRaDecLSST
-from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
+from lsst.sims.coordUtils import chipNameFromRaDec
+from lsst.sims.coordUtils import pixelCoordsFromRaDec
 from lsst.sims.photUtils import calcSNR_m5, BandpassDict
 from lsst.sims.photUtils import PhotometricParameters
-from lsst.sims.catUtils.mixins import CameraCoordsLSST
+from lsst.sims.catUtils.mixins import CameraCoords
 from lsst.sims.catUtils.mixins import AstrometryStars
 from lsst.sims.catUtils.mixins import Variability
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import compound, cached
 
-from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
-from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoordsLSST
-from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
-
-from lsst.sims.coordUtils import clean_up_lsst_camera
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -55,6 +49,8 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print('setting up %s' % sims_clean_up.targets)
+
+        cls.camera = obs_lsst_phosim.PhosimMapper().camera
 
         # These represent the dimmest magnitudes at which objects
         # are considered visible in each of the LSST filters
@@ -209,8 +205,6 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
             os.unlink(os.path.join(cls.output_dir, file_name))
         shutil.rmtree(cls.output_dir)
 
-        clean_up_lsst_camera()
-
     def test_alert_data_generation(self):
 
         dmag_cutoff = 0.005
@@ -256,9 +250,11 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
         class TestAlertsVarCat(TestAlertsVarCatMixin, AlertStellarVariabilityCatalog):
             pass
 
-        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoordsLSST, AstrometryStars,
+        class TestAlertsTruthCat(TestAlertsVarCatMixin, CameraCoords, AstrometryStars,
                                  Variability, InstanceCatalog):
             column_outputs = ['uniqueId', 'chipName', 'dmagAlert', 'magAlert']
+
+            camera = obs_lsst_phosim.PhosimMapper().camera
 
             @compound('delta_umag', 'delta_gmag', 'delta_rmag',
                       'delta_imag', 'delta_zmag', 'delta_ymag')
@@ -422,13 +418,14 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 obs = obs_dict[alert_data['obshistId'][i_obj]]
 
-                chipname = chipNameFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
-                                                 pm_ra=self.pmra_truth[obj_dex],
-                                                 pm_dec=self.pmdec_truth[obj_dex],
-                                                 parallax=self.px_truth[obj_dex],
-                                                 v_rad=self.vrad_truth[obj_dex],
-                                                 obs_metadata=obs,
-                                                 band=obs.bandpass)
+
+                chipname = chipNameFromRaDec(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                             pm_ra=self.pmra_truth[obj_dex],
+                                             pm_dec=self.pmdec_truth[obj_dex],
+                                             parallax=self.px_truth[obj_dex],
+                                             v_rad=self.vrad_truth[obj_dex],
+                                             obs_metadata=obs,
+                                             camera=self.camera)
 
                 chipnum = int(chipname.replace('R', '').replace('S', '').
                               replace(' ', '').replace(';', '').replace(',', '').
@@ -436,13 +433,13 @@ class AlertDataGeneratorTestCase(unittest.TestCase):
 
                 self.assertEqual(chipnum, alert_data['chipNum'][i_obj])
 
-                xpix, ypix = pixelCoordsFromRaDecLSST(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
-                                                      pm_ra=self.pmra_truth[obj_dex],
-                                                      pm_dec=self.pmdec_truth[obj_dex],
-                                                      parallax=self.px_truth[obj_dex],
-                                                      v_rad=self.vrad_truth[obj_dex],
-                                                      obs_metadata=obs,
-                                                      band=obs.bandpass)
+                xpix, ypix = pixelCoordsFromRaDec(self.ra_truth[obj_dex], self.dec_truth[obj_dex],
+                                                  pm_ra=self.pmra_truth[obj_dex],
+                                                  pm_dec=self.pmdec_truth[obj_dex],
+                                                  parallax=self.px_truth[obj_dex],
+                                                  v_rad=self.vrad_truth[obj_dex],
+                                                  obs_metadata=obs,
+                                                  camera=self.camera)
 
                 self.assertAlmostEqual(alert_data['xPix'][i_obj], xpix, 4)
                 self.assertAlmostEqual(alert_data['yPix'][i_obj], ypix, 4)

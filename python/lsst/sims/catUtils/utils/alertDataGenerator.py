@@ -6,6 +6,7 @@ from collections import OrderedDict
 import time
 import gc
 from lsst.utils import getPackageDir
+import lsst.obs.lsst.phosim as obs_lsst_phosim
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import trixelFromHtmid, getAllTrixels
 from lsst.sims.utils import levelFromHtmid, halfSpaceFromRaDec
@@ -13,15 +14,15 @@ from lsst.sims.utils import angularSeparation, ObservationMetaData
 from lsst.sims.utils import arcsecFromRadians
 from lsst.sims.catUtils.utils import _baseLightCurveCatalog
 from lsst.sims.utils import _pupilCoordsFromRaDec
-from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
-from lsst.sims.coordUtils import pixelCoordsFromPupilCoordsLSST
+from lsst.sims.coordUtils import chipNameFromPupilCoords
+from lsst.sims.coordUtils import pixelCoordsFromPupilCoords
 
 from lsst.sims.catalogs.decorators import compound, cached
 from lsst.sims.photUtils import BandpassDict, Sed, calcSNR_m5
 from lsst.sims.photUtils import PhotometricParameters
 from lsst.sims.catUtils.mixins import VariabilityStars, AstrometryStars
 from lsst.sims.catUtils.mixins import VariabilityGalaxies, AstrometryGalaxies
-from lsst.sims.catUtils.mixins import CameraCoordsLSST, PhotometryBase
+from lsst.sims.catUtils.mixins import CameraCoords, PhotometryBase
 from lsst.sims.catUtils.mixins import ParametrizedLightCurveMixin
 from lsst.sims.catUtils.mixins import create_variability_cache
 
@@ -220,7 +221,9 @@ class AgnAlertDBObj(GalaxyAgnObj):
         return results
 
 
-class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog):
+class _baseAlertCatalog(PhotometryBase, CameraCoords, _baseLightCurveCatalog):
+
+    camera = obs_lsst_phosim.PhosimMapper().camera
 
     column_outputs = ['htmid', 'uniqueId', 'raICRS', 'decICRS',
                       'flux', 'SNR', 'dflux',
@@ -309,9 +312,9 @@ class _baseAlertCatalog(PhotometryBase, CameraCoordsLSST, _baseLightCurveCatalog
         xpup = self.column_by_name('x_pupil')
         ypup = self.column_by_name('y_pupil')
         chip_name = self.column_by_name('chipName')
-        xpix, ypix = pixelCoordsFromPupilCoordsLSST(xpup, ypup, chipName=chip_name,
-                                                    band=self.obs_metadata.bandpass,
-                                                    includeDistortion=True)
+        xpix, ypix = pixelCoordsFromPupilCoords(xpup, ypup, chipName=chip_name,
+                                                includeDistortion=True,
+                                                camera=self.camera)
         return np.array([xpix, ypix])
 
     @compound('delta_umag', 'delta_gmag', 'delta_rmag',
@@ -530,6 +533,7 @@ class AlertDataGenerator(object):
         in a unit test.
         """
 
+        self.lsst_camera = obs_lsst_phosim.PhosimMapper().camera
         self._variability_cache = create_variability_cache()
         self._stdout_lock = None
         if not testing:
@@ -858,8 +862,9 @@ class AlertDataGenerator(object):
                 xpup_list[photometrically_valid] = xpup_list_val
                 ypup_list[photometrically_valid] = ypup_list_val
 
-                chip_name_list[photometrically_valid] = chipNameFromPupilCoordsLSST(xpup_list_val,
-                                                                                    ypup_list_val)
+                chip_name_list[photometrically_valid] = chipNameFromPupilCoords(xpup_list_val,
+                                                                     ypup_list_val,
+                                                                     camera=self.lsst_camera)
 
                 for i_chip, name in enumerate(chip_name_list):
                     if name is not None:
@@ -994,11 +999,6 @@ class AlertDataGenerator(object):
             os.mkdir(output_dir)
 
         dummy_sed = Sed()
-
-        # a dummy call to make sure that the initialization
-        # is done before we attempt to parallelize calls
-        # to chipNameFromRaDecLSST
-        chipNameFromPupilCoordsLSST(0.0, 0.0)
 
         mag_names = ('u', 'g', 'r', 'i', 'z', 'y')
 
