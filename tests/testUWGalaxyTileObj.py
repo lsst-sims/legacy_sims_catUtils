@@ -71,11 +71,11 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         with sqlite3.connect(cls._temp_gal_db) as conn:
             c = conn.cursor()
             query = '''CREATE TABLE galaxy(htmid int, id int,
-                       galid text, ra real, dec real, galtag int)'''
+                       galid text, ra real, dec real, galtag int, redshift)'''
             c.execute(query).fetchall()
-            values = ((int(hh), int(ii), str(ii), r, d, int(g)) for hh, ii, r, d, g in
+            values = ((int(hh), int(ii), str(ii), r, d, int(g), 0.5) for hh, ii, r, d, g in
                       zip(htmid_grid, gid, ra_grid, dec_grid, galtag))
-            c.executemany('INSERT INTO galaxy VALUES (?,?,?,?,?,?)', values)
+            c.executemany('INSERT INTO galaxy VALUES (?,?,?,?,?,?,?)', values)
 
     @classmethod
     def tearDownClass(cls):
