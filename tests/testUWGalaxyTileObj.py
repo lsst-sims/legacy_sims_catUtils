@@ -13,7 +13,7 @@ from lsst.sims.utils import xyz_from_ra_dec
 from lsst.sims.utils import ra_dec_from_xyz
 from lsst.sims.utils import angularSeparation
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catUtils.baseCatalogModels import LocalGalaxyModels as LocGal
+from lsst.sims.catUtils.baseCatalogModels import UWGalaxyModels as UWGal
 
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import cached
@@ -97,7 +97,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
 
             expected_galtag = set(int(r[0]) for r in results)
 
-        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+        dbobj = UWGal.UWGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
         obs = ObservationMetaData(pointingRA=34.0, pointingDec=0.0,
                                   boundType='circle',
                                   boundLength=self._tile_radius)
@@ -168,7 +168,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=0.5*(ra1+ra2), pointingDec=0.0,
                                   boundType='circle', boundLength=radius)
 
-        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+        dbobj = UWGal.UWGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
         data_iter = dbobj.query_columns(['galtileid', 'ra', 'dec', 'galtag'],
                                         obs_metadata=obs)
 
@@ -343,7 +343,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra_obs, pointingDec=dec_obs,
                                   boundType='circle', boundLength=radius)
 
-        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+        dbobj = UWGal.UWGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
         data_iter = dbobj.query_columns(['galtileid', 'ra', 'dec', 'galtag'],
                                         obs_metadata=obs)
 
@@ -429,7 +429,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=34.0, pointingDec=44.0,
                                   boundType='circle', boundLength=3.0)
 
-        dbobj = LocGal.LocalGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
+        dbobj = UWGal.UWGalaxyTileObj(database=self._temp_gal_db, driver='sqlite')
 
         cat = LocalGalDummyICat(dbobj, obs_metadata=obs)
         scratch_dir = tempfile.mkdtemp(dir=ROOT, prefix='local_gal')
