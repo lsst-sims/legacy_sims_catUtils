@@ -80,7 +80,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         if os.path.isdir(cls._tmpdir):
-            shutil.rmtree(cls._tmpdir)
+            shutil.rmtree(cls._tmpdir, ignore_errors=True)
 
 
     def test_equatorial_tile(self):
