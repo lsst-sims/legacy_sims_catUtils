@@ -683,7 +683,7 @@ class MLTflaringMixin(Variability):
 
     def _process_mlt_class(self, lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                            flux_arr_dict, flux_factor, ebv, mlt_dust_lookup, base_fluxes,
-                           base_mags, mag_name_tuple, output_dict):
+                           base_mags, mag_name_tuple, output_dict, do_mags):
 
         ss = Sed()
 
@@ -699,7 +699,9 @@ class MLTflaringMixin(Variability):
             n_obj = len(use_this_lc)
             n_time = len(expmjd)
             t_interp = np.ones(shape=(n_obj, n_time))*expmjd
-            t_interp += np.array([[tt]*n_time for tt in params['t0'][use_this_lc].astype(float)])
+            t0_arr = params['t0'][use_this_lc].astype(float)
+            for i_obj in range(n_obj):
+                t_interp[i_obj,:] += t0_arr[i_obj]
 
         bad_dexes = np.where(t_interp>max_time)
         while len(bad_dexes[0])>0:
@@ -712,39 +714,47 @@ class MLTflaringMixin(Variability):
 
                 flux_arr = flux_arr_dict[mag_name]
 
+                t_pre_interp = time.time()
                 dflux = np.interp(t_interp, time_arr, flux_arr)
+                self.t_spent_interp+=time.time()-t_pre_interp
 
                 if isinstance(expmjd, numbers.Number):
                     dflux *= flux_factor[use_this_lc]
                 else:
-                    dflux *= np.array([flux_factor[use_this_lc]]*n_time).transpose()
+                    for i_obj in range(n_obj):
+                        dflux[i_obj,:] *= flux_factor[use_this_lc[i_obj]]
 
                 dust_factor = np.interp(ebv[use_this_lc],
                                         mlt_dust_lookup['ebv'],
                                         mlt_dust_lookup[mag_name])
 
                 if not isinstance(expmjd, numbers.Number):
-                    dust_factor = np.array([dust_factor]*n_time).transpose()
-
-                dflux *= dust_factor
-
-                if isinstance(expmjd, numbers.Number):
-                    local_base_fluxes = base_fluxes[mag_name][use_this_lc]
-                    local_base_mags = base_mags[mag_name][use_this_lc]
+                    for i_obj in range(n_obj):
+                        dflux[i_obj,:] *= dust_factor[i_obj]
                 else:
-                    local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
-                    local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
+                    dflux *= dust_factor
 
-                dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
+                if do_mags:
+                    if isinstance(expmjd, numbers.Number):
+                        local_base_fluxes = base_fluxes[mag_name][use_this_lc]
+                        local_base_mags = base_mags[mag_name][use_this_lc]
+                    else:
+                        local_base_fluxes = np.array([base_fluxes[mag_name][use_this_lc]]*n_time).transpose()
+                        local_base_mags = np.array([base_mags[mag_name][use_this_lc]]*n_time).transpose()
 
-                local_output_dict[i_mag]=dmag
+                    dmag = ss.magFromFlux(local_base_fluxes + dflux) - local_base_mags
+
+                    local_output_dict[i_mag]=dmag
+                else:
+                    local_output_dict[i_mag]=dflux
 
             output_dict[lc_name_raw] = {'dex':use_this_lc, 'dmag':local_output_dict}
 
     @register_method('MLT')
     def applyMLTflaring(self, valid_dexes, params, expmjd,
                         parallax=None, ebv=None, quiescent_mags=None,
-                        variability_cache=None):
+                        variability_cache=None, do_mags=True,
+                        mag_name_tuple=('u','g','r','i','z','y')):
         """
         parallax, ebv, and quiescent_mags are optional kwargs for use if you are
         calling this method outside the context of an InstanceCatalog (presumably
@@ -756,8 +766,14 @@ class MLTflaringMixin(Variability):
 
         quiescent_mags is a dict keyed on ('u', 'g', 'r', 'i', 'z', 'y')
         with the quiescent magnitudes of the objects
-        """
 
+        do_mags is a boolean; if True, return delta_magnitude;
+        if False, return delta_flux
+
+        mag_name_tuple is a tuple indicating which magnitudes should actually
+        be simulated
+        """
+        self.t_spent_interp = 0.0
         t_start = time.time()
         if not hasattr(self, '_total_t_MLT'):
             self._total_t_MLT = 0.0
@@ -862,12 +878,12 @@ class MLTflaringMixin(Variability):
 
         flux_factor = 1.0/sphere_area
 
+        n_mags = len(mag_name_tuple)
         if isinstance(expmjd, numbers.Number):
-            dMags = np.zeros((6, self.num_variable_obj(params)))
+            dMags = np.zeros((n_mags, self.num_variable_obj(params)))
         else:
-            dMags = np.zeros((6, self.num_variable_obj(params), len(expmjd)))
+            dMags = np.zeros((n_mags, self.num_variable_obj(params), len(expmjd)))
 
-        mag_name_tuple = ('u', 'g', 'r', 'i', 'z', 'y')
         base_fluxes = {}
         base_mags = {}
         ss = Sed()
@@ -963,7 +979,7 @@ class MLTflaringMixin(Variability):
 
             self._process_mlt_class(lc_name_raw, lc_name_arr, lc_dex_arr, expmjd, params, time_arr, max_time, dt,
                                     flux_arr_dict, flux_factor, ebv, self._mlt_dust_lookup,
-                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict)
+                                    base_fluxes, base_mags, mag_name_tuple, dmag_master_dict, do_mags)
 
             t_work += time.time() - t_before_work
 
@@ -1183,16 +1199,17 @@ class ParametrizedLightCurveMixin(Variability):
             delta_flux = np.float(delta_flux)
         return quiescent_flux, delta_flux
 
-    @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
-    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
-                                    variability_cache=None):
+    def singleBandParametrizedLightCurve(self, valid_dexes, params, expmjd,
+                                         variability_cache=None):
+        """
+        Apply the parametrized light curve model, but just return one
+        d_magnitude array.  This works because the parametrized
+        light curve model does not cause colors to vary.
+        """
 
         t_start = time.time()
         if not hasattr(self, '_total_t_param_lc'):
             self._total_t_param_lc = 0.0
-
-        if len(params) == 0:
-            return np.array([[], [], [], [], [], []])
 
         n_obj = self.num_variable_obj(params)
 
@@ -1215,12 +1232,12 @@ class ParametrizedLightCurveMixin(Variability):
         if isinstance(expmjd, numbers.Number):
             mjd_is_number = True
             n_t = 1
-            d_mag_out = np.zeros((6, n_obj))
+            d_mag_out = np.zeros(n_obj, dtype=float)
             lc_time = expmjd - params['t0'].astype(float)
         else:
             mjd_is_number = False
             n_t = len(expmjd)
-            d_mag_out = np.zeros((6, n_obj, n_t))
+            d_mag_out = np.zeros((n_obj, n_t), dtype=float)
             t0_float = params['t0'].astype(float)
             lc_time = np.zeros(n_t*n_obj)
             i_start = 0
@@ -1273,14 +1290,12 @@ class ParametrizedLightCurveMixin(Variability):
 
             # t_before = time.time()
             if mjd_is_number:
-                for i_filter in range(6):
-                    d_mag_out[i_filter][use_this_lc] = d_mag
+                d_mag_out[use_this_lc] = d_mag
             else:
                 for i_obj in range(len(use_this_lc)//n_t):
                     i_start = i_obj*n_t
                     obj_dex = use_this_lc_unq[i_obj]
-                    for i_filter in range(6):
-                        d_mag_out[i_filter][obj_dex] = d_mag[i_start:i_start+n_t]
+                    d_mag_out[obj_dex] = d_mag[i_start:i_start+n_t]
 
             # t_assign += time.time()-t_before
 
@@ -1292,6 +1307,30 @@ class ParametrizedLightCurveMixin(Variability):
 
         # print('param time %.2e use this %.2e' % (time.time()-t_start, t_use_this))
         self._total_t_param_lc += time.time()-t_start
+
+        return d_mag_out
+
+    @register_method('kplr')  # this 'kplr' tag derives from the fact that default light curves come from Kepler
+    def applyParametrizedLightCurve(self, valid_dexes, params, expmjd,
+                                    variability_cache=None):
+
+        if len(params) == 0:
+            return np.array([[], [], [], [], [], []])
+
+        n_obj = self.num_variable_obj(params)
+        if isinstance(expmjd, numbers.Number):
+            mjd_is_number = True
+            d_mag_out = np.zeros((6, n_obj), dtype=float)
+        else:
+            mjd_is_number = False
+            n_t = len(expmjd)
+            d_mag_out = np.zeros((6, n_obj, n_t), dtype=float)
+
+        d_mag = self.singleBandParametrizedLightCurve(valid_dexes, params, expmjd,
+                                                      variability_cache=variability_cache)
+
+        for i_filter in range(6):
+            d_mag_out[i_filter] = np.copy(d_mag)
 
         return d_mag_out
 

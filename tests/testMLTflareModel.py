@@ -360,6 +360,39 @@ class MLT_flare_test_case(unittest.TestCase):
                     else:
                         self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
 
+        # test that delta_flux is correctly calculated
+        delta_flux_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                    parallax=parallax,
+                                                    ebv=ebv,
+                                                    quiescent_mags=quiescent_mags,
+                                                    do_mags=False)
+
+        self.assertEqual(delta_flux_vector.shape, delta_mag_vector.shape)
+
+        dummy_sed = Sed()
+        for i_band in range(6):
+            if i_band>=2:
+                # because we only implemented models of variability for u, g
+                np.testing.assert_array_equal(delta_flux_vector[i_band],
+                                              np.zeros(delta_flux_vector[i_band].shape, dtype=float))
+                continue
+            for i_obj in range(n_obj):
+                mag0 = quiescent_mags['ug'[i_band]][i_obj]
+                flux0 = dummy_sed.fluxFromMag(mag0)
+                delta_flux_control = dummy_sed.fluxFromMag(mag0 + delta_mag_vector[i_band][i_obj])-flux0
+                err = np.abs(delta_flux_vector[i_band][i_obj]-delta_flux_control)/np.abs(delta_flux_control)
+                self.assertLess(err.max(), 1.0e-10)
+
+        # test fluxes on just one mjd
+        delta_flux_single_time = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr[3],
+                                                         parallax=parallax,
+                                                         ebv=ebv,
+                                                         quiescent_mags=quiescent_mags,
+                                                         do_mags=False)
+
+        self.assertEqual(delta_flux_single_time.shape, (6, n_obj))
+        np.testing.assert_array_equal(delta_flux_single_time, delta_flux_vector[:,:,3])
+
     def test_MLT_many_mjd_some_invalid(self):
         """
         This test will verify that applyMLTflaring responds properly when given
@@ -457,6 +490,133 @@ class MLT_flare_test_case(unittest.TestCase):
                                          delta_g[i_time*n_obj + i_obj])
                     else:
                         self.assertEqual(delta_mag_vector[i_band][i_obj][i_time], 0.0)
+
+        # test that delta_flux is correctly calculated
+        delta_flux_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                    parallax=parallax,
+                                                    ebv=ebv,
+                                                    quiescent_mags=quiescent_mags,
+                                                    do_mags=False)
+
+        self.assertEqual(delta_flux_vector.shape, delta_mag_vector.shape)
+
+        dummy_sed = Sed()
+        for i_band in range(6):
+            if i_band>=2:
+                # because we only implemented models of variability for u, g
+                np.testing.assert_array_equal(delta_flux_vector[i_band],
+                                              np.zeros(delta_flux_vector[i_band].shape, dtype=float))
+                continue
+            for i_obj in range(n_obj):
+                mag0 = quiescent_mags['ug'[i_band]][i_obj]
+                flux0 = dummy_sed.fluxFromMag(mag0)
+                delta_flux_control = dummy_sed.fluxFromMag(mag0 + delta_mag_vector[i_band][i_obj])-flux0
+                denom = np.abs(delta_flux_control)
+                denom = np.where(denom>0.0, denom, 1.0e-20)
+                err = np.abs(delta_flux_vector[i_band][i_obj]-delta_flux_control)/denom
+                self.assertLess(err.max(), 1.0e-10)
+
+    def test_selective_MLT_magnitudes(self):
+        """
+        This test will verify that applyMLTflaring responds correctly
+        when mag_name_tuple is set to simulate only a subset of bandpasses
+        """
+        rng =np.random.RandomState(87124)
+        n_stars = 1000
+        n_time = 5
+        quiescent_mags = {}
+        quiescent_mags['u'] = rng.random_sample(n_stars)*5.0+17.0
+        quiescent_mags['g'] = rng.random_sample(n_stars)*5.0+17.0
+        ebv = rng.random_sample(n_stars)*4.0
+        parallax = rng.random_sample(n_stars)*np.radians(0.001/3600.0)
+
+        available_lc = np.array(['lc_1', 'lc_2'])
+
+        params = {}
+        params['lc'] = rng.choice(available_lc, size=n_stars)
+        params['t0'] = rng.random_sample(n_stars)*1000.0
+        mjd_arr = rng.random_sample(n_time)*500.0*59580.0
+
+        mlt_obj = MLTflaringMixin()
+        mlt_obj.photParams = PhotometricParameters()
+        mlt_obj.lsstBandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
+        mlt_obj._mlt_lc_file = self.mlt_lc_name
+        mlt_obj._actually_calculated_columns = ['delta_lsst_u', 'delta_lsst_g']
+        valid_dex = [] # applyMLT does not actually use valid_dex; it looks for non-None params['lc']
+        valid_obj = rng.choice(np.arange(n_stars, dtype=int), size=50)
+        for ix in range(n_stars):
+            if ix not in valid_obj:
+                params['lc'][ix] = None
+        delta_mag_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                   parallax=parallax,
+                                                   ebv=ebv,
+                                                   quiescent_mags=quiescent_mags)
+        n_time = len(mjd_arr)
+        self.assertEqual(delta_mag_vector.shape, (6, n_stars, n_time))
+
+        # test that delta_flux is correctly calculated
+        delta_flux_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                    parallax=parallax,
+                                                    ebv=ebv,
+                                                    quiescent_mags=quiescent_mags,
+                                                    do_mags=False)
+
+        self.assertEqual(delta_flux_vector.shape, delta_mag_vector.shape)
+
+        dummy_sed = Sed()
+        for i_band in range(6):
+            if i_band>=2:
+                # because we only implemented models of variability for u, g
+                np.testing.assert_array_equal(delta_flux_vector[i_band],
+                                              np.zeros(delta_flux_vector[i_band].shape, dtype=float))
+                continue
+            for i_obj in range(n_stars):
+                mag0 = quiescent_mags['ug'[i_band]][i_obj]
+                flux0 = dummy_sed.fluxFromMag(mag0)
+                delta_flux_control = dummy_sed.fluxFromMag(mag0 + delta_mag_vector[i_band][i_obj])-flux0
+                denom = np.abs(delta_flux_control)
+                denom = np.where(denom>0.0, denom, 1.0e-20)
+                err = np.abs(delta_flux_vector[i_band][i_obj]-delta_flux_control)/denom
+                self.assertLess(err.max(), 1.0e-6)
+
+        # see that we get the same results as before when we request a subset
+        # of magnitudes
+
+        test_mag_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                  parallax=parallax,
+                                                  ebv=ebv,
+                                                  quiescent_mags=quiescent_mags,
+                                                  mag_name_tuple=('g','i'))
+
+
+        non_zero = np.where(test_mag_vector[0]<0.0)
+        self.assertGreater(len(non_zero[0]), 0)
+
+        np.testing.assert_array_equal(test_mag_vector[0],
+                                      delta_mag_vector[1])
+
+        np.testing.assert_array_equal(test_mag_vector[1],
+                                      delta_mag_vector[3])
+
+
+        test_flux_vector = mlt_obj.applyMLTflaring(valid_dex, params, mjd_arr,
+                                                   parallax=parallax,
+                                                   ebv=ebv,
+                                                   quiescent_mags=quiescent_mags,
+                                                   do_mags=False,
+                                                   mag_name_tuple=('u','z','g'))
+
+        non_zero = np.where(test_flux_vector[2]>0.0)
+        self.assertGreater(len(non_zero[0]), 0)
+
+        np.testing.assert_array_equal(test_flux_vector[0],
+                                      delta_flux_vector[0])
+
+        np.testing.assert_array_equal(test_flux_vector[1],
+                                      delta_flux_vector[4])
+
+        np.testing.assert_array_equal(test_flux_vector[2],
+                                      delta_flux_vector[1])
 
     def test_mlt_clean_up(self):
         """

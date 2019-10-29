@@ -1,5 +1,6 @@
 import warnings
 import numpy
+import copy
 from .BaseCatalogModels import BaseCatalogObj
 from lsst.sims.catalogs.db import ChunkIterator, CompoundCatalogDBObject
 from lsst.sims.utils import ObservationMetaData
@@ -231,11 +232,12 @@ class GalaxyTileObj(BaseCatalogObj):
         # CompoundInstanceCatalog and CompoundDBObject classes, which
         # mangle column names such that they include the objid of the
         # specific CatalogDBObject that is asking for them.
-        for name in colnames:
+        query_colnames = copy.deepcopy(colnames)
+        for name in query_colnames:
             if 'galtileid' in name:
-                colnames.remove(name)
+                query_colnames.remove(name)
 
-        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in colnames]
+        mappedcolnames = ["%s as %s"%(self.columnMap[x], x) for x in query_colnames]
         mappedcolnames = ",".join(mappedcolnames)
 
         if obs_metadata is not None and obs_metadata.bounds is not None:

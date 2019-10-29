@@ -1,0 +1,9 @@
+# from the overview paper
+# table 2; take m5 row and add Delta m5 row
+# to get down to airmass 1.2
+u 23.57
+g 24.65
+r 24.21
+i 23.79
+z 23.21
+y 22.31
