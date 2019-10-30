@@ -18,6 +18,7 @@ from lsst.sims.catUtils.baseCatalogModels import UWGalaxyModels as UWGal
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catalogs.decorators import cached
 
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -79,6 +80,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         if os.path.isdir(cls._tmpdir):
             shutil.rmtree(cls._tmpdir, ignore_errors=True)
 
