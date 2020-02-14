@@ -173,6 +173,7 @@ class SNFunctionality(InstanceCatalog, EBVmixin, CosmologyMixin, SNUniverse):
                     if self.mjdobs > snobject.maxtime() or self.mjdobs < snobject.mintime():
                         magNorms[i] = np.nan
                         fnames[i] = None
+                        continue
 
                 # SED in rest frame
                 sed = snobject.SNObjectSourceSED(time=self.mjdobs)
