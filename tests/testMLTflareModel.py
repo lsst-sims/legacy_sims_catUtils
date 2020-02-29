@@ -6,7 +6,9 @@ import sqlite3
 import json
 import tempfile
 import shutil
-from astropy.modeling.blackbody import blackbody_lambda
+from astropy import units as u
+from astropy.modeling import models
+
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 from lsst.utils.tests import getTempFilePath
@@ -165,7 +167,8 @@ class MLT_flare_test_case(unittest.TestCase):
         baseline_fluxes = bp_dict.fluxListForSedList(sed_list)
 
         bb_wavelen = np.arange(100.0, 1600.0, 0.1)
-        bb_flambda = blackbody_lambda(bb_wavelen*10.0, 9000.0)
+        bb = models.BlackBody(temperature=9000.0 * u.K, scale=1.0 * u.erg / (u.cm ** 2 * u.AA * u.s * u.sr))
+        bb_flambda = bb(bb_wavelen * u.nm).to_value()
 
         # this data is taken from the setUpClass() classmethod above
         t0_list = [456.2, 41006.2, 117.2, 10456.2]
@@ -752,7 +755,8 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
         baseline_fluxes = bp_dict.fluxListForSedList(sed_list)
 
         bb_wavelen = np.arange(100.0, 1600.0, 0.1)
-        bb_flambda = blackbody_lambda(bb_wavelen*10.0, 9000.0)
+        bb = models.BlackBody(temperature=9000.0 * u.K, scale=1.0 * u.erg / (u.cm ** 2 * u.AA * u.s * u.sr))
+        bb_flambda = bb(bb_wavelen * u.nm).to_value()
 
         # this data is taken from the setUpClass() classmethod above
         t0_list = [456.2, 41006.2, 117.2, 10456.2]
@@ -1015,7 +1019,8 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
         baseline_fluxes = bp_dict.fluxListForSedList(sed_list)
 
         bb_wavelen = np.arange(100.0, 1600.0, 0.1)
-        bb_flambda = blackbody_lambda(bb_wavelen*10.0, 9000.0)
+        bb = models.BlackBody(temperature=9000.0 * u.K, scale=1.0 * u.erg / (u.cm ** 2 * u.AA * u.s * u.sr))
+        bb_flambda = bb(bb_wavelen * u.nm).to_value()
 
         # this data is taken from the setUpClass() classmethod above
         t0_list = [456.2, 41006.2, 117.2, 10456.2]
