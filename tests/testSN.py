@@ -26,7 +26,7 @@ import shutil
 
 # External packages used
 # import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import sncosmo
 import astropy
 
@@ -88,7 +88,7 @@ class SNObject_tests(unittest.TestCase):
         print('===============================')
         print('===============================')
         # A range of wavelengths in Ang
-        self.wave = np.arange(3000., 12000., 50.)
+        self.wave = np.arange(3500., 12000., 50.)
         # Equivalent wavelenths in nm
         self.wavenm = self.wave / 10.
         # Time to be used as Peak
@@ -213,7 +213,7 @@ class SNObject_tests(unittest.TestCase):
         sncosmo_r = self.SNCosmoModel.bandflux(band=self.SNCosmoBP,
                                                time=times, zpsys='ab',
                                                zp=0.)
-        np.testing.assert_allclose(sncosmo_r, catsim_r)
+        np.testing.assert_allclose(sncosmo_r, catsim_r, rtol=1.0e-4)
 
     def test_CompareBandMags2SNCosmo(self):
         """
@@ -227,7 +227,7 @@ class SNObject_tests(unittest.TestCase):
             time=times)
         sncosmo_r = self.SNCosmoModel.bandmag(band=self.SNCosmoBP,
                                               time=times, magsys='ab')
-        np.testing.assert_allclose(sncosmo_r, catsim_r)
+        np.testing.assert_allclose(sncosmo_r, catsim_r, rtol=1.0e-5)
 
     def test_CompareExtinctedSED2SNCosmo(self):
         """
@@ -241,7 +241,6 @@ class SNObject_tests(unittest.TestCase):
 
         SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) \
             * 10.
-
         np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
                                    rtol=1.0e-7)
 
@@ -259,7 +258,7 @@ class SNObject_tests(unittest.TestCase):
 
         SNObjectFluxDensity = unextincted_sed.flambda
         np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
-                                   rtol=1.0e-7)
+                                   rtol=1.0e-4)
 
     def test_redshift(self):
         """
