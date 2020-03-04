@@ -88,7 +88,7 @@ class SNObject_tests(unittest.TestCase):
         print('===============================')
         print('===============================')
         # A range of wavelengths in Ang
-        self.wave = np.arange(3500., 12000., 50.)
+        self.wave = np.arange(3000., 12000., 50.)
         # Equivalent wavelenths in nm
         self.wavenm = self.wave / 10.
         # Time to be used as Peak
@@ -239,9 +239,9 @@ class SNObject_tests(unittest.TestCase):
         SNObjectSED = self.SN_extincted.SNObjectSED(time=self.mjdobs,
                                                     wavelen=self.wavenm)
 
-        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) \
+        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave[10:]) \
             * 10.
-        np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
+        np.testing.assert_allclose(SNObjectSED.flambda[10:], SNCosmoSED,
                                    rtol=1.0e-7)
 
     def test_CompareUnextinctedSED2SNCosmo(self):
@@ -250,13 +250,13 @@ class SNObject_tests(unittest.TestCase):
         is mereley a sanity check as SNObject uses SNCosmo under the hood.
         """
 
-        SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave,
+        SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave[10:],
                                                 time=self.mjdobs) * 10.
 
         unextincted_sed = self.SN_blank.SNObjectSED(time=self.mjdobs,
                                                     wavelen=self.wavenm)
 
-        SNObjectFluxDensity = unextincted_sed.flambda
+        SNObjectFluxDensity = unextincted_sed.flambda[10:]
         np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
                                    rtol=1.0e-4)
 
