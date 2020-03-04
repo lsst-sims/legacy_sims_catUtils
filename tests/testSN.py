@@ -26,7 +26,7 @@ import shutil
 
 # External packages used
 # import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import sncosmo
 import astropy
 
@@ -213,7 +213,7 @@ class SNObject_tests(unittest.TestCase):
         sncosmo_r = self.SNCosmoModel.bandflux(band=self.SNCosmoBP,
                                                time=times, zpsys='ab',
                                                zp=0.)
-        np.testing.assert_allclose(sncosmo_r, catsim_r)
+        np.testing.assert_allclose(sncosmo_r, catsim_r, rtol=1.0e-4)
 
     def test_CompareBandMags2SNCosmo(self):
         """
@@ -227,7 +227,7 @@ class SNObject_tests(unittest.TestCase):
             time=times)
         sncosmo_r = self.SNCosmoModel.bandmag(band=self.SNCosmoBP,
                                               time=times, magsys='ab')
-        np.testing.assert_allclose(sncosmo_r, catsim_r)
+        np.testing.assert_allclose(sncosmo_r, catsim_r, rtol=1.0e-5)
 
     def test_CompareExtinctedSED2SNCosmo(self):
         """
@@ -239,10 +239,9 @@ class SNObject_tests(unittest.TestCase):
         SNObjectSED = self.SN_extincted.SNObjectSED(time=self.mjdobs,
                                                     wavelen=self.wavenm)
 
-        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave) \
+        SNCosmoSED = self.SNCosmoModel.flux(time=self.mjdobs, wave=self.wave[10:]) \
             * 10.
-
-        np.testing.assert_allclose(SNObjectSED.flambda, SNCosmoSED,
+        np.testing.assert_allclose(SNObjectSED.flambda[10:], SNCosmoSED,
                                    rtol=1.0e-7)
 
     def test_CompareUnextinctedSED2SNCosmo(self):
@@ -251,15 +250,15 @@ class SNObject_tests(unittest.TestCase):
         is mereley a sanity check as SNObject uses SNCosmo under the hood.
         """
 
-        SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave,
+        SNCosmoFluxDensity = self.SN_blank.flux(wave=self.wave[10:],
                                                 time=self.mjdobs) * 10.
 
         unextincted_sed = self.SN_blank.SNObjectSED(time=self.mjdobs,
                                                     wavelen=self.wavenm)
 
-        SNObjectFluxDensity = unextincted_sed.flambda
+        SNObjectFluxDensity = unextincted_sed.flambda[10:]
         np.testing.assert_allclose(SNCosmoFluxDensity, SNObjectFluxDensity,
-                                   rtol=1.0e-7)
+                                   rtol=1.0e-4)
 
     def test_redshift(self):
         """
