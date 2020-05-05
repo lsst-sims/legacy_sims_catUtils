@@ -7,12 +7,9 @@ setupRequired(sims_coordUtils)
 setupRequired(sims_photUtils)
 setupRequired(sims_data)
 setupRequired(palpy)
-setupRequired(python)
 setupRequired(pymssql)
 setupRequired(daf_persistence)
 setupRequired(sncosmo)
-setupRequired(astropy)
-setupRequired(sqlalchemy)
 
 setupOptional(obs_lsstSim)
 
