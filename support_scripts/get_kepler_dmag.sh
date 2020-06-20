@@ -2,11 +2,11 @@
 
 # these variables indicate from where to download the
 # light curves
-data_url=https://lsst-web.ncsa.illinois.edu/
+data_url=https://lsst.ncsa.illinois.edu/
 data_dir=sim-data/parametrized_light_curves/
 data_file=kplr_dmag_171204.txt
 
-curl -O ${data_url}${data_dir}${data_file}
+curl -LO ${data_url}${data_dir}${data_file}
 
 # this is the directory where the light curve file
 # will be stored
