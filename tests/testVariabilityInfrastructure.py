@@ -191,7 +191,7 @@ class VariabilityDesignTest(unittest.TestCase):
     def tearDownClass(cls):
         sims_clean_up()
         if os.path.exists(cls.scratch_dir):
-            shutil.rmtree(cls.scratch_dir)
+            shutil.rmtree(cls.scratch_dir, ignore_errors=True)
 
     def setUp(self):
         self.starDB = myTestStars(database=self.starDbName)

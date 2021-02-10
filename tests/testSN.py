@@ -427,7 +427,7 @@ class SNIaCatalog_tests(unittest.TestCase):
         if os.path.exists(cls.fullCatalog):
             os.unlink(cls.fullCatalog)
         if os.path.exists(cls.scratchDir):
-            shutil.rmtree(cls.scratchDir)
+            shutil.rmtree(cls.scratchDir, ignore_errors=True)
 
     def test_writingfullCatalog(self):
         """
@@ -658,7 +658,7 @@ class SNIaLightCurveTest(unittest.TestCase):
         if os.path.exists(cls.input_cat_name):
             os.unlink(cls.input_cat_name)
         if os.path.exists(cls.scratchDir):
-            shutil.rmtree(cls.scratchDir)
+            shutil.rmtree(cls.scratchDir, ignore_errors=True)
 
     def test_sne_light_curves(self):
         """

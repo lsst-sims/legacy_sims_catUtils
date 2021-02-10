@@ -130,7 +130,7 @@ class MLT_flare_test_case(unittest.TestCase):
             os.unlink(cls.db_name)
 
         if os.path.exists(cls.scratch_dir):
-            shutil.rmtree(cls.scratch_dir)
+            shutil.rmtree(cls.scratch_dir, ignore_errors=True)
 
     def test_flare_lc_failure(self):
         """
@@ -734,7 +734,7 @@ class MLT_flare_mixed_with_none_model_test_case(unittest.TestCase):
             os.unlink(cls.db_name)
 
         if os.path.exists(cls.scratch_dir):
-            shutil.rmtree(cls.scratch_dir)
+            shutil.rmtree(cls.scratch_dir, ignore_errors=True)
 
     def test_flare_magnitudes_mixed_with_none(self):
         """
@@ -998,7 +998,7 @@ class MLT_flare_mixed_with_dummy_model_test_case(unittest.TestCase):
             os.unlink(cls.dummy_lc_name)
 
         if os.path.exists(cls.scratch_dir):
-            shutil.rmtree(cls.scratch_dir)
+            shutil.rmtree(cls.scratch_dir, ignore_errors=True)
 
     def test_flare_magnitudes_mixed_with_dummy(self):
         """

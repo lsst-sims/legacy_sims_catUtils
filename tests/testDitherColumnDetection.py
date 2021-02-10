@@ -8,7 +8,6 @@ import tempfile
 import shutil
 
 import lsst.utils.tests
-from lsst.utils import getPackageDir
 from lsst.sims.catUtils.utils import ObservationMetaDataGenerator
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 
@@ -32,7 +31,7 @@ class ObsMetaDataGenDitherTestClass(unittest.TestCase):
         if os.path.exists(cls.fake_db_name):
             os.unlink(cls.fake_db_name)
         if os.path.exists(cls.scratch_space):
-            shutil.rmtree(cls.scratch_space)
+            shutil.rmtree(cls.scratch_space, ignore_errors=True)
 
     @classmethod
     def setUpClass(cls):

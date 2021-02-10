@@ -133,7 +133,7 @@ class StellarLightCurveTest(unittest.TestCase):
         if os.path.exists(cls.txt_name):
             os.unlink(cls.txt_name)
         if os.path.exists(cls.scratchDir):
-            shutil.rmtree(cls.scratchDir)
+            shutil.rmtree(cls.scratchDir, ignore_errors=True)
 
     def test_get_pointings(self):
         """
