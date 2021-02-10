@@ -3,7 +3,6 @@ import os
 import shutil
 import tempfile
 import lsst.utils.tests
-from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catUtils.baseCatalogModels import (GalaxyBulgeObj, GalaxyDiskObj,
@@ -64,7 +63,7 @@ class CompoundCatalogTest(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(self.baseDir):
-            shutil.rmtree(self.baseDir)
+            shutil.rmtree(self.baseDir, ignore_errors=True)
 
     @unittest.skipIf(not _testCompoundCatalogs_is_connected,
                      "We are not connected to fatboy")

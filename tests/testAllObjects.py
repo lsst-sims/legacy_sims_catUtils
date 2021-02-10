@@ -11,10 +11,8 @@ import tempfile
 import shutil
 import lsst.utils.tests
 
-from lsst.utils import getPackageDir
 from lsst.sims.catalogs.db import CatalogDBObject
 from lsst.sims.catalogs.definitions import InstanceCatalog
-from lsst.sims.catUtils.exampleCatalogDefinitions import ObsStarCatalogBase
 from lsst.sims.catUtils.utils import failedOnFatboy
 # The following is to get the object ids in the registry
 import lsst.sims.catUtils.baseCatalogModels as bcm
@@ -110,7 +108,7 @@ class basicAccessTest(unittest.TestCase):
                     os.unlink(catName)
 
         if os.path.exists(catDir):
-            shutil.rmtree(catDir)
+            shutil.rmtree(catDir, ignore_errors=True)
 
         self.assertEqual(len(list_of_failures), ct_failed_connection)
 
@@ -151,7 +149,7 @@ class basicAccessTest(unittest.TestCase):
                 if os.path.exists(catName):
                     os.unlink(catName)
                 if os.path.exists(catDir):
-                    shutil.rmtree(catDir)
+                    shutil.rmtree(catDir, ignore_errors=True)
 
             print('\ntestObsCat successfully connected to fatboy')
 
@@ -167,7 +165,7 @@ class basicAccessTest(unittest.TestCase):
                 print('Sometimes that happens.  Do not worry.')
 
                 if os.path.exists(catDir):
-                    shutil.rmtree(catDir)
+                    shutil.rmtree(catDir, ignore_errors=True)
 
                 pass
             else:

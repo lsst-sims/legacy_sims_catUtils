@@ -9,7 +9,6 @@ import tempfile
 import shutil
 import lsst.utils.tests
 
-from lsst.utils import getPackageDir
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.utils import ObservationMetaData, arcsecFromRadians
@@ -136,7 +135,7 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists(cls.galDBName):
             os.unlink(cls.galDBName)
         if os.path.exists(cls.scratch_dir):
-            shutil.rmtree(cls.scratch_dir)
+            shutil.rmtree(cls.scratch_dir, ignore_errors=True)
 
     def setUp(self):
         self.starDBObject = AstrometryTestStars(database=self.starDBName)

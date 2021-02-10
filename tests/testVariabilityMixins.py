@@ -474,7 +474,7 @@ class VariabilityTest(unittest.TestCase):
         if os.path.exists(cls.variability_db):
             os.unlink(cls.variability_db)
         if os.path.exists(cls.scratch_dir):
-            shutil.rmtree(cls.scratch_dir)
+            shutil.rmtree(cls.scratch_dir, ignore_errors=True)
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.0)

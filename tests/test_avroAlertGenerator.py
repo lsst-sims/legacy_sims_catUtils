@@ -267,7 +267,7 @@ class AvroAlertTestCase(unittest.TestCase):
         if os.path.exists(cls.star_db_name):
             os.unlink(cls.star_db_name)
         if os.path.exists(cls.input_dir):
-            shutil.rmtree(cls.input_dir)
+            shutil.rmtree(cls.input_dir, ignore_errors=True)
 
     def setUp(self):
         self.alert_data_output_dir = tempfile.mkdtemp(dir=ROOT, prefix='avro_gen_output')
@@ -276,11 +276,11 @@ class AvroAlertTestCase(unittest.TestCase):
     def tearDown(self):
         for file_name in os.listdir(self.alert_data_output_dir):
             os.unlink(os.path.join(self.alert_data_output_dir, file_name))
-        shutil.rmtree(self.alert_data_output_dir)
+        shutil.rmtree(self.alert_data_output_dir, ignore_errors=True)
 
         for file_name in os.listdir(self.avro_out_dir):
             os.unlink(os.path.join(self.avro_out_dir, file_name))
-        shutil.rmtree(self.avro_out_dir)
+        shutil.rmtree(self.avro_out_dir, ignore_errors=True)
 
     def test_avro_alert_generation(self):
         dmag_cutoff = 0.005

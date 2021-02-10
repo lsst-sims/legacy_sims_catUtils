@@ -139,7 +139,7 @@ class FastStellar_stellar_lc_gen_case(unittest.TestCase):
         if os.path.exists(cls.mlt_lc_file_name):
             os.unlink(cls.mlt_lc_file_name)
         if os.path.exists(cls.scratchDir):
-            shutil.rmtree(cls.scratchDir)
+            shutil.rmtree(cls.scratchDir, ignore_errors=True)
 
     def test_fast_stellar_lc_gen(self):
 

@@ -454,7 +454,7 @@ class GalaxyTileObjTestCase(unittest.TestCase):
 
         if os.path.exists(cat_name):
             os.unlink(cat_name)
-        shutil.rmtree(scratch_dir)
+        shutil.rmtree(scratch_dir, ignore_errors=True)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
