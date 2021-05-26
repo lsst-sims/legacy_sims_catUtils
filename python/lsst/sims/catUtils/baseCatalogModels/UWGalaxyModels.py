@@ -340,7 +340,7 @@ class UWGalaxyChunkIterator(ChunkIterator):
         if self._tile_to_do == 0:
             self._valid_tiles = 0
             self._n_chunks += 1
-            if self.chunk_size is None and not self._galaxy_query.closed:
+            if self.chunk_size is None:
                 results = self._galaxy_query.fetchall()
             elif self.chunk_size is not None:
                 results = self._galaxy_query.fetchmany(self.chunk_size)
