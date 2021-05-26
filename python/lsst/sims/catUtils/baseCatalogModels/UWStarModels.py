@@ -159,7 +159,7 @@ class UWStarChunkIterator(ChunkIterator):
 
     def __next__(self):
 
-        if self._active_query is None or self._active_query.closed:
+        if self._active_query is None:
             if len(self._tables_to_query) == 0:
                 raise StopIteration
             self._active_query = self._load_next_star_db(self._colnames)
